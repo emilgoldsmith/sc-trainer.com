@@ -1,0 +1,10 @@
+{
+  "editor.tabSize": 2,
+  "editor.formatOnSave": true,
+  "editor.linkedEditing": true,
+  "files.trimFinalNewlines": true,
+  "files.trimTrailingWhitespace": true,
+  "workbench.editor.enablePreviewFromQuickOpen": false,
+  "files.insertFinalNewline": true,
+  "files.eol": "\n",
+}

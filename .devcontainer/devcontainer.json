@@ -1,0 +1,13 @@
+{
+  "name": "Elm Dev Container",
+  "dockerFile": "Dockerfile",
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "extensions": [
+    "Elmtooling.elm-ls-vscode"
+  ],
+  "forwardPorts": [
+    4000
+  ]
+}
