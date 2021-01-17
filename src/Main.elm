@@ -7,4 +7,4 @@ import Models.Cube
 
 main : Html Never
 main =
-    div [] [ Components.Cube.injectStyles, Components.Cube.view, Models.Cube.view ]
+    div [] [ Components.Cube.injectStyles, Components.Cube.view ]

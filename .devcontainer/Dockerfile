@@ -9,7 +9,9 @@ RUN yarn global add \
     elm-test@0.19.1 \
     elm-format@0.8.4 \
     elm-live@4.0.2 \
-    uglify-js@3.12.4
+    uglify-js@3.12.4 \
+    elm-verify-examples@5.0.0
+
 
 ENV PATH "$PATH:/home/node/.yarn/bin"
 
