@@ -1,4 +1,4 @@
-module Tests.Models.Algorithm exposing (suite)
+module Tests.Models.Algorithm exposing (algorithmFuzzer, suite)
 
 {-| This represents an Algorithm, which is an ordered sequence of moves to be applied
 to a cube. Enjoy!
@@ -6,7 +6,7 @@ to a cube. Enjoy!
 
 import Expect
 import Fuzz
-import Models.Algorithm as Algorithm exposing (Algorithm)
+import Models.Algorithm as Algorithm exposing (Algorithm, allTurnables)
 import Test exposing (..)
 
 
@@ -14,38 +14,60 @@ suite : Test
 suite =
     describe "Models.Algorithm"
         [ describe "fromString"
-            [ fuzz validAlgorithmString "successfully parses valid algorithms" <|
+            [ fuzz validAlgorithmString "successfully parses valid algorithm strings" <|
                 Algorithm.fromString
                     >> Expect.ok
+            , fuzz2 algorithmFuzzer turnSeparator "a rendered algorithm is correctly retrieved" <|
+                \alg separator ->
+                    renderAlgorithm alg separator
+                        |> Algorithm.fromString
+                        |> Expect.equal (Ok alg)
+            , test "handles differing whitespace separation between turns" <|
+                \_ ->
+                    Algorithm.fromString "U U  U\tU   U  \t U    \t    U"
+                        |> Expect.ok
+            , todo "Confidence check that a simple example maps to what we would expect"
             , fuzz obviouslyInvalidAlgorithmString "errors on invalid algorithms" <|
                 Algorithm.fromString
                     >> Expect.err
             , test "errors on empty string as in the real world an algorithm always has turns" <|
                 \_ ->
                     Algorithm.fromString "" |> Expect.err
-            , todo "Do some specific cases with edge cases surrounding invalid algorithms"
-            , todo "Assert that some valid algorithms map to the expected algorithm, including all the separate cases"
-            , todo "Assert that it handles spaces and tabs in algorithm"
-            , todo "Assert that it doesn't allow newlines"
+            , test "errors on 2 apostrophes in a row" <|
+                \_ ->
+                    Algorithm.fromString "U''" |> Expect.err
+            , test "errors on space between the turnable and the apostrophe" <|
+                \_ ->
+                    Algorithm.fromString "U '" |> Expect.err
+            , test "errors on apostrophe before turn length" <|
+                \_ ->
+                    Algorithm.fromString "U'2" |> Expect.err
+            , test "errors on space between turnable and turn length" <|
+                \_ ->
+                    Algorithm.fromString "U 2" |> Expect.err
+            , test "errors on turn length 4" <|
+                \_ ->
+                    Algorithm.fromString "U4" |> Expect.err
+            , test "errors on turn length specified twice" <|
+                \_ ->
+                    Algorithm.fromString "U22'" |> Expect.err
+            , test "errors on newline between turns" <|
+                \_ ->
+                    Algorithm.fromString "U2'\nU" |> Expect.err
+            , todo "The turnable specified twice should be tested for a good error message"
             ]
         , describe "inverseAlg"
-            [ -- [ fuzz validAlgorithmString "the inverse of the inverse should be the original algorithm" <|
-              --     \turns ->
-              --         turnsToAlg turns |> Result.map Algorithm.inverse |> Result.map Algorithm.inverse |> Expect.all [ Expect.ok, Expect.equal (turnsToAlg turns) ]
-              -- , fuzz2 validAlgorithmString validAlgorithmString "the inverse of an algorithm equals splitting the alg in two, inversing each part and swapping their order" <|
-              --     \part1 part2 ->
-              --         let
-              --             fullAlgorithm =
-              --                 turnsToAlg <| part1 ++ part2
-              --             alg1 =
-              --                 turnsToAlg part1
-              --             alg2 =
-              --                 turnsToAlg part2
-              --             inversedAlgorithm =
-              --                 Result.map Algorithm.inverse fullAlgorithm
-              --         in
-              --         Result.map2 (++) (Result.map Algorithm.inverse alg2) (Result.map Algorithm.inverse alg1) |> Expect.all [ Expect.ok, Expect.equal inversedAlgorithm ]
-              skip <|
+            [ fuzz algorithmFuzzer "the inverse of the inverse should be the original algorithm" <|
+                \alg ->
+                    alg
+                        |> Algorithm.inverse
+                        |> Algorithm.inverse
+                        |> Expect.equal alg
+            , fuzz2 algorithmFuzzer algorithmFuzzer "the inverse of an algorithm equals splitting the alg in two, inversing each part and swapping their order" <|
+                \part1 part2 ->
+                    Algorithm.append (Algorithm.inverse part2) (Algorithm.inverse part1)
+                        |> Expect.equal (Algorithm.inverse (Algorithm.append part1 part2))
+            , skip <|
                 test "correctly inverses simple example" <|
                     \_ ->
                         let
@@ -57,19 +79,27 @@ suite =
                         in
                         alg |> Result.map Algorithm.inverse |> Expect.all [ Expect.ok, Expect.equal inversedAlg ]
             ]
+        , describe "append"
+            [ test "a simple example works as expected" <|
+                \_ ->
+                    let
+                        turn1 =
+                            Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
+
+                        turn2 =
+                            Algorithm.Turn Algorithm.U Algorithm.ThreeQuarters Algorithm.CounterClockwise
+                    in
+                    Algorithm.append (Algorithm.build [ turn1 ]) (Algorithm.build [ turn2 ])
+                        |> Expect.equal (Algorithm.build [ turn1, turn2 ])
+            ]
         ]
-
-
-turnsToAlg : List String -> Result String Algorithm
-turnsToAlg =
-    String.join "" >> Algorithm.fromString
 
 
 obviouslyInvalidAlgorithmString : Fuzz.Fuzzer String
 obviouslyInvalidAlgorithmString =
     let
         notFaceOrSlice c =
-            List.member c facesAndSlices |> not
+            not <| List.member c (List.map renderTurnable allTurnables)
 
         removeFaceAndSliceChars =
             String.filter notFaceOrSlice
@@ -79,65 +109,96 @@ obviouslyInvalidAlgorithmString =
 
 validAlgorithmString : Fuzz.Fuzzer String
 validAlgorithmString =
+    Fuzz.map2 renderAlgorithm algorithmFuzzer turnSeparator
+
+
+algorithmFuzzer : Fuzz.Fuzzer Algorithm
+algorithmFuzzer =
     let
-        separatorAndTurns =
-            Fuzz.tuple ( turnSeparator, nonEmptyTurnList )
+        nonEmptyTurnList =
+            Fuzz.map2 (::) turn <| Fuzz.list turn
     in
-    Fuzz.map (\( separator, turns ) -> String.join separator turns) separatorAndTurns
+    Fuzz.map Algorithm.build nonEmptyTurnList
+
+
+renderAlgorithm : Algorithm -> String -> String
+renderAlgorithm alg separator =
+    let
+        renderedTurnList =
+            Algorithm.extractInternals >> List.map renderTurn <| alg
+    in
+    String.join separator renderedTurnList
 
 
 turnSeparator : Fuzz.Fuzzer String
 turnSeparator =
     Fuzz.oneOf
         [ Fuzz.constant ""
-
-        -- , Fuzz.constant " "
-        -- , Fuzz.constant "  "
-        -- , Fuzz.constant "   "
-        -- , Fuzz.constant "\t"
+        , Fuzz.constant " "
+        , Fuzz.constant "  "
+        , Fuzz.constant "   "
+        , Fuzz.constant "\t"
         ]
 
 
-nonEmptyTurnList : Fuzz.Fuzzer (List String)
-nonEmptyTurnList =
-    Fuzz.map2 (::) turn <| Fuzz.list turn
-
-
-turn : Fuzz.Fuzzer String
+turn : Fuzz.Fuzzer Algorithm.Turn
 turn =
+    Fuzz.map3 Algorithm.Turn turnable turnLength turnDirection
+
+
+renderTurn : Algorithm.Turn -> String
+renderTurn (Algorithm.Turn x length direction) =
     -- For double/triple turns clockwise we format it as U2' / U3' as these are used in some
     -- algorithms for explanations of fingertricks, also notice it's not U'2 or U'3. This
     -- decision was made based on "use in the wild" specifically the Youtuber Jperm's use.
-    Fuzz.map3 (\a b c -> a ++ b ++ c) turnable turnLength turnDirection
+    String.fromChar (renderTurnable x) ++ renderLength length ++ renderDirection direction
 
 
-quarterTurn : Fuzz.Fuzzer String
+quarterTurn : Fuzz.Fuzzer Algorithm.Turn
 quarterTurn =
-    Fuzz.map2 (++) turnable turnDirection
+    Fuzz.map3 Algorithm.Turn turnable (Fuzz.constant Algorithm.OneQuarter) turnDirection
 
 
-turnable : Fuzz.Fuzzer String
+turnable : Fuzz.Fuzzer Algorithm.Turnable
 turnable =
-    Fuzz.oneOf <| List.map (String.fromChar >> Fuzz.constant) facesAndSlices
+    Fuzz.oneOf <| List.map Fuzz.constant Algorithm.allTurnables
 
 
-facesAndSlices : List Char
-facesAndSlices =
-    [ 'U' ]
+renderTurnable : Algorithm.Turnable -> Char
+renderTurnable x =
+    case x of
+        Algorithm.U ->
+            'U'
 
 
-turnLength : Fuzz.Fuzzer String
+turnLength : Fuzz.Fuzzer Algorithm.TurnLength
 turnLength =
-    Fuzz.oneOf
-        [ Fuzz.constant ""
-        , Fuzz.constant "2"
-        , Fuzz.constant "3"
-        ]
+    Fuzz.oneOf <| List.map Fuzz.constant Algorithm.allTurnLengths
 
 
-turnDirection : Fuzz.Fuzzer String
+renderLength : Algorithm.TurnLength -> String
+renderLength length =
+    case length of
+        Algorithm.OneQuarter ->
+            ""
+
+        Algorithm.DoubleTurn ->
+            "2"
+
+        Algorithm.ThreeQuarters ->
+            "3"
+
+
+turnDirection : Fuzz.Fuzzer Algorithm.TurnDirection
 turnDirection =
-    Fuzz.oneOf
-        [ Fuzz.constant "" -- No prime = clockwise
-        , Fuzz.constant "'" -- prime = counterclockwise
-        ]
+    Fuzz.oneOf <| List.map Fuzz.constant Algorithm.allTurnDirections
+
+
+renderDirection : Algorithm.TurnDirection -> String
+renderDirection dir =
+    case dir of
+        Algorithm.Clockwise ->
+            ""
+
+        Algorithm.CounterClockwise ->
+            "'"
