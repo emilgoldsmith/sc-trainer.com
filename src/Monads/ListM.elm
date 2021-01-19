@@ -1,4 +1,4 @@
-module Monads.List exposing (ListM, applicative, fromList, return, toList)
+module Monads.ListM exposing (ListM, applicative, fromList, return, toList)
 
 
 type ListM a

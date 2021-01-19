@@ -1,6 +1,6 @@
-module Models.Algorithm exposing (Algorithm, Turn(..), TurnDirection(..), TurnLength(..), Turnable(..), allTurnDirections, allTurnLengths, allTurnables, allTurns, append, build, extractInternals, fromString, inverse)
+module Models.Algorithm exposing (Algorithm, Turn(..), TurnDirection(..), TurnLength(..), Turnable(..), allTurnDirections, allTurnLengths, allTurnables, allTurns, appendTo, build, extractInternals, fromString, inverse)
 
-import Monads.List as ListM
+import Monads.ListM as ListM
 import Parser.Advanced as Parser exposing ((|.), (|=), Parser)
 import Utils.Enumerator
 
@@ -32,6 +32,10 @@ type TurnDirection
     | CounterClockwise
 
 
+
+-- HELPERS
+
+
 extractInternals : Algorithm -> List Turn
 extractInternals alg =
     case alg of
@@ -44,19 +48,29 @@ build =
     Algorithm
 
 
-flipDirection : TurnDirection -> TurnDirection
-flipDirection direction =
-    case direction of
-        Clockwise ->
-            CounterClockwise
-
-        CounterClockwise ->
-            Clockwise
-
-
-append : Algorithm -> Algorithm -> Algorithm
-append (Algorithm a) (Algorithm b) =
+appendTo : Algorithm -> Algorithm -> Algorithm
+appendTo (Algorithm a) (Algorithm b) =
     Algorithm (a ++ b)
+
+
+inverse : Algorithm -> Algorithm
+inverse =
+    let
+        map f (Algorithm turnList) =
+            Algorithm (f turnList)
+
+        flipDirection direction =
+            case direction of
+                Clockwise ->
+                    CounterClockwise
+
+                CounterClockwise ->
+                    Clockwise
+
+        flipTurn (Turn a b direction) =
+            Turn a b (flipDirection direction)
+    in
+    map <| List.reverse >> List.map flipTurn
 
 
 fromString : String -> Result String Algorithm
@@ -65,32 +79,8 @@ fromString string =
         |> Result.mapError (renderError string)
 
 
-renderError : String -> List (Parser.DeadEnd Never Problem) -> String
-renderError string deadEnds =
-    let
-        renderDeadEnd d =
-            String.fromInt d.row ++ ":" ++ String.fromInt d.col ++ " : " ++ renderProblem d.problem
-    in
-    string ++ "    " ++ (String.join ". " <| List.map renderDeadEnd deadEnds)
 
-
-renderProblem : Problem -> String
-renderProblem problem =
-    case problem of
-        ExpectingFaceOrSlice ->
-            "Expecting face or slice"
-
-        ExpectingNumQuarterTurns ->
-            "Expecting num quarter turns"
-
-        ExpectingTurnDirection ->
-            "Expecting turn direction"
-
-        UnexpectedCharacter ->
-            "Unexpected character"
-
-        EmptyAlgorithm ->
-            "An empty algorithm makes no sense as user input"
+-- PARSER
 
 
 type Problem
@@ -162,18 +152,32 @@ algParser =
     Parser.succeed Algorithm |= Parser.loop [] looper |> Parser.andThen verifyNotEmpty
 
 
-inverse : Algorithm -> Algorithm
-inverse =
+renderError : String -> List (Parser.DeadEnd Never Problem) -> String
+renderError string deadEnds =
     let
-        flipTurn (Turn a b direction) =
-            Turn a b (flipDirection direction)
+        renderDeadEnd d =
+            String.fromInt d.row ++ ":" ++ String.fromInt d.col ++ " : " ++ renderProblem d.problem
     in
-    map <| List.reverse >> List.map flipTurn
+    string ++ "    " ++ (String.join ". " <| List.map renderDeadEnd deadEnds)
 
 
-map : (List Turn -> List Turn) -> Algorithm -> Algorithm
-map f (Algorithm turnList) =
-    Algorithm (f turnList)
+renderProblem : Problem -> String
+renderProblem problem =
+    case problem of
+        ExpectingFaceOrSlice ->
+            "Expecting face or slice"
+
+        ExpectingNumQuarterTurns ->
+            "Expecting num quarter turns"
+
+        ExpectingTurnDirection ->
+            "Expecting turn direction"
+
+        UnexpectedCharacter ->
+            "Unexpected character"
+
+        EmptyAlgorithm ->
+            "An empty algorithm makes no sense as user input"
 
 
 
@@ -203,7 +207,6 @@ allTurns =
 allTurnables : List Turnable
 allTurnables =
     let
-        fromU : Utils.Enumerator.Order Turnable
         fromU layer =
             case layer of
                 U ->
@@ -214,13 +217,12 @@ allTurnables =
 
 {-| All possible turn lengths
 
-    List.length allTurnLengths -> 3
+    List.length allTurnLengths --> 3
 
 -}
 allTurnLengths : List TurnLength
 allTurnLengths =
     let
-        fromOneQuarter : Utils.Enumerator.Order TurnLength
         fromOneQuarter length =
             case length of
                 OneQuarter ->
@@ -243,7 +245,6 @@ allTurnLengths =
 allTurnDirections : List TurnDirection
 allTurnDirections =
     let
-        fromClockwise : Utils.Enumerator.Order TurnDirection
         fromClockwise direction =
             case direction of
                 Clockwise ->

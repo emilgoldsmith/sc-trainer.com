@@ -1,0 +1,6 @@
+{
+    "checks": {
+        "FunctionInLet": false,
+        "ImportAll": false
+    }
+}

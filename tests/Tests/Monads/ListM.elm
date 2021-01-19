@@ -1,8 +1,8 @@
-module Tests.Monads.List exposing (suite)
+module Tests.Monads.ListM exposing (suite)
 
 import Expect
 import Fuzz
-import Monads.List as ListM
+import Monads.ListM as ListM
 import Test exposing (..)
 
 

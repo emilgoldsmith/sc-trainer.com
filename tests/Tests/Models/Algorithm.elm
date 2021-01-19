@@ -1,4 +1,4 @@
-module Tests.Models.Algorithm exposing (algorithmFuzzer, suite)
+module Tests.Models.Algorithm exposing (algorithmFuzzer, suite, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
 
 {-| This represents an Algorithm, which is an ordered sequence of moves to be applied
 to a cube. Enjoy!
@@ -65,8 +65,8 @@ suite =
                         |> Expect.equal alg
             , fuzz2 algorithmFuzzer algorithmFuzzer "the inverse of an algorithm equals splitting the alg in two, inversing each part and swapping their order" <|
                 \part1 part2 ->
-                    Algorithm.append (Algorithm.inverse part2) (Algorithm.inverse part1)
-                        |> Expect.equal (Algorithm.inverse (Algorithm.append part1 part2))
+                    Algorithm.appendTo (Algorithm.inverse part2) (Algorithm.inverse part1)
+                        |> Expect.equal (Algorithm.inverse (Algorithm.appendTo part1 part2))
             , skip <|
                 test "correctly inverses simple example" <|
                     \_ ->
@@ -89,7 +89,7 @@ suite =
                         turn2 =
                             Algorithm.Turn Algorithm.U Algorithm.ThreeQuarters Algorithm.CounterClockwise
                     in
-                    Algorithm.append (Algorithm.build [ turn1 ]) (Algorithm.build [ turn2 ])
+                    Algorithm.appendTo (Algorithm.build [ turn1 ]) (Algorithm.build [ turn2 ])
                         |> Expect.equal (Algorithm.build [ turn1, turn2 ])
             ]
         ]
@@ -116,7 +116,7 @@ algorithmFuzzer : Fuzz.Fuzzer Algorithm
 algorithmFuzzer =
     let
         nonEmptyTurnList =
-            Fuzz.map2 (::) turn <| Fuzz.list turn
+            Fuzz.map2 (::) turnFuzzer <| Fuzz.list turnFuzzer
     in
     Fuzz.map Algorithm.build nonEmptyTurnList
 
@@ -141,9 +141,9 @@ turnSeparator =
         ]
 
 
-turn : Fuzz.Fuzzer Algorithm.Turn
-turn =
-    Fuzz.map3 Algorithm.Turn turnable turnLength turnDirection
+turnFuzzer : Fuzz.Fuzzer Algorithm.Turn
+turnFuzzer =
+    Fuzz.map3 Algorithm.Turn turnableFuzzer turnLength turnDirectionFuzzer
 
 
 renderTurn : Algorithm.Turn -> String
@@ -154,13 +154,8 @@ renderTurn (Algorithm.Turn x length direction) =
     String.fromChar (renderTurnable x) ++ renderLength length ++ renderDirection direction
 
 
-quarterTurn : Fuzz.Fuzzer Algorithm.Turn
-quarterTurn =
-    Fuzz.map3 Algorithm.Turn turnable (Fuzz.constant Algorithm.OneQuarter) turnDirection
-
-
-turnable : Fuzz.Fuzzer Algorithm.Turnable
-turnable =
+turnableFuzzer : Fuzz.Fuzzer Algorithm.Turnable
+turnableFuzzer =
     Fuzz.oneOf <| List.map Fuzz.constant Algorithm.allTurnables
 
 
@@ -189,8 +184,8 @@ renderLength length =
             "3"
 
 
-turnDirection : Fuzz.Fuzzer Algorithm.TurnDirection
-turnDirection =
+turnDirectionFuzzer : Fuzz.Fuzzer Algorithm.TurnDirection
+turnDirectionFuzzer =
     Fuzz.oneOf <| List.map Fuzz.constant Algorithm.allTurnDirections
 
 
