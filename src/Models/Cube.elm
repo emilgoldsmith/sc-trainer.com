@@ -1,4 +1,4 @@
-module Models.Cube exposing (Color(..), Cube, CubieRendering, Rendering, applyAlgorithm, cycleToThePowerOf, render, solved, traceExponentCycle)
+module Models.Cube exposing (Color(..), Cube, CubieRendering, Rendering, applyAlgorithm, render, solved)
 
 {-| The Cube Model Module
 -}
@@ -6,6 +6,7 @@ module Models.Cube exposing (Color(..), Cube, CubieRendering, Rendering, applyAl
 import Array exposing (Array)
 import Models.Algorithm as Algorithm exposing (Algorithm, TurnDirection(..))
 import Set exposing (Set)
+import Utils.Permutation as Permutation exposing (Permutation)
 
 
 {-| A solved cube. This is your entry point into this module, if you need a cube at
@@ -101,7 +102,6 @@ type EdgeOrientation
 
 
 -- MOVE APPLICATION
--- See https://en.wikipedia.org/wiki/Permutation#Cycle_notation for background on this notation
 
 
 type alias TurnPermutation =
@@ -158,7 +158,7 @@ getPermutation : Algorithm.Turn -> TurnPermutation
 getPermutation turn =
     let
         clockwiseQuarterPermutation =
-            getClockwiseQuarterPermutation turn
+            getClockwiseQuarterTurnPermutation turn
     in
     Tuple.mapBoth (clockwiseQuarterToFullTurnPermutation turn) (clockwiseQuarterToFullTurnPermutation turn) clockwiseQuarterPermutation
 
@@ -172,10 +172,10 @@ clockwiseQuarterToFullTurnPermutation (Algorithm.Turn _ length direction) permut
                     identity
 
                 Algorithm.DoubleTurn ->
-                    permutationToThePowerOf 2
+                    Permutation.toThePowerOf 2
 
                 Algorithm.ThreeQuarters ->
-                    reversePermutation
+                    Permutation.reverse
 
         transformDirection =
             case direction of
@@ -183,28 +183,28 @@ clockwiseQuarterToFullTurnPermutation (Algorithm.Turn _ length direction) permut
                     identity
 
                 CounterClockwise ->
-                    reversePermutation
+                    Permutation.reverse
     in
     permutation
         |> transformPermutationLength
         |> transformDirection
 
 
-getClockwiseQuarterPermutation : Algorithm.Turn -> TurnPermutation
-getClockwiseQuarterPermutation (Algorithm.Turn turnable _ _) =
+getClockwiseQuarterTurnPermutation : Algorithm.Turn -> TurnPermutation
+getClockwiseQuarterTurnPermutation (Algorithm.Turn turnable _ _) =
     case turnable of
         Algorithm.U ->
-            ( Permutation [ Array.fromList [ UFRLoc, UFLLoc, UBLLoc, UBRLoc ] ], Permutation [ Array.fromList [ UFLoc, ULLoc, UBLoc, URLoc ] ] )
+            ( Permutation.build [ [ UFRLoc, UFLLoc, UBLLoc, UBRLoc ] ], Permutation.build [ [ UFLoc, ULLoc, UBLoc, URLoc ] ] )
 
 
 applyTurnPermutation : TurnPermutation -> Cube -> Cube
 applyTurnPermutation ( cornerPermutation, edgePermutation ) =
-    applyPermutation cornerAccessors cornerPermutation >> applyPermutation edgeAccessors edgePermutation
+    Permutation.apply cornerAccessors cornerPermutation >> Permutation.apply edgeAccessors edgePermutation
 
 
-cornerAccessors : Accessors CornerLocation Cube OrientedCorner
+cornerAccessors : Permutation.Accessor CornerLocation Cube OrientedCorner
 cornerAccessors =
-    { getValue = getCorner, setValue = setCorner }
+    Permutation.buildAccessor getCorner setCorner
 
 
 getCorner : CornerLocation -> Cube -> OrientedCorner
@@ -243,9 +243,9 @@ setCorner location cornerToSet (Cube corners edges) =
     Cube newCorners edges
 
 
-edgeAccessors : Accessors EdgeLocation Cube OrientedEdge
+edgeAccessors : Permutation.Accessor EdgeLocation Cube OrientedEdge
 edgeAccessors =
-    { getValue = getEdge, setValue = setEdge }
+    Permutation.buildAccessor getEdge setEdge
 
 
 getEdge : EdgeLocation -> Cube -> OrientedEdge
@@ -282,126 +282,6 @@ setEdge location edgeToSet (Cube corners edges) =
                     { edges | ul = edgeToSet }
     in
     Cube corners newEdges
-
-
-
--- PERMUTATION HELPERS
-
-
-type Permutation location
-    = Permutation (List (Cycle location))
-
-
-type alias Cycle location =
-    Array location
-
-
-type alias Getter location container value =
-    location -> container -> value
-
-
-type alias Setter location container value =
-    location -> value -> container -> container
-
-
-type alias Accessors location container value =
-    { getValue : Getter location container value, setValue : Setter location container value }
-
-
-applyPermutation : Accessors location container value -> Permutation location -> container -> container
-applyPermutation accessors (Permutation cycles) container =
-    List.foldl (applyCycle accessors) container cycles
-
-
-applyCycle : Accessors location container value -> Cycle location -> container -> container
-applyCycle { getValue, setValue } cycle originalContainer =
-    let
-        setThisLocation currentLocation ( previousLocation, currentContainer ) =
-            let
-                -- It's important we use originalContainer, since in currentContainer
-                -- for all cases but the first time the previous value has already
-                -- been set with its new value
-                previousValue =
-                    getValue previousLocation originalContainer
-
-                nextContainer =
-                    setValue currentLocation previousValue currentContainer
-            in
-            ( currentLocation, nextContainer )
-
-        maybeLastLocation =
-            Array.get (Array.length cycle - 1) cycle
-    in
-    Maybe.map
-        (\lastLocation -> Array.foldl setThisLocation ( lastLocation, originalContainer ) cycle)
-        maybeLastLocation
-        |> Maybe.map Tuple.second
-        -- If there was no last element of the array, it means the cycle was empty, which is equivalent
-        -- to preserving the original container
-        |> Maybe.withDefault originalContainer
-
-
-reversePermutation : Permutation a -> Permutation a
-reversePermutation (Permutation cycleList) =
-    Permutation <| List.map reverseCycle cycleList
-
-
-reverseCycle : Cycle a -> Cycle a
-reverseCycle =
-    Array.toList >> List.reverse >> Array.fromList
-
-
-permutationToThePowerOf : Int -> Permutation a -> Permutation a
-permutationToThePowerOf exponent (Permutation cycleList) =
-    Permutation <| List.concatMap (cycleToThePowerOf exponent) cycleList
-
-
-cycleToThePowerOf : Int -> Cycle a -> List (Cycle a)
-cycleToThePowerOf exponent cycle =
-    let
-        cycleIndices =
-            Array.initialize (Array.length cycle) identity
-
-        foldItUp index ( cycleList, seen ) =
-            let
-                ( exponentCycle, newSeen ) =
-                    getExponentCycleStartingAt index exponent seen cycle
-            in
-            ( exponentCycle :: cycleList, newSeen )
-    in
-    Array.foldl foldItUp ( [], Set.empty ) cycleIndices
-        |> Tuple.first
-        |> List.filter (\newCycle -> Array.length newCycle /= 0)
-
-
-getExponentCycleStartingAt : Int -> Int -> Set Int -> Cycle a -> ( Cycle a, Set Int )
-getExponentCycleStartingAt index exponent seen cycle =
-    traceExponentCycle exponent index cycle seen
-        |> Tuple.mapFirst (Maybe.map Array.fromList)
-        |> Tuple.mapFirst (Maybe.withDefault Array.empty)
-
-
-traceExponentCycle : Int -> Int -> Cycle a -> Set Int -> ( Maybe (List a), Set Int )
-traceExponentCycle exponent index cycle seen =
-    let
-        cycleLength =
-            Array.length cycle
-
-        arrayIndex =
-            modBy cycleLength index
-    in
-    if Set.member arrayIndex seen then
-        ( Just [], seen )
-
-    else
-        let
-            currentValue =
-                Array.get arrayIndex cycle
-
-            ( restOfTrace, newSeen ) =
-                traceExponentCycle exponent (index + exponent) cycle (Set.insert arrayIndex seen)
-        in
-        ( Maybe.map2 (::) currentValue restOfTrace, newSeen )
 
 
 
