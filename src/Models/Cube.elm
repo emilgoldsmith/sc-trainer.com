@@ -3,9 +3,7 @@ module Models.Cube exposing (Color(..), Cube, CubieRendering, Rendering, applyAl
 {-| The Cube Model Module
 -}
 
-import Array exposing (Array)
 import Models.Algorithm as Algorithm exposing (Algorithm, TurnDirection(..))
-import Set exposing (Set)
 import Utils.Permutation as Permutation exposing (Permutation)
 
 
@@ -132,14 +130,14 @@ applyEdgeOrientationChanges (Algorithm.Turn turnable _ _) cube =
             cube
 
 
-flipEdge : OrientedEdge -> OrientedEdge
-flipEdge ( edge, orientation ) =
-    case orientation of
-        NotFlipped ->
-            ( edge, Flipped )
 
-        Flipped ->
-            ( edge, NotFlipped )
+-- flipEdge : OrientedEdge -> OrientedEdge
+-- flipEdge ( edge, orientation ) =
+--     case orientation of
+--         NotFlipped ->
+--             ( edge, Flipped )
+--         Flipped ->
+--             ( edge, NotFlipped )
 
 
 applyCornerOrientationChanges : Algorithm.Turn -> Cube -> Cube

@@ -24,7 +24,8 @@ injectStyles =
 
 displayCubie : Html Never
 displayCubie =
-    div [ class classes.cubie ] (List.map displayCubieFace cubeFaces)
+    Debug.todo "nvm"
+    -- div [ class classes.cubie ] (List.map displayCubieFace cubeFaces)
 
 
 displayCubieFace : CubeFace -> Html Never
