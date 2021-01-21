@@ -9,5 +9,18 @@
   ],
   "forwardPorts": [
     4000
-  ]
+  ],
+  // We need to have the elm dependency cache mounted as the Elm Language Server depends on it.
+  // Without this mount there will be a file (elm-stuff/0.19.1/d.dat) telling the compiler
+  // dependencies are cached, but the cache isn't there if we rebuilt the container which will
+  // then have deleted the cache at ~/.elm if we don't have it mounted, saving it in our repo
+  // in a gitignored directory as we're doing here
+  "mounts": [
+    "source=${localWorkspaceFolder}/.elm-cache,target=/home/node/.elm,type=bind,consistency=delegated"
+  ],
+  // We change the mount to use delegated consistency as it is more performant and there shouldn't be reasons
+  // for us to be changing on both the host and the container at the same time. At the same time we also choose
+  // to mount it in the containers home directory instead of the default at /workspaces/html-cube
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/node/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/home/node/workspace",
 }

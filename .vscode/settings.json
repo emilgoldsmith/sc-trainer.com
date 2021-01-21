@@ -7,5 +7,4 @@
   "workbench.editor.enablePreviewFromQuickOpen": false,
   "files.insertFinalNewline": true,
   "files.eol": "\n",
-  "elmLS.elmAnalyseTrigger": "save"
 }
