@@ -10,13 +10,21 @@
   "forwardPorts": [
     4000
   ],
-  // We need to have the elm dependency cache mounted as the Elm Language Server depends on it.
-  // Without this mount there will be a file (elm-stuff/0.19.1/d.dat) telling the compiler
-  // dependencies are cached, but the cache isn't there if we rebuilt the container which will
-  // then have deleted the cache at ~/.elm if we don't have it mounted, saving it in our repo
-  // in a gitignored directory as we're doing here
+  // Keeping the elm dependency cache mounted in a volume is both a small performance benefit
+  // when having rebuilt your container. It also solves a problem with the Elm Language Server.
+  // The Elm Language Server uses the dependency cache stored at ~/.elm.
+  // However, the elm compiler uses elm-stuff in the mounted directory which keeps timestamps
+  // telling the elm compiler whether elm.json changed since it last downloaded dependencies.
+  // This data is persisted, but without a volume the ~/.elm dependency cache itself is not
+  // persisted, resulting in a corruption of that relationship.
+  // The Elm Language Server expects the elm compiler to keep ~/.elm up to date, but because
+  // of this failure it will crash continuously when ~/.elm does not store the elm code for
+  // the dependencies. This will usually occur every time the container has been rebuilt
+  // and is manually fixed by deleting the elm-stuff directory which forces the compiler to
+  // redownload dependencies.
+  // Adding this volume will preserve the elm cache between rebuilds though, fixing this issue
   "mounts": [
-    "source=${localWorkspaceFolder}/.elm-cache,target=/home/node/.elm,type=bind,consistency=delegated"
+    "source=elm-dependency-cache,target=/home/node/.elm,type=volume"
   ],
   // We change the mount to use delegated consistency as it is more performant and there shouldn't be reasons
   // for us to be changing on both the host and the container at the same time. At the same time we also choose
