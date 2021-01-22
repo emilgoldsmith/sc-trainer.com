@@ -3,7 +3,7 @@ module Models.Cube exposing (Color(..), Cube, CubieRendering, Rendering, applyAl
 {-| The Cube Model Module
 -}
 
-import Models.Algorithm as Algorithm exposing (Algorithm, TurnDirection(..))
+import Models.Algorithm as Algorithm exposing (Algorithm)
 import Utils.Permutation as Permutation exposing (Permutation)
 
 
@@ -177,10 +177,10 @@ clockwiseQuarterToFullTurnPermutation (Algorithm.Turn _ length direction) permut
 
         transformDirection =
             case direction of
-                Clockwise ->
+                Algorithm.Clockwise ->
                     identity
 
-                CounterClockwise ->
+                Algorithm.CounterClockwise ->
                     Permutation.reverse
     in
     permutation
