@@ -302,36 +302,43 @@ get to that state like this:
 -}
 solved : Cube
 solved =
+    let
+        solvedCorner location =
+            OrientedCorner location NotTwisted
+
+        solvedEdge location =
+            OrientedEdge location NotFlipped
+    in
     Cube
         { -- U Corners
-          ufr = OrientedCorner UFR NotTwisted
-        , ufl = OrientedCorner UFL NotTwisted
-        , ubl = OrientedCorner UBL NotTwisted
-        , ubr = OrientedCorner UBR NotTwisted
+          ufr = solvedCorner UFR
+        , ufl = solvedCorner UFL
+        , ubl = solvedCorner UBL
+        , ubr = solvedCorner UBR
 
         -- D Corners
-        , dfr = OrientedCorner DFR NotTwisted
-        , dfl = OrientedCorner DFL NotTwisted
-        , dbl = OrientedCorner DBL NotTwisted
-        , dbr = OrientedCorner DBR NotTwisted
+        , dfr = solvedCorner DFR
+        , dfl = solvedCorner DFL
+        , dbl = solvedCorner DBL
+        , dbr = solvedCorner DBR
         }
         { -- M Edges
-          uf = OrientedEdge UF NotFlipped
-        , ub = OrientedEdge UB NotFlipped
-        , df = OrientedEdge DF NotFlipped
-        , db = OrientedEdge DB NotFlipped
+          uf = solvedEdge UF
+        , ub = solvedEdge UB
+        , df = solvedEdge DF
+        , db = solvedEdge DB
 
         -- S Edges
-        , ur = OrientedEdge UR NotFlipped
-        , ul = OrientedEdge UL NotFlipped
-        , dr = OrientedEdge DR NotFlipped
-        , dl = OrientedEdge DL NotFlipped
+        , ur = solvedEdge UR
+        , ul = solvedEdge UL
+        , dr = solvedEdge DR
+        , dl = solvedEdge DL
 
         -- E Edges
-        , fr = OrientedEdge FR NotFlipped
-        , fl = OrientedEdge FL NotFlipped
-        , br = OrientedEdge BR NotFlipped
-        , bl = OrientedEdge BL NotFlipped
+        , fr = solvedEdge FR
+        , fl = solvedEdge FL
+        , br = solvedEdge BR
+        , bl = solvedEdge BL
         }
 
 
@@ -671,31 +678,40 @@ renderCorner cube location =
     let
         corner =
             getCorner location cube
+
+        reference =
+            getCornerReferenceSticker corner
+
+        counterClockwise =
+            getCounterClockwiseSticker corner
+
+        clockwise =
+            getClockwiseSticker corner
     in
     case location of
         UFRLoc ->
-            { plainCubie | u = getCornerReferenceSticker corner, f = getCounterClockwiseSticker corner, r = getClockwiseSticker corner }
+            { plainCubie | u = reference, f = counterClockwise, r = clockwise }
 
         UFLLoc ->
-            { plainCubie | u = getCornerReferenceSticker corner, f = getClockwiseSticker corner, l = getCounterClockwiseSticker corner }
+            { plainCubie | u = reference, f = clockwise, l = counterClockwise }
 
         UBLLoc ->
-            { plainCubie | u = getCornerReferenceSticker corner, b = getCounterClockwiseSticker corner, l = getClockwiseSticker corner }
+            { plainCubie | u = reference, b = counterClockwise, l = clockwise }
 
         UBRLoc ->
-            { plainCubie | u = getCornerReferenceSticker corner, b = getClockwiseSticker corner, r = getCounterClockwiseSticker corner }
+            { plainCubie | u = reference, b = clockwise, r = counterClockwise }
 
         DFRLoc ->
-            { plainCubie | d = getCornerReferenceSticker corner, f = getClockwiseSticker corner, r = getCounterClockwiseSticker corner }
+            { plainCubie | d = reference, f = clockwise, r = counterClockwise }
 
         DFLLoc ->
-            { plainCubie | d = getCornerReferenceSticker corner, f = getCounterClockwiseSticker corner, l = getClockwiseSticker corner }
+            { plainCubie | d = reference, f = counterClockwise, l = clockwise }
 
         DBLLoc ->
-            { plainCubie | d = getCornerReferenceSticker corner, b = getClockwiseSticker corner, l = getCounterClockwiseSticker corner }
+            { plainCubie | d = reference, b = clockwise, l = counterClockwise }
 
         DBRLoc ->
-            { plainCubie | d = getCornerReferenceSticker corner, b = getCounterClockwiseSticker corner, r = getClockwiseSticker corner }
+            { plainCubie | d = reference, b = counterClockwise, r = clockwise }
 
 
 type alias LocationAgnosticCornerRendering =
@@ -776,46 +792,52 @@ renderEdge cube location =
     let
         edge =
             getEdge location cube
+
+        reference =
+            getEdgeReferenceSticker edge
+
+        other =
+            getOtherSticker edge
     in
     case location of
         -- M Edges
         UFLoc ->
-            { plainCubie | u = getEdgeReferenceSticker edge, f = getOtherSticker edge }
+            { plainCubie | u = reference, f = other }
 
         UBLoc ->
-            { plainCubie | u = getEdgeReferenceSticker edge, b = getOtherSticker edge }
+            { plainCubie | u = reference, b = other }
 
         DFLoc ->
-            { plainCubie | d = getEdgeReferenceSticker edge, f = getOtherSticker edge }
+            { plainCubie | d = reference, f = other }
 
         DBLoc ->
-            { plainCubie | d = getEdgeReferenceSticker edge, b = getOtherSticker edge }
+            { plainCubie | d = reference, b = other }
 
         -- S Edges
         URLoc ->
-            { plainCubie | u = getEdgeReferenceSticker edge, r = getOtherSticker edge }
+            { plainCubie | u = reference, r = other }
 
         ULLoc ->
-            { plainCubie | u = getEdgeReferenceSticker edge, l = getOtherSticker edge }
+            { plainCubie | u = reference, l = other }
 
         DRLoc ->
-            { plainCubie | d = getEdgeReferenceSticker edge, r = getOtherSticker edge }
+            { plainCubie | d = reference, r = other }
 
         DLLoc ->
-            { plainCubie | d = getEdgeReferenceSticker edge, l = getOtherSticker edge }
+            { plainCubie | d = reference, l = other }
 
         -- E Edges
         FRLoc ->
-            { plainCubie | f = getEdgeReferenceSticker edge, r = getOtherSticker edge }
+            { plainCubie | f = reference, r = other }
 
         FLLoc ->
-            { plainCubie | f = getEdgeReferenceSticker edge, l = getOtherSticker edge }
+            { plainCubie | f = reference, l = other }
 
         BRLoc ->
-            { plainCubie | b = getEdgeReferenceSticker edge, r = getOtherSticker edge }
+            { plainCubie | b = reference, r = other }
 
         BLLoc ->
-            { plainCubie | b = getEdgeReferenceSticker edge, l = getOtherSticker edge }
+            { plainCubie | b = reference, l = other }
 
 
 type alias LocationAgnosticEdgeRendering =
