@@ -19,11 +19,14 @@ type Turn
 
 type Turnable
     = U
+    | D
+    | L
+    | R
 
 
 type TurnLength
     = OneQuarter
-    | DoubleTurn
+    | Halfway
     | ThreeQuarters
 
 
@@ -121,6 +124,15 @@ algParser =
                                 U ->
                                     "U"
 
+                                D ->
+                                    "D"
+
+                                L ->
+                                    "L"
+
+                                R ->
+                                    "R"
+
                         token =
                             Parser.token (Parser.Token (turnableToString turnable) ExpectingFaceOrSlice)
                     in
@@ -130,7 +142,7 @@ algParser =
 
         turnLengthParser =
             Parser.oneOf
-                [ Parser.map (\_ -> DoubleTurn) <| Parser.token (Parser.Token "2" ExpectingNumQuarterTurns)
+                [ Parser.map (\_ -> Halfway) <| Parser.token (Parser.Token "2" ExpectingNumQuarterTurns)
                 , Parser.map (\_ -> ThreeQuarters) <| Parser.token (Parser.Token "3" ExpectingNumQuarterTurns)
                 , Parser.map (\_ -> OneQuarter) <| Parser.token (Parser.Token "" ExpectingNumQuarterTurns)
                 ]
@@ -201,7 +213,7 @@ allTurns =
 
 {-| All possible turnables
 
-    List.length allTurnables --> 1
+    List.length allTurnables --> 4
 
 -}
 allTurnables : List Turnable
@@ -210,6 +222,15 @@ allTurnables =
         fromU layer =
             case layer of
                 U ->
+                    Just D
+
+                D ->
+                    Just L
+
+                L ->
+                    Just R
+
+                R ->
                     Nothing
     in
     Utils.Enumerator.from U fromU
@@ -226,9 +247,9 @@ allTurnLengths =
         fromOneQuarter length =
             case length of
                 OneQuarter ->
-                    Just DoubleTurn
+                    Just Halfway
 
-                DoubleTurn ->
+                Halfway ->
                     Just ThreeQuarters
 
                 ThreeQuarters ->

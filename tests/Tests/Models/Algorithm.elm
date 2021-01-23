@@ -165,6 +165,15 @@ renderTurnable x =
         Algorithm.U ->
             'U'
 
+        Algorithm.D ->
+            'D'
+
+        Algorithm.L ->
+            'L'
+
+        Algorithm.R ->
+            'R'
+
 
 turnLength : Fuzz.Fuzzer Algorithm.TurnLength
 turnLength =
@@ -177,7 +186,7 @@ renderLength length =
         Algorithm.OneQuarter ->
             ""
 
-        Algorithm.DoubleTurn ->
+        Algorithm.Halfway ->
             "2"
 
         Algorithm.ThreeQuarters ->

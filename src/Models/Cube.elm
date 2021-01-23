@@ -7,32 +7,6 @@ import Models.Algorithm as Algorithm exposing (Algorithm)
 import Utils.Permutation as Permutation exposing (Permutation)
 
 
-{-| A solved cube. This is your entry point into this module, if you need a cube at
-a specific state you take this as a starting point and apply the algorithm on it to
-get to that state like this:
-
-    import Model.Cube as Cube
-    import Model.Algorithm as Algorithm
-
-    -- This would generate a cube with one of the big fish OLLs
-    Cube.solved |> Cube.applyAlgorithm (Algorithm.fromString "RUR'U'R'FRF'")
-
--}
-solved : Cube
-solved =
-    Cube
-        { ufr = ( UFR, NotTwisted )
-        , ufl = ( UFL, NotTwisted )
-        , ubl = ( UBL, NotTwisted )
-        , ubr = ( UBR, NotTwisted )
-        }
-        { uf = ( UF, NotFlipped )
-        , ur = ( UR, NotFlipped )
-        , ub = ( UB, NotFlipped )
-        , ul = ( UL, NotFlipped )
-        }
-
-
 
 -- CUBE MODEL
 
@@ -50,159 +24,22 @@ type alias CornerPositions =
     , ufl : OrientedCorner
     , ubl : OrientedCorner
     , ubr : OrientedCorner
+    , dfr : OrientedCorner
+    , dfl : OrientedCorner
+    , dbl : OrientedCorner
+    , dbr : OrientedCorner
     }
 
 
-type alias OrientedCorner =
-    ( Corner, CornerOrientation )
-
-
-type Corner
-    = UFR
-    | UFL
-    | UBR
-    | UBL
-
-
-type CornerOrientation
-    = NotTwisted
-    | TwistedClockwise
-    | TwistedCounterClockwise
-
-
-
--- EDGE MODEL
-
-
-type alias EdgePositions =
-    { uf : OrientedEdge
-    , ur : OrientedEdge
-    , ub : OrientedEdge
-    , ul : OrientedEdge
-    }
-
-
-type alias OrientedEdge =
-    ( Edge, EdgeOrientation )
-
-
-type Edge
-    = UF
-    | UB
-    | UR
-    | UL
-
-
-type EdgeOrientation
-    = NotFlipped
-    | Flipped
-
-
-
--- MOVE APPLICATION
-
-
-type alias TurnPermutation =
-    ( Permutation CornerLocation, Permutation EdgeLocation )
-
-
-{-| Apply an algorithm to a cube, see example for [`solved`](Model.Cube#solved)
--}
-applyAlgorithm : Algorithm -> Cube -> Cube
-applyAlgorithm alg cube =
-    List.foldl applyTurn cube (Algorithm.extractInternals alg)
-
-
-applyTurn : Algorithm.Turn -> Cube -> Cube
-applyTurn turn =
-    applyOrientationChanges turn >> applyPermutationChanges turn
-
-
-applyOrientationChanges : Algorithm.Turn -> Cube -> Cube
-applyOrientationChanges turn =
-    applyEdgeOrientationChanges turn >> applyCornerOrientationChanges turn
-
-
-applyEdgeOrientationChanges : Algorithm.Turn -> Cube -> Cube
-applyEdgeOrientationChanges (Algorithm.Turn turnable _ _) cube =
-    case turnable of
-        _ ->
-            cube
-
-
-
--- flipEdge : OrientedEdge -> OrientedEdge
--- flipEdge ( edge, orientation ) =
---     case orientation of
---         NotFlipped ->
---             ( edge, Flipped )
---         Flipped ->
---             ( edge, NotFlipped )
-
-
-applyCornerOrientationChanges : Algorithm.Turn -> Cube -> Cube
-applyCornerOrientationChanges (Algorithm.Turn turnable _ _) cube =
-    case turnable of
-        _ ->
-            cube
-
-
-applyPermutationChanges : Algorithm.Turn -> Cube -> Cube
-applyPermutationChanges =
-    getPermutation >> applyTurnPermutation
-
-
-getPermutation : Algorithm.Turn -> TurnPermutation
-getPermutation turn =
-    let
-        clockwiseQuarterPermutation =
-            getClockwiseQuarterTurnPermutation turn
-    in
-    Tuple.mapBoth (clockwiseQuarterToFullTurnPermutation turn) (clockwiseQuarterToFullTurnPermutation turn) clockwiseQuarterPermutation
-
-
-clockwiseQuarterToFullTurnPermutation : Algorithm.Turn -> Permutation a -> Permutation a
-clockwiseQuarterToFullTurnPermutation (Algorithm.Turn _ length direction) permutation =
-    let
-        transformPermutationLength =
-            case length of
-                Algorithm.OneQuarter ->
-                    identity
-
-                Algorithm.DoubleTurn ->
-                    Permutation.toThePowerOf 2
-
-                Algorithm.ThreeQuarters ->
-                    Permutation.reverse
-
-        transformDirection =
-            case direction of
-                Algorithm.Clockwise ->
-                    identity
-
-                Algorithm.CounterClockwise ->
-                    Permutation.reverse
-    in
-    permutation
-        |> transformPermutationLength
-        |> transformDirection
-
-
-getClockwiseQuarterTurnPermutation : Algorithm.Turn -> TurnPermutation
-getClockwiseQuarterTurnPermutation (Algorithm.Turn turnable _ _) =
-    case turnable of
-        Algorithm.U ->
-            ( Permutation.build [ [ UFRLoc, UFLLoc, UBLLoc, UBRLoc ] ], Permutation.build [ [ UFLoc, ULLoc, UBLoc, URLoc ] ] )
-
-
-applyTurnPermutation : TurnPermutation -> Cube -> Cube
-applyTurnPermutation ( cornerPermutation, edgePermutation ) =
-    Permutation.apply cornerAccessors cornerPermutation >> Permutation.apply edgeAccessors edgePermutation
-
-
-cornerAccessors : Permutation.Accessor CornerLocation Cube OrientedCorner
-cornerAccessors =
-    Permutation.buildAccessor getCorner setCorner
+type CornerLocation
+    = UFRLoc
+    | UFLLoc
+    | UBRLoc
+    | UBLLoc
+    | DFRLoc
+    | DFLLoc
+    | DBRLoc
+    | DBLLoc
 
 
 getCorner : CornerLocation -> Cube -> OrientedCorner
@@ -219,6 +56,18 @@ getCorner location (Cube corners _) =
 
         UBLLoc ->
             corners.ubl
+
+        DBRLoc ->
+            corners.dbr
+
+        DFLLoc ->
+            corners.dfl
+
+        DFRLoc ->
+            corners.dfr
+
+        DBLLoc ->
+            corners.dbl
 
 
 setCorner : CornerLocation -> OrientedCorner -> Cube -> Cube
@@ -237,29 +86,129 @@ setCorner location cornerToSet (Cube corners edges) =
 
                 UBLLoc ->
                     { corners | ubl = cornerToSet }
+
+                DFRLoc ->
+                    { corners | dfr = cornerToSet }
+
+                DFLLoc ->
+                    { corners | dfl = cornerToSet }
+
+                DBRLoc ->
+                    { corners | dbr = cornerToSet }
+
+                DBLLoc ->
+                    { corners | dbl = cornerToSet }
     in
     Cube newCorners edges
 
 
-edgeAccessors : Permutation.Accessor EdgeLocation Cube OrientedEdge
-edgeAccessors =
-    Permutation.buildAccessor getEdge setEdge
+type OrientedCorner
+    = OrientedCorner Corner CornerOrientation
+
+
+type Corner
+    = -- U Corners
+      UFR
+    | UFL
+    | UBR
+    | UBL
+      -- D Corners
+    | DFR
+    | DFL
+    | DBR
+    | DBL
+
+
+type CornerOrientation
+    = NotTwisted
+    | TwistedClockwise
+    | TwistedCounterClockwise
+
+
+
+-- EDGE MODEL
+
+
+type alias EdgePositions =
+    { -- M Edges
+      uf : OrientedEdge
+    , ub : OrientedEdge
+    , df : OrientedEdge
+    , db : OrientedEdge
+
+    -- S Edges
+    , ur : OrientedEdge
+    , ul : OrientedEdge
+    , dr : OrientedEdge
+    , dl : OrientedEdge
+
+    -- E Edges
+    , fr : OrientedEdge
+    , fl : OrientedEdge
+    , br : OrientedEdge
+    , bl : OrientedEdge
+    }
+
+
+type EdgeLocation
+    = -- M Edges
+      UFLoc
+    | UBLoc
+    | DFLoc
+    | DBLoc
+      -- S Edges
+    | URLoc
+    | ULLoc
+    | DRLoc
+    | DLLoc
+      -- E Edges
+    | FRLoc
+    | FLLoc
+    | BRLoc
+    | BLLoc
 
 
 getEdge : EdgeLocation -> Cube -> OrientedEdge
 getEdge location (Cube _ edges) =
     case location of
+        -- M Edges
         UFLoc ->
             edges.uf
-
-        URLoc ->
-            edges.ur
 
         UBLoc ->
             edges.ub
 
+        DFLoc ->
+            edges.df
+
+        DBLoc ->
+            edges.db
+
+        -- S Edges
+        URLoc ->
+            edges.ur
+
         ULLoc ->
             edges.ul
+
+        DRLoc ->
+            edges.dr
+
+        DLLoc ->
+            edges.dl
+
+        -- E Edges
+        FRLoc ->
+            edges.fr
+
+        FLLoc ->
+            edges.fl
+
+        BRLoc ->
+            edges.br
+
+        BLLoc ->
+            edges.bl
 
 
 setEdge : EdgeLocation -> OrientedEdge -> Cube -> Cube
@@ -267,19 +216,334 @@ setEdge location edgeToSet (Cube corners edges) =
     let
         newEdges =
             case location of
+                -- M Edges
                 UFLoc ->
                     { edges | uf = edgeToSet }
-
-                URLoc ->
-                    { edges | ur = edgeToSet }
 
                 UBLoc ->
                     { edges | ub = edgeToSet }
 
+                DFLoc ->
+                    { edges | df = edgeToSet }
+
+                DBLoc ->
+                    { edges | db = edgeToSet }
+
+                -- S Edges
+                URLoc ->
+                    { edges | ur = edgeToSet }
+
                 ULLoc ->
                     { edges | ul = edgeToSet }
+
+                DRLoc ->
+                    { edges | dr = edgeToSet }
+
+                DLLoc ->
+                    { edges | dl = edgeToSet }
+
+                -- E Edges
+                FRLoc ->
+                    { edges | fr = edgeToSet }
+
+                FLLoc ->
+                    { edges | fl = edgeToSet }
+
+                BRLoc ->
+                    { edges | br = edgeToSet }
+
+                BLLoc ->
+                    { edges | bl = edgeToSet }
     in
     Cube corners newEdges
+
+
+type OrientedEdge
+    = OrientedEdge Edge EdgeOrientation
+
+
+type Edge
+    = -- M Edges
+      UF
+    | UB
+    | DF
+    | DB
+      -- S Edges
+    | UR
+    | UL
+    | DR
+    | DL
+      -- E Edges
+    | FR
+    | FL
+    | BR
+    | BL
+
+
+type EdgeOrientation
+    = NotFlipped
+    | Flipped
+
+
+
+-- CUBE CONSTRUCTORS
+
+
+{-| A solved cube. This is your entry point into this module, if you need a cube at
+a specific state you take this as a starting point and apply the algorithm on it to
+get to that state like this:
+
+    import Model.Cube as Cube
+    import Model.Algorithm as Algorithm
+
+    -- This would generate a cube with one of the big fish OLLs
+    Cube.solved |> Cube.applyAlgorithm (Algorithm.fromString "RUR'U'R'FRF'")
+
+-}
+solved : Cube
+solved =
+    Cube
+        { -- U Corners
+          ufr = OrientedCorner UFR NotTwisted
+        , ufl = OrientedCorner UFL NotTwisted
+        , ubl = OrientedCorner UBL NotTwisted
+        , ubr = OrientedCorner UBR NotTwisted
+
+        -- D Corners
+        , dfr = OrientedCorner DFR NotTwisted
+        , dfl = OrientedCorner DFL NotTwisted
+        , dbl = OrientedCorner DBL NotTwisted
+        , dbr = OrientedCorner DBR NotTwisted
+        }
+        { -- M Edges
+          uf = OrientedEdge UF NotFlipped
+        , ub = OrientedEdge UB NotFlipped
+        , df = OrientedEdge DF NotFlipped
+        , db = OrientedEdge DB NotFlipped
+
+        -- S Edges
+        , ur = OrientedEdge UR NotFlipped
+        , ul = OrientedEdge UL NotFlipped
+        , dr = OrientedEdge DR NotFlipped
+        , dl = OrientedEdge DL NotFlipped
+
+        -- E Edges
+        , fr = OrientedEdge FR NotFlipped
+        , fl = OrientedEdge FL NotFlipped
+        , br = OrientedEdge BR NotFlipped
+        , bl = OrientedEdge BL NotFlipped
+        }
+
+
+
+-- MOVE APPLICATION
+
+
+{-| Apply an algorithm to a cube, see example for [`solved`](Model.Cube#solved)
+-}
+applyAlgorithm : Algorithm -> Cube -> Cube
+applyAlgorithm alg cube =
+    List.foldl applyTurn cube (Algorithm.extractInternals alg)
+
+
+applyTurn : Algorithm.Turn -> Cube -> Cube
+applyTurn turn =
+    applyOrientationChanges turn >> applyPermutationChanges turn
+
+
+
+-- Orientation Changes
+
+
+applyOrientationChanges : Algorithm.Turn -> Cube -> Cube
+applyOrientationChanges turn =
+    applyEdgeOrientationChanges turn >> applyCornerOrientationChanges turn
+
+
+applyEdgeOrientationChanges : Algorithm.Turn -> Cube -> Cube
+applyEdgeOrientationChanges (Algorithm.Turn turnable _ _) cube =
+    case turnable of
+        _ ->
+            cube
+
+
+applyCornerOrientationChanges : Algorithm.Turn -> Cube -> Cube
+applyCornerOrientationChanges (Algorithm.Turn turnable turnLength _) cube =
+    case turnLength of
+        -- A double turn always reverses the orientation change again
+        Algorithm.Halfway ->
+            cube
+
+        -- Three quarter turns act the same as a quarter turn
+        _ ->
+            case turnable of
+                Algorithm.L ->
+                    cube
+                        |> applyClockwiseTwist UBLLoc
+                        |> applyClockwiseTwist DFLLoc
+                        |> applyCounterClockwiseTwist UFLLoc
+                        |> applyCounterClockwiseTwist DBLLoc
+
+                Algorithm.R ->
+                    cube
+                        |> applyClockwiseTwist UFRLoc
+                        |> applyClockwiseTwist DBRLoc
+                        |> applyCounterClockwiseTwist UBRLoc
+                        |> applyCounterClockwiseTwist DFRLoc
+
+                _ ->
+                    cube
+
+
+applyClockwiseTwist : CornerLocation -> Cube -> Cube
+applyClockwiseTwist location cube =
+    let
+        (OrientedCorner corner orientation) =
+            getCorner location cube
+
+        newOrientation =
+            case orientation of
+                NotTwisted ->
+                    TwistedClockwise
+
+                TwistedClockwise ->
+                    TwistedCounterClockwise
+
+                TwistedCounterClockwise ->
+                    NotTwisted
+    in
+    setCorner location (OrientedCorner corner newOrientation) cube
+
+
+applyCounterClockwiseTwist : CornerLocation -> Cube -> Cube
+applyCounterClockwiseTwist location cube =
+    let
+        (OrientedCorner corner orientation) =
+            getCorner location cube
+
+        newOrientation =
+            case orientation of
+                NotTwisted ->
+                    TwistedCounterClockwise
+
+                TwistedCounterClockwise ->
+                    TwistedClockwise
+
+                TwistedClockwise ->
+                    NotTwisted
+    in
+    setCorner location (OrientedCorner corner newOrientation) cube
+
+
+
+-- Permutation Changes
+
+
+type TurnPermutation
+    = TurnPermutation (Permutation CornerLocation) (Permutation EdgeLocation)
+
+
+applyPermutationChanges : Algorithm.Turn -> Cube -> Cube
+applyPermutationChanges =
+    getPermutation >> applyTurnPermutation
+
+
+
+-- Construct the permutation definition for the turn
+
+
+getPermutation : Algorithm.Turn -> TurnPermutation
+getPermutation turn =
+    let
+        (ClockwiseQuarterTurnPermutation cornerPermutation edgePermutation) =
+            getClockwiseQuarterPermutation turn
+    in
+    TurnPermutation (toFullPermutation turn cornerPermutation) (toFullPermutation turn edgePermutation)
+
+
+
+-- First get the clockwise quarter turn permutation
+
+
+type ClockwiseQuarterPermutation a
+    = ClockwiseQuarterPermutation (Permutation a)
+
+
+type ClockwiseQuarterTurnPermutation
+    = ClockwiseQuarterTurnPermutation (ClockwiseQuarterPermutation CornerLocation) (ClockwiseQuarterPermutation EdgeLocation)
+
+
+getClockwiseQuarterPermutation : Algorithm.Turn -> ClockwiseQuarterTurnPermutation
+getClockwiseQuarterPermutation (Algorithm.Turn turnable _ _) =
+    case turnable of
+        Algorithm.U ->
+            buildClockwiseQuarterTurnPermutation [ [ UFRLoc, UFLLoc, UBLLoc, UBRLoc ] ] [ [ UFLoc, ULLoc, UBLoc, URLoc ] ]
+
+        Algorithm.D ->
+            buildClockwiseQuarterTurnPermutation [ [ DFRLoc, DBRLoc, DBLLoc, DFLLoc ] ] [ [ DFLoc, DRLoc, DBLoc, DLLoc ] ]
+
+        Algorithm.L ->
+            buildClockwiseQuarterTurnPermutation [ [ UFLLoc, DFLLoc, DBLLoc, UBLLoc ] ] [ [ ULLoc, FLLoc, DLLoc, BLLoc ] ]
+
+        Algorithm.R ->
+            buildClockwiseQuarterTurnPermutation [ [ UFRLoc, UBRLoc, DBRLoc, DFRLoc ] ] [ [ URLoc, BRLoc, DRLoc, FRLoc ] ]
+
+
+buildClockwiseQuarterTurnPermutation : List (List CornerLocation) -> List (List EdgeLocation) -> ClockwiseQuarterTurnPermutation
+buildClockwiseQuarterTurnPermutation cornerCycles edgeCycles =
+    ClockwiseQuarterTurnPermutation
+        (ClockwiseQuarterPermutation <| Permutation.build cornerCycles)
+        (ClockwiseQuarterPermutation <| Permutation.build edgeCycles)
+
+
+
+-- Then use the direction and length to convert it to a full turn permutation
+
+
+toFullPermutation : Algorithm.Turn -> ClockwiseQuarterPermutation a -> Permutation a
+toFullPermutation (Algorithm.Turn _ length direction) (ClockwiseQuarterPermutation permutation) =
+    permutation
+        |> transformLength length
+        |> transformDirection direction
+
+
+transformLength : Algorithm.TurnLength -> Permutation a -> Permutation a
+transformLength length =
+    case length of
+        Algorithm.OneQuarter ->
+            identity
+
+        Algorithm.Halfway ->
+            Permutation.toThePowerOf 2
+
+        Algorithm.ThreeQuarters ->
+            Permutation.reverse
+
+
+transformDirection : Algorithm.TurnDirection -> Permutation a -> Permutation a
+transformDirection direction =
+    case direction of
+        Algorithm.Clockwise ->
+            identity
+
+        Algorithm.CounterClockwise ->
+            Permutation.reverse
+
+
+
+-- Now that we have defined the permutation correctly we define how to apply the permutation
+
+
+applyTurnPermutation : TurnPermutation -> Cube -> Cube
+applyTurnPermutation (TurnPermutation cornerPermutation edgePermutation) =
+    let
+        cornerAccessors =
+            Permutation.buildAccessor getCorner setCorner
+
+        edgeAccessors =
+            Permutation.buildAccessor getEdge setEdge
+    in
+    Permutation.apply cornerAccessors cornerPermutation >> Permutation.apply edgeAccessors edgePermutation
 
 
 
@@ -329,6 +593,16 @@ type alias CubieRendering =
     }
 
 
+type Color
+    = UpColor
+    | DownColor
+    | FrontColor
+    | BackColor
+    | LeftColor
+    | RightColor
+    | PlasticColor
+
+
 {-| Helper for easier construction of rendered cubies. This allows you to only specify
 the stickers that are actually colored and the rest will automatically be designated
 as PlasticColor
@@ -342,47 +616,44 @@ plainCubie =
     { u = PlasticColor, f = PlasticColor, r = PlasticColor, d = PlasticColor, l = PlasticColor, b = PlasticColor }
 
 
-type Color
-    = UpColor
-    | DownColor
-    | FrontColor
-    | BackColor
-    | LeftColor
-    | RightColor
-    | PlasticColor
-
-
 render : Cube -> Rendering
-render (Cube corners edges) =
+render cube =
+    let
+        rc =
+            renderCorner cube
+
+        re =
+            renderEdge cube
+    in
     { -- U Corners
-      ufr = renderCorner UFRLoc corners.ufr
-    , ufl = renderCorner UFLLoc corners.ufl
-    , ubl = renderCorner UBLLoc corners.ubl
-    , ubr = renderCorner UBRLoc corners.ubr
+      ufr = rc UFRLoc
+    , ufl = rc UFLLoc
+    , ubl = rc UBLLoc
+    , ubr = rc UBRLoc
 
     -- D Corners
-    , dbr = { u = PlasticColor, f = PlasticColor, l = PlasticColor, r = RightColor, d = DownColor, b = BackColor }
-    , dbl = { u = PlasticColor, f = PlasticColor, l = LeftColor, r = PlasticColor, d = DownColor, b = BackColor }
-    , dfl = { u = PlasticColor, f = FrontColor, l = LeftColor, r = PlasticColor, d = DownColor, b = PlasticColor }
-    , dfr = { u = PlasticColor, f = FrontColor, l = PlasticColor, r = RightColor, d = DownColor, b = PlasticColor }
+    , dbr = rc DBRLoc
+    , dbl = rc DBLLoc
+    , dfl = rc DFLLoc
+    , dfr = rc DFRLoc
 
     -- M Edges
-    , uf = renderEdge UFLoc edges.uf
-    , ub = renderEdge UBLoc edges.ub
-    , db = { u = PlasticColor, f = PlasticColor, r = PlasticColor, d = DownColor, l = PlasticColor, b = BackColor }
-    , df = { u = PlasticColor, f = FrontColor, r = PlasticColor, d = DownColor, l = PlasticColor, b = PlasticColor }
+    , uf = re UFLoc
+    , ub = re UBLoc
+    , db = re DBLoc
+    , df = re DFLoc
 
     -- S Edges
-    , dl = { u = PlasticColor, f = PlasticColor, r = PlasticColor, d = DownColor, l = LeftColor, b = PlasticColor }
-    , dr = { u = PlasticColor, f = PlasticColor, r = RightColor, d = DownColor, l = PlasticColor, b = PlasticColor }
-    , ur = renderEdge URLoc edges.ur
-    , ul = renderEdge ULLoc edges.ul
+    , dl = re DLLoc
+    , dr = re DRLoc
+    , ur = re URLoc
+    , ul = re ULLoc
 
     -- E Edges
-    , fl = { u = PlasticColor, f = FrontColor, r = PlasticColor, d = PlasticColor, l = LeftColor, b = PlasticColor }
-    , fr = { u = PlasticColor, f = FrontColor, r = RightColor, d = PlasticColor, l = PlasticColor, b = PlasticColor }
-    , br = { u = PlasticColor, f = PlasticColor, r = RightColor, d = PlasticColor, l = PlasticColor, b = BackColor }
-    , bl = { u = PlasticColor, f = PlasticColor, r = PlasticColor, d = PlasticColor, l = LeftColor, b = BackColor }
+    , fl = re FLLoc
+    , fr = re FRLoc
+    , br = re BRLoc
+    , bl = re BLLoc
     }
 
 
@@ -390,32 +661,41 @@ render (Cube corners edges) =
 -- CORNER RENDERING
 
 
-type CornerLocation
-    = UFRLoc
-    | UFLLoc
-    | UBRLoc
-    | UBLLoc
-
-
 {-| We have chosen the U/D layers for our reference stickers for corners. This means that
 we consider a corner oriented correctly if its U or D sticker is on the U or D layer,
 and respectively it is oriented clockwise / counterclockwise if the U / D sticker for
 the corner is a counter / counterclockwise turn away from the U / D
 -}
-renderCorner : CornerLocation -> OrientedCorner -> CubieRendering
-renderCorner location orientedCorner =
+renderCorner : Cube -> CornerLocation -> CubieRendering
+renderCorner cube location =
+    let
+        corner =
+            getCorner location cube
+    in
     case location of
         UFRLoc ->
-            { plainCubie | u = getCornerReferenceSticker orientedCorner, f = getCounterClockwiseSticker orientedCorner, r = getClockwiseSticker orientedCorner }
+            { plainCubie | u = getCornerReferenceSticker corner, f = getCounterClockwiseSticker corner, r = getClockwiseSticker corner }
 
         UFLLoc ->
-            { plainCubie | u = getCornerReferenceSticker orientedCorner, f = getClockwiseSticker orientedCorner, l = getCounterClockwiseSticker orientedCorner }
+            { plainCubie | u = getCornerReferenceSticker corner, f = getClockwiseSticker corner, l = getCounterClockwiseSticker corner }
 
         UBLLoc ->
-            { plainCubie | u = getCornerReferenceSticker orientedCorner, b = getCounterClockwiseSticker orientedCorner, l = getClockwiseSticker orientedCorner }
+            { plainCubie | u = getCornerReferenceSticker corner, b = getCounterClockwiseSticker corner, l = getClockwiseSticker corner }
 
         UBRLoc ->
-            { plainCubie | u = getCornerReferenceSticker orientedCorner, b = getClockwiseSticker orientedCorner, r = getCounterClockwiseSticker orientedCorner }
+            { plainCubie | u = getCornerReferenceSticker corner, b = getClockwiseSticker corner, r = getCounterClockwiseSticker corner }
+
+        DFRLoc ->
+            { plainCubie | d = getCornerReferenceSticker corner, f = getClockwiseSticker corner, r = getCounterClockwiseSticker corner }
+
+        DFLLoc ->
+            { plainCubie | d = getCornerReferenceSticker corner, f = getCounterClockwiseSticker corner, l = getClockwiseSticker corner }
+
+        DBLLoc ->
+            { plainCubie | d = getCornerReferenceSticker corner, b = getClockwiseSticker corner, l = getCounterClockwiseSticker corner }
+
+        DBRLoc ->
+            { plainCubie | d = getCornerReferenceSticker corner, b = getCounterClockwiseSticker corner, r = getClockwiseSticker corner }
 
 
 type alias LocationAgnosticCornerRendering =
@@ -438,10 +718,10 @@ getCounterClockwiseSticker =
 
 
 getLocationAgnosticCornerRendering : OrientedCorner -> LocationAgnosticCornerRendering
-getLocationAgnosticCornerRendering orientedCorner =
+getLocationAgnosticCornerRendering (OrientedCorner corner location) =
     let
         notTwistedRendering =
-            case Tuple.first orientedCorner of
+            case corner of
                 UFL ->
                     { referenceSticker = UpColor, clockwiseSticker = FrontColor, counterClockwiseSticker = LeftColor }
 
@@ -453,8 +733,20 @@ getLocationAgnosticCornerRendering orientedCorner =
 
                 UBL ->
                     { referenceSticker = UpColor, clockwiseSticker = LeftColor, counterClockwiseSticker = BackColor }
+
+                DFL ->
+                    { referenceSticker = DownColor, clockwiseSticker = LeftColor, counterClockwiseSticker = FrontColor }
+
+                DFR ->
+                    { referenceSticker = DownColor, clockwiseSticker = FrontColor, counterClockwiseSticker = RightColor }
+
+                DBR ->
+                    { referenceSticker = DownColor, clockwiseSticker = RightColor, counterClockwiseSticker = BackColor }
+
+                DBL ->
+                    { referenceSticker = DownColor, clockwiseSticker = BackColor, counterClockwiseSticker = LeftColor }
     in
-    applyTwist (Tuple.second orientedCorner) notTwistedRendering
+    applyTwist location notTwistedRendering
 
 
 applyTwist : CornerOrientation -> LocationAgnosticCornerRendering -> LocationAgnosticCornerRendering
@@ -474,32 +766,56 @@ applyTwist orientation notTwistedRendering =
 -- EDGE RENDERING
 
 
-type EdgeLocation
-    = UFLoc
-    | UBLoc
-    | URLoc
-    | ULLoc
-
-
 {-| We have chosen the U/D layers for our reference stickers for edges that have a
 U or D sticker. For the last 4 edges we use the F/B layers. This works the same as
 corners. If the U/D F/B sticker is on the U/D F/B layer we consider the edge
 oriented correctly, otherwise we consider it flipped.
 -}
-renderEdge : EdgeLocation -> OrientedEdge -> CubieRendering
-renderEdge location orientedEdge =
+renderEdge : Cube -> EdgeLocation -> CubieRendering
+renderEdge cube location =
+    let
+        edge =
+            getEdge location cube
+    in
     case location of
+        -- M Edges
         UFLoc ->
-            { plainCubie | u = getEdgeReferenceSticker orientedEdge, f = getOtherSticker orientedEdge }
-
-        URLoc ->
-            { plainCubie | u = getEdgeReferenceSticker orientedEdge, r = getOtherSticker orientedEdge }
+            { plainCubie | u = getEdgeReferenceSticker edge, f = getOtherSticker edge }
 
         UBLoc ->
-            { plainCubie | u = getEdgeReferenceSticker orientedEdge, b = getOtherSticker orientedEdge }
+            { plainCubie | u = getEdgeReferenceSticker edge, b = getOtherSticker edge }
+
+        DFLoc ->
+            { plainCubie | d = getEdgeReferenceSticker edge, f = getOtherSticker edge }
+
+        DBLoc ->
+            { plainCubie | d = getEdgeReferenceSticker edge, b = getOtherSticker edge }
+
+        -- S Edges
+        URLoc ->
+            { plainCubie | u = getEdgeReferenceSticker edge, r = getOtherSticker edge }
 
         ULLoc ->
-            { plainCubie | u = getEdgeReferenceSticker orientedEdge, l = getOtherSticker orientedEdge }
+            { plainCubie | u = getEdgeReferenceSticker edge, l = getOtherSticker edge }
+
+        DRLoc ->
+            { plainCubie | d = getEdgeReferenceSticker edge, r = getOtherSticker edge }
+
+        DLLoc ->
+            { plainCubie | d = getEdgeReferenceSticker edge, l = getOtherSticker edge }
+
+        -- E Edges
+        FRLoc ->
+            { plainCubie | f = getEdgeReferenceSticker edge, r = getOtherSticker edge }
+
+        FLLoc ->
+            { plainCubie | f = getEdgeReferenceSticker edge, l = getOtherSticker edge }
+
+        BRLoc ->
+            { plainCubie | b = getEdgeReferenceSticker edge, r = getOtherSticker edge }
+
+        BLLoc ->
+            { plainCubie | b = getEdgeReferenceSticker edge, l = getOtherSticker edge }
 
 
 type alias LocationAgnosticEdgeRendering =
@@ -517,23 +833,50 @@ getOtherSticker =
 
 
 getLocationAgnosticEdgeRendering : OrientedEdge -> LocationAgnosticEdgeRendering
-getLocationAgnosticEdgeRendering orientedEdge =
+getLocationAgnosticEdgeRendering (OrientedEdge edge location) =
     let
         notFlippedRendering =
-            case Tuple.first orientedEdge of
+            case edge of
+                -- M Edges
                 UF ->
                     { referenceSticker = UpColor, otherSticker = FrontColor }
-
-                UR ->
-                    { referenceSticker = UpColor, otherSticker = RightColor }
 
                 UB ->
                     { referenceSticker = UpColor, otherSticker = BackColor }
 
+                DF ->
+                    { referenceSticker = DownColor, otherSticker = FrontColor }
+
+                DB ->
+                    { referenceSticker = DownColor, otherSticker = BackColor }
+
+                -- S Edges
+                UR ->
+                    { referenceSticker = UpColor, otherSticker = RightColor }
+
                 UL ->
                     { referenceSticker = UpColor, otherSticker = LeftColor }
+
+                DR ->
+                    { referenceSticker = DownColor, otherSticker = RightColor }
+
+                DL ->
+                    { referenceSticker = DownColor, otherSticker = LeftColor }
+
+                -- E Edges
+                FR ->
+                    { referenceSticker = FrontColor, otherSticker = RightColor }
+
+                FL ->
+                    { referenceSticker = FrontColor, otherSticker = LeftColor }
+
+                BR ->
+                    { referenceSticker = BackColor, otherSticker = RightColor }
+
+                BL ->
+                    { referenceSticker = BackColor, otherSticker = LeftColor }
     in
-    applyFlip (Tuple.second orientedEdge) notFlippedRendering
+    applyFlip location notFlippedRendering
 
 
 applyFlip : EdgeOrientation -> LocationAgnosticEdgeRendering -> LocationAgnosticEdgeRendering
