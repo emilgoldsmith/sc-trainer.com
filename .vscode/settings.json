@@ -1,7 +1,8 @@
 {
   "editor.tabSize": 4,
   "editor.formatOnSave": true,
-  "editor.linkedEditing": true,
+  "editor.linkedEditing": false,
+  "editor.codeLens": false,
   "files.trimFinalNewlines": true,
   "files.trimTrailingWhitespace": true,
   "workbench.editor.enablePreviewFromQuickOpen": false,
