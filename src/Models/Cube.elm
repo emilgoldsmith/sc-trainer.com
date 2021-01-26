@@ -4,6 +4,7 @@ module Models.Cube exposing (Color(..), Cube, CubieRendering, Rendering, applyAl
 -}
 
 import Models.Algorithm as Algorithm exposing (Algorithm)
+import Utils.MappedPermutation as MappedPermutation exposing (MappedPermutation)
 import Utils.Permutation as Permutation exposing (Permutation)
 
 
@@ -216,202 +217,194 @@ applyAlgorithm alg cube =
 
 applyTurn : Algorithm.Turn -> Cube -> Cube
 applyTurn turn =
-    applyOrientationChanges turn >> applyPermutationChanges turn
+    applyCornerTurn turn >> applyEdgeTurn turn
 
 
-
--- Orientation Changes
-
-
-applyOrientationChanges : Algorithm.Turn -> Cube -> Cube
-applyOrientationChanges turn =
-    applyEdgeOrientationChanges turn >> applyCornerOrientationChanges turn
+applyCornerTurn : Algorithm.Turn -> Cube -> Cube
+applyCornerTurn turn =
+    MappedPermutation.apply (MappedPermutation.buildAccessor getCorner setCorner) <| getCornerTurnDefinition turn
 
 
-applyEdgeOrientationChanges : Algorithm.Turn -> Cube -> Cube
-applyEdgeOrientationChanges (Algorithm.Turn turnable _ _) cube =
-    case turnable of
-        _ ->
-            cube
+getCornerTurnDefinition : Algorithm.Turn -> MappedPermutation CornerLocation OrientedCorner
+getCornerTurnDefinition turn =
+    getClockwiseQuarterCornerPermutation turn |> toFullPermutation turn
 
 
-applyCornerOrientationChanges : Algorithm.Turn -> Cube -> Cube
-applyCornerOrientationChanges (Algorithm.Turn turnable turnLength _) cube =
-    case turnLength of
-        -- A double turn always reverses the orientation change again
-        Algorithm.Halfway ->
-            cube
-
-        -- Three quarter turns act the same as a quarter turn
-        _ ->
-            case turnable of
-                Algorithm.L ->
-                    cube
-                        |> applyClockwiseTwist ( U, B, L )
-                        |> applyClockwiseTwist ( D, F, L )
-                        |> applyCounterClockwiseTwist ( U, F, L )
-                        |> applyCounterClockwiseTwist ( D, B, L )
-
-                Algorithm.R ->
-                    cube
-                        |> applyClockwiseTwist ( U, F, R )
-                        |> applyClockwiseTwist ( D, B, R )
-                        |> applyCounterClockwiseTwist ( U, B, R )
-                        |> applyCounterClockwiseTwist ( D, F, R )
-
-                _ ->
-                    cube
+applyEdgeTurn : Algorithm.Turn -> Cube -> Cube
+applyEdgeTurn turn =
+    MappedPermutation.apply (MappedPermutation.buildAccessor getEdge setEdge) <| getEdgeTurnDefinition turn
 
 
-applyClockwiseTwist : CornerLocation -> Cube -> Cube
-applyClockwiseTwist location cube =
-    let
-        (OrientedCorner corner orientation) =
-            getCorner location cube
-
-        newOrientation =
-            case orientation of
-                NotTwisted ->
-                    TwistedClockwise
-
-                TwistedClockwise ->
-                    TwistedCounterClockwise
-
-                TwistedCounterClockwise ->
-                    NotTwisted
-    in
-    setCorner location (OrientedCorner corner newOrientation) cube
-
-
-applyCounterClockwiseTwist : CornerLocation -> Cube -> Cube
-applyCounterClockwiseTwist location cube =
-    let
-        (OrientedCorner corner orientation) =
-            getCorner location cube
-
-        newOrientation =
-            case orientation of
-                NotTwisted ->
-                    TwistedCounterClockwise
-
-                TwistedCounterClockwise ->
-                    TwistedClockwise
-
-                TwistedClockwise ->
-                    NotTwisted
-    in
-    setCorner location (OrientedCorner corner newOrientation) cube
-
-
-
--- Permutation Changes
-
-
-type TurnPermutation
-    = TurnPermutation (Permutation CornerLocation) (Permutation EdgeLocation)
-
-
-applyPermutationChanges : Algorithm.Turn -> Cube -> Cube
-applyPermutationChanges =
-    getPermutation >> applyTurnPermutation
-
-
-
--- Construct the permutation definition for the turn
-
-
-getPermutation : Algorithm.Turn -> TurnPermutation
-getPermutation turn =
-    let
-        (ClockwiseQuarterTurnPermutation cornerPermutation edgePermutation) =
-            getClockwiseQuarterPermutation turn
-    in
-    TurnPermutation (toFullPermutation turn cornerPermutation) (toFullPermutation turn edgePermutation)
+getEdgeTurnDefinition : Algorithm.Turn -> MappedPermutation EdgeLocation OrientedEdge
+getEdgeTurnDefinition turn =
+    getClockwiseQuarterEdgePermutation turn |> toFullPermutation turn
 
 
 
 -- First get the clockwise quarter turn permutation
 
 
-type ClockwiseQuarterPermutation a
-    = ClockwiseQuarterPermutation (Permutation a)
+type ClockwiseQuarterPermutation location cubie
+    = ClockwiseQuarterPermutation (MappedPermutation location cubie)
 
 
-type ClockwiseQuarterTurnPermutation
-    = ClockwiseQuarterTurnPermutation (ClockwiseQuarterPermutation CornerLocation) (ClockwiseQuarterPermutation EdgeLocation)
-
-
-getClockwiseQuarterPermutation : Algorithm.Turn -> ClockwiseQuarterTurnPermutation
-getClockwiseQuarterPermutation (Algorithm.Turn turnable _ _) =
+getClockwiseQuarterCornerPermutation : Algorithm.Turn -> ClockwiseQuarterPermutation CornerLocation OrientedCorner
+getClockwiseQuarterCornerPermutation (Algorithm.Turn turnable _ _) =
     case turnable of
         Algorithm.U ->
-            buildClockwiseQuarterTurnPermutation [ [ ( U, F, R ), ( U, F, L ), ( U, B, L ), ( U, B, R ) ] ] [ [ M ( U, F ), S ( U, L ), M ( U, B ), S ( U, R ) ] ]
+            ClockwiseQuarterPermutation <|
+                MappedPermutation.build
+                    [ [ ( ( U, F, R ), dontTwist )
+                      , ( ( U, F, L ), dontTwist )
+                      , ( ( U, B, L ), dontTwist )
+                      , ( ( U, B, R ), dontTwist )
+                      ]
+                    ]
 
         Algorithm.D ->
-            buildClockwiseQuarterTurnPermutation [ [ ( D, F, R ), ( D, B, R ), ( D, B, L ), ( D, F, L ) ] ] [ [ M ( D, F ), S ( D, R ), M ( D, B ), S ( D, L ) ] ]
+            ClockwiseQuarterPermutation <|
+                MappedPermutation.build
+                    [ [ ( ( D, F, R ), dontTwist )
+                      , ( ( D, B, R ), dontTwist )
+                      , ( ( D, B, L ), dontTwist )
+                      , ( ( D, F, L ), dontTwist )
+                      ]
+                    ]
 
         Algorithm.L ->
-            buildClockwiseQuarterTurnPermutation [ [ ( U, F, L ), ( D, F, L ), ( D, B, L ), ( U, B, L ) ] ] [ [ S ( U, L ), E ( F, L ), S ( D, L ), E ( B, L ) ] ]
+            ClockwiseQuarterPermutation <|
+                MappedPermutation.build
+                    [ [ ( ( U, F, L ), twistCounterClockwise )
+                      , ( ( D, F, L ), twistClockwise )
+                      , ( ( D, B, L ), twistCounterClockwise )
+                      , ( ( U, B, L ), twistClockwise )
+                      ]
+                    ]
 
         Algorithm.R ->
-            buildClockwiseQuarterTurnPermutation [ [ ( U, F, R ), ( U, B, R ), ( D, B, R ), ( D, F, R ) ] ] [ [ S ( U, R ), E ( B, R ), S ( D, R ), E ( F, R ) ] ]
+            ClockwiseQuarterPermutation <|
+                MappedPermutation.build
+                    [ [ ( ( U, F, R ), twistClockwise )
+                      , ( ( U, B, R ), twistCounterClockwise )
+                      , ( ( D, B, R ), twistClockwise )
+                      , ( ( D, F, R ), twistCounterClockwise )
+                      ]
+                    ]
 
 
-buildClockwiseQuarterTurnPermutation : List (List CornerLocation) -> List (List EdgeLocation) -> ClockwiseQuarterTurnPermutation
-buildClockwiseQuarterTurnPermutation cornerCycles edgeCycles =
-    ClockwiseQuarterTurnPermutation
-        (ClockwiseQuarterPermutation <| Permutation.build cornerCycles)
-        (ClockwiseQuarterPermutation <| Permutation.build edgeCycles)
+getClockwiseQuarterEdgePermutation : Algorithm.Turn -> ClockwiseQuarterPermutation EdgeLocation OrientedEdge
+getClockwiseQuarterEdgePermutation (Algorithm.Turn turnable _ _) =
+    case turnable of
+        Algorithm.U ->
+            ClockwiseQuarterPermutation <|
+                MappedPermutation.build
+                    [ [ ( M ( U, F ), dontFlip )
+                      , ( S ( U, L ), dontFlip )
+                      , ( M ( U, B ), dontFlip )
+                      , ( S ( U, R ), dontFlip )
+                      ]
+                    ]
+
+        Algorithm.D ->
+            ClockwiseQuarterPermutation <|
+                MappedPermutation.build
+                    [ [ ( M ( D, F ), dontFlip )
+                      , ( S ( D, R ), dontFlip )
+                      , ( M ( D, B ), dontFlip )
+                      , ( S ( D, L ), dontFlip )
+                      ]
+                    ]
+
+        Algorithm.L ->
+            ClockwiseQuarterPermutation <|
+                MappedPermutation.build
+                    [ [ ( S ( U, L ), dontFlip )
+                      , ( E ( F, L ), dontFlip )
+                      , ( S ( D, L ), dontFlip )
+                      , ( E ( B, L ), dontFlip )
+                      ]
+                    ]
+
+        Algorithm.R ->
+            ClockwiseQuarterPermutation <|
+                MappedPermutation.build
+                    [ [ ( S ( U, R ), dontFlip )
+                      , ( E ( B, R ), dontFlip )
+                      , ( S ( D, R ), dontFlip )
+                      , ( E ( F, R ), dontFlip )
+                      ]
+                    ]
 
 
 
 -- Then use the direction and length to convert it to a full turn permutation
 
 
-toFullPermutation : Algorithm.Turn -> ClockwiseQuarterPermutation a -> Permutation a
+toFullPermutation : Algorithm.Turn -> ClockwiseQuarterPermutation location cubie -> MappedPermutation location cubie
 toFullPermutation (Algorithm.Turn _ length direction) (ClockwiseQuarterPermutation permutation) =
-    permutation
-        |> transformLength length
-        |> transformDirection direction
+    case ( length, direction ) of
+        ( Algorithm.OneQuarter, Algorithm.Clockwise ) ->
+            permutation
 
+        ( Algorithm.ThreeQuarters, Algorithm.CounterClockwise ) ->
+            permutation
 
-transformLength : Algorithm.TurnLength -> Permutation a -> Permutation a
-transformLength length =
-    case length of
-        Algorithm.OneQuarter ->
-            identity
+        ( Algorithm.Halfway, _ ) ->
+            MappedPermutation.toThePowerOf 2 permutation
 
-        Algorithm.Halfway ->
-            Permutation.toThePowerOf 2
+        ( Algorithm.OneQuarter, Algorithm.CounterClockwise ) ->
+            MappedPermutation.toThePowerOf 3 permutation
 
-        Algorithm.ThreeQuarters ->
-            Permutation.reverse
-
-
-transformDirection : Algorithm.TurnDirection -> Permutation a -> Permutation a
-transformDirection direction =
-    case direction of
-        Algorithm.Clockwise ->
-            identity
-
-        Algorithm.CounterClockwise ->
-            Permutation.reverse
+        ( Algorithm.ThreeQuarters, Algorithm.Clockwise ) ->
+            MappedPermutation.toThePowerOf 3 permutation
 
 
 
--- Now that we have defined the permutation correctly we define how to apply the permutation
+-- And here are the twists and flips
 
 
-applyTurnPermutation : TurnPermutation -> Cube -> Cube
-applyTurnPermutation (TurnPermutation cornerPermutation edgePermutation) =
+twistClockwise : OrientedCorner -> OrientedCorner
+twistClockwise (OrientedCorner corner orientation) =
     let
-        cornerAccessors =
-            Permutation.buildAccessor getCorner setCorner
+        newOrientation =
+            case orientation of
+                NotTwisted ->
+                    TwistedClockwise
 
-        edgeAccessors =
-            Permutation.buildAccessor getEdge setEdge
+                TwistedClockwise ->
+                    TwistedCounterClockwise
+
+                TwistedCounterClockwise ->
+                    NotTwisted
     in
-    Permutation.apply cornerAccessors cornerPermutation >> Permutation.apply edgeAccessors edgePermutation
+    OrientedCorner corner newOrientation
+
+
+twistCounterClockwise : OrientedCorner -> OrientedCorner
+twistCounterClockwise (OrientedCorner corner orientation) =
+    let
+        newOrientation =
+            case orientation of
+                NotTwisted ->
+                    TwistedCounterClockwise
+
+                TwistedCounterClockwise ->
+                    TwistedClockwise
+
+                TwistedClockwise ->
+                    NotTwisted
+    in
+    OrientedCorner corner newOrientation
+
+
+dontTwist : OrientedCorner -> OrientedCorner
+dontTwist =
+    identity
+
+
+dontFlip : OrientedEdge -> OrientedEdge
+dontFlip =
+    identity
 
 
 
@@ -726,7 +719,7 @@ getEdgeColorOnOtherFace (OrientedEdge edge orientation) =
 
 
 
--- HELPERS
+-- HELPERS - Mostly just trivial type mappings
 -- Corner Location Helpers
 
 

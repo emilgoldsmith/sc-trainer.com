@@ -40,8 +40,8 @@ buildAccessor =
 
 
 apply : Accessor location container value -> Permutation location -> container -> container
-apply accessors (Permutation cycles) container =
-    List.foldl (applyCycle accessors) container cycles
+apply accessor (Permutation cycles) container =
+    List.foldl (applyCycle accessor) container cycles
 
 
 applyCycle : Accessor location container value -> Cycle location -> container -> container
@@ -107,7 +107,7 @@ cycleToThePowerOf exponent (Cycle cycleArray) =
     in
     Array.foldl addCycleStartingAt ( [], Set.empty ) cycleIndices
         |> Tuple.first
-        |> List.filter (\newCycle -> Array.length newCycle /= 0)
+        |> List.filter ((/=) Array.empty)
         |> List.map Cycle
 
 
@@ -115,6 +115,9 @@ getExponentCycleStartingAt : Int -> Int -> Set Int -> Array a -> ( Array a, Set 
 getExponentCycleStartingAt index exponent seen cycle =
     traceExponentCycle exponent index cycle seen
         |> Tuple.mapFirst (Maybe.map Array.fromList)
+        -- The Maybe is expected to be nothing if we pass it
+        -- either an empty cycle or an out of range starting index.
+        -- In both these cases it should make sense to return an empty cycle
         |> Tuple.mapFirst (Maybe.withDefault Array.empty)
 
 
