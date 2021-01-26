@@ -215,4 +215,12 @@ solvedCubeColors =
     , fr = { plainCubie | f = FrontColor, r = RightColor }
     , br = { plainCubie | b = BackColor, r = RightColor }
     , bl = { plainCubie | b = BackColor, l = LeftColor }
+
+    -- Centers
+    , u = { plainCubie | u = UpColor }
+    , d = { plainCubie | d = DownColor }
+    , f = { plainCubie | f = FrontColor }
+    , b = { plainCubie | b = BackColor }
+    , l = { plainCubie | l = LeftColor }
+    , r = { plainCubie | r = RightColor }
     }

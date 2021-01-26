@@ -12,7 +12,7 @@ import Utils.MappedPermutation as MappedPermutation exposing (MappedPermutation)
 
 
 type Cube
-    = Cube CornerPositions EdgePositions
+    = Cube CornerPositions EdgePositions CenterPositions
 
 
 
@@ -110,6 +110,29 @@ type EdgeOrientation
 
 
 
+-- CENTER MODEL
+
+
+type alias CenterPositions =
+    { u : Center
+    , d : Center
+    , f : Center
+    , b : Center
+    , l : Center
+    , r : Center
+    }
+
+
+type Center
+    = UCenter
+    | DCenter
+    | FCenter
+    | BCenter
+    | LCenter
+    | RCenter
+
+
+
 -- LOCATIONS MODEL
 -- These pretty much map to the positions above, see helpers at the bottom
 -- for the actual mapping
@@ -123,6 +146,10 @@ type EdgeLocation
     = M ( UOrD, FOrB )
     | S ( UOrD, LOrR )
     | E ( FOrB, LOrR )
+
+
+type CenterLocation
+    = CenterLocation Face
 
 
 type Face
@@ -164,42 +191,50 @@ get to that state like this:
 solved : Cube
 solved =
     let
-        solvedCorner location =
+        orientedCorner location =
             OrientedCorner location NotTwisted
 
-        solvedEdge location =
+        orientedEdge location =
             OrientedEdge location NotFlipped
     in
     Cube
         { -- U Corners
-          ufr = solvedCorner UFR
-        , ufl = solvedCorner UFL
-        , ubl = solvedCorner UBL
-        , ubr = solvedCorner UBR
+          ufr = orientedCorner UFR
+        , ufl = orientedCorner UFL
+        , ubl = orientedCorner UBL
+        , ubr = orientedCorner UBR
 
         -- D Corners
-        , dfr = solvedCorner DFR
-        , dfl = solvedCorner DFL
-        , dbl = solvedCorner DBL
-        , dbr = solvedCorner DBR
+        , dfr = orientedCorner DFR
+        , dfl = orientedCorner DFL
+        , dbl = orientedCorner DBL
+        , dbr = orientedCorner DBR
         }
         { -- M Edges
-          uf = solvedEdge UF
-        , ub = solvedEdge UB
-        , df = solvedEdge DF
-        , db = solvedEdge DB
+          uf = orientedEdge UF
+        , ub = orientedEdge UB
+        , df = orientedEdge DF
+        , db = orientedEdge DB
 
         -- S Edges
-        , ur = solvedEdge UR
-        , ul = solvedEdge UL
-        , dr = solvedEdge DR
-        , dl = solvedEdge DL
+        , ur = orientedEdge UR
+        , ul = orientedEdge UL
+        , dr = orientedEdge DR
+        , dl = orientedEdge DL
 
         -- E Edges
-        , fr = solvedEdge FR
-        , fl = solvedEdge FL
-        , br = solvedEdge BR
-        , bl = solvedEdge BL
+        , fr = orientedEdge FR
+        , fl = orientedEdge FL
+        , br = orientedEdge BR
+        , bl = orientedEdge BL
+        }
+        { -- Centers
+          u = UCenter
+        , d = DCenter
+        , f = FCenter
+        , b = BCenter
+        , l = LCenter
+        , r = RCenter
         }
 
 
@@ -433,6 +468,14 @@ type alias Rendering =
     , fr : CubieRendering
     , br : CubieRendering
     , bl : CubieRendering
+
+    -- Centers
+    , u : CubieRendering
+    , d : CubieRendering
+    , f : CubieRendering
+    , b : CubieRendering
+    , l : CubieRendering
+    , r : CubieRendering
     }
 
 
@@ -507,6 +550,14 @@ render cube =
     , fr = edge (E ( F, R ))
     , br = edge (E ( B, R ))
     , bl = edge (E ( B, L ))
+
+    -- Centers
+    , u = { plainCubie | u = UpColor }
+    , d = { plainCubie | d = DownColor }
+    , f = { plainCubie | f = FrontColor }
+    , b = { plainCubie | b = BackColor }
+    , l = { plainCubie | l = LeftColor }
+    , r = { plainCubie | r = RightColor }
     }
 
 
@@ -716,7 +767,7 @@ getEdgeColorOnOtherFace (OrientedEdge edge orientation) =
 
 
 getCorner : CornerLocation -> Cube -> OrientedCorner
-getCorner location (Cube corners _) =
+getCorner location (Cube corners _ _) =
     case location of
         ( U, F, R ) ->
             corners.ufr
@@ -744,7 +795,7 @@ getCorner location (Cube corners _) =
 
 
 setCorner : CornerLocation -> OrientedCorner -> Cube -> Cube
-setCorner location cornerToSet (Cube corners edges) =
+setCorner location cornerToSet (Cube corners edges centers) =
     let
         newCorners =
             case location of
@@ -772,7 +823,7 @@ setCorner location cornerToSet (Cube corners edges) =
                 ( D, B, L ) ->
                     { corners | dbl = cornerToSet }
     in
-    Cube newCorners edges
+    Cube newCorners edges centers
 
 
 getSolvedCornerLocation : Corner -> CornerLocation
@@ -808,7 +859,7 @@ getSolvedCornerLocation corner =
 
 
 getEdge : EdgeLocation -> Cube -> OrientedEdge
-getEdge location (Cube _ edges) =
+getEdge location (Cube _ edges _) =
     case location of
         -- M Edges
         M ( U, F ) ->
@@ -851,7 +902,7 @@ getEdge location (Cube _ edges) =
 
 
 setEdge : EdgeLocation -> OrientedEdge -> Cube -> Cube
-setEdge location edgeToSet (Cube corners edges) =
+setEdge location edgeToSet (Cube corners edges centers) =
     let
         newEdges =
             case location of
@@ -894,7 +945,7 @@ setEdge location edgeToSet (Cube corners edges) =
                 E ( B, L ) ->
                     { edges | bl = edgeToSet }
     in
-    Cube corners newEdges
+    Cube corners newEdges centers
 
 
 getSolvedEdgeLocation : Edge -> EdgeLocation
