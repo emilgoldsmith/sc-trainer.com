@@ -158,6 +158,36 @@ type Face
     | LeftOrRight LOrR
 
 
+uFace : Face
+uFace =
+    UpOrDown U
+
+
+dFace : Face
+dFace =
+    UpOrDown D
+
+
+fFace : Face
+fFace =
+    FrontOrBack F
+
+
+bFace : Face
+bFace =
+    FrontOrBack B
+
+
+lFace : Face
+lFace =
+    LeftOrRight L
+
+
+rFace : Face
+rFace =
+    LeftOrRight R
+
+
 type UOrD
     = U
     | D
@@ -989,6 +1019,80 @@ getSolvedEdgeLocation edge =
 
         BL ->
             E ( B, L )
+
+
+
+-- Center Location Helpers
+
+
+getCenter : CenterLocation -> Cube -> Center
+getCenter location (Cube _ _ centers) =
+    case location of
+        CenterLocation (UpOrDown U) ->
+            centers.u
+
+        CenterLocation (UpOrDown D) ->
+            centers.d
+
+        CenterLocation (FrontOrBack F) ->
+            centers.f
+
+        CenterLocation (FrontOrBack B) ->
+            centers.b
+
+        CenterLocation (LeftOrRight L) ->
+            centers.l
+
+        CenterLocation (LeftOrRight R) ->
+            centers.r
+
+
+setCenter : CenterLocation -> Center -> Cube -> Cube
+setCenter location center (Cube corners edges centers) =
+    let
+        newCenters =
+            case location of
+                CenterLocation (UpOrDown U) ->
+                    { centers | u = center }
+
+                CenterLocation (UpOrDown D) ->
+                    { centers | d = center }
+
+                CenterLocation (FrontOrBack F) ->
+                    { centers | f = center }
+
+                CenterLocation (FrontOrBack B) ->
+                    { centers | b = center }
+
+                CenterLocation (LeftOrRight L) ->
+                    { centers | l = center }
+
+                CenterLocation (LeftOrRight R) ->
+                    { centers | r = center }
+    in
+    Cube corners edges newCenters
+
+
+getSolvedCenterLocation : Center -> CenterLocation
+getSolvedCenterLocation center =
+    case center of
+        UCenter ->
+            CenterLocation uFace
+
+        DCenter ->
+            CenterLocation dFace
+
+        FCenter ->
+            CenterLocation fFace
+
+        BCenter ->
+            CenterLocation bFace
+
+        LCenter ->
+            CenterLocation lFace
+
+        RCenter ->
+            CenterLocation rFace
 
 
 
