@@ -1,4 +1,4 @@
-module Utils.MappedPermutation exposing (MappedPermutation, apply, build, buildAccessor, toThePowerOf)
+module Utils.MappedPermutation exposing (MappedPermutation, apply, build, buildAccessor, reversePermutationButKeepMaps, toThePowerOf)
 
 {-| Not exposing a reverse as it doesn't seem to have a clear definition.
 
@@ -87,6 +87,13 @@ toCycle (MappedCycle array) =
 toPermutationAccessor : Accessor location container value -> Permutation.Accessor location container value
 toPermutationAccessor (Accessor getValue setValue) =
     Permutation.buildAccessor getValue setValue
+
+
+reversePermutationButKeepMaps : MappedPermutation a b -> MappedPermutation a b
+reversePermutationButKeepMaps (MappedPermutation mappedCycles) =
+    List.map (\(MappedCycle array) -> Array.toList array) mappedCycles
+        |> List.map List.reverse
+        |> build
 
 
 toThePowerOf : Int -> MappedPermutation location value -> MappedPermutation location value
