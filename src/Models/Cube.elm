@@ -567,6 +567,9 @@ render cube =
 
         edge =
             renderEdge cube
+
+        center face =
+            renderCenter cube (CenterLocation face)
     in
     { -- U Corners
       ufr = corner ( U, F, R )
@@ -599,12 +602,12 @@ render cube =
     , bl = edge (E ( B, L ))
 
     -- Centers
-    , u = { plainCubie | u = UpColor }
-    , d = { plainCubie | d = DownColor }
-    , f = { plainCubie | f = FrontColor }
-    , b = { plainCubie | b = BackColor }
-    , l = { plainCubie | l = LeftColor }
-    , r = { plainCubie | r = RightColor }
+    , u = center uFace
+    , d = center dFace
+    , f = center fFace
+    , b = center bFace
+    , l = center lFace
+    , r = center rFace
     }
 
 
@@ -806,6 +809,30 @@ getEdgeColorOnOtherFace (OrientedEdge edge orientation) =
                     getEdgeReferenceFace
     in
     edge |> getSolvedEdgeLocation |> getFace |> getColor
+
+
+
+-- CENTER RENDERING
+
+
+renderCenter : Cube -> CenterLocation -> CubieRendering
+renderCenter cube location =
+    let
+        center =
+            getCenter location cube
+    in
+    plainCubie
+        |> setColor (getCentersColoredFace location) (getCentersColor center)
+
+
+getCentersColoredFace : CenterLocation -> Face
+getCentersColoredFace (CenterLocation face) =
+    face
+
+
+getCentersColor : Center -> Color
+getCentersColor =
+    getSolvedCenterLocation >> getCentersColoredFace >> getColor
 
 
 
