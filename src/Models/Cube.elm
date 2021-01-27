@@ -400,6 +400,22 @@ getClockwiseQuarterTurnDefinition (Algorithm.Turn turnable _ _) =
                 ]
                 [ noCentersMoved ]
 
+        Algorithm.B ->
+            buildClockwiseQuarterTurnDefinition
+                [ [ ( ( U, B, R ), twistClockwise )
+                  , ( ( U, B, L ), twistCounterClockwise )
+                  , ( ( D, B, L ), twistClockwise )
+                  , ( ( D, B, R ), twistCounterClockwise )
+                  ]
+                ]
+                [ [ ( M ( U, B ), flip )
+                  , ( E ( B, L ), flip )
+                  , ( M ( D, B ), flip )
+                  , ( E ( B, R ), flip )
+                  ]
+                ]
+                []
+
 
 buildClockwiseQuarterTurnDefinition :
     List (List ( CornerLocation, OrientedCorner -> OrientedCorner ))

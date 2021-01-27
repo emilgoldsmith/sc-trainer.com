@@ -216,7 +216,27 @@ suite =
                         |> Cube.applyAlgorithm alg
                         |> Cube.render
                         |> Expect.equal expectedColorSpec
-            , todo "B performs expected transformation"
+            , test "B performs expected transformation" <|
+                \_ ->
+                    let
+                        alg =
+                            Algorithm.build [ Algorithm.Turn Algorithm.B Algorithm.OneQuarter Algorithm.Clockwise ]
+
+                        expectedColorSpec =
+                            solvedCubeRendering
+                                |> (\x -> { x | ubr = { plainCubie | u = RightColor, b = BackColor, r = DownColor } })
+                                |> (\x -> { x | ub = { plainCubie | u = RightColor, b = BackColor } })
+                                |> (\x -> { x | ubl = { plainCubie | u = RightColor, b = BackColor, l = UpColor } })
+                                |> (\x -> { x | bl = { plainCubie | b = BackColor, l = UpColor } })
+                                |> (\x -> { x | dbl = { plainCubie | d = LeftColor, b = BackColor, l = UpColor } })
+                                |> (\x -> { x | db = { plainCubie | d = LeftColor, b = BackColor } })
+                                |> (\x -> { x | dbr = { plainCubie | d = LeftColor, b = BackColor, r = DownColor } })
+                                |> (\x -> { x | br = { plainCubie | b = BackColor, r = DownColor } })
+                    in
+                    Cube.solved
+                        |> Cube.applyAlgorithm alg
+                        |> Cube.render
+                        |> Expect.equal expectedColorSpec
             , todo "M performs expected transformation"
             , todo "E performs expected transformation"
             , todo "S performs expected transformation"
