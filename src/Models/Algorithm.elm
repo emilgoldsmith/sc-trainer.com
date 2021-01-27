@@ -24,6 +24,7 @@ type Turnable
     | R
     | F
     | B
+    | M
 
 
 type TurnLength
@@ -141,6 +142,9 @@ algParser =
                                 B ->
                                     "B"
 
+                                M ->
+                                    "M"
+
                         token =
                             Parser.token (Parser.Token (turnableToString turnable) ExpectingFaceOrSlice)
                     in
@@ -221,7 +225,7 @@ allTurns =
 
 {-| All possible turnables
 
-    List.length allTurnables --> 6
+    List.length allTurnables --> 7
 
 -}
 allTurnables : List Turnable
@@ -245,6 +249,9 @@ allTurnables =
                     Just B
 
                 B ->
+                    Just M
+
+                M ->
                     Nothing
     in
     Utils.Enumerator.from U fromU

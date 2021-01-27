@@ -237,10 +237,32 @@ suite =
                         |> Cube.applyAlgorithm alg
                         |> Cube.render
                         |> Expect.equal expectedColorSpec
-            , todo "M performs expected transformation"
+            , test "M performs expected transformation" <|
+                \_ ->
+                    let
+                        alg =
+                            Algorithm.build [ Algorithm.Turn Algorithm.M Algorithm.OneQuarter Algorithm.Clockwise ]
+
+                        expectedColorSpec =
+                            solvedCubeRendering
+                                |> (\x -> { x | ub = { plainCubie | u = BackColor, b = DownColor } })
+                                |> (\x -> { x | u = { plainCubie | u = BackColor } })
+                                |> (\x -> { x | uf = { plainCubie | u = BackColor, f = UpColor } })
+                                |> (\x -> { x | f = { plainCubie | f = UpColor } })
+                                |> (\x -> { x | df = { plainCubie | d = FrontColor, f = UpColor } })
+                                |> (\x -> { x | d = { plainCubie | d = FrontColor } })
+                                |> (\x -> { x | db = { plainCubie | d = FrontColor, b = DownColor } })
+                                |> (\x -> { x | b = { plainCubie | b = DownColor } })
+                    in
+                    Cube.solved
+                        |> Cube.applyAlgorithm alg
+                        |> Cube.render
+                        |> Expect.equal expectedColorSpec
             , todo "E performs expected transformation"
             , todo "S performs expected transformation"
-            , test "0-length algorithm is identity operation to simplify types despite 0 length algorithm not making much sense" <| \_ -> Cube.solved |> Cube.applyAlgorithm (Algorithm.build []) |> Expect.equal Cube.solved
+            , test "0-length algorithm is identity operation to simplify types despite 0 length algorithm not making much sense" <|
+                \_ ->
+                    Cube.solved |> Cube.applyAlgorithm (Algorithm.build []) |> Expect.equal Cube.solved
             ]
         ]
 
