@@ -384,6 +384,22 @@ getClockwiseQuarterTurnDefinition (Algorithm.Turn turnable _ _) =
                 ]
                 [ noCentersMoved ]
 
+        Algorithm.F ->
+            buildClockwiseQuarterTurnDefinition
+                [ [ ( ( U, F, L ), twistClockwise )
+                  , ( ( U, F, R ), twistCounterClockwise )
+                  , ( ( D, F, R ), twistClockwise )
+                  , ( ( D, F, L ), twistCounterClockwise )
+                  ]
+                ]
+                [ [ ( M ( U, F ), flip )
+                  , ( E ( F, R ), flip )
+                  , ( M ( D, F ), flip )
+                  , ( E ( F, L ), flip )
+                  ]
+                ]
+                [ noCentersMoved ]
+
 
 buildClockwiseQuarterTurnDefinition :
     List (List ( CornerLocation, OrientedCorner -> OrientedCorner ))
@@ -479,6 +495,20 @@ twistCounterClockwise (OrientedCorner corner orientation) =
 dontFlip : OrientedEdge -> OrientedEdge
 dontFlip =
     identity
+
+
+flip : OrientedEdge -> OrientedEdge
+flip (OrientedEdge corner orientation) =
+    let
+        newOrientation =
+            case orientation of
+                NotFlipped ->
+                    Flipped
+
+                Flipped ->
+                    NotFlipped
+    in
+    OrientedEdge corner newOrientation
 
 
 
