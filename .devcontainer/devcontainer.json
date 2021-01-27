@@ -24,11 +24,11 @@
   // redownload dependencies.
   // Adding this volume will preserve the elm cache between rebuilds though, fixing this issue
   "mounts": [
-    "source=elm-dependency-cache,target=/home/node/.elm,type=volume"
+    "source=elm-dependency-cache,target=/home/cube-community/.elm,type=volume"
   ],
   // We change the mount to use delegated consistency as it is more performant and there shouldn't be reasons
   // for us to be changing on both the host and the container at the same time. At the same time we also choose
   // to mount it in the containers home directory instead of the default at /workspaces/html-cube
-  "workspaceMount": "source=${localWorkspaceFolder},target=/home/node/workspace,type=bind,consistency=delegated",
-  "workspaceFolder": "/home/node/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/cube-community/workspace,type=bind,consistency=delegated",
+  "workspaceFolder": "/home/cube-community/workspace",
 }
