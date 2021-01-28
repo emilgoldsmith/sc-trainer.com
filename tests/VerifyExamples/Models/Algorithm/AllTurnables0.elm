@@ -16,12 +16,12 @@ import Models.Algorithm exposing (..)
 
 spec0 : Test.Test
 spec0 =
-    Test.test "#allTurnables: \n\n    List.length allTurnables\n    --> 7" <|
+    Test.test "#allTurnables: \n\n    List.length allTurnables\n    --> 8" <|
         \() ->
             Expect.equal
                 (
                 List.length allTurnables
                 )
                 (
-                7
+                8
                 )

@@ -258,8 +258,28 @@ suite =
                         |> Cube.applyAlgorithm alg
                         |> Cube.render
                         |> Expect.equal expectedColorSpec
+            , test "S performs expected transformation" <|
+                \_ ->
+                    let
+                        alg =
+                            Algorithm.build [ Algorithm.Turn Algorithm.S Algorithm.OneQuarter Algorithm.Clockwise ]
+
+                        expectedColorSpec =
+                            solvedCubeRendering
+                                |> (\x -> { x | ul = { plainCubie | u = LeftColor, l = DownColor } })
+                                |> (\x -> { x | u = { plainCubie | u = LeftColor } })
+                                |> (\x -> { x | ur = { plainCubie | u = LeftColor, r = UpColor } })
+                                |> (\x -> { x | r = { plainCubie | r = UpColor } })
+                                |> (\x -> { x | dr = { plainCubie | d = RightColor, r = UpColor } })
+                                |> (\x -> { x | d = { plainCubie | d = RightColor } })
+                                |> (\x -> { x | dl = { plainCubie | d = RightColor, l = DownColor } })
+                                |> (\x -> { x | l = { plainCubie | l = DownColor } })
+                    in
+                    Cube.solved
+                        |> Cube.applyAlgorithm alg
+                        |> Cube.render
+                        |> Expect.equal expectedColorSpec
             , todo "E performs expected transformation"
-            , todo "S performs expected transformation"
             , test "0-length algorithm is identity operation to simplify types despite 0 length algorithm not making much sense" <|
                 \_ ->
                     Cube.solved |> Cube.applyAlgorithm (Algorithm.build []) |> Expect.equal Cube.solved
