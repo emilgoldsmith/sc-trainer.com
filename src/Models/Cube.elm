@@ -320,6 +320,7 @@ type ClockwiseQuarterPermutation location cubie
 getClockwiseQuarterTurnDefinition : Algorithm.Turn -> ClockwiseQuarterTurnDefinition
 getClockwiseQuarterTurnDefinition (Algorithm.Turn turnable _ _) =
     case turnable of
+        -- Single face turns
         Algorithm.U ->
             buildClockwiseQuarterTurnDefinition
                 [ [ ( ( U, F, R ), dontTwist )
@@ -416,6 +417,7 @@ getClockwiseQuarterTurnDefinition (Algorithm.Turn turnable _ _) =
                 ]
                 [ noCentersMoved ]
 
+        -- Slice turns
         Algorithm.M ->
             buildClockwiseQuarterTurnDefinition
                 [ noCornersMoved ]
@@ -444,6 +446,22 @@ getClockwiseQuarterTurnDefinition (Algorithm.Turn turnable _ _) =
                 [ [ ( CenterLocation uFace, identity )
                   , ( CenterLocation rFace, identity )
                   , ( CenterLocation dFace, identity )
+                  , ( CenterLocation lFace, identity )
+                  ]
+                ]
+
+        Algorithm.E ->
+            buildClockwiseQuarterTurnDefinition
+                [ noCornersMoved ]
+                [ [ ( E ( F, L ), flip )
+                  , ( E ( F, R ), flip )
+                  , ( E ( B, R ), flip )
+                  , ( E ( B, L ), flip )
+                  ]
+                ]
+                [ [ ( CenterLocation fFace, identity )
+                  , ( CenterLocation rFace, identity )
+                  , ( CenterLocation bFace, identity )
                   , ( CenterLocation lFace, identity )
                   ]
                 ]
