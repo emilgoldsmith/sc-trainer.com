@@ -1,4 +1,4 @@
-module Tests.Models.Algorithm exposing (algorithmFuzzer, fromStringTests, suite2, suite3, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
+module Tests.Models.Algorithm exposing (algorithmFuzzer, appendTests, fromStringTests, inverseAlgTests, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
 
 {-| This represents an Algorithm, which is an ordered sequence of moves to be applied
 to a cube. Enjoy!
@@ -57,8 +57,8 @@ fromStringTests =
         ]
 
 
-suite2 : Test
-suite2 =
+inverseAlgTests : Test
+inverseAlgTests =
     describe "inverseAlg"
         [ fuzz algorithmFuzzer "the inverse of the inverse should be the original algorithm" <|
             \alg ->
@@ -89,18 +89,11 @@ suite2 =
         ]
 
 
-suite3 : Test
-suite3 =
+appendTests : Test
+appendTests =
     describe "append"
-        [ test "a simple example works as expected" <|
-            \_ ->
-                let
-                    turn1 =
-                        Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
-
-                    turn2 =
-                        Algorithm.Turn Algorithm.U Algorithm.ThreeQuarters Algorithm.CounterClockwise
-                in
+        [ fuzz2 turnFuzzer turnFuzzer "Appending two algorithms each consisting of a turn equals an algorithm with those two turns in a row" <|
+            \turn1 turn2 ->
                 Algorithm.appendTo (Algorithm.build [ turn1 ]) (Algorithm.build [ turn2 ])
                     |> Expect.equal (Algorithm.build [ turn1, turn2 ])
         ]
