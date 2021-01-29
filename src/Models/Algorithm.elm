@@ -1,7 +1,8 @@
-module Models.Algorithm exposing (Algorithm, Turn(..), TurnDirection(..), TurnLength(..), Turnable(..), allTurnDirections, allTurnLengths, allTurnables, allTurns, appendTo, build, extractInternals, fromString, inverse)
+module Models.Algorithm exposing (Algorithm, Turn(..), TurnDirection(..), TurnLength(..), Turnable(..), allTurnDirections, allTurnLengths, allTurnables, allTurns, appendTo, build, extractInternals, inverse)
+
+-- import Parser.Advanced as Parser exposing ((|.), (|=), Parser)
 
 import Monads.ListM as ListM
-import Parser.Advanced as Parser exposing ((|.), (|=), Parser)
 import Utils.Enumerator
 
 
@@ -83,138 +84,106 @@ inverse =
     map <| List.reverse >> List.map flipTurn
 
 
-fromString : String -> Result String Algorithm
-fromString string =
-    Parser.run algParser string
-        |> Result.mapError (renderError string)
 
-
-
--- PARSER
-
-
-type Problem
-    = ExpectingFaceOrSlice
-    | ExpectingNumQuarterTurns
-    | ExpectingTurnDirection
-    | UnexpectedCharacter
-    | EmptyAlgorithm
-
-
-algParser : Parser Never Problem Algorithm
-algParser =
-    let
-        looper currentAlgorithm =
-            Parser.oneOf
-                [ Parser.succeed (\turn -> Parser.Loop (turn :: currentAlgorithm))
-                    |= turnParser
-                    |. Parser.chompWhile (\c -> c == ' ' || c == '\t')
-                , Parser.succeed ()
-                    |. Parser.end UnexpectedCharacter
-                    |> Parser.map
-                        (\_ -> Parser.Done (List.reverse currentAlgorithm))
-                ]
-
-        turnParser =
-            Parser.succeed Turn
-                |= turnableParser
-                |= turnLengthParser
-                |= directionParser
-
-        turnableParser =
-            let
-                turnableToTokenParser turnable =
-                    let
-                        turnableToString : Turnable -> String
-                        turnableToString layer =
-                            case layer of
-                                U ->
-                                    "U"
-
-                                D ->
-                                    "D"
-
-                                L ->
-                                    "L"
-
-                                R ->
-                                    "R"
-
-                                F ->
-                                    "F"
-
-                                B ->
-                                    "B"
-
-                                M ->
-                                    "M"
-
-                                S ->
-                                    "S"
-
-                                E ->
-                                    "E"
-
-                        token =
-                            Parser.token (Parser.Token (turnableToString turnable) ExpectingFaceOrSlice)
-                    in
-                    Parser.map (\_ -> turnable) token
-            in
-            Parser.oneOf (List.map turnableToTokenParser allTurnables)
-
-        turnLengthParser =
-            Parser.oneOf
-                [ Parser.map (\_ -> Halfway) <| Parser.token (Parser.Token "2" ExpectingNumQuarterTurns)
-                , Parser.map (\_ -> ThreeQuarters) <| Parser.token (Parser.Token "3" ExpectingNumQuarterTurns)
-                , Parser.map (\_ -> OneQuarter) <| Parser.token (Parser.Token "" ExpectingNumQuarterTurns)
-                ]
-
-        directionParser =
-            Parser.oneOf
-                [ Parser.map (\_ -> CounterClockwise) <| Parser.token (Parser.Token "'" ExpectingTurnDirection)
-                , Parser.map (\_ -> Clockwise) <| Parser.token (Parser.Token "" ExpectingTurnDirection)
-                ]
-
-        verifyNotEmpty (Algorithm turnList) =
-            case List.length turnList of
-                0 ->
-                    Parser.problem EmptyAlgorithm
-
-                _ ->
-                    Parser.succeed (Algorithm turnList)
-    in
-    Parser.succeed Algorithm |= Parser.loop [] looper |> Parser.andThen verifyNotEmpty
-
-
-renderError : String -> List (Parser.DeadEnd Never Problem) -> String
-renderError string deadEnds =
-    let
-        renderDeadEnd d =
-            String.fromInt d.row ++ ":" ++ String.fromInt d.col ++ " : " ++ renderProblem d.problem
-    in
-    string ++ "    " ++ (String.join ". " <| List.map renderDeadEnd deadEnds)
-
-
-renderProblem : Problem -> String
-renderProblem problem =
-    case problem of
-        ExpectingFaceOrSlice ->
-            "Expecting face or slice"
-
-        ExpectingNumQuarterTurns ->
-            "Expecting num quarter turns"
-
-        ExpectingTurnDirection ->
-            "Expecting turn direction"
-
-        UnexpectedCharacter ->
-            "Unexpected character"
-
-        EmptyAlgorithm ->
-            "An empty algorithm makes no sense as user input"
-
-
-
+-- fromString : String -> Result String Algorithm
+-- fromString string =
+--     Parser.run algParser string
+--         |> Result.mapError (renderError string)
+-- -- PARSER
+-- type Problem
+--     = ExpectingFaceOrSlice
+--     | ExpectingNumQuarterTurns
+--     | ExpectingTurnDirection
+--     | UnexpectedCharacter
+--     | EmptyAlgorithm
+-- algParser : Parser Never Problem Algorithm
+-- algParser =
+--     let
+--         looper currentAlgorithm =
+--             Parser.oneOf
+--                 [ Parser.succeed (\turn -> Parser.Loop (turn :: currentAlgorithm))
+--                     |= turnParser
+--                     |. Parser.chompWhile (\c -> c == ' ' || c == '\t')
+--                 , Parser.succeed ()
+--                     |. Parser.end UnexpectedCharacter
+--                     |> Parser.map
+--                         (\_ -> Parser.Done (List.reverse currentAlgorithm))
+--                 ]
+--         turnParser =
+--             Parser.succeed Turn
+--                 |= turnableParser
+--                 |= turnLengthParser
+--                 |= directionParser
+--         turnableParser =
+--             let
+--                 turnableToTokenParser turnable =
+--                     let
+--                         turnableToString : Turnable -> String
+--                         turnableToString layer =
+--                             case layer of
+--                                 U ->
+--                                     "U"
+--                                 D ->
+--                                     "D"
+--                                 L ->
+--                                     "L"
+--                                 R ->
+--                                     "R"
+--                                 F ->
+--                                     "F"
+--                                 B ->
+--                                     "B"
+--                                 M ->
+--                                     "M"
+--                                 S ->
+--                                     "S"
+--                                 E ->
+--                                     "E"
+--                         token =
+--                             Parser.token (Parser.Token (turnableToString turnable) ExpectingFaceOrSlice)
+--                     in
+--                     Parser.map (\_ -> turnable) token
+--             in
+--             Parser.oneOf (List.map turnableToTokenParser allTurnables)
+--         turnLengthParser =
+--             Parser.oneOf
+--                 [ Parser.map (\_ -> Halfway) <| Parser.token (Parser.Token "2" ExpectingNumQuarterTurns)
+--                 , Parser.map (\_ -> ThreeQuarters) <| Parser.token (Parser.Token "3" ExpectingNumQuarterTurns)
+--                 , Parser.map (\_ -> OneQuarter) <| Parser.token (Parser.Token "" ExpectingNumQuarterTurns)
+--                 ]
+--         directionParser =
+--             Parser.oneOf
+--                 [ Parser.map (\_ -> CounterClockwise) <| Parser.token (Parser.Token "'" ExpectingTurnDirection)
+--                 , Parser.map (\_ -> Clockwise) <| Parser.token (Parser.Token "" ExpectingTurnDirection)
+--                 ]
+--         verifyNotEmpty (Algorithm turnList) =
+--             case List.length turnList of
+--                 0 ->
+--                     Parser.problem EmptyAlgorithm
+--                 _ ->
+--                     Parser.succeed (Algorithm turnList)
+--     in
+--     Parser.succeed Algorithm |= Parser.loop [] looper |> Parser.andThen verifyNotEmpty
+-- renderError : String -> List (Parser.DeadEnd Never Problem) -> String
+-- renderError string deadEnds =
+--     let
+--         renderDeadEnd d =
+--             String.fromInt d.row ++ ":" ++ String.fromInt d.col ++ " : " ++ renderProblem d.problem
+--     in
+--     string ++ "    " ++ (String.join ". " <| List.map renderDeadEnd deadEnds)
+-- renderProblem : Problem -> String
+-- renderProblem problem =
+--     case problem of
+--         ExpectingFaceOrSlice ->
+--             "Expecting face or slice"
+--         ExpectingNumQuarterTurns ->
+--             "Expecting num quarter turns"
+--         ExpectingTurnDirection ->
+--             "Expecting turn direction"
+--         UnexpectedCharacter ->
+--             "Unexpected character"
+--         EmptyAlgorithm ->
+--             "An empty algorithm makes no sense as user input"
 -- TYPE ENUMERATORS (as lists)
 
 

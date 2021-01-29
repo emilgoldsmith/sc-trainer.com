@@ -1,4 +1,4 @@
-module Tests.Models.Algorithm exposing (algorithmFuzzer, appendTests, fromStringTests, inverseAlgTests, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
+module Tests.Models.Algorithm exposing (algorithmFuzzer, appendTests, inverseAlgTests, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
 
 {-| This represents an Algorithm, which is an ordered sequence of moves to be applied
 to a cube. Enjoy!
@@ -10,51 +10,52 @@ import Models.Algorithm as Algorithm exposing (Algorithm, allTurnables)
 import Test exposing (..)
 
 
-fromStringTests : Test
-fromStringTests =
-    describe "fromString"
-        [ fuzz validAlgorithmString "successfully parses valid algorithm strings" <|
-            Algorithm.fromString
-                >> Expect.ok
-        , fuzz2 algorithmFuzzer turnSeparator "a rendered algorithm is correctly retrieved" <|
-            \alg separator ->
-                renderAlgorithm alg separator
-                    |> Algorithm.fromString
-                    |> Expect.equal (Ok alg)
-        , test "handles differing whitespace separation between turns" <|
-            \_ ->
-                Algorithm.fromString "U U  U\tU   U  \t U    \t    U"
-                    |> Expect.ok
-        , todo "Confidence check that a simple example maps to what we would expect"
-        , fuzz obviouslyInvalidAlgorithmString "errors on invalid algorithms" <|
-            Algorithm.fromString
-                >> Expect.err
-        , test "errors on empty string as in the real world an algorithm always has turns" <|
-            \_ ->
-                Algorithm.fromString "" |> Expect.err
-        , test "errors on 2 apostrophes in a row" <|
-            \_ ->
-                Algorithm.fromString "U''" |> Expect.err
-        , test "errors on space between the turnable and the apostrophe" <|
-            \_ ->
-                Algorithm.fromString "U '" |> Expect.err
-        , test "errors on apostrophe before turn length" <|
-            \_ ->
-                Algorithm.fromString "U'2" |> Expect.err
-        , test "errors on space between turnable and turn length" <|
-            \_ ->
-                Algorithm.fromString "U 2" |> Expect.err
-        , test "errors on turn length 4" <|
-            \_ ->
-                Algorithm.fromString "U4" |> Expect.err
-        , test "errors on turn length specified twice" <|
-            \_ ->
-                Algorithm.fromString "U22'" |> Expect.err
-        , test "errors on newline between turns" <|
-            \_ ->
-                Algorithm.fromString "U2'\nU" |> Expect.err
-        , todo "The turnable specified twice should be tested for a good error message"
-        ]
+
+-- fromStringTests : Test
+-- fromStringTests =
+--     describe "fromString"
+--         [ fuzz validAlgorithmString "successfully parses valid algorithm strings" <|
+--             Algorithm.fromString
+--                 >> Expect.ok
+--         , fuzz2 algorithmFuzzer turnSeparator "a rendered algorithm is correctly retrieved" <|
+--             \alg separator ->
+--                 renderAlgorithm alg separator
+--                     |> Algorithm.fromString
+--                     |> Expect.equal (Ok alg)
+--         , test "handles differing whitespace separation between turns" <|
+--             \_ ->
+--                 Algorithm.fromString "U U  U\tU   U  \t U    \t    U"
+--                     |> Expect.ok
+--         , todo "Confidence check that a simple example maps to what we would expect"
+--         , fuzz obviouslyInvalidAlgorithmString "errors on invalid algorithms" <|
+--             Algorithm.fromString
+--                 >> Expect.err
+--         , test "errors on empty string as in the real world an algorithm always has turns" <|
+--             \_ ->
+--                 Algorithm.fromString "" |> Expect.err
+--         , test "errors on 2 apostrophes in a row" <|
+--             \_ ->
+--                 Algorithm.fromString "U''" |> Expect.err
+--         , test "errors on space between the turnable and the apostrophe" <|
+--             \_ ->
+--                 Algorithm.fromString "U '" |> Expect.err
+--         , test "errors on apostrophe before turn length" <|
+--             \_ ->
+--                 Algorithm.fromString "U'2" |> Expect.err
+--         , test "errors on space between turnable and turn length" <|
+--             \_ ->
+--                 Algorithm.fromString "U 2" |> Expect.err
+--         , test "errors on turn length 4" <|
+--             \_ ->
+--                 Algorithm.fromString "U4" |> Expect.err
+--         , test "errors on turn length specified twice" <|
+--             \_ ->
+--                 Algorithm.fromString "U22'" |> Expect.err
+--         , test "errors on newline between turns" <|
+--             \_ ->
+--                 Algorithm.fromString "U2'\nU" |> Expect.err
+--         , todo "The turnable specified twice should be tested for a good error message"
+--         ]
 
 
 inverseAlgTests : Test
