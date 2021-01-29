@@ -1,9 +1,10 @@
-module Tests.Models.Cube exposing (suite)
+module Tests.Models.Cube exposing (suite, testHelperTests)
 
 import Expect
 import Fuzz
 import Models.Algorithm as Algorithm
 import Models.Cube as Cube exposing (Color(..), Cube)
+import Monads.ListM as ListM
 import Parser exposing ((|.), (|=))
 import Test exposing (..)
 import Tests.Models.Algorithm exposing (algorithmFuzzer, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
@@ -34,7 +35,14 @@ suite =
                             cube |> Cube.applyAlgorithm alg1 |> Cube.applyAlgorithm alg2
                     in
                     appliedTogether |> Expect.equal appliedSeparately
-            , todo "is exactly commutative for parallel faces/slices"
+            , fuzz2 parallelPairsFuzzer cubeFuzzer "parallel turns are commutative" <|
+                \( turn1, turn2 ) cube ->
+                    Cube.applyAlgorithm (Algorithm.build [ turn1, turn2 ]) cube
+                        |> Expect.equal (Cube.applyAlgorithm (Algorithm.build [ turn2, turn1 ]) cube)
+            , fuzz2 nonParallelPairsFuzzer cubeFuzzer "non parallel turns are not commutative" <|
+                \( turn1, turn2 ) cube ->
+                    Cube.applyAlgorithm (Algorithm.build [ turn1, turn2 ]) cube
+                        |> Expect.notEqual (Cube.applyAlgorithm (Algorithm.build [ turn2, turn1 ]) cube)
             , fuzz3 cubeFuzzer turnableFuzzer turnDirectionFuzzer "Applying a quarter turn twice equals applying a double turn" <|
                 \cube turnable direction ->
                     let
@@ -305,6 +313,159 @@ suite =
                     Cube.solved |> Cube.applyAlgorithm (Algorithm.build []) |> Expect.equal Cube.solved
             ]
         ]
+
+
+testHelperTests : Test
+testHelperTests =
+    describe "test helper tests"
+        [ describe "parallel turns"
+            [ test "up or down group is disjoint with front or back group" <|
+                \_ ->
+                    List.filter (\uOrD -> List.member uOrD frontOrBackGroup) upOrDownGroup
+                        |> Expect.equal []
+            , test "up or down group is disjoint with left or right group" <|
+                \_ ->
+                    List.filter (\uOrD -> List.member uOrD leftOrRightGroup) upOrDownGroup
+                        |> Expect.equal []
+            , test "front or back group is disjoint with left or right group" <|
+                \_ ->
+                    List.filter (\fOrB -> List.member fOrB leftOrRightGroup) frontOrBackGroup
+                        |> Expect.equal []
+            , test "three parallel groups have same length as all turns" <|
+                \_ ->
+                    [ upOrDownGroup, frontOrBackGroup, leftOrRightGroup ]
+                        |> List.map List.length
+                        |> List.sum
+                        |> Expect.equal (List.length Algorithm.allTurns)
+            , test "parallelPairs and nonParallelPairs are disjoint" <|
+                \_ ->
+                    List.filter (\parallel -> List.member parallel nonParallelPairs) parallelPairs
+                        |> Expect.equal []
+            , test "parallelPairs + nonParallelPairs have same length as amount of pairs of turns" <|
+                \_ ->
+                    [ parallelPairs, nonParallelPairs ]
+                        |> List.map List.length
+                        |> List.sum
+                        |> Expect.equal (List.length Algorithm.allTurns ^ 2)
+            ]
+        ]
+
+
+parallelPairsFuzzer : Fuzz.Fuzzer ( Algorithm.Turn, Algorithm.Turn )
+parallelPairsFuzzer =
+    Fuzz.oneOf <| List.map Fuzz.constant parallelPairs
+
+
+nonParallelPairsFuzzer : Fuzz.Fuzzer ( Algorithm.Turn, Algorithm.Turn )
+nonParallelPairsFuzzer =
+    Fuzz.oneOf <| List.map Fuzz.constant nonParallelPairs
+
+
+nonParallelPairs : List ( Algorithm.Turn, Algorithm.Turn )
+nonParallelPairs =
+    buildPairsForGroup Algorithm.allTurns
+        |> List.filter (\anyPair -> not <| List.member anyPair parallelPairs)
+
+
+parallelPairs : List ( Algorithm.Turn, Algorithm.Turn )
+parallelPairs =
+    List.concatMap buildPairsForGroup [ upOrDownGroup, frontOrBackGroup, leftOrRightGroup ]
+
+
+buildPairsForGroup : List Algorithm.Turn -> List ( Algorithm.Turn, Algorithm.Turn )
+buildPairsForGroup group =
+    ListM.return Tuple.pair
+        |> ListM.applicative (ListM.fromList group)
+        |> ListM.applicative (ListM.fromList group)
+        |> ListM.toList
+
+
+type ParallelGroup
+    = UpOrDownGroup
+    | FrontOrBackGroup
+    | LeftOrRightGroup
+
+
+upOrDownGroup =
+    List.partition (getParallelGroup >> isUpOrDownGroup) Algorithm.allTurns |> Tuple.first
+
+
+frontOrBackGroup =
+    List.partition (getParallelGroup >> isFrontOrBackGroup) Algorithm.allTurns |> Tuple.first
+
+
+leftOrRightGroup =
+    List.partition (getParallelGroup >> isLeftOrRightGroup) Algorithm.allTurns |> Tuple.first
+
+
+getParallelGroup : Algorithm.Turn -> ParallelGroup
+getParallelGroup turn =
+    case turn of
+        Algorithm.Turn Algorithm.U _ _ ->
+            UpOrDownGroup
+
+        Algorithm.Turn Algorithm.D _ _ ->
+            UpOrDownGroup
+
+        Algorithm.Turn Algorithm.E _ _ ->
+            UpOrDownGroup
+
+        Algorithm.Turn Algorithm.F _ _ ->
+            FrontOrBackGroup
+
+        Algorithm.Turn Algorithm.B _ _ ->
+            FrontOrBackGroup
+
+        Algorithm.Turn Algorithm.S _ _ ->
+            FrontOrBackGroup
+
+        Algorithm.Turn Algorithm.L _ _ ->
+            LeftOrRightGroup
+
+        Algorithm.Turn Algorithm.R _ _ ->
+            LeftOrRightGroup
+
+        Algorithm.Turn Algorithm.M _ _ ->
+            LeftOrRightGroup
+
+
+isUpOrDownGroup : ParallelGroup -> Bool
+isUpOrDownGroup parallelGroup =
+    case parallelGroup of
+        UpOrDownGroup ->
+            True
+
+        FrontOrBackGroup ->
+            False
+
+        LeftOrRightGroup ->
+            False
+
+
+isFrontOrBackGroup : ParallelGroup -> Bool
+isFrontOrBackGroup parallelGroup =
+    case parallelGroup of
+        UpOrDownGroup ->
+            False
+
+        FrontOrBackGroup ->
+            True
+
+        LeftOrRightGroup ->
+            False
+
+
+isLeftOrRightGroup : ParallelGroup -> Bool
+isLeftOrRightGroup parallelGroup =
+    case parallelGroup of
+        UpOrDownGroup ->
+            False
+
+        FrontOrBackGroup ->
+            False
+
+        LeftOrRightGroup ->
+            True
 
 
 cubeFuzzer : Fuzz.Fuzzer Cube
