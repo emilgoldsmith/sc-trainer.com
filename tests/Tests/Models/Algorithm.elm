@@ -1,4 +1,4 @@
-module Tests.Models.Algorithm exposing (algorithmFuzzer, suite, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
+module Tests.Models.Algorithm exposing (algorithmFuzzer, fromStringTests, suite2, suite3, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
 
 {-| This represents an Algorithm, which is an ordered sequence of moves to be applied
 to a cube. Enjoy!
@@ -10,88 +10,99 @@ import Models.Algorithm as Algorithm exposing (Algorithm, allTurnables)
 import Test exposing (..)
 
 
-suite : Test
-suite =
-    describe "Models.Algorithm"
-        [ describe "fromString"
-            [ fuzz validAlgorithmString "successfully parses valid algorithm strings" <|
-                Algorithm.fromString
-                    >> Expect.ok
-            , fuzz2 algorithmFuzzer turnSeparator "a rendered algorithm is correctly retrieved" <|
-                \alg separator ->
-                    renderAlgorithm alg separator
-                        |> Algorithm.fromString
-                        |> Expect.equal (Ok alg)
-            , test "handles differing whitespace separation between turns" <|
-                \_ ->
-                    Algorithm.fromString "U U  U\tU   U  \t U    \t    U"
-                        |> Expect.ok
-            , todo "Confidence check that a simple example maps to what we would expect"
-            , fuzz obviouslyInvalidAlgorithmString "errors on invalid algorithms" <|
-                Algorithm.fromString
-                    >> Expect.err
-            , test "errors on empty string as in the real world an algorithm always has turns" <|
-                \_ ->
-                    Algorithm.fromString "" |> Expect.err
-            , test "errors on 2 apostrophes in a row" <|
-                \_ ->
-                    Algorithm.fromString "U''" |> Expect.err
-            , test "errors on space between the turnable and the apostrophe" <|
-                \_ ->
-                    Algorithm.fromString "U '" |> Expect.err
-            , test "errors on apostrophe before turn length" <|
-                \_ ->
-                    Algorithm.fromString "U'2" |> Expect.err
-            , test "errors on space between turnable and turn length" <|
-                \_ ->
-                    Algorithm.fromString "U 2" |> Expect.err
-            , test "errors on turn length 4" <|
-                \_ ->
-                    Algorithm.fromString "U4" |> Expect.err
-            , test "errors on turn length specified twice" <|
-                \_ ->
-                    Algorithm.fromString "U22'" |> Expect.err
-            , test "errors on newline between turns" <|
-                \_ ->
-                    Algorithm.fromString "U2'\nU" |> Expect.err
-            , todo "The turnable specified twice should be tested for a good error message"
-            ]
-        , describe "inverseAlg"
-            [ fuzz algorithmFuzzer "the inverse of the inverse should be the original algorithm" <|
-                \alg ->
-                    alg
-                        |> Algorithm.inverse
-                        |> Algorithm.inverse
-                        |> Expect.equal alg
-            , fuzz2 algorithmFuzzer algorithmFuzzer "the inverse of an algorithm equals splitting the alg in two, inversing each part and swapping their order" <|
-                \part1 part2 ->
-                    Algorithm.appendTo (Algorithm.inverse part2) (Algorithm.inverse part1)
-                        |> Expect.equal (Algorithm.inverse (Algorithm.appendTo part1 part2))
-            , skip <|
-                test "correctly inverses simple example" <|
-                    \_ ->
-                        let
-                            alg =
-                                Algorithm.fromString "UR'"
+fromStringTests : Test
+fromStringTests =
+    describe "fromString"
+        [ fuzz validAlgorithmString "successfully parses valid algorithm strings" <|
+            Algorithm.fromString
+                >> Expect.ok
+        , fuzz2 algorithmFuzzer turnSeparator "a rendered algorithm is correctly retrieved" <|
+            \alg separator ->
+                renderAlgorithm alg separator
+                    |> Algorithm.fromString
+                    |> Expect.equal (Ok alg)
+        , test "handles differing whitespace separation between turns" <|
+            \_ ->
+                Algorithm.fromString "U U  U\tU   U  \t U    \t    U"
+                    |> Expect.ok
+        , todo "Confidence check that a simple example maps to what we would expect"
+        , fuzz obviouslyInvalidAlgorithmString "errors on invalid algorithms" <|
+            Algorithm.fromString
+                >> Expect.err
+        , test "errors on empty string as in the real world an algorithm always has turns" <|
+            \_ ->
+                Algorithm.fromString "" |> Expect.err
+        , test "errors on 2 apostrophes in a row" <|
+            \_ ->
+                Algorithm.fromString "U''" |> Expect.err
+        , test "errors on space between the turnable and the apostrophe" <|
+            \_ ->
+                Algorithm.fromString "U '" |> Expect.err
+        , test "errors on apostrophe before turn length" <|
+            \_ ->
+                Algorithm.fromString "U'2" |> Expect.err
+        , test "errors on space between turnable and turn length" <|
+            \_ ->
+                Algorithm.fromString "U 2" |> Expect.err
+        , test "errors on turn length 4" <|
+            \_ ->
+                Algorithm.fromString "U4" |> Expect.err
+        , test "errors on turn length specified twice" <|
+            \_ ->
+                Algorithm.fromString "U22'" |> Expect.err
+        , test "errors on newline between turns" <|
+            \_ ->
+                Algorithm.fromString "U2'\nU" |> Expect.err
+        , todo "The turnable specified twice should be tested for a good error message"
+        ]
 
-                            inversedAlg =
-                                Algorithm.fromString "RU'"
-                        in
-                        alg |> Result.map Algorithm.inverse |> Expect.all [ Expect.ok, Expect.equal inversedAlg ]
-            ]
-        , describe "append"
-            [ test "a simple example works as expected" <|
-                \_ ->
-                    let
-                        turn1 =
-                            Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
 
-                        turn2 =
-                            Algorithm.Turn Algorithm.U Algorithm.ThreeQuarters Algorithm.CounterClockwise
-                    in
-                    Algorithm.appendTo (Algorithm.build [ turn1 ]) (Algorithm.build [ turn2 ])
-                        |> Expect.equal (Algorithm.build [ turn1, turn2 ])
-            ]
+suite2 : Test
+suite2 =
+    describe "inverseAlg"
+        [ fuzz algorithmFuzzer "the inverse of the inverse should be the original algorithm" <|
+            \alg ->
+                alg
+                    |> Algorithm.inverse
+                    |> Algorithm.inverse
+                    |> Expect.equal alg
+        , fuzz2 algorithmFuzzer algorithmFuzzer "the inverse of an algorithm equals splitting the alg in two, inversing each part and swapping their order" <|
+            \part1 part2 ->
+                Algorithm.appendTo (Algorithm.inverse part2) (Algorithm.inverse part1)
+                    |> Expect.equal (Algorithm.inverse (Algorithm.appendTo part1 part2))
+        , test "correctly inverses simple example" <|
+            \_ ->
+                let
+                    alg =
+                        Algorithm.build
+                            [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
+                            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.CounterClockwise
+                            ]
+
+                    inversedAlg =
+                        Algorithm.build
+                            [ Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
+                            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise
+                            ]
+                in
+                alg |> Algorithm.inverse |> Expect.equal inversedAlg
+        ]
+
+
+suite3 : Test
+suite3 =
+    describe "append"
+        [ test "a simple example works as expected" <|
+            \_ ->
+                let
+                    turn1 =
+                        Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
+
+                    turn2 =
+                        Algorithm.Turn Algorithm.U Algorithm.ThreeQuarters Algorithm.CounterClockwise
+                in
+                Algorithm.appendTo (Algorithm.build [ turn1 ]) (Algorithm.build [ turn2 ])
+                    |> Expect.equal (Algorithm.build [ turn1, turn2 ])
         ]
 
 

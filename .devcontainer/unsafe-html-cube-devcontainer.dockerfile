@@ -1,4 +1,5 @@
-
+# Most of this is copied from the official node image, but I wanted it on Ubuntu for
+# a nicer dev environment in the dev container
 FROM ubuntu:20.04
 
 ENV USERNAME cube-community

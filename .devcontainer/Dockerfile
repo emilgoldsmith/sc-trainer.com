@@ -1,7 +1,7 @@
 
 # This is built in the initializeCommand for the devcontainer
 # from base.dockerfile which is located here in this directory
-FROM html-cube-devcontainer-base
+FROM unsafe-html-cube-devcontainer
 
 ENV ELM_VERSION 0.19.1
 ENV ELM_TEST_VERSION 0.19.1
