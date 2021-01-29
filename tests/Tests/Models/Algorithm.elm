@@ -96,6 +96,18 @@ appendTests =
             \turn1 turn2 ->
                 Algorithm.appendTo (Algorithm.build [ turn1 ]) (Algorithm.build [ turn2 ])
                     |> Expect.equal (Algorithm.build [ turn1, turn2 ])
+        , fuzz algorithmFuzzer "Appending to an empty algorithm equals the second algorithm" <|
+            \algorithm ->
+                Algorithm.appendTo (Algorithm.build []) algorithm
+                    |> Expect.equal algorithm
+        , fuzz algorithmFuzzer "Appending an empty algorithm to an algorithm equals the first algorithm" <|
+            \algorithm ->
+                Algorithm.appendTo algorithm (Algorithm.build [])
+                    |> Expect.equal algorithm
+        , test "Appending two empty algorithm equals an empty algorithm" <|
+            \_ ->
+                Algorithm.appendTo (Algorithm.build []) (Algorithm.build [])
+                    |> Expect.equal (Algorithm.build [])
         ]
 
 
