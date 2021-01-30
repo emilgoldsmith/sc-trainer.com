@@ -33,7 +33,7 @@ type Msg
 
 type Key
     = Space
-    | AnythingElse
+    | SomeKey String
     | W
 
 
@@ -54,7 +54,7 @@ toKey keyString =
             W
 
         _ ->
-            AnythingElse
+            SomeKey keyString
 
 
 subscriptions : Model -> Sub Msg
@@ -70,7 +70,7 @@ subscriptions model =
                         decodeKey
                 , Events.onMouseDown <|
                     Decode.succeed
-                        (KeyDown AnythingElse)
+                        (KeyDown <| SomeKey "mouseDown")
                 ]
 
         _ ->
