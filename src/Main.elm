@@ -152,25 +152,30 @@ addSnackbar model snackbarText =
 
 moreThanASecondLater : Time.Posix -> Time.Posix -> Bool
 moreThanASecondLater first second =
-    Time.posixToMillis second - Time.posixToMillis first > 1000
+    Time.posixToMillis second - Time.posixToMillis first > 400
 
 
 view : Model -> Html Msg
 view model =
-    div [] [ viewState model, div [ style "position" "fixed", style "top" "20px", style "left" "50%" ] <| List.map viewSnackbar model.snackbars ]
+    div [] [ viewState model, viewSnackbars model ]
+
+
+viewSnackbars : Model -> Html Msg
+viewSnackbars model =
+    div [ style "position" "fixed", style "top" "20px", style "left" "50%" ] <| List.map viewSnackbar model.snackbars
 
 
 viewState : Model -> Html Msg
 viewState model =
     case model.trainerState of
         BetweenTests ->
-            text "Between Tests"
+            div [ attribute "data-testid" "between-tests-container" ] [ text "Between Tests" ]
 
         TestRunning ->
-            text "Test Running"
+            div [ attribute "data-testid" "test-running-container" ] [ text "Test Running" ]
 
         EvaluateResult timeStopped ->
-            text <| "Evaluating Result" ++ " " ++ (Time.toHour Time.utc timeStopped |> String.fromInt) ++ ":" ++ (Time.toMinute Time.utc timeStopped |> String.fromInt) ++ ":" ++ (Time.toSecond Time.utc timeStopped |> String.fromInt) ++ "." ++ (Time.toMillis Time.utc timeStopped |> String.fromInt)
+            div [ attribute "data-testid" "evaluate-test-result-container" ] [ text <| "Evaluating Result" ++ " " ++ (Time.toHour Time.utc timeStopped |> String.fromInt) ++ ":" ++ (Time.toMinute Time.utc timeStopped |> String.fromInt) ++ ":" ++ (Time.toSecond Time.utc timeStopped |> String.fromInt) ++ "." ++ (Time.toMillis Time.utc timeStopped |> String.fromInt) ]
 
 
 viewSnackbar : String -> Html Msg

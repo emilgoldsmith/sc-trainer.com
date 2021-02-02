@@ -16,10 +16,13 @@ RUN groupadd --gid 1000 $USERNAME \
     && echo "root:$ROOT_PASSWORD" | chpasswd root \
 # Missing dependencies for installing node and yarn
     && apt-get update \
-    && apt-get -y install \
+# DEBIAN_FRONTEND is for making configuring tzdata to work
+    && DEBIAN_FRONTEND=noninteractive apt-get -y install \
         gpg \
         curl \
         xz-utils \
+# E2E browser testing (Cypress.io anyway) dependencies
+        libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb \
 # Nice to haves for developer experience
         git \
         vim \
