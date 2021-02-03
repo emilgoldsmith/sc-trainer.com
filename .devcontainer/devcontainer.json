@@ -26,7 +26,9 @@
   "mounts": [
     "source=cube-community-devcontainer-elm-dependency-cache,target=/home/cube-community/.elm,type=volume",
     // This volume can store our cypress install amongst other things
-    "source=cube-community-devcontainer-cache,target=/home/cube-community/.cache,type=volume"
+    "source=cube-community-devcontainer-cache,target=/home/cube-community/.cache,type=volume",
+    // This volume persists your bash history across runs
+    "source=cube-community-devcontainer-bash-history,target=/home/cube-community/bash_history,type=volume"
   ],
   // We change the mount to use delegated consistency as it is more performant and there shouldn't be reasons
   // for us to be changing on both the host and the container at the same time. At the same time we also choose

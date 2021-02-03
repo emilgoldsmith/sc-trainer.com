@@ -14,6 +14,8 @@ USER $USERNAME
 
 WORKDIR /home/$USERNAME
 
+ENV HISTFILE /home/$USERNAME/bash_history/bash_history.txt
+
 RUN yarn global add \
         elm@$ELM_VERSION \
         elm-test@$ELM_TEST_VERSION \
@@ -23,7 +25,9 @@ RUN yarn global add \
         elm-verify-examples@$ELM_VERIFY_EXAMPLES_VERSION \
     # Create the elm cache directory where we can mount a volume. If we don't create it like this
     # it is auto created by docker on volume creation but with root as owner which makes it unusable.
-    && mkdir .elm
+    && mkdir .elm \
+    # Similar story here with the bash history we store in a volume
+    && mkdir -p $(dirname $HISTFILE)
 
 ENV PATH "$PATH:/home/$USERNAME/.yarn/bin"
 
