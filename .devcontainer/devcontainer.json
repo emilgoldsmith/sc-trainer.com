@@ -24,7 +24,8 @@
   // redownload dependencies.
   // Adding this volume will preserve the elm cache between rebuilds though, fixing this issue
   "mounts": [
-    "source=elm-dependency-cache,target=/home/cube-community/.elm,type=volume",
+    "source=cube-community-devcontainer-elm-dependency-cache,target=/home/cube-community/.elm,type=volume",
+    // This volume can store our cypress install amongst other things
     "source=cube-community-devcontainer-cache,target=/home/cube-community/.cache,type=volume"
   ],
   // We change the mount to use delegated consistency as it is more performant and there shouldn't be reasons
@@ -33,5 +34,5 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/cube-community/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/home/cube-community/workspace",
   "initializeCommand": "docker build -f .devcontainer/unsafe-html-cube-devcontainer.dockerfile -t unsafe-html-cube-devcontainer .devcontainer",
-  "postAttachCommand": "cd end-to-end-tests && yarn && (yarn run cypress verify || install)"
+  "postAttachCommand": "cd end-to-end-tests && yarn && (yarn run cypress verify || yarn run cypress install)"
 }
