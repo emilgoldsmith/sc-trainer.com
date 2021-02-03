@@ -1,0 +1,16 @@
+{
+  "plugins": ["cypress", "chai-friendly"],
+  "extends": [
+    "esnext",
+    "plugin:chai-friendly/recommended",
+    "plugin:cypress/recommended",
+    "prettier"
+  ],
+  "rules": {
+    "cypress/no-force": "error",
+    // Can't get the configuration to work it seems and don't really care much, typescript checks it for us
+    "import/no-unresolved": "off"
+  },
+  "globals": { "Parameters": false, "ReturnType": false },
+  "ignorePatterns": "*.d.ts"
+}
