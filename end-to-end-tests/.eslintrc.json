@@ -1,11 +1,13 @@
 {
-  "plugins": ["cypress", "chai-friendly"],
+  "plugins": ["cypress", "chai-friendly", "@typescript-eslint"],
   "extends": [
     "esnext",
+    "plugin:@typescript-eslint/recommended",
     "plugin:chai-friendly/recommended",
     "plugin:cypress/recommended",
     "prettier"
   ],
+  "parser": "@typescript-eslint/parser",
   "rules": {
     "cypress/no-force": "error",
     // Can't get the configuration to work it seems and don't really care much, typescript checks it for us

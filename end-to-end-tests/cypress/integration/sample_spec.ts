@@ -1,3 +1,5 @@
+import { Key } from "support/keys";
+
 describe("AlgorithmTrainer", () => {
   beforeEach(() => {
     cy.visit("/");
@@ -9,22 +11,22 @@ describe("AlgorithmTrainer", () => {
       getBetweenTests();
     });
     it("starts test when pressing space", () => {
-      cy.pressKey(" ");
+      cy.pressKey(Key.space);
       getTestRunning();
     });
     it("doesn't start test when pressing any other keys", () => {
-      cy.pressKey("a");
+      cy.pressKey(Key.a);
       getBetweenTests();
-      cy.pressKey("x");
+      cy.pressKey(Key.x);
       getBetweenTests();
-      cy.pressKey("CapsLock");
+      cy.pressKey(Key.capsLock);
       getBetweenTests();
     });
   });
 
   describe("Test Running", () => {
     beforeEach(() => {
-      cy.pressKey(" ");
+      cy.pressKey(Key.space);
     });
 
     it("has all the correct elements", () => {
@@ -45,27 +47,27 @@ describe("AlgorithmTrainer", () => {
       });
       describe("on pressing any keyboard key", () => {
         it("tested with space", () => {
-          cy.pressKey(" ");
+          cy.pressKey(Key.space);
           getEvaluateResult();
         });
 
         it("tested with l", () => {
-          cy.pressKey("l");
+          cy.pressKey(Key.l);
           getEvaluateResult();
         });
 
         it("tested with number 5", () => {
-          cy.pressKey("5");
+          cy.pressKey(Key.five);
           getEvaluateResult();
         });
 
         it("tested with modifier key caps lock", () => {
-          cy.pressKey("CapsLock");
+          cy.pressKey(Key.capsLock);
           getEvaluateResult();
         });
 
         it("tested with modifier key ctrl", () => {
-          cy.pressKey("Ctrl");
+          cy.pressKey(Key.leftCtrl);
           getEvaluateResult();
         });
       });

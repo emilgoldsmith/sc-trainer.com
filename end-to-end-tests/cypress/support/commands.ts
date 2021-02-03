@@ -24,10 +24,25 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
-Cypress.Commands.add("getByTestId", (selector, ...args) => {
-    return cy.get(`[data-testid=${selector}]`, ...args);
-});
+import { getCode, getKeyCode, getKeyValue } from "./keys";
 
-Cypress.Commands.add("pressKey", (key) => {
-    return cy.document().trigger('keydown', { key }).trigger('keypress', { key }).trigger('keyup', { key })
-})
+const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
+  selector,
+  ...args
+) => cy.get(`[data-testid=${selector}]`, ...args);
+Cypress.Commands.add("getByTestId", getByTestId);
+
+const pressKey: Cypress.Chainable<undefined>["pressKey"] = (key) => {
+  const event: KeyboardEventInit & { constructor: typeof KeyboardEvent } = {
+    key: getKeyValue(key),
+    code: getCode(key),
+    keyCode: getKeyCode(key),
+    constructor: KeyboardEvent,
+  };
+  cy.document()
+    .trigger("keydown", event)
+    .trigger("keypress", event)
+    .trigger("keyup", event);
+};
+
+Cypress.Commands.add("pressKey", pressKey);
