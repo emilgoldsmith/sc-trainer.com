@@ -1,5 +1,17 @@
 import { getKeyValue, Key } from "support/keys";
 
+const mousePositions: Cypress.PositionType[] = [
+  "center",
+  "top",
+  "left",
+  "right",
+  "bottom",
+  "topLeft",
+  "topRight",
+  "bottomRight",
+  "bottomLeft",
+];
+
 describe("AlgorithmTrainer", () => {
   beforeEach(() => {
     cy.visit("/");
@@ -35,18 +47,7 @@ describe("AlgorithmTrainer", () => {
 
     describe("ends test correctly", () => {
       describe("on click anywhere", () => {
-        const tests: Cypress.PositionType[] = [
-          "center",
-          "top",
-          "left",
-          "right",
-          "bottom",
-          "topLeft",
-          "topRight",
-          "bottomRight",
-          "bottomLeft",
-        ];
-        tests.forEach((position) =>
+        mousePositions.forEach((position) =>
           it(`tested in ${position}`, () => {
             cy.get("body").click(position);
             assertEvaluateResultState();
@@ -70,6 +71,9 @@ describe("AlgorithmTrainer", () => {
       });
       describe("on long-pressing any keyboard key", () => {
         const tests: Key[] = [
+          // Space is the special one that's the hard case to handle as we're
+          // also using space to evaluate a result as correct and the delayed
+          // "up" could cause issues
           Key.space,
           Key.l,
           Key.five,
@@ -84,6 +88,46 @@ describe("AlgorithmTrainer", () => {
         );
       });
     });
+  });
+
+  describe.only("Evaluate Result", () => {
+    beforeEach(() => {
+      cy.pressKey(Key.space);
+      cy.pressKey(Key.space);
+    });
+
+    it("has all the correct elements", () => {
+      assertEvaluateResultState();
+    });
+
+    describe("doesn't change state when", () => {
+      mousePositions.forEach((position) =>
+        it(`mouse clicked at ${position}`, () => {
+          cy.get("body").click(position);
+          assertEvaluateResultState();
+        })
+      );
+      // Note we are not including w or space here as those should indeed
+      // change the state
+      const representativeSelectionOfKeys: Key[] = [
+        Key.leftCtrl,
+        Key.five,
+        Key.l,
+      ];
+      representativeSelectionOfKeys.forEach((key) =>
+        it(`keyboard key '${getKeyValue(key)}' pressed`, () => {
+          cy.pressKey(key);
+          assertEvaluateResultState();
+        })
+      );
+    });
+    // describe("approves correctly", () => {
+    //   it("approves on space pressed", () => {
+    //     cy.pressKey(Key.space);
+    //     assertBetweenTestsState();
+    //     // Assert approved message
+    //   });
+    // });
   });
 });
 

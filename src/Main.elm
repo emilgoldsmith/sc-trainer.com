@@ -7,7 +7,6 @@ import Html.Attributes exposing (..)
 import Json.Decode as Decode
 import Process
 import Task
-import Time
 
 
 main : Program () Model Msg
@@ -34,15 +33,18 @@ type alias Model =
 type TrainerState
     = BetweenTests
     | TestRunning
-    | EvaluateResult Time.Posix
+    | EvaluatingResult { correctKeyState : KeyPressState, wrongKeyState : KeyPressState }
+
+
+type KeyPressState
+    = NotPressed
+    | PressedDown
+    | Released
 
 
 type Msg
     = KeyUp Key
     | KeyDown Key
-    | StopTest Time.Posix
-    | EvaluateWrong Time.Posix
-    | EvaluateCorrect Time.Posix
     | DeleteOldestSnackbar
 
 
@@ -88,8 +90,11 @@ subscriptions model =
                         (KeyDown <| SomeKey "mouseDown")
                 ]
 
-        _ ->
-            Events.onKeyUp <| Decode.map KeyUp decodeKey
+        EvaluatingResult _ ->
+            Sub.batch
+                [ Events.onKeyUp <| Decode.map KeyUp decodeKey
+                , Events.onKeyDown <| Decode.map KeyDown decodeKey
+                ]
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -111,48 +116,52 @@ update msg model =
                 TestRunning ->
                     case msg of
                         KeyDown _ ->
-                            ( model, Task.perform StopTest Time.now )
-
-                        StopTest timeStopped ->
-                            ( { model | trainerState = EvaluateResult timeStopped }, Cmd.none )
+                            ( { model | trainerState = EvaluatingResult { correctKeyState = NotPressed, wrongKeyState = NotPressed } }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
 
-                EvaluateResult timeStopped ->
+                EvaluatingResult { wrongKeyState, correctKeyState } ->
                     case msg of
+                        KeyDown Space ->
+                            ( { model | trainerState = EvaluatingResult { wrongKeyState = wrongKeyState, correctKeyState = afterKeyDown correctKeyState } }, Cmd.none )
+
                         KeyUp Space ->
-                            ( model, Task.perform EvaluateCorrect Time.now )
+                            ( { model | trainerState = EvaluatingResult { wrongKeyState = wrongKeyState, correctKeyState = afterKeyUp correctKeyState } }, Cmd.none )
+
+                        KeyDown W ->
+                            ( { model | trainerState = EvaluatingResult { wrongKeyState = afterKeyDown wrongKeyState, correctKeyState = correctKeyState } }, Cmd.none )
 
                         KeyUp W ->
-                            ( model, Task.perform EvaluateWrong Time.now )
-
-                        EvaluateCorrect timeEvaluated ->
-                            if moreThanASecondLater timeStopped timeEvaluated then
-                                ( { model | trainerState = BetweenTests }, Cmd.none )
-
-                            else
-                                addSnackbar model "correct too soon"
-
-                        EvaluateWrong timeEvaluated ->
-                            if moreThanASecondLater timeStopped timeEvaluated then
-                                ( { model | trainerState = BetweenTests }, Cmd.none )
-
-                            else
-                                addSnackbar model "wrong too soon"
+                            ( { model | trainerState = EvaluatingResult { wrongKeyState = afterKeyUp wrongKeyState, correctKeyState = correctKeyState } }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
+
+
+afterKeyDown : KeyPressState -> KeyPressState
+afterKeyDown previous =
+    case previous of
+        NotPressed ->
+            PressedDown
+
+        x ->
+            x
+
+
+afterKeyUp : KeyPressState -> KeyPressState
+afterKeyUp previous =
+    case previous of
+        PressedDown ->
+            Released
+
+        x ->
+            x
 
 
 addSnackbar : Model -> String -> ( Model, Cmd Msg )
 addSnackbar model snackbarText =
     ( { model | snackbars = snackbarText :: model.snackbars }, Task.perform (always DeleteOldestSnackbar) (Process.sleep 3000) )
-
-
-moreThanASecondLater : Time.Posix -> Time.Posix -> Bool
-moreThanASecondLater first second =
-    Time.posixToMillis second - Time.posixToMillis first > 400
 
 
 view : Model -> Html Msg
@@ -174,8 +183,8 @@ viewState model =
         TestRunning ->
             div [ attribute "data-testid" "test-running-container" ] [ text "Test Running" ]
 
-        EvaluateResult timeStopped ->
-            div [ attribute "data-testid" "evaluate-test-result-container" ] [ text <| "Evaluating Result" ++ " " ++ (Time.toHour Time.utc timeStopped |> String.fromInt) ++ ":" ++ (Time.toMinute Time.utc timeStopped |> String.fromInt) ++ ":" ++ (Time.toSecond Time.utc timeStopped |> String.fromInt) ++ "." ++ (Time.toMillis Time.utc timeStopped |> String.fromInt) ]
+        EvaluatingResult _ ->
+            div [ attribute "data-testid" "evaluate-test-result-container" ] [ text <| "Evaluating Result" ]
 
 
 viewSnackbar : String -> Html Msg
