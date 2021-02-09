@@ -24,7 +24,7 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
-import { getCode, getKeyCode, getKeyValue } from "./keys";
+import { getCode, getKeyCode, getKeyValue, Key } from "./keys";
 
 const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
   selector,
@@ -33,16 +33,30 @@ const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
 Cypress.Commands.add("getByTestId", getByTestId);
 
 const pressKey: Cypress.Chainable<undefined>["pressKey"] = (key) => {
-  const event: KeyboardEventInit & { constructor: typeof KeyboardEvent } = {
-    key: getKeyValue(key),
-    code: getCode(key),
-    keyCode: getKeyCode(key),
-    constructor: KeyboardEvent,
-  };
+  const event = buildKeyboardEvent(key);
   cy.document()
     .trigger("keydown", event)
     .trigger("keypress", event)
     .trigger("keyup", event);
 };
-
 Cypress.Commands.add("pressKey", pressKey);
+
+const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = (key) => {
+  const event = buildKeyboardEvent(key);
+  cy.document().trigger("keydown", event).trigger("keypress", event);
+  // A somewhat arbitrary number that just is long enough for a very long press
+  cy.tick(3000);
+  cy.document().trigger("keypress", event).trigger("keyup", event);
+};
+Cypress.Commands.add("longPressKey", longPressKey);
+
+function buildKeyboardEvent(
+  key: Key
+): KeyboardEventInit & { constructor: typeof KeyboardEvent } {
+  return {
+    key: getKeyValue(key),
+    code: getCode(key),
+    keyCode: getKeyCode(key),
+    constructor: KeyboardEvent,
+  };
+}

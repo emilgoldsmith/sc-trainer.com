@@ -8,19 +8,19 @@ describe("AlgorithmTrainer", () => {
 
   describe("Between Tests", () => {
     it("has all the correct elements", () => {
-      getBetweenTests();
+      assertBetweenTestsState();
     });
     it("starts test when pressing space", () => {
       cy.pressKey(Key.space);
-      getTestRunning();
+      assertTestRunningState();
     });
     it("doesn't start test when pressing any other keys", () => {
       cy.pressKey(Key.a);
-      getBetweenTests();
+      assertBetweenTestsState();
       cy.pressKey(Key.x);
-      getBetweenTests();
+      assertBetweenTestsState();
       cy.pressKey(Key.capsLock);
-      getBetweenTests();
+      assertBetweenTestsState();
     });
   });
 
@@ -30,10 +30,10 @@ describe("AlgorithmTrainer", () => {
     });
 
     it("has all the correct elements", () => {
-      getTestRunning();
+      assertTestRunningState();
     });
 
-    describe("ends test", () => {
+    describe("ends test correctly", () => {
       describe("on click anywhere", () => {
         const tests: Cypress.PositionType[] = [
           "center",
@@ -49,7 +49,7 @@ describe("AlgorithmTrainer", () => {
         tests.forEach((position) =>
           it(`tested in ${position}`, () => {
             cy.get("body").click(position);
-            getEvaluateResult();
+            assertEvaluateResultState();
           })
         );
       });
@@ -64,7 +64,22 @@ describe("AlgorithmTrainer", () => {
         tests.forEach((key) =>
           it(`tested with '${getKeyValue(key)}'`, () => {
             cy.pressKey(key);
-            getEvaluateResult();
+            assertEvaluateResultState();
+          })
+        );
+      });
+      describe("on long-pressing any keyboard key", () => {
+        const tests: Key[] = [
+          Key.space,
+          Key.l,
+          Key.five,
+          Key.capsLock,
+          Key.leftCtrl,
+        ];
+        tests.forEach((key) =>
+          it(`tested with '${getKeyValue(key)}'`, () => {
+            cy.longPressKey(key);
+            assertEvaluateResultState();
           })
         );
       });
@@ -72,14 +87,14 @@ describe("AlgorithmTrainer", () => {
   });
 });
 
-function getEvaluateResult() {
+function assertEvaluateResultState() {
   cy.getByTestId("evaluate-test-result-container");
 }
 
-function getTestRunning() {
+function assertTestRunningState() {
   cy.getByTestId("test-running-container");
 }
 
-function getBetweenTests() {
+function assertBetweenTestsState() {
   cy.getByTestId("between-tests-container");
 }
