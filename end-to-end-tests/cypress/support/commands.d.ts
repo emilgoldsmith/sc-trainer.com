@@ -16,7 +16,10 @@ declare namespace Cypress {
       ...args: Parameters<Cypress.Chainable<Subject>["get"]>
     ): Chainable<JQuery<HTMLElement>>;
     /**
-     * Presses a key in
+     * Presses a key in the "global scope", not on any specific input
+     *
+     * @example
+     * cy.pressKey(Key.space);
      */
     pressKey(key: import("./keys").Key): void;
   }
