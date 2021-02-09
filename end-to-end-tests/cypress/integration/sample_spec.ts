@@ -1,4 +1,4 @@
-import { Key } from "support/keys";
+import { getKeyValue, Key } from "support/keys";
 
 describe("AlgorithmTrainer", () => {
   beforeEach(() => {
@@ -35,41 +35,38 @@ describe("AlgorithmTrainer", () => {
 
     describe("ends test", () => {
       describe("on click anywhere", () => {
-        it("tested in center", () => {
-          cy.get("body").click("center");
-          getEvaluateResult();
-        });
-
-        it("tested in top left", () => {
-          cy.get("body").click("topLeft");
-          getEvaluateResult();
-        });
+        const tests: Cypress.PositionType[] = [
+          "center",
+          "top",
+          "left",
+          "right",
+          "bottom",
+          "topLeft",
+          "topRight",
+          "bottomRight",
+          "bottomLeft",
+        ];
+        tests.forEach((position) =>
+          it(`tested in ${position}`, () => {
+            cy.get("body").click(position);
+            getEvaluateResult();
+          })
+        );
       });
       describe("on pressing any keyboard key", () => {
-        it("tested with space", () => {
-          cy.pressKey(Key.space);
-          getEvaluateResult();
-        });
-
-        it("tested with l", () => {
-          cy.pressKey(Key.l);
-          getEvaluateResult();
-        });
-
-        it("tested with number 5", () => {
-          cy.pressKey(Key.five);
-          getEvaluateResult();
-        });
-
-        it("tested with modifier key caps lock", () => {
-          cy.pressKey(Key.capsLock);
-          getEvaluateResult();
-        });
-
-        it("tested with modifier key ctrl", () => {
-          cy.pressKey(Key.leftCtrl);
-          getEvaluateResult();
-        });
+        const tests: Key[] = [
+          Key.space,
+          Key.l,
+          Key.five,
+          Key.capsLock,
+          Key.leftCtrl,
+        ];
+        tests.forEach((key) =>
+          it(`tested with '${getKeyValue(key)}'`, () => {
+            cy.pressKey(key);
+            getEvaluateResult();
+          })
+        );
       });
     });
   });
