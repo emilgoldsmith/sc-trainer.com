@@ -15,6 +15,7 @@ const mousePositions: Cypress.PositionType[] = [
 describe("AlgorithmTrainer", () => {
   beforeEach(() => {
     cy.visit("/");
+    assertBetweenTestsState();
     cy.clock();
   });
 
@@ -39,6 +40,7 @@ describe("AlgorithmTrainer", () => {
   describe("Test Running", () => {
     beforeEach(() => {
       cy.pressKey(Key.space);
+      assertTestRunningState();
     });
 
     it("has all the correct elements", () => {
@@ -93,7 +95,9 @@ describe("AlgorithmTrainer", () => {
   describe("Evaluate Result", () => {
     beforeEach(() => {
       cy.pressKey(Key.space);
+      assertTestRunningState();
       cy.pressKey(Key.space);
+      assertEvaluateResultState();
     });
 
     it("has all the correct elements", () => {
@@ -125,27 +129,24 @@ describe("AlgorithmTrainer", () => {
       it("approves on space pressed", () => {
         cy.pressKey(Key.space);
         assertBetweenTestsState();
-        // Assert approved message
+        assertCorrectEvaluationMessage();
       });
     });
     describe("rejects correctly", () => {
       it("rejects on w key pressed", () => {
         cy.pressKey(Key.w);
         assertBetweenTestsState();
-        // Assert rejected message
+        assertWrongEvaluationMessage();
       });
+
       it("also rejects if shift + w is pressed", () => {
         cy.pressKey(Key.W);
         assertBetweenTestsState();
-        // Assert rejected message
+        assertWrongEvaluationMessage();
       });
     });
   });
 });
-
-function assertEvaluateResultState() {
-  cy.getByTestId("evaluate-test-result-container");
-}
 
 function assertTestRunningState() {
   cy.getByTestId("test-running-container");
@@ -153,4 +154,16 @@ function assertTestRunningState() {
 
 function assertBetweenTestsState() {
   cy.getByTestId("between-tests-container");
+}
+
+function assertEvaluateResultState() {
+  cy.getByTestId("evaluate-test-result-container");
+}
+
+function assertCorrectEvaluationMessage() {
+  cy.getByTestId("correct-evaluation-message");
+}
+
+function assertWrongEvaluationMessage() {
+  cy.getByTestId("wrong-evaluation-message");
 }

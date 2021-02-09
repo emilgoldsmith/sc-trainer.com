@@ -21,7 +21,7 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { trainerState = BetweenTests, snackbars = [] }, Cmd.none )
+    ( { trainerState = BetweenTests NoEvaluationMessage, snackbars = [] }, Cmd.none )
 
 
 type alias Model =
@@ -31,9 +31,20 @@ type alias Model =
 
 
 type TrainerState
-    = BetweenTests
+    = BetweenTests EvaluationMessage
     | TestRunning
     | EvaluatingResult { correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool }
+
+
+allPressed : { correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool } -> Bool
+allPressed { correctKeyPressStarted, wrongKeyPressStarted } =
+    correctKeyPressStarted && wrongKeyPressStarted
+
+
+type EvaluationMessage
+    = NoEvaluationMessage
+    | CorrectEvaluation
+    | WrongEvaluation
 
 
 type Msg
@@ -74,7 +85,7 @@ toKey keyString =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.trainerState of
-        BetweenTests ->
+        BetweenTests _ ->
             Events.onKeyUp <| Decode.map KeyUp decodeKey
 
         TestRunning ->
@@ -87,10 +98,14 @@ subscriptions model =
                         (KeyDown <| SomeKey "mouseDown")
                 ]
 
-        EvaluatingResult _ ->
+        EvaluatingResult keyStates ->
             Sub.batch
-                [ Events.onKeyUp <| Decode.map KeyUp decodeKey
-                , Events.onKeyDown <| Decode.map KeyDown decodeKey
+                [ if allPressed keyStates then
+                    Sub.none
+
+                  else
+                    Events.onKeyDown <| Decode.map KeyDown decodeKey
+                , Events.onKeyUp <| Decode.map KeyUp decodeKey
                 ]
 
 
@@ -102,7 +117,7 @@ update msg model =
 
         _ ->
             case model.trainerState of
-                BetweenTests ->
+                BetweenTests _ ->
                     case msg of
                         KeyUp Space ->
                             ( { model | trainerState = TestRunning }, Cmd.none )
@@ -125,7 +140,7 @@ update msg model =
 
                         KeyUp Space ->
                             ( if correctKeyPressStarted then
-                                { model | trainerState = BetweenTests }
+                                { model | trainerState = BetweenTests CorrectEvaluation }
 
                               else
                                 model
@@ -137,7 +152,7 @@ update msg model =
 
                         KeyUp W ->
                             ( if wrongKeyPressStarted then
-                                { model | trainerState = BetweenTests }
+                                { model | trainerState = BetweenTests WrongEvaluation }
 
                               else
                                 model
@@ -166,8 +181,8 @@ viewSnackbars model =
 viewState : Model -> Html Msg
 viewState model =
     case model.trainerState of
-        BetweenTests ->
-            div [ attribute "data-testid" "between-tests-container" ] [ text "Between Tests" ]
+        BetweenTests message ->
+            div [ attribute "data-testid" "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
 
         TestRunning ->
             div [ attribute "data-testid" "test-running-container" ] [ text "Test Running" ]
@@ -179,3 +194,16 @@ viewState model =
 viewSnackbar : String -> Html Msg
 viewSnackbar snackbarText =
     div [ style "border" "solid black 2px" ] [ text snackbarText ]
+
+
+viewEvaluationMessage : EvaluationMessage -> Html Msg
+viewEvaluationMessage message =
+    case message of
+        NoEvaluationMessage ->
+            div [] []
+
+        CorrectEvaluation ->
+            div [ attribute "data-testid" "correct-evaluation-message" ] [ text "Correct" ]
+
+        WrongEvaluation ->
+            div [ attribute "data-testid" "wrong-evaluation-message" ] [ text "Wrong" ]
