@@ -29,6 +29,9 @@ import {
   CODE_5,
   KEY_L,
   KEY_5,
+  VALUE_W,
+  CODE_W,
+  KEY_W,
 } from "keycode-js";
 
 export enum Key {
@@ -38,6 +41,8 @@ export enum Key {
   d,
   l,
   x,
+  w,
+  W,
   five,
   space,
   leftCtrl,
@@ -56,6 +61,10 @@ export function getKeyValue(key: Key): string {
       return VALUE_D;
     case Key.l:
       return VALUE_L;
+    case Key.w:
+      return VALUE_W;
+    case Key.W:
+      return "W";
     case Key.x:
       return VALUE_X;
     case Key.five:
@@ -81,6 +90,10 @@ export function getCode(key: Key): string {
       return CODE_D;
     case Key.l:
       return CODE_L;
+    case Key.w:
+      return CODE_W;
+    case Key.W:
+      return CODE_W;
     case Key.x:
       return CODE_X;
     case Key.five:
@@ -106,6 +119,10 @@ export function getKeyCode(key: Key): number {
       return KEY_D;
     case Key.l:
       return KEY_L;
+    case Key.w:
+      return KEY_W;
+    case Key.W:
+      return KEY_W;
     case Key.x:
       return KEY_X;
     case Key.five:

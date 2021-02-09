@@ -90,7 +90,7 @@ describe("AlgorithmTrainer", () => {
     });
   });
 
-  describe.only("Evaluate Result", () => {
+  describe("Evaluate Result", () => {
     beforeEach(() => {
       cy.pressKey(Key.space);
       cy.pressKey(Key.space);
@@ -121,13 +121,25 @@ describe("AlgorithmTrainer", () => {
         })
       );
     });
-    // describe("approves correctly", () => {
-    //   it("approves on space pressed", () => {
-    //     cy.pressKey(Key.space);
-    //     assertBetweenTestsState();
-    //     // Assert approved message
-    //   });
-    // });
+    describe("approves correctly", () => {
+      it("approves on space pressed", () => {
+        cy.pressKey(Key.space);
+        assertBetweenTestsState();
+        // Assert approved message
+      });
+    });
+    describe("rejects correctly", () => {
+      it("rejects on w key pressed", () => {
+        cy.pressKey(Key.w);
+        assertBetweenTestsState();
+        // Assert rejected message
+      });
+      it("also rejects if shift + w is pressed", () => {
+        cy.pressKey(Key.W);
+        assertBetweenTestsState();
+        // Assert rejected message
+      });
+    });
   });
 });
 

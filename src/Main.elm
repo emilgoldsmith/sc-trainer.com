@@ -33,13 +33,7 @@ type alias Model =
 type TrainerState
     = BetweenTests
     | TestRunning
-    | EvaluatingResult { correctKeyState : KeyPressState, wrongKeyState : KeyPressState }
-
-
-type KeyPressState
-    = NotPressed
-    | PressedDown
-    | Released
+    | EvaluatingResult { correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool }
 
 
 type Msg
@@ -68,6 +62,9 @@ toKey keyString =
             Space
 
         "w" ->
+            W
+
+        "W" ->
             W
 
         _ ->
@@ -116,47 +113,39 @@ update msg model =
                 TestRunning ->
                     case msg of
                         KeyDown _ ->
-                            ( { model | trainerState = EvaluatingResult { correctKeyState = NotPressed, wrongKeyState = NotPressed } }, Cmd.none )
+                            ( { model | trainerState = EvaluatingResult { correctKeyPressStarted = False, wrongKeyPressStarted = False } }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
 
-                EvaluatingResult { wrongKeyState, correctKeyState } ->
+                EvaluatingResult ({ correctKeyPressStarted, wrongKeyPressStarted } as keyStates) ->
                     case msg of
                         KeyDown Space ->
-                            ( { model | trainerState = EvaluatingResult { wrongKeyState = wrongKeyState, correctKeyState = afterKeyDown correctKeyState } }, Cmd.none )
+                            ( { model | trainerState = EvaluatingResult { keyStates | correctKeyPressStarted = True } }, Cmd.none )
 
                         KeyUp Space ->
-                            ( { model | trainerState = EvaluatingResult { wrongKeyState = wrongKeyState, correctKeyState = afterKeyUp correctKeyState } }, Cmd.none )
+                            ( if correctKeyPressStarted then
+                                { model | trainerState = BetweenTests }
+
+                              else
+                                model
+                            , Cmd.none
+                            )
 
                         KeyDown W ->
-                            ( { model | trainerState = EvaluatingResult { wrongKeyState = afterKeyDown wrongKeyState, correctKeyState = correctKeyState } }, Cmd.none )
+                            ( { model | trainerState = EvaluatingResult { keyStates | wrongKeyPressStarted = True } }, Cmd.none )
 
                         KeyUp W ->
-                            ( { model | trainerState = EvaluatingResult { wrongKeyState = afterKeyUp wrongKeyState, correctKeyState = correctKeyState } }, Cmd.none )
+                            ( if wrongKeyPressStarted then
+                                { model | trainerState = BetweenTests }
+
+                              else
+                                model
+                            , Cmd.none
+                            )
 
                         _ ->
                             ( model, Cmd.none )
-
-
-afterKeyDown : KeyPressState -> KeyPressState
-afterKeyDown previous =
-    case previous of
-        NotPressed ->
-            PressedDown
-
-        x ->
-            x
-
-
-afterKeyUp : KeyPressState -> KeyPressState
-afterKeyUp previous =
-    case previous of
-        PressedDown ->
-            Released
-
-        x ->
-            x
 
 
 addSnackbar : Model -> String -> ( Model, Cmd Msg )
