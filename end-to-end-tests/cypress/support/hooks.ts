@@ -25,7 +25,7 @@ export const intercept = (): void => {
         `;
 
         function parseSendToApp(javascriptString: string) {
-          const regex = /function \w+\([,\w\s]*?\)[\s\n]*?\{[\s\n\w(),;=]+?(\w+)\((\w+)\s*=\s*\w+\.a\s*,\s*\w+\)[\s\S]+?\}/g;
+          const regex = /function \w+\([,\w\s]*?\)[\s\n]*?\{[\s\n\w(),;=]+?(\w+)\((\w+)\s*=\s*\w+\.a\s*,\s*\w+\)[\s;,\n]*(\w+)\s*\(\s*(\w+),[^,]+,\s*(\w+)\s*\([\s\S]+?\}/g;
           const candidates: RegExpExecArray[] = [];
           let result = regex.exec(javascriptString);
           while (result) {
@@ -62,15 +62,18 @@ export const intercept = (): void => {
           const afterSendToApp = javascriptString.substring(endIndex);
           const updaterFunctionName = getOrThrow(1, finalResult);
           const modelVariableName = getOrThrow(2, finalResult);
+          const enqueueEffectsFunctionName = getOrThrow(3, finalResult);
+          const managersVariableName = getOrThrow(4, finalResult);
+          const subscriptionsFunctionName = getOrThrow(5, finalResult);
           return {
             beforeSendToApp,
             sendToAppDefinition,
             afterSendToApp,
             modelVariableName,
             updaterFunctionName,
-            enqueueEffectsFunctionName: "_Platform_enqueueEffects",
-            managersVariableName: "managers",
-            subscriptionsFunctionName: "subscriptions",
+            enqueueEffectsFunctionName,
+            managersVariableName,
+            subscriptionsFunctionName,
           };
         }
 
