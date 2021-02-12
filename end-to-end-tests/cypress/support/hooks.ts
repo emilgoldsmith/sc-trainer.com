@@ -69,7 +69,6 @@ export const intercept = (): void => {
             updaterFunctionName: "stepper",
             enqueueEffectsFunctionName: "_Platform_enqueueEffects",
             managersVariableName: "managers",
-            initPairVariableName: "initPair",
             subscriptionsFunctionName: "subscriptions",
           };
         }
@@ -83,7 +82,6 @@ export const intercept = (): void => {
             updaterFunctionName,
             enqueueEffectsFunctionName,
             managersVariableName,
-            initPairVariableName,
             subscriptionsFunctionName,
           } = parseSendToApp(javascriptString);
 
@@ -132,7 +130,6 @@ export const intercept = (): void => {
             modelVariableName,
             updaterFunctionName,
             enqueueEffectsFunctionName,
-            initPairVariableName,
             managersVariableName,
             subscriptionsFunctionName,
           };
@@ -147,6 +144,8 @@ export const intercept = (): void => {
           );
         }
         function addObservers(parsedJs: ReturnType<typeof parseTheJavascript>) {
+          // Gotten by adding a console.log(JSON.stringify(initPair.b)) while the initial command was Cmd.None
+          const cmdDotNone = '{"$":3,"o":{"$":2,"m":{"$":"[]"}}}';
           return {
             ...parsedJs,
             beforeSendToAppInInitialize: addObserversToModel(
@@ -158,7 +157,7 @@ export const intercept = (): void => {
                 parsedJs.modelVariableName,
                 parsedJs.sendToAppDefinition
               ) +
-              `;window.END_TO_END_TEST_HELPERS.internal.registerModelUpdater((newModel) => {${parsedJs.modelVariableName} = newModel; ${parsedJs.updaterFunctionName}(newModel, true);${parsedJs.enqueueEffectsFunctionName}(${parsedJs.managersVariableName},${parsedJs.initPairVariableName}.b,${parsedJs.subscriptionsFunctionName}(newModel))});`,
+              `;window.END_TO_END_TEST_HELPERS.internal.registerModelUpdater((newModel) => {${parsedJs.modelVariableName} = newModel; ${parsedJs.updaterFunctionName}(newModel, true);${parsedJs.enqueueEffectsFunctionName}(${parsedJs.managersVariableName},${cmdDotNone},${parsedJs.subscriptionsFunctionName}(newModel))});`,
           };
         }
         function joinParsedJs(
