@@ -25,7 +25,7 @@ export const intercept = (): void => {
         `;
 
         function parseSendToApp(javascriptString: string) {
-          const regex = /function \w+\([,\w\s]*?\)[\s\n]*?\{[\s\n\w(),;=]+\w+\((\w+)\s*=\s*\w+\.a\s*,\s*\w+\)[\s\S]+?\}/g;
+          const regex = /function \w+\([,\w\s]*?\)[\s\n]*?\{[\s\n\w(),;=]+?(\w+)\((\w+)\s*=\s*\w+\.a\s*,\s*\w+\)[\s\S]+?\}/g;
           const candidates: RegExpExecArray[] = [];
           let result = regex.exec(javascriptString);
           while (result) {
@@ -60,13 +60,14 @@ export const intercept = (): void => {
             endIndex
           );
           const afterSendToApp = javascriptString.substring(endIndex);
-          const modelVariableName = getOrThrow(1, finalResult);
+          const updaterFunctionName = getOrThrow(1, finalResult);
+          const modelVariableName = getOrThrow(2, finalResult);
           return {
             beforeSendToApp,
             sendToAppDefinition,
             afterSendToApp,
             modelVariableName,
-            updaterFunctionName: "stepper",
+            updaterFunctionName,
             enqueueEffectsFunctionName: "_Platform_enqueueEffects",
             managersVariableName: "managers",
             subscriptionsFunctionName: "subscriptions",
