@@ -102,14 +102,27 @@ function buildKeyboardEvent(
   };
 }
 
+const getCustomWindow: Cypress.Chainable<undefined>["getCustomWindow"] = function () {
+  return cy.window().then((window) => {
+    expect(window).to.have.property("END_TO_END_TEST_HELPERS");
+    return window as Cypress.CustomWindow;
+  });
+};
+Cypress.Commands.add("getCustomWindow", getCustomWindow);
+
 const getApplicationState: Cypress.Chainable<undefined>["getApplicationState"] = function () {
-  return cy.window().its("END_TO_END_TEST_HELPERS").invoke("getModel");
+  return cy
+    .getCustomWindow()
+    .then((window) => window.END_TO_END_TEST_HELPERS.getModel());
 };
 Cypress.Commands.add("getApplicationState", getApplicationState);
 
 const setApplicationState: Cypress.Chainable<undefined>["setApplicationState"] = function (
   state
 ) {
-  return cy.window().its("END_TO_END_TEST_HELPERS").invoke("setModel", state);
+  cy.getCustomWindow().then((window) =>
+    window.END_TO_END_TEST_HELPERS.setModel(state)
+  );
+  return cy.wrap(undefined);
 };
 Cypress.Commands.add("setApplicationState", setApplicationState);

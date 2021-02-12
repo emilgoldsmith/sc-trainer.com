@@ -37,13 +37,6 @@ export const intercept = (): void => {
         const addToDocumentHead = (toAdd: string, body: string) =>
           body.replace("<head>", "<head>" + toAdd);
 
-        const e2eHelpersDefinition = `
-          <script>
-            (${addE2ETestHelpersToWindow.toString()}())
-          </script>
-        `;
-        console.log(e2eHelpersDefinition);
-
         function parseSendToApp(javascriptString: string) {
           const regex = /function \w+\([,\w\s]*?\)[\s\n]*?\{[\s\n\w(),;=]+?(\w+)\((\w+)\s*=\s*\w+\.a\s*,\s*\w+\)[\s;,\n]*(\w+)\s*\(\s*(\w+),[^,]+,\s*(\w+)\s*\([\s\S]+?\}/g;
           const candidates: RegExpExecArray[] = [];
@@ -181,7 +174,15 @@ export const intercept = (): void => {
                 parsedJs.modelVariableName,
                 parsedJs.sendToAppDefinition
               ) +
-              `;window.END_TO_END_TEST_HELPERS.internal.registerModelUpdater((newModel) => {${parsedJs.modelVariableName} = newModel; ${parsedJs.updaterFunctionName}(newModel, true);${parsedJs.enqueueEffectsFunctionName}(${parsedJs.managersVariableName},${cmdDotNone},${parsedJs.subscriptionsFunctionName}(newModel))});`,
+              `;window.END_TO_END_TEST_HELPERS.internal.registerModelUpdater((newModel) => {
+                ${parsedJs.modelVariableName} = newModel;
+                ${parsedJs.updaterFunctionName}(newModel, true);
+                ${parsedJs.enqueueEffectsFunctionName}(
+                    ${parsedJs.managersVariableName},
+                    ${cmdDotNone},
+                    ${parsedJs.subscriptionsFunctionName}(newModel),
+                )
+              });`,
           };
         }
         function joinParsedJs(
@@ -195,13 +196,10 @@ export const intercept = (): void => {
             parsed.afterInitialize
           );
         }
-        // const toLog = addObservers(parseTheJavascript(res.body));
-        // console.log(toLog);
-        // console.log(toLog.beforeSendToAppInInitialize);
-        // console.log(toLog.sendToAppDefinition);
-        // console.log(toLog.afterSendToAppInInitialize);
         const bodyWithE2eHelpers = addToDocumentHead(
-          e2eHelpersDefinition,
+          `<script>
+            (${addE2ETestHelpersToWindow.toString()}())
+          </script>`,
           res.body
         );
         const bodyWithModelObservers = joinParsedJs(
