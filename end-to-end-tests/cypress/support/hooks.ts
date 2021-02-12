@@ -1,3 +1,34 @@
+function addE2ETestHelpersToWindow() {
+  "use strict";
+  let model: Cypress.OurApplicationState | null = null;
+  let modelUpdater:
+    | ((newModel: Cypress.OurApplicationState) => void)
+    | null = null;
+
+  (window as Cypress.CustomWindow).END_TO_END_TEST_HELPERS = {
+    getModel() {
+      if (model === null) {
+        throw new Error(
+          "Model was attempted to be accessed before it has been set"
+        );
+      }
+      return model;
+    },
+    setModel(newModel) {
+      if (modelUpdater === null) {
+        throw new Error(
+          "Model attempted to be set before model has been registered"
+        );
+      }
+      modelUpdater(newModel);
+      model = newModel;
+    },
+    internal: {
+      setModel: (newModel) => (model = newModel),
+      registerModelUpdater: (updater) => (modelUpdater = updater),
+    },
+  };
+}
 export const intercept = (): void => {
   cy.intercept(
     new RegExp(String.raw`^${Cypress.config().baseUrl}/$`),
@@ -8,21 +39,10 @@ export const intercept = (): void => {
 
         const e2eHelpersDefinition = `
           <script>
-            (function(){
-              'use strict';
-              var model = null;
-              var modelUpdater = null;
-              window.END_TO_END_TEST_HELPERS = {
-                getModel: () => model,
-                setModel: newModel => {modelUpdater(newModel);model=newModel},
-                internal: {
-                  setModel: newModel => (model=newModel),
-                  registerModelUpdater: updater => (modelUpdater = updater)
-                }
-              };
-            }())
+            (${addE2ETestHelpersToWindow.toString()}())
           </script>
         `;
+        console.log(e2eHelpersDefinition);
 
         function parseSendToApp(javascriptString: string) {
           const regex = /function \w+\([,\w\s]*?\)[\s\n]*?\{[\s\n\w(),;=]+?(\w+)\((\w+)\s*=\s*\w+\.a\s*,\s*\w+\)[\s;,\n]*(\w+)\s*\(\s*(\w+),[^,]+,\s*(\w+)\s*\([\s\S]+?\}/g;

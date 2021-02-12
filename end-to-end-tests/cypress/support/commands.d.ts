@@ -1,6 +1,21 @@
 /// <reference types="cypress" />
 
 declare namespace Cypress {
+  import { Key } from "./keys";
+  type CustomWindow = Window &
+    typeof globalThis & {
+      END_TO_END_TEST_HELPERS: {
+        getModel(): OurApplicationState;
+        setModel(newModel: Cypress.OurApplicationState): void;
+        internal: {
+          setModel(newModel: OurApplicationState): void;
+          registerModelUpdater(
+            updater: (newModel: OurApplicationState) => void
+          ): void;
+        };
+      };
+    };
+
   /**
    * A "fake type" for our application state as we're essentially
    * going to be passing around an 'any type', but this ensures we
@@ -36,7 +51,7 @@ declare namespace Cypress {
      * @example
      * cy.pressKey(Key.space);
      */
-    pressKey(key: import("./keys").Key): void;
+    pressKey(key: Key): void;
     /**
      * Holds down a key in the global scope for a "long" time before releasing it
      * not focusing on any specific node
@@ -44,7 +59,7 @@ declare namespace Cypress {
      * @example
      * cy.longPressKey(Key.space);
      */
-    longPressKey(key: import("./keys").Key): void;
+    longPressKey(key: Key): void;
     /**
      * Get the current state of our application, do not try to modify it
      * just pass it in to setApplicationState at some point later to restore
