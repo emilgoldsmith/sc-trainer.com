@@ -1,3 +1,4 @@
+import { intercept } from "support/hooks";
 import { getKeyValue, Key } from "support/keys";
 
 const mousePositions: Cypress.PositionType[] = [
@@ -12,9 +13,47 @@ const mousePositions: Cypress.PositionType[] = [
   "bottomLeft",
 ];
 
+class StateCache {
+  private elmModel: Cypress.OurApplicationState | null = null;
+  constructor(private name: string, private getToThatState: () => void) {}
+
+  populateCache() {
+    intercept();
+    cy.visit("/");
+    this.getToThatState();
+    return cy
+      .getApplicationState()
+      .then((elmModel) => (this.elmModel = elmModel));
+  }
+
+  restoreState() {
+    if (this.elmModel === null)
+      throw new Error(
+        `Attempted to restore the ${this.name} state before cache was populated`
+      );
+    return cy.setApplicationState(this.elmModel);
+  }
+}
+const states = {
+  initial: new StateCache("initial", () => {}),
+  testRunning: new StateCache("testRunning", () => {
+    states.initial.restoreState();
+    cy.pressKey(Key.space);
+  }),
+  evaluateResult: new StateCache("evaluateResult", () => {
+    states.testRunning.restoreState();
+    cy.pressKey(Key.space);
+  }),
+} as const;
+
 describe("AlgorithmTrainer", () => {
+  before(() => {
+    states.initial.populateCache();
+  });
+
   beforeEach(() => {
     cy.visit("/");
+    states.initial.restoreState();
     assertBetweenTestsState();
     cy.clock();
   });
@@ -38,8 +77,11 @@ describe("AlgorithmTrainer", () => {
   });
 
   describe("Test Running", () => {
+    before(() => {
+      states.testRunning.populateCache();
+    });
     beforeEach(() => {
-      cy.pressKey(Key.space);
+      states.testRunning.restoreState();
       assertTestRunningState();
     });
 
@@ -93,10 +135,12 @@ describe("AlgorithmTrainer", () => {
   });
 
   describe("Evaluate Result", () => {
+    before(() => {
+      states.evaluateResult.populateCache();
+    });
+
     beforeEach(() => {
-      cy.pressKey(Key.space);
-      assertTestRunningState();
-      cy.pressKey(Key.space);
+      states.evaluateResult.restoreState();
       assertEvaluateResultState();
     });
 

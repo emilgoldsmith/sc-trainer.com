@@ -32,21 +32,62 @@ const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
 ) => cy.get(`[data-testid=${selector}]`, ...args);
 Cypress.Commands.add("getByTestId", getByTestId);
 
-const pressKey: Cypress.Chainable<undefined>["pressKey"] = (key) => {
+const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (key) {
   const event = buildKeyboardEvent(key);
-  cy.document()
-    .trigger("keydown", event)
-    .trigger("keypress", event)
-    .trigger("keyup", event);
+  const log = Cypress.log({
+    name: "pressKey",
+    displayName: "PRESS KEY",
+    message: `'${getKeyValue(key)}' without any dom target`,
+    autoEnd: false,
+    consoleProps: () => ({ event }),
+  });
+  log.snapshot("before");
+
+  cy.document({ log: false })
+    .trigger("keydown", { ...event, log: false })
+    .trigger("keypress", { ...event, log: false })
+    .trigger("keyup", { ...event, log: false });
+
+  new Cypress.Promise(() => {
+    log.snapshot("after");
+    log.end();
+  });
 };
 Cypress.Commands.add("pressKey", pressKey);
 
-const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = (key) => {
-  const event = buildKeyboardEvent(key);
-  cy.document().trigger("keydown", event).trigger("keypress", event);
+const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
+  key
+) {
   // A somewhat arbitrary number that just is long enough for a very long press
-  cy.tick(3000);
-  cy.document().trigger("keypress", event).trigger("keyup", event);
+  const LONG_TIME_MS = 3000;
+  const stringDisplayableKey = `'${getKeyValue(key)}'`;
+  const event = buildKeyboardEvent(key);
+  const log = Cypress.log({
+    name: "longPressKey",
+    displayName: "LONG PRESS KEY",
+    message: `${stringDisplayableKey} without any dom target`,
+    autoEnd: false,
+    consoleProps: () => ({
+      event,
+      "Key Press Duration In Millisecond": LONG_TIME_MS,
+    }),
+  });
+  log.snapshot("before");
+
+  cy.document({ log: false })
+    .trigger("keydown", { ...event, log: false })
+    .trigger("keypress", { ...event, log: false });
+  cy.log(`Pressed down ${stringDisplayableKey}`);
+  cy.tick(LONG_TIME_MS);
+  cy.document({ log: false })
+    .trigger("keypress", { ...event, log: false })
+    .trigger("keyup", { ...event, log: false });
+  cy.log(`Released ${stringDisplayableKey}`);
+
+  new Cypress.Promise(() => {
+    log.snapshot("after");
+    log.end();
+  });
 };
 Cypress.Commands.add("longPressKey", longPressKey);
 
@@ -60,3 +101,15 @@ function buildKeyboardEvent(
     constructor: KeyboardEvent,
   };
 }
+
+const getApplicationState: Cypress.Chainable<undefined>["getApplicationState"] = function () {
+  return cy.window().its("END_TO_END_TEST_HELPERS").invoke("getModel");
+};
+Cypress.Commands.add("getApplicationState", getApplicationState);
+
+const setApplicationState: Cypress.Chainable<undefined>["setApplicationState"] = function (
+  state
+) {
+  return cy.window().its("END_TO_END_TEST_HELPERS").invoke("setModel", state);
+};
+Cypress.Commands.add("setApplicationState", setApplicationState);
