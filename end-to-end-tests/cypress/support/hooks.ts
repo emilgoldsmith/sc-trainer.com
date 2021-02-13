@@ -1,3 +1,5 @@
+beforeEach(intercept);
+
 function addE2ETestHelpersToWindow() {
   "use strict";
   let model: Cypress.OurApplicationState | null = null;
@@ -29,7 +31,8 @@ function addE2ETestHelpersToWindow() {
     },
   };
 }
-export const intercept = (): void => {
+
+export function intercept(): void {
   cy.intercept(
     new RegExp(String.raw`^${Cypress.config().baseUrl}/$`),
     (req) => {
@@ -209,6 +212,4 @@ export const intercept = (): void => {
       });
     }
   );
-};
-
-beforeEach(intercept);
+}
