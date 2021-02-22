@@ -2,11 +2,22 @@
 
 declare namespace Cypress {
   import { Key } from "./keys";
+
   type CustomWindow = Window &
     typeof globalThis & {
       END_TO_END_TEST_HELPERS: {
+        /**
+         * Get a snapshot of the current application state
+         */
         getModel(): OurApplicationState;
+        /**
+         * Reset the application state to a previous snapshot
+         */
         setModel(newModel: Cypress.OurApplicationState): void;
+        /**
+         * Only meant to be used within the javascript injection,
+         * not ever within Cypress code
+         */
         internal: {
           setModel(newModel: OurApplicationState): void;
           registerModelUpdater(
@@ -18,7 +29,8 @@ declare namespace Cypress {
 
   /**
    * A "fake type" for our application state as we're essentially
-   * going to be passing around an 'any type', but this ensures we
+   * going to be passing around an 'any type', as it will be passed in
+   * from untyped code, but this ensures we
    * will not be trying to modify it or construct it, only get it
    * from these functions and pass in ones we already got which
    * is the intention of this type
@@ -31,6 +43,12 @@ declare namespace Cypress {
     /**
      * Gets the window variable, but also asserts that it has our custom additions
      * to the window for test purposes and returns the extended window type
+     *
+     * @example
+     *
+     * cy.getCustomWindow().then(window => {
+     *   return window.END_TO_END_TEST_HELPERS.getModel();
+     * })
      */
     getCustomWindow(options?: {
       log?: boolean;
@@ -56,8 +74,8 @@ declare namespace Cypress {
      * @example
      * cy.pressKey(Key.space);
      */
-
     pressKey(key: Key): void;
+
     /**
      * Holds down a key in the global scope for a "long" time before releasing it
      * not focusing on any specific node
@@ -65,8 +83,8 @@ declare namespace Cypress {
      * @example
      * cy.longPressKey(Key.space);
      */
-
     longPressKey(key: Key): void;
+
     /**
      * Get the current state of our application, do not try to modify it
      * just pass it in to setApplicationState at some point later to restore

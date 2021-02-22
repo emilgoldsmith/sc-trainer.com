@@ -51,12 +51,24 @@ const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (key) {
 };
 Cypress.Commands.add("pressKey", pressKey);
 
+function buildKeyboardEvent(
+  key: Key
+): KeyboardEventInit &
+  Partial<Cypress.TriggerOptions> & { constructor: typeof KeyboardEvent } {
+  return {
+    key: getKeyValue(key),
+    code: getCode(key),
+    keyCode: getKeyCode(key),
+    constructor: KeyboardEvent,
+  };
+}
+
 const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
   key
 ) {
   // A somewhat arbitrary number that just is long enough for a very long press
   const LONG_TIME_MS = 3000;
-  const stringDisplayableKey = `'${getKeyValue(key)}'`;
+  const stringDisplayableKey = "'" + getKeyValue(key) + "'";
   const event = buildKeyboardEvent(key);
   cy.withOverallNameLogged(
     {
@@ -82,17 +94,6 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
   );
 };
 Cypress.Commands.add("longPressKey", longPressKey);
-
-function buildKeyboardEvent(
-  key: Key
-): KeyboardEventInit & { constructor: typeof KeyboardEvent } {
-  return {
-    key: getKeyValue(key),
-    code: getCode(key),
-    keyCode: getKeyCode(key),
-    constructor: KeyboardEvent,
-  };
-}
 
 const getCustomWindow: Cypress.Chainable<undefined>["getCustomWindow"] = function (
   options: {
@@ -124,7 +125,7 @@ const getApplicationState: Cypress.Chainable<undefined>["getApplicationState"] =
     (consolePropsSetter) =>
       cy.getCustomWindow({ log: false }).then((window) => {
         const state = window.END_TO_END_TEST_HELPERS.getModel();
-        consolePropsSetter({ appState: state });
+        consolePropsSetter({ name, appState: state });
         return state;
       })
   );
@@ -146,7 +147,7 @@ const setApplicationState: Cypress.Chainable<undefined>["setApplicationState"] =
       name: "setApplicationState",
       displayName: "SET APPLICATION STATE",
       message: `to ${stateDescription} state`,
-      consoleProps: () => ({ state }),
+      consoleProps: () => ({ appState: state, name: stateDescription }),
     },
     () => {
       cy.getCustomWindow({ log: false }).then((window) =>
@@ -165,7 +166,7 @@ const withOverallNameLogged: Cypress.Chainable<undefined>["withOverallNameLogged
     ...logConfig,
     ...(logConfig.autoEnd === true ? {} : { autoEnd: false }),
   });
-  const consolePropsSetter = (consoleProps: { [key: string]: any }): void => {
+  const consolePropsSetter = (consoleProps: Cypress.ObjectLike): void => {
     log.set({ consoleProps: () => consoleProps });
   };
   const handleEndOfCommand = () => {
