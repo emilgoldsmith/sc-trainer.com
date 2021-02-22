@@ -90,27 +90,31 @@ describe("AlgorithmTrainer", () => {
     });
 
     describe("ends test correctly", () => {
-      it("on click anywhere", () => {
+      it.only("on click anywhere", () => {
         mousePositions.forEach((position) => {
-          cy.wrap(undefined, { log: false }).then(() =>
-            Cypress.log({
+          cy.withOverallNameLogged(
+            {
               name: "testing click",
               displayName: "TESTING CLICK",
               message: `position ${position}`,
               consoleProps: () => ({ position }),
-            })
+            },
+            () => {
+              cy.get("body").click(position);
+              assertEvaluateResultState();
+            }
           );
-          cy.get("body").click(position);
-          assertEvaluateResultState();
-          cy.wrap(undefined, { log: false }).then(() =>
-            Cypress.log({
+          cy.withOverallNameLogged(
+            {
               name: "resetting state",
               displayName: "RESETTING STATE",
               message: "to testRunning state",
-            })
+            },
+            () => {
+              states.testRunning.restoreState();
+              assertTestRunningState();
+            }
           );
-          states.testRunning.restoreState();
-          assertTestRunningState();
         });
       });
       describe("on pressing any keyboard key", () => {

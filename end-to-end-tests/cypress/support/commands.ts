@@ -34,24 +34,20 @@ Cypress.Commands.add("getByTestId", getByTestId);
 
 const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (key) {
   const event = buildKeyboardEvent(key);
-  const log = Cypress.log({
-    name: "pressKey",
-    displayName: "PRESS KEY",
-    message: `'${getKeyValue(key)}' without any dom target`,
-    autoEnd: false,
-    consoleProps: () => ({ event }),
-  });
-  log.snapshot("before");
-
-  cy.document({ log: false })
-    .trigger("keydown", { ...event, log: false })
-    .trigger("keypress", { ...event, log: false })
-    .trigger("keyup", { ...event, log: false });
-
-  new Cypress.Promise(() => {
-    log.snapshot("after");
-    log.end();
-  });
+  cy.withOverallNameLogged(
+    {
+      name: "pressKey",
+      displayName: "PRESS KEY",
+      message: `'${getKeyValue(key)}' without any dom target`,
+      consoleProps: () => ({ event }),
+    },
+    () => {
+      cy.document({ log: false })
+        .trigger("keydown", { ...event, log: false })
+        .trigger("keypress", { ...event, log: false })
+        .trigger("keyup", { ...event, log: false });
+    }
+  );
 };
 Cypress.Commands.add("pressKey", pressKey);
 
@@ -62,32 +58,28 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
   const LONG_TIME_MS = 3000;
   const stringDisplayableKey = `'${getKeyValue(key)}'`;
   const event = buildKeyboardEvent(key);
-  const log = Cypress.log({
-    name: "longPressKey",
-    displayName: "LONG PRESS KEY",
-    message: `${stringDisplayableKey} without any dom target`,
-    autoEnd: false,
-    consoleProps: () => ({
-      event,
-      "Key Press Duration In Millisecond": LONG_TIME_MS,
-    }),
-  });
-  log.snapshot("before");
-
-  cy.document({ log: false })
-    .trigger("keydown", { ...event, log: false })
-    .trigger("keypress", { ...event, log: false });
-  cy.log(`Pressed down ${stringDisplayableKey}`);
-  cy.tick(LONG_TIME_MS);
-  cy.document({ log: false })
-    .trigger("keypress", { ...event, log: false })
-    .trigger("keyup", { ...event, log: false });
-  cy.log(`Released ${stringDisplayableKey}`);
-
-  new Cypress.Promise(() => {
-    log.snapshot("after");
-    log.end();
-  });
+  cy.withOverallNameLogged(
+    {
+      name: "longPressKey",
+      displayName: "LONG PRESS KEY",
+      message: `${stringDisplayableKey} without any dom target`,
+      consoleProps: () => ({
+        event,
+        "Key Press Duration In Millisecond": LONG_TIME_MS,
+      }),
+    },
+    () => {
+      cy.document({ log: false })
+        .trigger("keydown", { ...event, log: false })
+        .trigger("keypress", { ...event, log: false });
+      cy.log(`Pressed down ${stringDisplayableKey}`);
+      cy.tick(LONG_TIME_MS);
+      cy.document({ log: false })
+        .trigger("keypress", { ...event, log: false })
+        .trigger("keyup", { ...event, log: false });
+      cy.log(`Released ${stringDisplayableKey}`);
+    }
+  );
 };
 Cypress.Commands.add("longPressKey", longPressKey);
 
@@ -122,21 +114,20 @@ Cypress.Commands.add("getCustomWindow", getCustomWindow);
 const getApplicationState: Cypress.Chainable<undefined>["getApplicationState"] = function (
   name
 ) {
-  const log = Cypress.log({
-    name: "getApplicationState",
-    displayName: "GET APPLICATION STATE",
-    message: name === undefined ? "current" : `current ${name} state`,
-    autoEnd: false,
-    consoleProps: () => ({ name }),
-  });
-  return cy
-    .getCustomWindow({ log: false })
-    .then((window) => window.END_TO_END_TEST_HELPERS.getModel())
-    .then((state) => {
-      log.set({ consoleProps: () => ({ state, name }) });
-      log.snapshot("after");
-      log.end();
-    });
+  return cy.withOverallNameLogged(
+    {
+      name: "getApplicationState",
+      displayName: "GET APPLICATION STATE",
+      message: name === undefined ? "current" : `current ${name} state`,
+      consoleProps: () => ({ name }),
+    },
+    (consolePropsSetter) =>
+      cy.getCustomWindow({ log: false }).then((window) => {
+        const state = window.END_TO_END_TEST_HELPERS.getModel();
+        consolePropsSetter({ appState: state });
+        return state;
+      })
+  );
 };
 Cypress.Commands.add("getApplicationState", getApplicationState);
 
@@ -144,22 +135,56 @@ const setApplicationState: Cypress.Chainable<undefined>["setApplicationState"] =
   state,
   name
 ) {
+  if (state === undefined) {
+    throw new Error(
+      "setApplicationState called with undefined state, which is not allowed"
+    );
+  }
   const stateDescription = name || "unknown";
-  const log = Cypress.log({
-    name: "setApplicationState",
-    displayName: "SET APPLICATION STATE",
-    message: `to ${stateDescription} state`,
-    autoEnd: false,
-    consoleProps: () => ({ state }),
-  });
-  log.snapshot("before");
-  cy.getCustomWindow({ log: false }).then((window) =>
-    window.END_TO_END_TEST_HELPERS.setModel(state)
+  cy.withOverallNameLogged(
+    {
+      name: "setApplicationState",
+      displayName: "SET APPLICATION STATE",
+      message: `to ${stateDescription} state`,
+      consoleProps: () => ({ state }),
+    },
+    () => {
+      cy.getCustomWindow({ log: false }).then((window) =>
+        window.END_TO_END_TEST_HELPERS.setModel(state)
+      );
+    }
   );
-  new Cypress.Promise(() => {
-    log.snapshot("after");
-    log.end();
-  });
-  return cy.wrap(undefined, { log: false });
 };
 Cypress.Commands.add("setApplicationState", setApplicationState);
+
+const withOverallNameLogged: Cypress.Chainable<undefined>["withOverallNameLogged"] = function (
+  logConfig,
+  commandsCallback
+) {
+  const log = Cypress.log({
+    ...logConfig,
+    ...(logConfig.autoEnd === true ? {} : { autoEnd: false }),
+  });
+  const consolePropsSetter = (consoleProps: { [key: string]: any }): void => {
+    log.set({ consoleProps: () => consoleProps });
+  };
+  const handleEndOfCommand = () => {
+    log.snapshot("after");
+    if (logConfig.autoEnd !== true) {
+      log.end();
+    }
+  };
+
+  log.snapshot("before");
+  const callbackReturnValue = commandsCallback(consolePropsSetter);
+  if (Cypress.isCy(callbackReturnValue)) {
+    return callbackReturnValue.then((returnValue) => {
+      handleEndOfCommand();
+      return returnValue;
+    }) as typeof callbackReturnValue;
+  } else {
+    cy.wrap(undefined, { log: false }).then(handleEndOfCommand);
+    return callbackReturnValue;
+  }
+};
+Cypress.Commands.add("withOverallNameLogged", withOverallNameLogged);
