@@ -1,4 +1,4 @@
-beforeEach(intercept);
+beforeEach(interceptAddingElmModelObserversAndModifiers);
 
 function addE2ETestHelpersToWindow() {
   "use strict";
@@ -32,7 +32,7 @@ function addE2ETestHelpersToWindow() {
   };
 }
 
-export function intercept(): void {
+export function interceptAddingElmModelObserversAndModifiers(): void {
   cy.intercept(
     new RegExp(String.raw`^${Cypress.config().baseUrl}/$`),
     (req) => {

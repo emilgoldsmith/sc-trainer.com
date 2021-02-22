@@ -1,4 +1,4 @@
-import { intercept } from "support/hooks";
+import { interceptAddingElmModelObserversAndModifiers } from "support/hooks";
 import { getKeyValue, Key } from "support/keys";
 
 const mousePositions: Cypress.PositionType[] = [
@@ -18,7 +18,7 @@ class StateCache {
   constructor(private name: string, private getToThatState: () => void) {}
 
   populateCache() {
-    intercept();
+    interceptAddingElmModelObserversAndModifiers();
     cy.visit("/");
     this.getToThatState();
     return cy
