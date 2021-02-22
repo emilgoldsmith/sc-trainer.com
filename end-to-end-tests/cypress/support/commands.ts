@@ -102,27 +102,64 @@ function buildKeyboardEvent(
   };
 }
 
-const getCustomWindow: Cypress.Chainable<undefined>["getCustomWindow"] = function () {
-  return cy.window().then((window) => {
-    expect(window).to.have.property("END_TO_END_TEST_HELPERS");
-    return window as Cypress.CustomWindow;
+const getCustomWindow: Cypress.Chainable<undefined>["getCustomWindow"] = function (
+  options: {
+    log?: boolean;
+  } = {}
+) {
+  return cy.window(options).then((window) => {
+    const customWindow = window as Cypress.CustomWindow;
+    if (customWindow.END_TO_END_TEST_HELPERS === undefined) {
+      throw new Error(
+        "Not a populated custom window, doesn't have END_TO_END_TEST_HELPERS property"
+      );
+    }
+    return customWindow;
   });
 };
 Cypress.Commands.add("getCustomWindow", getCustomWindow);
 
-const getApplicationState: Cypress.Chainable<undefined>["getApplicationState"] = function () {
+const getApplicationState: Cypress.Chainable<undefined>["getApplicationState"] = function (
+  name
+) {
+  const log = Cypress.log({
+    name: "getApplicationState",
+    displayName: "GET APPLICATION STATE",
+    message: name === undefined ? "current" : `current ${name} state`,
+    autoEnd: false,
+    consoleProps: () => ({ name }),
+  });
   return cy
-    .getCustomWindow()
-    .then((window) => window.END_TO_END_TEST_HELPERS.getModel());
+    .getCustomWindow({ log: false })
+    .then((window) => window.END_TO_END_TEST_HELPERS.getModel())
+    .then((state) => {
+      log.set({ consoleProps: () => ({ state, name }) });
+      log.snapshot("after");
+      log.end();
+    });
 };
 Cypress.Commands.add("getApplicationState", getApplicationState);
 
 const setApplicationState: Cypress.Chainable<undefined>["setApplicationState"] = function (
-  state
+  state,
+  name
 ) {
-  cy.getCustomWindow().then((window) =>
+  const stateDescription = name || "unknown";
+  const log = Cypress.log({
+    name: "setApplicationState",
+    displayName: "SET APPLICATION STATE",
+    message: `to ${stateDescription} state`,
+    autoEnd: false,
+    consoleProps: () => ({ state }),
+  });
+  log.snapshot("before");
+  cy.getCustomWindow({ log: false }).then((window) =>
     window.END_TO_END_TEST_HELPERS.setModel(state)
   );
-  return cy.wrap(undefined);
+  new Cypress.Promise(() => {
+    log.snapshot("after");
+    log.end();
+  });
+  return cy.wrap(undefined, { log: false });
 };
 Cypress.Commands.add("setApplicationState", setApplicationState);

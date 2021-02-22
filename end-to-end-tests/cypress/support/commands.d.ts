@@ -27,12 +27,10 @@ declare namespace Cypress {
     identifierToMakeItUnique: "ourApplicationState";
   };
 
-  interface LogConfig {
-    autoEnd: boolean;
-  }
-
   interface Chainable<Subject> {
-    getCustomWindow(): Cypress.Chainable<CustomWindow>;
+    getCustomWindow(options?: {
+      log?: boolean;
+    }): Cypress.Chainable<CustomWindow>;
     /**
      * Get an html node based on it's data-testid property set in our
      * html code to reliably target parts of our DOM.
@@ -72,7 +70,7 @@ declare namespace Cypress {
      *   return cy.setApplicationState(state);
      * })
      */
-    getApplicationState(): Chainable<OurApplicationState>;
+    getApplicationState(name?: string): Chainable<OurApplicationState>;
     /**
      * Restore the state of the application to a previous state.
      * Only use with a state gotten from cy.getApplicationState()
@@ -83,6 +81,9 @@ declare namespace Cypress {
      *   return cy.setApplicationState(state);
      * })
      */
-    setApplicationState(state: OurApplicationState): Chainable<undefined>;
+    setApplicationState(
+      state: OurApplicationState,
+      name?: string
+    ): Chainable<undefined>;
   }
 }

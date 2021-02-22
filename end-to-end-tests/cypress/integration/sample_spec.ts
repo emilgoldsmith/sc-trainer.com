@@ -22,7 +22,7 @@ class StateCache {
     cy.visit("/");
     this.getToThatState();
     return cy
-      .getApplicationState()
+      .getApplicationState(this.name)
       .then((elmModel) => (this.elmModel = elmModel));
   }
 
@@ -31,7 +31,7 @@ class StateCache {
       throw new Error(
         `Attempted to restore the ${this.name} state before cache was populated`
       );
-    return cy.setApplicationState(this.elmModel);
+    return cy.setApplicationState(this.elmModel, this.name);
   }
 }
 const states = {
@@ -90,13 +90,28 @@ describe("AlgorithmTrainer", () => {
     });
 
     describe("ends test correctly", () => {
-      describe("on click anywhere", () => {
-        mousePositions.forEach((position) =>
-          it(`tested in ${position}`, () => {
-            cy.get("body").click(position);
-            assertEvaluateResultState();
-          })
-        );
+      it("on click anywhere", () => {
+        mousePositions.forEach((position) => {
+          cy.wrap(undefined, { log: false }).then(() =>
+            Cypress.log({
+              name: "testing click",
+              displayName: "TESTING CLICK",
+              message: `position ${position}`,
+              consoleProps: () => ({ position }),
+            })
+          );
+          cy.get("body").click(position);
+          assertEvaluateResultState();
+          cy.wrap(undefined, { log: false }).then(() =>
+            Cypress.log({
+              name: "resetting state",
+              displayName: "RESETTING STATE",
+              message: "to testRunning state",
+            })
+          );
+          states.testRunning.restoreState();
+          assertTestRunningState();
+        });
       });
       describe("on pressing any keyboard key", () => {
         const tests: Key[] = [
@@ -193,21 +208,21 @@ describe("AlgorithmTrainer", () => {
 });
 
 function assertTestRunningState() {
-  cy.getByTestId("test-running-container");
+  cy.getByTestId("test-running-container").should("exist");
 }
 
 function assertBetweenTestsState() {
-  cy.getByTestId("between-tests-container");
+  cy.getByTestId("between-tests-container").should("exist");
 }
 
 function assertEvaluateResultState() {
-  cy.getByTestId("evaluate-test-result-container");
+  cy.getByTestId("evaluate-test-result-container").should("exist");
 }
 
 function assertCorrectEvaluationMessage() {
-  cy.getByTestId("correct-evaluation-message");
+  cy.getByTestId("correct-evaluation-message").should("exist");
 }
 
 function assertWrongEvaluationMessage() {
-  cy.getByTestId("wrong-evaluation-message");
+  cy.getByTestId("wrong-evaluation-message").should("exist");
 }
