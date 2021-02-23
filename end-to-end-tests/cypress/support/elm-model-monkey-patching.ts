@@ -137,30 +137,33 @@ function parseTheJavascript(htmlString: string) {
 }
 
 function parseSendToAppFunction(htmlString: string) {
-  const anyAmountOfWhitespaceIncludingNewlinesRegex = String.raw`[\s\n]*`;
   const regex = new RegExp(
     [
       // function keyword + function name + possible whitespace after
-      String.raw`function \w+\s*`,
+      /function \w+\s*/,
       // variable amount of function argument definitions
-      String.raw`\([,\w\s]*\)`,
-      anyAmountOfWhitespaceIncludingNewlinesRegex,
+      /\([,\w\s]*\)/,
+      // Any amount of whitespace including newlines
+      /[\s\n]*/,
       // Start of function body
-      String.raw`\{`,
+      /\{/,
       // Pass through as few lines of code as possible until the next pattern matches
       // is pretty much equivalent to [\s\S]+? but will just fail a bit more accurately
       // as we for example don't expect any curly braces, this specifically specifies variable
       // names as \w, and different operators such as , ) ; = (
-      String.raw`[\s\n\w(),;=]*?`,
-      // The next few lines we are intending to capture this line (shown unminimized): stepper(model = pair.a, viewMetadata);
+      /[\s\n\w(),;=]*?/,
+      // The next few lines we are intending to capture this line (shown unminimized): `stepper(model = pair.a, viewMetadata);`
       // Here we first capture the function name, as we need to call this when the model updates
-      String.raw`(\w+)`,
+      /(\w+)/,
       // Start argument specification
-      String.raw`\(`,
+      /\(/,
       // Capture the model variable name in the first argument `model = pair.a` (unminimized version)
-      String.raw`(\w+)\s*=\s*\w+\.a\s*,`,
-      String.raw`\s*\w+\)[\s;,\n]*(\w+)\s*\(\s*(\w+),[^,]+,\s*(\w+)\s*\([\s\S]+?\}`,
-    ].join(""),
+      /(\w+)\s*=\s*\w+\.a\s*,/,
+      /\s*\w+\)[\s;,\n]*(\w+)\s*\(\s*(\w+),[^,]+,\s*(\w+)\s*\([\s\S]+?\}/,
+    ]
+      .map((x) => x.toString().substring(1, x.toString().length - 1))
+      .concat([])
+      .join(""),
     "g"
   );
   const candidates: RegExpExecArray[] = [];
