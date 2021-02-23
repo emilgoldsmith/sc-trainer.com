@@ -182,10 +182,12 @@ function parseSendToAppFunction(htmlString: string) {
        * We're also lucky that the `.a` seems to be preserved across minimizing/uglifying, though it could
        * probably work with matching towards an arbitrary property name there too
        */
+      // CAPTURE NUMBER 1:
       // Here we first capture the function name, as we need to call this when the model updates
       /(\w+)/,
       // Start argument specification
       /\(/,
+      // CAPTURE NUMBER 2:
       // Capture the model variable name in the first argument `model = pair.a` (unminimized version)
       /(\w+)\s*=\s*\w+\.a\s*,/,
       // Match the second argument which we don't care about
@@ -202,15 +204,18 @@ function parseSendToAppFunction(htmlString: string) {
        * these next lines try to capture
        * (unminified version) `_Platform_enqueueEffects(managers, pair.b, subscriptions(model));`
        */
+      // CAPTURE NUMBER 3:
       // Capture the function name
       /(\w+)\s*/,
       // Start argument parsing
       /\(/,
+      // CAPTURE NUMBER 4:
       // Capture the managers variable
       /\s*(\w+),/,
       // Parse the next argument which we don't care about
       /[^,]+,/,
-      // Parse the subscriptions function name, as soon as we reach the function call `(`
+      // CAPTURE NUMBER 5:
+      // Capture the subscriptions function name, as soon as we reach the function call `(`
       // We no longer care about the rest as we're confident it's the right place
       /\s*(\w+)\s*\(/,
       // Parse anything including newlines
@@ -221,50 +226,20 @@ function parseSendToAppFunction(htmlString: string) {
     ],
     "g"
   );
-  const candidates: RegExpExecArray[] = [];
-  let result = regex.exec(htmlString);
-  while (result) {
-    candidates.push(result);
-    result = regex.exec(htmlString);
-  }
-  const finalResult = candidates[0];
-  if (finalResult === undefined || candidates.length !== 1) {
-    throw new Error(
-      "Our regular expression for patching elm to be able to programatically modify state found a wrong amount of candidates, which should not happen, maybe the elm version or our minifying setup changed?    " +
-        JSON.stringify(candidates)
-    );
-  }
-  function getOrThrow<T>(index: number, list: T[]): T {
-    const candidate = list[index];
-    if (candidate === undefined) {
-      throw new Error(
-        "Expected item to exist at index " +
-          index +
-          " in list " +
-          JSON.stringify(list)
-      );
-    }
-    return candidate;
-  }
+  const candidates: RegExpExecArray[] = applyGlobalRegex(regex, htmlString);
+  const finalResult = ensureSingletonListAndExtract(candidates);
+
   const startIndex = finalResult.index;
   const endIndex = finalResult.index + getOrThrow(0, finalResult).length;
-  const beforeSendToApp = htmlString.substring(0, startIndex);
-  const sendToAppDefinition = htmlString.substring(startIndex, endIndex);
-  const afterSendToApp = htmlString.substring(endIndex);
-  const updaterFunctionName = getOrThrow(1, finalResult);
-  const modelVariableName = getOrThrow(2, finalResult);
-  const enqueueEffectsFunctionName = getOrThrow(3, finalResult);
-  const managersVariableName = getOrThrow(4, finalResult);
-  const subscriptionsFunctionName = getOrThrow(5, finalResult);
   return {
-    beforeSendToApp,
-    sendToAppDefinition,
-    afterSendToApp,
-    modelVariableName,
-    updaterFunctionName,
-    enqueueEffectsFunctionName,
-    managersVariableName,
-    subscriptionsFunctionName,
+    beforeSendToApp: htmlString.substring(0, startIndex),
+    sendToAppDefinition: htmlString.substring(startIndex, endIndex),
+    afterSendToApp: htmlString.substring(endIndex),
+    updaterFunctionName: getOrThrow(1, finalResult),
+    modelVariableName: getOrThrow(2, finalResult),
+    enqueueEffectsFunctionName: getOrThrow(3, finalResult),
+    managersVariableName: getOrThrow(4, finalResult),
+    subscriptionsFunctionName: getOrThrow(5, finalResult),
   };
 }
 
@@ -303,4 +278,41 @@ function buildRegex(regexParts: RegExp[], flags: string): RegExp {
       .join(""),
     flags
   );
+}
+
+function getOrThrow<T>(index: number, list: T[]): T {
+  const candidate = list[index];
+  if (candidate === undefined) {
+    throw new Error(
+      "Expected item to exist at index " +
+        index +
+        " in list " +
+        JSON.stringify(list)
+    );
+  }
+  return candidate;
+}
+
+function ensureSingletonListAndExtract<T>(candidates: T[]): T {
+  const finalResult = candidates[0];
+  if (finalResult === undefined || candidates.length !== 1) {
+    throw new Error(
+      "Our regular expression for patching elm to be able to programatically modify state found a wrong amount of candidates, which should not happen, maybe the elm version or our minifying setup changed?    " +
+        JSON.stringify(candidates)
+    );
+  }
+  return finalResult;
+}
+
+function applyGlobalRegex(
+  regex: RegExp,
+  htmlString: string
+): RegExpExecArray[] {
+  const candidates: RegExpExecArray[] = [];
+  let result = regex.exec(htmlString);
+  while (result) {
+    candidates.push(result);
+    result = regex.exec(htmlString);
+  }
+  return candidates;
 }
