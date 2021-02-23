@@ -137,7 +137,29 @@ function parseTheJavascript(htmlString: string) {
 }
 
 function parseSendToAppFunction(htmlString: string) {
-  const regex = new RegExp(
+  /**
+   * We here try to create a regular expression that in a huge html/javascript string
+   * can find the sendToApp function uniquely as the only match. Lots of explanation about
+   * the parts below and also which parts really work for that unicity for us.
+   *
+   * It needs to work for both an uglified/minimized version and a development version.
+   * It is obviously very brittle in the sense that if a new elm version is released there's
+   * a large chance this will break.
+   *
+   * For reference this was built using elm 0.19.1 and the unminified version it is matching on is:
+   * (hover over the regex variable to see it with syntax highlighting)
+   *
+   * @example
+   * function sendToApp(msg, viewMetadata)
+   * {
+   *   var pair = A2(update, msg, model);
+   *   stepper(model = pair.a, viewMetadata);
+   *   _Platform_enqueueEffects(managers, pair.b, subscriptions(model));
+   * }
+   *
+   *
+   */
+  const regex = buildRegex(
     [
       // function keyword + function name + possible whitespace after
       /function \w+\s*/,
@@ -152,18 +174,51 @@ function parseSendToAppFunction(htmlString: string) {
       // as we for example don't expect any curly braces, this specifically specifies variable
       // names as \w, and different operators such as , ) ; = (
       /[\s\n\w(),;=]*?/,
-      // The next few lines we are intending to capture this line (shown unminimized): `stepper(model = pair.a, viewMetadata);`
+      /**
+       * The next few lines we are intending to capture this line (shown unminimized): `stepper(model = pair.a, viewMetadata);`
+       * The main reason this whole regex lets us find the right place in a whole html string is
+       * because the structure of having an assignment and a `.a` accessing in the first argument in a
+       * 2 argument expression is sufficiently unique.
+       * We're also lucky that the `.a` seems to be preserved across minimizing/uglifying, though it could
+       * probably work with matching towards an arbitrary property name there too
+       */
       // Here we first capture the function name, as we need to call this when the model updates
       /(\w+)/,
       // Start argument specification
       /\(/,
       // Capture the model variable name in the first argument `model = pair.a` (unminimized version)
       /(\w+)\s*=\s*\w+\.a\s*,/,
-      /\s*\w+\)[\s;,\n]*(\w+)\s*\(\s*(\w+),[^,]+,\s*(\w+)\s*\([\s\S]+?\}/,
-    ]
-      .map((x) => x.toString().substring(1, x.toString().length - 1))
-      .concat([])
-      .join(""),
+      // Match the second argument which we don't care about
+      /\s*\w+/,
+      // Match any whitespace
+      /\s*/,
+      // Finish argument parsing
+      /\)/,
+      // We need to get to the next line, between here and there depending
+      // on whether minified or not, there can be a combination of a semicolon,
+      // a comma, whitespace or a newline
+      /[\s;,\n]*/,
+      /**
+       * these next lines try to capture
+       * (unminified version) `_Platform_enqueueEffects(managers, pair.b, subscriptions(model));`
+       */
+      // Capture the function name
+      /(\w+)\s*/,
+      // Start argument parsing
+      /\(/,
+      // Capture the managers variable
+      /\s*(\w+),/,
+      // Parse the next argument which we don't care about
+      /[^,]+,/,
+      // Parse the subscriptions function name, as soon as we reach the function call `(`
+      // We no longer care about the rest as we're confident it's the right place
+      /\s*(\w+)\s*\(/,
+      // Parse anything including newlines
+      /[\s\S]+?/,
+      // Until we reach the end of the sendToApp function to make sure the endIndex is correct
+      // for our overall parsing
+      /\}/,
+    ],
     "g"
   );
   const candidates: RegExpExecArray[] = [];
@@ -230,5 +285,22 @@ function joinParsedJs(parsed: ReturnType<typeof parseTheJavascript>): string {
     parsed.sendToAppDefinition +
     parsed.afterSendToAppInInitialize +
     parsed.afterInitialize
+  );
+}
+
+function buildRegex(regexParts: RegExp[], flags: string): RegExp {
+  return new RegExp(
+    regexParts
+      .map((x) => {
+        const asString = x.toString();
+        const withoutFirstForwardSlash = asString.substring(1);
+        const withoutLastSlashAndFlags = withoutFirstForwardSlash.replace(
+          /\/\w*$/,
+          ""
+        );
+        return withoutLastSlashAndFlags;
+      })
+      .join(""),
+    flags
   );
 }
