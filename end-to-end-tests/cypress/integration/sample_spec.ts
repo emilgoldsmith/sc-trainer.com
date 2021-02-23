@@ -1,4 +1,4 @@
-import { interceptAddingElmModelObserversAndModifiers } from "support/to-be-named-properly";
+import { interceptAddingElmModelObserversAndModifiers } from "support/elm-model-monkey-patching";
 import { getKeyValue, Key } from "support/keys";
 
 const mousePositions: Cypress.PositionType[] = [
