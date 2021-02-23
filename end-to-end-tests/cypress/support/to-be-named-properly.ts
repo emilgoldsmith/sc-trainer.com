@@ -9,8 +9,8 @@ export function interceptAddingElmModelObserversAndModifiers(): void {
           </script>`,
           res.body
         );
-        const withModelObserversAndModifiers = joinParsedJs(
-          addObservers(parseTheJavascript(withE2eHelpers))
+        const withModelObserversAndModifiers = addObserversAndModifiers(
+          withE2eHelpers
         );
         res.send(withModelObserversAndModifiers);
       });
@@ -135,10 +135,11 @@ function addObserversToModel(
     "$1(window.END_TO_END_TEST_HELPERS.internal.setModel($2),$2)"
   );
 }
-function addObservers(parsedJs: ReturnType<typeof parseTheJavascript>) {
+function addObserversAndModifiers(jsString: string) {
+  const parsedJs = parseTheJavascript(jsString);
   // Gotten by adding a console.log(JSON.stringify(initPair.b)) while the initial command was Cmd.None
   const cmdDotNone = '{"$":3,"o":{"$":2,"m":{"$":"[]"}}}';
-  return {
+  const modifiedParsedJs = {
     ...parsedJs,
     beforeSendToAppInInitialize: addObserversToModel(
       parsedJs.modelVariableName,
@@ -159,6 +160,7 @@ function addObservers(parsedJs: ReturnType<typeof parseTheJavascript>) {
                 )
               });`,
   };
+  return joinParsedJs(modifiedParsedJs);
 }
 function joinParsedJs(parsed: ReturnType<typeof parseTheJavascript>): string {
   return (
