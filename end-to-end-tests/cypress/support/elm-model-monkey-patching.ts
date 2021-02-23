@@ -7,7 +7,7 @@ export function interceptAddingElmModelObserversAndModifiers(): void {
           toAdd: `<script>
                     (${addE2ETestHelpersToWindow.toString()}())
                   </script>`,
-          body: res.body,
+          htmlString: res.body,
         });
         const withEverything = addObserversAndModifiers(withE2eHelpers);
         res.send(withEverything);
@@ -16,8 +16,14 @@ export function interceptAddingElmModelObserversAndModifiers(): void {
   );
 }
 
-function addToDocumentHead({ toAdd, body }: { toAdd: string; body: string }) {
-  return body.replace("<head>", "<head>" + toAdd);
+function addToDocumentHead({
+  toAdd,
+  htmlString,
+}: {
+  toAdd: string;
+  htmlString: string;
+}) {
+  return htmlString.replace("<head>", "<head>" + toAdd);
 }
 
 function addE2ETestHelpersToWindow() {
@@ -81,7 +87,7 @@ function addObserversAndModifiers(htmlString: string) {
 }
 
 /**
- * This function is intending to parse the initialize function
+ * This function is intending to find and parse the initialize function
  * in both an unminimized and a minimized/uglified version.
  *
  * For more information about the parsing logic see the parseSendToAppFunction documentation
@@ -125,13 +131,13 @@ function parseTheJavascript(htmlString: string) {
     subscriptionsFunctionName,
   } = parseSendToAppFunction(htmlString);
 
-  const {
+  const [
     initializeStartIndex,
     initializeEndIndex,
-  } = getIndiciesForSurroundingFunction({
+  ] = getIndiciesForSurroundingFunction({
     curStartIndex: beforeSendToApp.length,
+    curEndIndex: htmlString.length - afterSendToApp.length,
     htmlString,
-    afterSendToApp,
   });
 
   const beforeInitialize = beforeSendToApp.substring(0, initializeStartIndex);
@@ -159,34 +165,40 @@ function parseTheJavascript(htmlString: string) {
 
 function getIndiciesForSurroundingFunction({
   curStartIndex,
+  curEndIndex,
   htmlString,
-  afterSendToApp,
 }: {
   curStartIndex: number;
+  curEndIndex: number;
   htmlString: string;
-  afterSendToApp: string;
-}) {
-  let initializeStartIndex = curStartIndex;
+}): [number, number] {
+  let surroundingStart = curStartIndex;
   let startLevel = 0;
+  // If we ever enter new functions or scopes we continue until they are done and we
+  // are one level lower than we are at the moment
   while (
     !(
       startLevel === -1 &&
-      htmlString.substr(initializeStartIndex, "function".length) === "function"
+      // And also ensure we include the function definition, so this function
+      // currently doesn't support arrow functions
+      htmlString.substr(surroundingStart, "function".length) === "function"
     )
   ) {
-    if (htmlString[initializeStartIndex] === "{") startLevel--;
-    if (htmlString[initializeStartIndex] === "}") startLevel++;
-    initializeStartIndex--;
+    // An opening brace is actually going out a scope because we are going backwards
+    if (htmlString[surroundingStart] === "{") startLevel--;
+    if (htmlString[surroundingStart] === "}") startLevel++;
+    surroundingStart--;
   }
 
-  let initializeEndIndex = 0;
+  let surroundingEnd = curEndIndex;
   let endLevel = 0;
   while (endLevel !== -1) {
-    if (afterSendToApp[initializeEndIndex - 1] === "{") endLevel++;
-    if (afterSendToApp[initializeEndIndex - 1] === "}") endLevel--;
-    initializeEndIndex++;
+    // We use -1 as by convention the endIndex is one after the last element it includes
+    if (htmlString[surroundingEnd - 1] === "{") endLevel++;
+    if (htmlString[surroundingEnd - 1] === "}") endLevel--;
+    surroundingEnd++;
   }
-  return { initializeStartIndex, initializeEndIndex };
+  return [surroundingStart, surroundingEnd];
 }
 
 function parseSendToAppFunction(htmlString: string) {
