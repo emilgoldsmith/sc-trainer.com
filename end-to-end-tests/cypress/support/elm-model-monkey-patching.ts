@@ -62,7 +62,7 @@ function addObserversAndModifiers(htmlString: string) {
   const parsedJs = parseTheJavascript(htmlString);
   // Gotten by adding a console.log(JSON.stringify(initPair.b)) while the initial command was Cmd.None in app code
   const cmdDotNone = '{"$":3,"o":{"$":2,"m":{"$":"[]"}}}';
-  const modifiedParsedJs = {
+  return joinParsedJs({
     ...parsedJs,
     beforeSendToAppInInitialize: addObserversToModel(
       parsedJs.modelVariableName,
@@ -82,8 +82,7 @@ function addObserversAndModifiers(htmlString: string) {
                     ${parsedJs.subscriptionsFunctionName}(newModel),
                 )
               });`,
-  };
-  return joinParsedJs(modifiedParsedJs);
+  });
 }
 
 /**
