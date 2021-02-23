@@ -80,6 +80,39 @@ function addObserversAndModifiers(htmlString: string) {
   return joinParsedJs(modifiedParsedJs);
 }
 
+/**
+ * This function is intending to parse the initialize function
+ * in both an unminimized and a minimized/uglified version.
+ *
+ * For more information about the parsing logic see the parseSendToAppFunction documentation
+ * as that is where the most complex bits of the logic live
+ *
+ * For reference the unminimized code looks like this:
+ *
+ * @example
+ *
+ * function _Platform_initialize(flagDecoder, args, init, update, subscriptions, stepperBuilder)
+ * {
+ *         var result = A2(_Json_run, flagDecoder, _Json_wrap(args ? args['flags'] : undefined));
+ *         $elm$core$Result$isOk(result) || _Debug_crash(2 , _Json_errorToString(result.a) );
+ *         var managers = {};
+ *         var initPair = init(result.a);
+ *         var model = initPair.a;
+ *         var stepper = stepperBuilder(sendToApp, model);
+ *         var ports = _Platform_setupEffects(managers, sendToApp);
+ *
+ *         function sendToApp(msg, viewMetadata)
+ *         {
+ *                 var pair = A2(update, msg, model);
+ *                 stepper(model = pair.a, viewMetadata);
+ *                 _Platform_enqueueEffects(managers, pair.b, subscriptions(model));
+ *         }
+ *
+ *         _Platform_enqueueEffects(managers, initPair.b, subscriptions(model));
+ *
+ *         return ports ? { ports: ports } : {};
+ * }
+ */
 function parseTheJavascript(htmlString: string) {
   const {
     beforeSendToApp,
@@ -92,26 +125,14 @@ function parseTheJavascript(htmlString: string) {
     subscriptionsFunctionName,
   } = parseSendToAppFunction(htmlString);
 
-  let initializeStartIndex = beforeSendToApp.length;
-  let startLevel = 0;
-  while (
-    !(
-      startLevel === -1 &&
-      htmlString.substr(initializeStartIndex, "function".length) === "function"
-    )
-  ) {
-    if (beforeSendToApp[initializeStartIndex] === "{") startLevel--;
-    if (beforeSendToApp[initializeStartIndex] === "}") startLevel++;
-    initializeStartIndex--;
-  }
-
-  let initializeEndIndex = 0;
-  let endLevel = 0;
-  while (endLevel !== -1) {
-    if (afterSendToApp[initializeEndIndex - 1] === "{") endLevel++;
-    if (afterSendToApp[initializeEndIndex - 1] === "}") endLevel--;
-    initializeEndIndex++;
-  }
+  const {
+    initializeStartIndex,
+    initializeEndIndex,
+  } = getIndiciesForSurroundingFunction({
+    curStartIndex: beforeSendToApp.length,
+    htmlString,
+    afterSendToApp,
+  });
 
   const beforeInitialize = beforeSendToApp.substring(0, initializeStartIndex);
   const beforeSendToAppInInitialize = beforeSendToApp.substring(
@@ -134,6 +155,38 @@ function parseTheJavascript(htmlString: string) {
     managersVariableName,
     subscriptionsFunctionName,
   };
+}
+
+function getIndiciesForSurroundingFunction({
+  curStartIndex,
+  htmlString,
+  afterSendToApp,
+}: {
+  curStartIndex: number;
+  htmlString: string;
+  afterSendToApp: string;
+}) {
+  let initializeStartIndex = curStartIndex;
+  let startLevel = 0;
+  while (
+    !(
+      startLevel === -1 &&
+      htmlString.substr(initializeStartIndex, "function".length) === "function"
+    )
+  ) {
+    if (htmlString[initializeStartIndex] === "{") startLevel--;
+    if (htmlString[initializeStartIndex] === "}") startLevel++;
+    initializeStartIndex--;
+  }
+
+  let initializeEndIndex = 0;
+  let endLevel = 0;
+  while (endLevel !== -1) {
+    if (afterSendToApp[initializeEndIndex - 1] === "{") endLevel++;
+    if (afterSendToApp[initializeEndIndex - 1] === "}") endLevel--;
+    initializeEndIndex++;
+  }
+  return { initializeStartIndex, initializeEndIndex };
 }
 
 function parseSendToAppFunction(htmlString: string) {
