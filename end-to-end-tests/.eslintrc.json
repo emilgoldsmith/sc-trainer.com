@@ -1,12 +1,13 @@
 {
-  "plugins": ["cypress", "chai-friendly", "@typescript-eslint"],
+  "plugins": ["cypress", "chai-friendly", "@typescript-eslint", "mocha"],
   "extends": [
     "esnext",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:chai-friendly/recommended",
     "plugin:cypress/recommended",
-    "prettier"
+    "prettier",
+    "plugin:mocha/recommended"
   ],
   "parser": "@typescript-eslint/parser",
   "rules": {
@@ -20,7 +21,12 @@
     "@typescript-eslint/no-empty-function": "off",
     // We don't prefer default export
     "import/prefer-default-export": "off",
-    "import/no-default-export": "error"
+    "import/no-default-export": "error",
+    // Avoid the conflicts between a mocha rule and prefer-arrow-callback
+    "prefer-arrow-callback": "off",
+    "mocha/prefer-arrow-callback": "error",
+    // This errors when we do parametrized test with .forEach
+    "mocha/no-setup-in-describe": "off"
   },
   "globals": { "Parameters": false, "ReturnType": false },
   "ignorePatterns": "*.d.ts"

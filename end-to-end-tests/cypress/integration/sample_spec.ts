@@ -1,4 +1,4 @@
-import { interceptAddingElmModelObserversAndModifiers } from "support/hooks";
+import { interceptAddingElmModelObserversAndModifiers } from "support/to-be-named-properly";
 import { getKeyValue, Key } from "support/keys";
 
 const mousePositions: Cypress.PositionType[] = [
@@ -46,27 +46,27 @@ const states = {
   }),
 } as const;
 
-describe("AlgorithmTrainer", () => {
-  before(() => {
+describe("AlgorithmTrainer", function () {
+  before(function () {
     states.initial.populateCache();
   });
 
-  beforeEach(() => {
+  beforeEach(function () {
     cy.visit("/");
     states.initial.restoreState();
     assertBetweenTestsState();
     cy.clock();
   });
 
-  describe("Between Tests", () => {
-    it("has all the correct elements", () => {
+  describe("Between Tests", function () {
+    it("has all the correct elements", function () {
       assertBetweenTestsState();
     });
-    it("starts test when pressing space", () => {
+    it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
       assertTestRunningState();
     });
-    it("doesn't start test when pressing any other keys", () => {
+    it("doesn't start test when pressing any other keys", function () {
       cy.pressKey(Key.a);
       assertBetweenTestsState();
       cy.pressKey(Key.x);
@@ -76,21 +76,21 @@ describe("AlgorithmTrainer", () => {
     });
   });
 
-  describe("Test Running", () => {
-    before(() => {
+  describe("Test Running", function () {
+    before(function () {
       states.testRunning.populateCache();
     });
-    beforeEach(() => {
+    beforeEach(function () {
       states.testRunning.restoreState();
       assertTestRunningState();
     });
 
-    it("has all the correct elements", () => {
+    it("has all the correct elements", function () {
       assertTestRunningState();
     });
 
-    describe("ends test correctly", () => {
-      it.only("on click anywhere", () => {
+    describe("ends test correctly", function () {
+      it("on click anywhere", function () {
         mousePositions.forEach((position) => {
           cy.withOverallNameLogged(
             {
@@ -117,7 +117,7 @@ describe("AlgorithmTrainer", () => {
           );
         });
       });
-      describe("on pressing any keyboard key", () => {
+      describe("on pressing any keyboard key", function () {
         const tests: Key[] = [
           Key.space,
           Key.l,
@@ -126,13 +126,13 @@ describe("AlgorithmTrainer", () => {
           Key.leftCtrl,
         ];
         tests.forEach((key) =>
-          it(`tested with '${getKeyValue(key)}'`, () => {
+          it(`tested with '${getKeyValue(key)}'`, function () {
             cy.pressKey(key);
             assertEvaluateResultState();
           })
         );
       });
-      describe("on long-pressing any keyboard key", () => {
+      describe("on long-pressing any keyboard key", function () {
         const tests: Key[] = [
           // Space is the special one that's the hard case to handle as we're
           // also using space to evaluate a result as correct and the delayed
@@ -144,7 +144,7 @@ describe("AlgorithmTrainer", () => {
           Key.leftCtrl,
         ];
         tests.forEach((key) =>
-          it(`tested with '${getKeyValue(key)}'`, () => {
+          it(`tested with '${getKeyValue(key)}'`, function () {
             cy.longPressKey(key);
             assertEvaluateResultState();
           })
@@ -153,23 +153,23 @@ describe("AlgorithmTrainer", () => {
     });
   });
 
-  describe("Evaluate Result", () => {
-    before(() => {
+  describe("Evaluate Result", function () {
+    before(function () {
       states.evaluateResult.populateCache();
     });
 
-    beforeEach(() => {
+    beforeEach(function () {
       states.evaluateResult.restoreState();
       assertEvaluateResultState();
     });
 
-    it("has all the correct elements", () => {
+    it("has all the correct elements", function () {
       assertEvaluateResultState();
     });
 
-    describe("doesn't change state when", () => {
+    describe("doesn't change state when", function () {
       mousePositions.forEach((position) =>
-        it(`mouse clicked at ${position}`, () => {
+        it(`mouse clicked at ${position}`, function () {
           cy.get("body").click(position);
           assertEvaluateResultState();
         })
@@ -182,27 +182,27 @@ describe("AlgorithmTrainer", () => {
         Key.l,
       ];
       representativeSelectionOfKeys.forEach((key) =>
-        it(`keyboard key '${getKeyValue(key)}' pressed`, () => {
+        it(`keyboard key '${getKeyValue(key)}' pressed`, function () {
           cy.pressKey(key);
           assertEvaluateResultState();
         })
       );
     });
-    describe("approves correctly", () => {
-      it("approves on space pressed", () => {
+    describe("approves correctly", function () {
+      it("approves on space pressed", function () {
         cy.pressKey(Key.space);
         assertBetweenTestsState();
         assertCorrectEvaluationMessage();
       });
     });
-    describe("rejects correctly", () => {
-      it("rejects on w key pressed", () => {
+    describe("rejects correctly", function () {
+      it("rejects on w key pressed", function () {
         cy.pressKey(Key.w);
         assertBetweenTestsState();
         assertWrongEvaluationMessage();
       });
 
-      it("also rejects if shift + w is pressed", () => {
+      it("also rejects if shift + w is pressed", function () {
         cy.pressKey(Key.W);
         assertBetweenTestsState();
         assertWrongEvaluationMessage();
