@@ -24,9 +24,7 @@
     "import/no-default-export": "error",
     // Avoid the conflicts between a mocha rule and prefer-arrow-callback
     "prefer-arrow-callback": "off",
-    "mocha/prefer-arrow-callback": "error",
-    // This errors when we do parametrized test with .forEach
-    "mocha/no-setup-in-describe": "off"
+    "mocha/prefer-arrow-callback": "error"
   },
   "globals": { "Parameters": false, "ReturnType": false },
   "ignorePatterns": "*.d.ts"

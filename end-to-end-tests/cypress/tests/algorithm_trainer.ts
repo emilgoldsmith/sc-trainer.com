@@ -213,7 +213,6 @@ describe("AlgorithmTrainer", function () {
             },
             () => {
               states.testRunning.restoreState({ log: false });
-              assertTestRunningState({ log: false });
             }
           );
         });
@@ -228,7 +227,6 @@ describe("AlgorithmTrainer", function () {
 
     beforeEach(function () {
       states.evaluateResult.restoreState();
-      assertEvaluateResultState();
     });
 
     it("has all the correct elements", function () {
@@ -236,35 +234,45 @@ describe("AlgorithmTrainer", function () {
     });
 
     describe("doesn't change state when", function () {
-      ([
-        "center",
-        "top",
-        "left",
-        "right",
-        "bottom",
-        "topLeft",
-        "topRight",
-        "bottomRight",
-        "bottomLeft",
-      ] as const).forEach((position) =>
-        it(`mouse clicked at ${position}`, function () {
-          cy.get("body").click(position);
-          assertEvaluateResultState();
-        })
-      );
-      // Note we are not including w or space here as those should indeed
-      // change the state
-      const representativeSelectionOfKeys: Key[] = [
-        Key.leftCtrl,
-        Key.five,
-        Key.l,
-      ];
-      representativeSelectionOfKeys.forEach((key) =>
-        it(`keyboard key '${getKeyValue(key)}' pressed`, function () {
-          cy.pressKey(key);
-          assertEvaluateResultState();
-        })
-      );
+      it(`mouse clicked anywhere`, function () {
+        ([
+          "center",
+          "top",
+          "left",
+          "right",
+          "bottom",
+          "topLeft",
+          "topRight",
+          "bottomRight",
+          "bottomLeft",
+        ] as const).forEach((position) => {
+          cy.withOverallNameLogged(
+            {
+              name: "testing click",
+              displayName: "TESTING CLICK",
+              message: `position ${position}`,
+            },
+            () => {
+              cy.get("body", { log: false }).click(position, { log: false });
+              assertEvaluateResultState({ log: false });
+            }
+          );
+        });
+      });
+      it(`keyboard key except space and w pressed`, function () {
+        [Key.leftCtrl, Key.five, Key.l].forEach((key) => {
+          cy.withOverallNameLogged(
+            {
+              displayName: "TESTING KEY",
+              message: getKeyValue(key),
+            },
+            () => {
+              cy.pressKey(key, { log: false });
+              assertEvaluateResultState({ log: false });
+            }
+          );
+        });
+      });
     });
     describe("approves correctly", function () {
       it("approves on space pressed", function () {
@@ -274,13 +282,13 @@ describe("AlgorithmTrainer", function () {
       });
     });
     describe("rejects correctly", function () {
-      it("rejects on w key pressed", function () {
+      it("on w key pressed", function () {
         cy.pressKey(Key.w);
         assertBetweenTestsState();
         assertWrongEvaluationMessage();
       });
 
-      it("also rejects if shift + w is pressed", function () {
+      it("on shift + w pressed", function () {
         cy.pressKey(Key.W);
         assertBetweenTestsState();
         assertWrongEvaluationMessage();

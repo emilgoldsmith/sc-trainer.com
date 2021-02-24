@@ -32,6 +32,9 @@ import {
   VALUE_W,
   CODE_W,
   KEY_W,
+  VALUE_SHIFT,
+  CODE_SHIFT_LEFT,
+  KEY_SHIFT,
 } from "keycode-js";
 
 export enum Key {
@@ -47,6 +50,7 @@ export enum Key {
   space,
   leftCtrl,
   capsLock,
+  shift,
 }
 
 export function getKeyValue(key: Key): string {
@@ -75,6 +79,8 @@ export function getKeyValue(key: Key): string {
       return VALUE_SPACE;
     case Key.capsLock:
       return VALUE_CAPS_LOCK;
+    case Key.shift:
+      return VALUE_SHIFT;
   }
 }
 
@@ -104,6 +110,8 @@ export function getCode(key: Key): string {
       return CODE_SPACE;
     case Key.capsLock:
       return CODE_CAPS_LOCK;
+    case Key.shift:
+      return CODE_SHIFT_LEFT;
   }
 }
 
@@ -133,5 +141,7 @@ export function getKeyCode(key: Key): number {
       return KEY_SPACE;
     case Key.capsLock:
       return KEY_CAPS_LOCK;
+    case Key.shift:
+      return KEY_SHIFT;
   }
 }
