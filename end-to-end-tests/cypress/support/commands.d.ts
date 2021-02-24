@@ -74,7 +74,7 @@ declare namespace Cypress {
      * @example
      * cy.pressKey(Key.space);
      */
-    pressKey(key: Key): void;
+    pressKey(key: Key, options?: { log?: boolean }): void;
 
     /**
      * Holds down a key in the global scope for a "long" time before releasing it
@@ -83,7 +83,7 @@ declare namespace Cypress {
      * @example
      * cy.longPressKey(Key.space);
      */
-    longPressKey(key: Key): void;
+    longPressKey(key: Key, options?: { log?: boolean }): void;
 
     /**
      * Get the current state of our application, do not try to modify it
@@ -96,7 +96,10 @@ declare namespace Cypress {
      *   return cy.setApplicationState(state);
      * })
      */
-    getApplicationState(name?: string): Chainable<OurApplicationState>;
+    getApplicationState(
+      name?: string,
+      options?: { log?: boolean }
+    ): Chainable<OurApplicationState>;
 
     /**
      * Restore the state of the application to a previous state.
@@ -108,7 +111,11 @@ declare namespace Cypress {
      *   return cy.setApplicationState(state);
      * })
      */
-    setApplicationState(state: OurApplicationState, name?: string): void;
+    setApplicationState(
+      state: OurApplicationState,
+      name?: string,
+      options?: { log?: boolean }
+    ): void;
 
     /**
      * Creates a log that the rest of the commands are nested under and

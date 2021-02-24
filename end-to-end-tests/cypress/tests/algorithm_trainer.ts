@@ -5,28 +5,52 @@ class StateCache {
   private elmModel: Cypress.OurApplicationState | null = null;
   constructor(
     private name: string,
-    private getToThatState: () => void,
-    private waitForStateToAppear: () => void
+    private getToThatState: (options?: { log?: boolean }) => void,
+    private waitForStateToAppear: (options?: { log?: boolean }) => void
   ) {}
 
   populateCache() {
     interceptAddingElmModelObserversAndModifiers();
     cy.visit("/");
-    this.getToThatState();
-    cy.getApplicationState(this.name).then(
-      (elmModel) => (this.elmModel = elmModel)
+    cy.withOverallNameLogged(
+      {
+        displayName: "NAVIGATING TO STATE",
+        message: this.name,
+      },
+      () => {
+        this.getToThatState({ log: false });
+        cy.getApplicationState(this.name, { log: false }).then(
+          (elmModel) => (this.elmModel = elmModel)
+        );
+      }
     );
   }
 
-  restoreState() {
+  restoreState(options?: { log?: false }) {
     if (this.elmModel === null)
       throw new Error(
         `Attempted to restore the ${this.name} state before cache was populated`
       );
-    cy.setApplicationState(this.elmModel, this.name);
-    this.waitForStateToAppear();
+    cy.setApplicationState(this.elmModel, this.name, options);
+    this.waitForStateToAppear(options);
   }
 }
+
+const assertTestRunningState = buildAsserter("test-running-container");
+const waitForTestRunningState = buildWaiter("test-running-container");
+const assertBetweenTestsState = buildAsserter("between-tests-container");
+const waitForBetweenTestsState = buildWaiter("between-tests-container");
+const assertEvaluateResultState = buildAsserter(
+  "evaluate-test-result-container"
+);
+const waitForEvaluateResultState = buildWaiter(
+  "evaluate-test-result-container"
+);
+const assertCorrectEvaluationMessage = buildAsserter(
+  "correct-evaluation-message"
+);
+const assertWrongEvaluationMessage = buildAsserter("wrong-evaluation-message");
+
 const states = {
   initial: new StateCache("initial", () => {}, waitForBetweenTestsState),
   testRunning: new StateCache(
@@ -48,25 +72,28 @@ const states = {
 } as const;
 
 describe("AlgorithmTrainer", function () {
-  before(function () {
-    states.initial.populateCache();
-  });
-
   beforeEach(function () {
     cy.visit("/");
-    states.initial.restoreState();
-    assertBetweenTestsState();
-    cy.clock();
   });
 
   describe("Between Tests", function () {
+    before(function () {
+      states.initial.populateCache();
+    });
+
+    beforeEach(function () {
+      states.initial.restoreState();
+    });
+
     it("has all the correct elements", function () {
       assertBetweenTestsState();
     });
+
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
       assertTestRunningState();
     });
+
     it("doesn't start test when pressing any other keys", function () {
       cy.pressKey(Key.a);
       assertBetweenTestsState();
@@ -81,9 +108,9 @@ describe("AlgorithmTrainer", function () {
     before(function () {
       states.testRunning.populateCache();
     });
+
     beforeEach(function () {
       states.testRunning.restoreState();
-      assertTestRunningState();
     });
 
     it("has all the correct elements", function () {
@@ -108,11 +135,10 @@ describe("AlgorithmTrainer", function () {
               name: "testing click",
               displayName: "TESTING CLICK",
               message: `position ${position}`,
-              consoleProps: () => ({ position }),
             },
             () => {
-              cy.get("body").click(position);
-              assertEvaluateResultState();
+              cy.get("body", { log: false }).click(position, { log: false });
+              assertEvaluateResultState({ log: false });
             }
           );
           cy.withOverallNameLogged(
@@ -122,29 +148,44 @@ describe("AlgorithmTrainer", function () {
               message: "to testRunning state",
             },
             () => {
-              states.testRunning.restoreState();
-              assertTestRunningState();
+              states.testRunning.restoreState({ log: false });
             }
           );
         });
       });
-      describe("on pressing any keyboard key", function () {
-        const tests: Key[] = [
+      it("on pressing any keyboard key", function () {
+        ([
           Key.space,
           Key.l,
           Key.five,
           Key.capsLock,
           Key.leftCtrl,
-        ];
-        tests.forEach((key) =>
-          it(`tested with '${getKeyValue(key)}'`, function () {
-            cy.pressKey(key);
-            assertEvaluateResultState();
-          })
-        );
+        ] as const).forEach((key) => {
+          cy.withOverallNameLogged(
+            {
+              displayName: "TESTING KEY",
+              message: getKeyValue(key),
+            },
+            () => {
+              cy.pressKey(key, { log: false });
+              assertEvaluateResultState({ log: false });
+            }
+          );
+          cy.withOverallNameLogged(
+            {
+              name: "resetting state",
+              displayName: "RESETTING STATE",
+              message: "to testRunning state",
+            },
+            () => {
+              states.testRunning.restoreState({ log: false });
+            }
+          );
+        });
       });
-      describe("on long-pressing any keyboard key", function () {
-        const tests: Key[] = [
+      it("on long-pressing any keyboard key", function () {
+        cy.clock();
+        ([
           // Space is the special one that's the hard case to handle as we're
           // also using space to evaluate a result as correct and the delayed
           // "up" could cause issues
@@ -153,13 +194,29 @@ describe("AlgorithmTrainer", function () {
           Key.five,
           Key.capsLock,
           Key.leftCtrl,
-        ];
-        tests.forEach((key) =>
-          it(`tested with '${getKeyValue(key)}'`, function () {
-            cy.longPressKey(key);
-            assertEvaluateResultState();
-          })
-        );
+        ] as const).forEach((key) => {
+          cy.withOverallNameLogged(
+            {
+              displayName: "TESTING KEY",
+              message: getKeyValue(key),
+            },
+            () => {
+              cy.longPressKey(key, { log: false });
+              assertEvaluateResultState({ log: false });
+            }
+          );
+          cy.withOverallNameLogged(
+            {
+              name: "resetting state",
+              displayName: "RESETTING STATE",
+              message: "to testRunning state",
+            },
+            () => {
+              states.testRunning.restoreState({ log: false });
+              assertTestRunningState({ log: false });
+            }
+          );
+        });
       });
     });
   });
@@ -232,34 +289,14 @@ describe("AlgorithmTrainer", function () {
   });
 });
 
-function assertTestRunningState() {
-  cy.getByTestId("test-running-container").should("exist");
+function buildAsserter(testId: string) {
+  return function (options?: { log?: boolean }) {
+    cy.getByTestId(testId, options).should("be.visible");
+  };
 }
 
-function waitForTestRunningState() {
-  cy.getByTestId("test-running-container");
-}
-
-function assertBetweenTestsState() {
-  cy.getByTestId("between-tests-container").should("exist");
-}
-
-function waitForBetweenTestsState() {
-  cy.getByTestId("between-tests-container");
-}
-
-function assertEvaluateResultState() {
-  cy.getByTestId("evaluate-test-result-container").should("exist");
-}
-
-function waitForEvaluateResultState() {
-  cy.getByTestId("evaluate-test-result-container");
-}
-
-function assertCorrectEvaluationMessage() {
-  cy.getByTestId("correct-evaluation-message").should("exist");
-}
-
-function assertWrongEvaluationMessage() {
-  cy.getByTestId("wrong-evaluation-message").should("exist");
+function buildWaiter(testId: string) {
+  return function (options?: { log?: boolean }) {
+    cy.getByTestId(testId, options);
+  };
 }
