@@ -64,7 +64,7 @@ export function getKeyValue(key: Key): string {
     case Key.w:
       return VALUE_W;
     case Key.W:
-      return "W";
+      return VALUE_W.toUpperCase();
     case Key.x:
       return VALUE_X;
     case Key.five:

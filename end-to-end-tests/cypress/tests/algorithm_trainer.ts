@@ -1,29 +1,21 @@
 import { interceptAddingElmModelObserversAndModifiers } from "support/elm-model-monkey-patching";
 import { getKeyValue, Key } from "support/keys";
 
-const mousePositions: Cypress.PositionType[] = [
-  "center",
-  "top",
-  "left",
-  "right",
-  "bottom",
-  "topLeft",
-  "topRight",
-  "bottomRight",
-  "bottomLeft",
-];
-
 class StateCache {
   private elmModel: Cypress.OurApplicationState | null = null;
-  constructor(private name: string, private getToThatState: () => void) {}
+  constructor(
+    private name: string,
+    private getToThatState: () => void,
+    private waitForStateToAppear: () => void
+  ) {}
 
   populateCache() {
     interceptAddingElmModelObserversAndModifiers();
     cy.visit("/");
     this.getToThatState();
-    return cy
-      .getApplicationState(this.name)
-      .then((elmModel) => (this.elmModel = elmModel));
+    cy.getApplicationState(this.name).then(
+      (elmModel) => (this.elmModel = elmModel)
+    );
   }
 
   restoreState() {
@@ -31,19 +23,28 @@ class StateCache {
       throw new Error(
         `Attempted to restore the ${this.name} state before cache was populated`
       );
-    return cy.setApplicationState(this.elmModel, this.name);
+    cy.setApplicationState(this.elmModel, this.name);
+    this.waitForStateToAppear();
   }
 }
 const states = {
-  initial: new StateCache("initial", () => {}),
-  testRunning: new StateCache("testRunning", () => {
-    states.initial.restoreState();
-    cy.pressKey(Key.space);
-  }),
-  evaluateResult: new StateCache("evaluateResult", () => {
-    states.testRunning.restoreState();
-    cy.pressKey(Key.space);
-  }),
+  initial: new StateCache("initial", () => {}, waitForBetweenTestsState),
+  testRunning: new StateCache(
+    "testRunning",
+    () => {
+      states.initial.restoreState();
+      cy.pressKey(Key.space);
+    },
+    waitForTestRunningState
+  ),
+  evaluateResult: new StateCache(
+    "evaluateResult",
+    () => {
+      states.testRunning.restoreState();
+      cy.pressKey(Key.space);
+    },
+    waitForEvaluateResultState
+  ),
 } as const;
 
 describe("AlgorithmTrainer", function () {
@@ -91,7 +92,17 @@ describe("AlgorithmTrainer", function () {
 
     describe("ends test correctly", function () {
       it("on click anywhere", function () {
-        mousePositions.forEach((position) => {
+        ([
+          "center",
+          "top",
+          "left",
+          "right",
+          "bottom",
+          "topLeft",
+          "topRight",
+          "bottomRight",
+          "bottomLeft",
+        ] as const).forEach((position) => {
           cy.withOverallNameLogged(
             {
               name: "testing click",
@@ -168,7 +179,17 @@ describe("AlgorithmTrainer", function () {
     });
 
     describe("doesn't change state when", function () {
-      mousePositions.forEach((position) =>
+      ([
+        "center",
+        "top",
+        "left",
+        "right",
+        "bottom",
+        "topLeft",
+        "topRight",
+        "bottomRight",
+        "bottomLeft",
+      ] as const).forEach((position) =>
         it(`mouse clicked at ${position}`, function () {
           cy.get("body").click(position);
           assertEvaluateResultState();
@@ -215,12 +236,24 @@ function assertTestRunningState() {
   cy.getByTestId("test-running-container").should("exist");
 }
 
+function waitForTestRunningState() {
+  cy.getByTestId("test-running-container");
+}
+
 function assertBetweenTestsState() {
   cy.getByTestId("between-tests-container").should("exist");
 }
 
+function waitForBetweenTestsState() {
+  cy.getByTestId("between-tests-container");
+}
+
 function assertEvaluateResultState() {
   cy.getByTestId("evaluate-test-result-container").should("exist");
+}
+
+function waitForEvaluateResultState() {
+  cy.getByTestId("evaluate-test-result-container");
 }
 
 function assertCorrectEvaluationMessage() {
