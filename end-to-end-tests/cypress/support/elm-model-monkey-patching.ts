@@ -64,15 +64,35 @@ function addObserversAndModifiers(htmlString: string) {
   const cmdDotNone = '{"$":3,"o":{"$":2,"m":{"$":"[]"}}}';
   return joinParsedJs({
     ...parsedJs,
-    beforeSendToAppInInitialize: addObserversToModel(
-      parsedJs.modelVariableName,
-      parsedJs.beforeSendToAppInInitialize
-    ),
+    // We want to add listeners to any model assignments anywhere in the initialize function
+    beforeSendToAppInInitialize: addListenersToAnyModelAssignments({
+      modelVariableName: parsedJs.modelVariableName,
+      htmlString: parsedJs.beforeSendToAppInInitialize,
+    }),
     sendToAppDefinition:
-      addObserversToModel(
-        parsedJs.modelVariableName,
-        parsedJs.sendToAppDefinition
-      ) +
+      addListenersToAnyModelAssignments({
+        modelVariableName: parsedJs.modelVariableName,
+        htmlString: parsedJs.sendToAppDefinition,
+      }) +
+      // We define the function to be called when we manually overwrite the elm application state.
+      // It is just convenient placing it here as we know it's right after a function definition
+      // so it won't be in the middle of a comma operator or var assignment with commas in the
+      // minified code
+      //
+      // By trial and error / reverse engineering we discovered what is needed, in order of actions
+      // in the below function, is:
+      // 1. Set the model to our new model
+      // 2. Call the updater function (in the unminimized, this is called stepper).
+      // The second argument is the isSync argument which can be seen in the return value
+      // of _Browser_makeAnimator in the unminimized Elm code. It is simply a qualified guess
+      // that we always want sync updates, the non sync version uses requestAnimationFrame
+      // so is probably related to making games or animations
+      // 3. Call enqueue effects with
+      //   a) The managers variable that is in scope (we don't change this ever)
+      //   b) A Cmd.None value
+      //   c) The subscriptions specified by the applications pure function subscriptions
+      // We do this not to have any effects happen, but this is what registers subscriptions
+      // such as event listeners, and they often need changing
       `;window.END_TO_END_TEST_HELPERS.internal.registerModelUpdater((newModel) => {
                 ${parsedJs.modelVariableName} = newModel;
                 ${parsedJs.updaterFunctionName}(newModel, true);
@@ -82,6 +102,10 @@ function addObserversAndModifiers(htmlString: string) {
                     ${parsedJs.subscriptionsFunctionName}(newModel),
                 )
               });`,
+    afterSendToAppInInitialize: addListenersToAnyModelAssignments({
+      modelVariableName: parsedJs.modelVariableName,
+      htmlString: parsedJs.afterSendToAppInInitialize,
+    }),
   });
 }
 
@@ -291,7 +315,19 @@ function parseSendToAppFunction(htmlString: string) {
     "g"
   );
   const candidates: RegExpExecArray[] = applyGlobalRegex(regex, htmlString);
-  const finalResult = ensureSingletonListAndExtract(candidates);
+  let finalResult: RegExpExecArray;
+  try {
+    finalResult = ensureSingletonListAndExtract(candidates);
+  } catch (e) {
+    if (!(e instanceof Error)) {
+      throw e;
+    }
+    e.message =
+      "Our regular expression for patching elm to be able to programatically modify state found a wrong amount of candidates it seems. " +
+      "This should not happen, maybe the elm version or our minifying setup changed?\n" +
+      e.message;
+    throw e;
+  }
 
   const startIndex = finalResult.index;
   const endIndex = finalResult.index + getOrThrow(0, finalResult).length;
@@ -307,13 +343,51 @@ function parseSendToAppFunction(htmlString: string) {
   };
 }
 
-function addObserversToModel(
-  modelVariableName: string,
-  someJavascript: string
-): string {
-  return someJavascript.replace(
-    new RegExp(String.raw`(\b${modelVariableName}\b\s*=\s*)([\w.]+)`),
-    "$1(window.END_TO_END_TEST_HELPERS.internal.setModel($2),$2)"
+function addListenersToAnyModelAssignments({
+  modelVariableName,
+  htmlString,
+}: {
+  modelVariableName: string;
+  htmlString: string;
+}): string {
+  const regex = buildRegex(
+    [
+      // CAPTURE NUMBER 1:
+      // Start capture of first part of assignment of model
+      "(",
+      // Include wordbreaks to make sure we aren't matching other variables
+      // that include this variable name as a substring
+      String.raw`\b${modelVariableName}\b`,
+      // Match the assignment operator and any whitespace on either side
+      /\s*=\s*/,
+      // End capture number 1
+      ")",
+      // CAPTURE NUMBER 2:
+      // Capture the value being assigned to the model including any `.`s
+      // as we also want property accesses to be included
+      /([\w.]+)/,
+    ],
+    "g"
+  );
+  return htmlString.replace(
+    regex,
+    [
+      // Retain the assignment of the model variable
+      "$1",
+      // Start parentheses as we are going to be using the comma operator
+      // to neatly add a second effect here.
+      "(",
+      // As the model is being assigned we want to keep track of this in our
+      // cache too, so we add this effect
+      "window.END_TO_END_TEST_HELPERS.internal.setModel($2)",
+      // Comma operator
+      // See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Comma_Operator
+      ",",
+      // Return the value to set, which will then be assigned to the model
+      "$2",
+      // End parentheses as we are done with our comma operator
+      ")",
+    ].join("")
   );
 }
 
@@ -327,10 +401,13 @@ function joinParsedJs(parsed: ReturnType<typeof parseTheJavascript>): string {
   );
 }
 
-function buildRegex(regexParts: RegExp[], flags: string): RegExp {
+function buildRegex(regexParts: (RegExp | string)[], flags = ""): RegExp {
   return new RegExp(
     regexParts
       .map((x) => {
+        if (typeof x === "string") {
+          return x;
+        }
         const asString = x.toString();
         const withoutFirstForwardSlash = asString.substring(1);
         const withoutLastSlashAndFlags = withoutFirstForwardSlash.replace(
@@ -357,12 +434,12 @@ function getOrThrow<T>(index: number, list: T[]): T {
   return candidate;
 }
 
-function ensureSingletonListAndExtract<T>(candidates: T[]): T {
-  const finalResult = candidates[0];
-  if (finalResult === undefined || candidates.length !== 1) {
+function ensureSingletonListAndExtract<T>(list: T[]): T {
+  const finalResult = list[0];
+  if (finalResult === undefined || list.length !== 1) {
     throw new Error(
-      "Our regular expression for patching elm to be able to programatically modify state found a wrong amount of candidates, which should not happen, maybe the elm version or our minifying setup changed?    " +
-        JSON.stringify(candidates)
+      "The list was expected to contain exactly one element. The list being checked was: " +
+        JSON.stringify(list)
     );
   }
   return finalResult;
