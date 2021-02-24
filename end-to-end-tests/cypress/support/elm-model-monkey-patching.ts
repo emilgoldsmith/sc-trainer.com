@@ -1,19 +1,16 @@
 export function interceptAddingElmModelObserversAndModifiers(): void {
-  cy.intercept(
-    new RegExp(String.raw`^${Cypress.config().baseUrl}/?$`),
-    (req) => {
-      req.reply((res) => {
-        const withE2eHelpers = addToDocumentHead({
-          toAdd: `<script>
+  cy.intercept(Cypress.config().baseUrl + "{,/}", (req) => {
+    req.reply((res) => {
+      const withE2eHelpers = addToDocumentHead({
+        toAdd: `<script>
                     (${addE2ETestHelpersToWindow.toString()}())
                   </script>`,
-          htmlString: res.body,
-        });
-        const withEverything = addObserversAndModifiers(withE2eHelpers);
-        res.send(withEverything);
+        htmlString: res.body,
       });
-    }
-  );
+      const withEverything = addObserversAndModifiers(withE2eHelpers);
+      res.send(withEverything);
+    });
+  });
 }
 
 function addToDocumentHead({
