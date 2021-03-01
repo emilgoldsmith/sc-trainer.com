@@ -1,0 +1,10 @@
+**/node_modules
+elm.js
+elm.min.js
+index.html
+elm-stuff
+.vscode
+main.js
+main.min.js
+tests
+end-to-end-tests

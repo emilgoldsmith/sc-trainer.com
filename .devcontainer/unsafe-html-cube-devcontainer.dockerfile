@@ -5,8 +5,13 @@ FROM ubuntu:20.04
 ENV USERNAME cube-community
 ENV ROOT_PASSWORD dev-container-password
 
-ENV NODE_VERSION 15.7.0
-ENV YARN_VERSION 1.22.5
+# Current SHA sums are for node 15.7.0 and yarn 1.22.5
+# we just make these arguments instead of hardcoded to
+# give some ensurance images are built with the correct tag
+# as the versions will have to be specified on the command line
+ARG NODE_VERSION
+ARG YARN_VERSION
+
 
 # Restore all the nice to haves to Ubuntu so it's a full dev environment
 RUN bash -i -c 'echo -e "y\nY" | unminimize'
