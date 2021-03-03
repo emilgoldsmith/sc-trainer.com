@@ -1,0 +1,12 @@
+steps:
+  # Build the container image
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "us-east4-docker.pkg.dev.pkg.dev/$PROJECT_ID/speedcubing-trainer:$COMMIT_SHA",
+        "--target",
+        "production",
+        ".",
+      ]

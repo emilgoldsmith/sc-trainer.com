@@ -20,7 +20,7 @@ RUN groupadd --gid 1000 $USERNAME \
     && useradd --uid 1000 --gid $USERNAME --shell /bin/bash --create-home $USERNAME \
     && echo "root:$ROOT_PASSWORD" | chpasswd root \
 # Missing dependencies for installing node and yarn
-    && apt-get update \
+    && apt-get update -y \
 # DEBIAN_FRONTEND is for making configuring tzdata to work
     && DEBIAN_FRONTEND=noninteractive apt-get -y install \
         gpg \
@@ -34,7 +34,13 @@ RUN groupadd --gid 1000 $USERNAME \
         man \
 # Installing locales
         locales \
-    && locale-gen en_GB en_US en_GB.UTF-8 en_US.UTF-8
+    && locale-gen en_GB en_US en_GB.UTF-8 en_US.UTF-8 \
+# Installing the google cloud CLI (taken from https://cloud.google.com/sdk/docs/install#deb)
+    && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | tee -a /etc/apt/sources.list.d/google-cloud-sdk.list \
+    && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - \
+    && apt-get update -y \
+    && apt-get install google-cloud-sdk -y
+      
 
 RUN ARCH= && dpkgArch="$(dpkg --print-architecture)" \
   && case "${dpkgArch##*-}" in \

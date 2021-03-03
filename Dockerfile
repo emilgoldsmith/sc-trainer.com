@@ -69,7 +69,7 @@ CMD yarn run serve --single --listen tcp://0.0.0.0:$PORT public
 
 # The `unsafe-html-cube-devcontainer` is built in the
 # initializeCommand for the devcontainer from base.dockerfile
-# which is located here in this directory
+# which is located in the .devcontainer directory
 FROM unsafe-html-cube-devcontainer:15.7.0 AS local-development
 
 # Add in the dependencies shared between stages
