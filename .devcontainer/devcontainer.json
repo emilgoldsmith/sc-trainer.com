@@ -1,6 +1,6 @@
 {
   "name": "Elm Dev Container",
-  "dockerFile": "Dockerfile",
+  "dockerFile": "../Dockerfile",
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash"
   },
