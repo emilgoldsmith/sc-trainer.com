@@ -5,7 +5,7 @@ steps:
       [
         "build",
         "-t",
-        "us-east4-docker.pkg.dev.pkg.dev/$PROJECT_ID/speedcubing-trainer:$COMMIT_SHA",
+        "us-east4-docker.pkg.dev/$PROJECT_ID/speedcubing-trainer:$COMMIT_SHA",
         "--target",
         "production",
         ".",
@@ -15,7 +15,7 @@ steps:
     args:
       [
         "push",
-        "us-east4-docker.pkg.dev.pkg.dev/$PROJECT_ID/speedcubing-trainer:$COMMIT_SHA",
+        "us-east4-docker.pkg.dev/$PROJECT_ID/speedcubing-trainer:$COMMIT_SHA",
       ]
   # Deploy container image to Cloud Run
   # - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
@@ -26,11 +26,11 @@ steps:
   #       "deploy",
   #       "SERVICE-NAME",
   #       "--image",
-  #       "us-east4-docker.pkg.dev.pkg.dev/$PROJECT_ID/speedcubing-trainer:$COMMIT_SHA",
+  #       "us-east4-docker.pkg.dev/$PROJECT_ID/speedcubing-trainer:$COMMIT_SHA",
   #       "--region",
   #       "REGION",
   #       "--platform",
   #       "managed",
   #     ]
 images:
-  - gcr.io/PROJECT_ID/IMAGE
+  - us-east4-docker.pkg.dev/$PROJECT_ID/speedcubing-trainer:$COMMIT_SHA
