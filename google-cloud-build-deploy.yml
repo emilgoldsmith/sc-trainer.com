@@ -26,7 +26,7 @@ steps:
         "deploy",
         "speedcubing-trainer",
         "--image",
-        "us-east4-docker.pkg.dev/$PROJECT_ID/speedcubing-trainer:$COMMIT_SHA",
+        "us-east4-docker.pkg.dev/$PROJECT_ID/speedcubing-trainer/main:$COMMIT_SHA",
         "--region",
         "us-east4",
         "--platform",
