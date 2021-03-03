@@ -200,7 +200,7 @@ viewEvaluationMessage : EvaluationMessage -> Html Msg
 viewEvaluationMessage message =
     case message of
         NoEvaluationMessage ->
-            div [] []
+            div [] [ text "Auto-deploy works!" ]
 
         CorrectEvaluation ->
             div [ attribute "data-testid" "correct-evaluation-message" ] [ text "Correct" ]
