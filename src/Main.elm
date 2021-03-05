@@ -7,6 +7,7 @@ import Html.Attributes exposing (..)
 import Json.Decode as Decode
 import Process
 import Task
+import Time
 
 
 main : Program () Model Msg
@@ -32,7 +33,7 @@ type alias Model =
 
 type TrainerState
     = BetweenTests EvaluationMessage
-    | TestRunning
+    | TestRunning { startTime : Time.Posix, currentTime : Time.Posix }
     | EvaluatingResult { correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool }
 
 
@@ -51,6 +52,8 @@ type Msg
     = KeyUp Key
     | KeyDown Key
     | DeleteOldestSnackbar
+    | StartTest Time.Posix
+    | UpdateTimer Time.Posix
 
 
 type Key
@@ -88,7 +91,7 @@ subscriptions model =
         BetweenTests _ ->
             Events.onKeyUp <| Decode.map KeyUp decodeKey
 
-        TestRunning ->
+        TestRunning _ ->
             Sub.batch
                 [ Events.onKeyDown <|
                     Decode.map KeyDown
@@ -96,6 +99,7 @@ subscriptions model =
                 , Events.onMouseDown <|
                     Decode.succeed
                         (KeyDown <| SomeKey "mouseDown")
+                , Time.every 30 UpdateTimer
                 ]
 
         EvaluatingResult keyStates ->
@@ -120,15 +124,21 @@ update msg model =
                 BetweenTests _ ->
                     case msg of
                         KeyUp Space ->
-                            ( { model | trainerState = TestRunning }, Cmd.none )
+                            ( model, Task.perform StartTest Time.now )
+
+                        StartTest startTime ->
+                            ( { model | trainerState = TestRunning { startTime = startTime, currentTime = startTime } }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
 
-                TestRunning ->
+                TestRunning timestamps ->
                     case msg of
                         KeyDown _ ->
                             ( { model | trainerState = EvaluatingResult { correctKeyPressStarted = False, wrongKeyPressStarted = False } }, Cmd.none )
+
+                        UpdateTimer time ->
+                            ( { model | trainerState = TestRunning { timestamps | currentTime = time } }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
@@ -184,11 +194,43 @@ viewState model =
         BetweenTests message ->
             div [ attribute "data-testid" "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
 
-        TestRunning ->
-            div [ attribute "data-testid" "test-running-container" ] [ text "Test Running" ]
+        TestRunning timestamps ->
+            div [ attribute "data-testid" "test-running-container" ] [ text "Test Running", div [ attribute "data-testid" "timer" ] [ text (Debug.log "timestamps" timestamps |> millisecondsElapsed |> displayTime) ] ]
 
         EvaluatingResult _ ->
             div [ attribute "data-testid" "evaluate-test-result-container" ] [ text <| "Evaluating Result" ]
+
+
+millisecondsElapsed : { startTime : Time.Posix, currentTime : Time.Posix } -> Int
+millisecondsElapsed { startTime, currentTime } =
+    Time.posixToMillis currentTime - Time.posixToMillis startTime
+
+
+displayTime : Int -> String
+displayTime totalMilliseconds =
+    let
+        time =
+            parseTime (Debug.log "millis" totalMilliseconds)
+    in
+    "0." ++ displayDeciseconds time
+
+
+type alias TimeInterval =
+    { milliseconds : Int, seconds : Int, minutes : Int, hours : Int }
+
+
+parseTime : Int -> TimeInterval
+parseTime totalMilliseconds =
+    Debug.log "parsed time" { milliseconds = remainderBy 1000 totalMilliseconds, seconds = 0, minutes = 0, hours = 0 }
+
+
+displayDeciseconds : TimeInterval -> String
+displayDeciseconds time =
+    let
+        deciseconds =
+            time.milliseconds // 100
+    in
+    String.fromInt deciseconds
 
 
 viewSnackbar : String -> Html Msg
