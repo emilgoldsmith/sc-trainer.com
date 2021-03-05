@@ -11,13 +11,14 @@ class StateCache {
 
   populateCache() {
     interceptAddingElmModelObserversAndModifiers();
-    cy.visit("/");
     cy.withOverallNameLogged(
       {
         displayName: "NAVIGATING TO STATE",
         message: this.name,
       },
       () => {
+        // TODO: Wait for model to be registered with a cy command
+        cy.visit("/");
         this.getToThatState({ log: false });
         this.waitForStateToAppear({ log: false });
         cy.getApplicationState(this.name, { log: false }).then(
@@ -32,6 +33,7 @@ class StateCache {
       throw new Error(
         `Attempted to restore the ${this.name} state before cache was populated`
       );
+    // TODO: Wait for model to be registered with a cy command
     cy.setApplicationState(this.elmModel, this.name, options);
     this.waitForStateToAppear(options);
   }
@@ -136,16 +138,27 @@ describe("AlgorithmTrainer", function () {
 
       cy.pressKey(Key.space);
       waitForTestRunningState();
+      // sum 0
       getTimer().should("have.text", "0.0");
       cy.tick(3);
+      // sum 3
       getTimer().should("have.text", "0.0");
       cy.tick(10);
+      // sum 13
       getTimer().should("have.text", "0.0");
-      // Note that for example doing just 200 here would fail TODO
+      // Note that for example doing just 200 here failed when it was written.
+      // This is because setInterval needs a granularity, so we just use values
+      // that seem like "definitely should have been processed here", so with
+      // a bit of a buffer.
       cy.tick(230);
+      // sum 243
       getTimer().should("have.text", "0.2");
-      // cy.tick(1300);
-      // getTimer().should("have.text", "1.5");
+      cy.tick(1300);
+      // sum 1543
+      getTimer().should("have.text", "1.5");
+      cy.tick(60 * 1000 * 3 + 15300);
+      // sum 196843
+      getTimer().should("have.text", "3:16.8");
     });
 
     describe("ends test correctly", function () {

@@ -195,7 +195,7 @@ viewState model =
             div [ attribute "data-testid" "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
 
         TestRunning timestamps ->
-            div [ attribute "data-testid" "test-running-container" ] [ text "Test Running", div [ attribute "data-testid" "timer" ] [ text (Debug.log "timestamps" timestamps |> millisecondsElapsed |> displayTime) ] ]
+            div [ attribute "data-testid" "test-running-container" ] [ text "Test Running", div [ attribute "data-testid" "timer" ] [ text (timestamps |> millisecondsElapsed |> displayTime) ] ]
 
         EvaluatingResult _ ->
             div [ attribute "data-testid" "evaluate-test-result-container" ] [ text <| "Evaluating Result" ]
@@ -210,9 +210,9 @@ displayTime : Int -> String
 displayTime totalMilliseconds =
     let
         time =
-            parseTime (Debug.log "millis" totalMilliseconds)
+            parseTime totalMilliseconds
     in
-    "0." ++ displayDeciseconds time
+    displaySeconds time ++ "." ++ displayDeciseconds time
 
 
 type alias TimeInterval =
@@ -221,7 +221,11 @@ type alias TimeInterval =
 
 parseTime : Int -> TimeInterval
 parseTime totalMilliseconds =
-    Debug.log "parsed time" { milliseconds = remainderBy 1000 totalMilliseconds, seconds = 0, minutes = 0, hours = 0 }
+    { milliseconds = remainderBy 1000 totalMilliseconds
+    , seconds = remainderBy 60 (totalMilliseconds // 1000)
+    , minutes = remainderBy 60 (totalMilliseconds // (60 * 1000))
+    , hours = totalMilliseconds // (60 * 60 * 1000)
+    }
 
 
 displayDeciseconds : TimeInterval -> String
@@ -231,6 +235,11 @@ displayDeciseconds time =
             time.milliseconds // 100
     in
     String.fromInt deciseconds
+
+
+displaySeconds : TimeInterval -> String
+displaySeconds time =
+    String.fromInt time.seconds
 
 
 viewSnackbar : String -> Html Msg
