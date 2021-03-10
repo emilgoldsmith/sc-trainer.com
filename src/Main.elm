@@ -209,37 +209,42 @@ millisecondsElapsed { startTime, currentTime } =
 displayTime : Int -> String
 displayTime totalMilliseconds =
     let
+        deciseconds =
+            time.milliseconds // 100
+
         time =
-            parseTime totalMilliseconds
+            buildTimeInterval totalMilliseconds
+
+        onlySeconds =
+            String.fromInt time.seconds ++ "." ++ String.fromInt deciseconds
+
+        withMinutes =
+            String.fromInt time.minutes ++ ":" ++ onlySeconds
+
+        withHours =
+            String.fromInt time.hours ++ ":" ++ withMinutes
     in
-    displaySeconds time ++ "." ++ displayDeciseconds time
+    if time.hours > 0 then
+        withHours
+
+    else if time.minutes > 0 then
+        withMinutes
+
+    else
+        onlySeconds
 
 
 type alias TimeInterval =
     { milliseconds : Int, seconds : Int, minutes : Int, hours : Int }
 
 
-parseTime : Int -> TimeInterval
-parseTime totalMilliseconds =
+buildTimeInterval : Int -> TimeInterval
+buildTimeInterval totalMilliseconds =
     { milliseconds = remainderBy 1000 totalMilliseconds
     , seconds = remainderBy 60 (totalMilliseconds // 1000)
     , minutes = remainderBy 60 (totalMilliseconds // (60 * 1000))
     , hours = totalMilliseconds // (60 * 60 * 1000)
     }
-
-
-displayDeciseconds : TimeInterval -> String
-displayDeciseconds time =
-    let
-        deciseconds =
-            time.milliseconds // 100
-    in
-    String.fromInt deciseconds
-
-
-displaySeconds : TimeInterval -> String
-displaySeconds time =
-    String.fromInt time.seconds
 
 
 viewSnackbar : String -> Html Msg

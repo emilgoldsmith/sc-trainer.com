@@ -135,30 +135,31 @@ describe("AlgorithmTrainer", function () {
       // Therefore we manually go to that state instead, to allow for the mocking.
       states.initial.restoreState();
       cy.clock();
+      const second = 1000;
+      const minute = 60 * second;
+      const hour = 60 * minute;
 
       cy.pressKey(Key.space);
       waitForTestRunningState();
-      // sum 0
       getTimer().should("have.text", "0.0");
+      // Just testing here that nothing happens with small increments
       cy.tick(3);
-      // sum 3
       getTimer().should("have.text", "0.0");
       cy.tick(10);
-      // sum 13
       getTimer().should("have.text", "0.0");
-      // Note that for example doing just 200 here failed when it was written.
+      // Note that for example doing just 200 milliseconds here failed when it was written.
       // This is because setInterval needs a granularity, so we just use values
       // that seem like "definitely should have been processed here", so with
       // a bit of a buffer.
-      cy.tick(230);
-      // sum 243
+      cy.tick(0.23 * second);
       getTimer().should("have.text", "0.2");
-      cy.tick(1300);
-      // sum 1543
+      cy.tick(1.3 * second);
       getTimer().should("have.text", "1.5");
-      cy.tick(60 * 1000 * 3 + 15300);
+      cy.tick(3 * minute + 15.3 * second);
       // sum 196843
       getTimer().should("have.text", "3:16.8");
+      cy.tick(4 * hour + 35 * minute);
+      getTimer().should("have.text", "4:38:16.8");
     });
 
     describe("ends test correctly", function () {
