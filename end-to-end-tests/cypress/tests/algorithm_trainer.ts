@@ -63,15 +63,18 @@ function buildElementsSingle<keys extends string>(
 }
 
 const elements = {
-  betweenTests: buildElementsSingle({ container: "between-tests-container" }),
+  betweenTests: buildElementsSingle({
+    container: "between-tests-container",
+    correctMessage: "correct-evaluation-message",
+    wrongMessage: "wrong-evaluation-message",
+  }),
   testRunning: buildElementsSingle({
     container: "test-running-container",
     timer: "timer",
   }),
   evaluateResult: buildElementsSingle({
     container: "evaluate-test-result-container",
-    correctMessage: "correct-evaluation-message",
-    wrongMessage: "wrong-evaluation-message",
+    timeResult: "time-result",
   }),
 };
 
@@ -146,21 +149,11 @@ describe("AlgorithmTrainer", function () {
     });
 
     it("tracks time correctly", function () {
-      // There are issues with the restore state functionality when mocking time.
-      // Specifically surrounding that the code stores timestamps and mocking
-      // changes the timestamps to 0 (or another constant), while the restored version
-      // may have saved a current timestamp. Also seems like there may be other issues
-      // that we didn't bother investigating further.
-      // Therefore we manually go to that state instead of restoring
-      // in order to allow for the mocking time.
-      states.initial.restoreState();
-      installClock();
+      getTestRunningWithMockedTime();
       const second = 1000;
       const minute = 60 * second;
       const hour = 60 * minute;
 
-      cy.pressKey(Key.space);
-      elements.testRunning.container.waitFor();
       // Should start at 0
       elements.testRunning.timer.get().should("have.text", "0.0");
       // Just testing here that nothing happens with small increments
@@ -289,13 +282,95 @@ describe("AlgorithmTrainer", function () {
     });
   });
 
-  describe("Evaluate Result", function () {
+  describe.only("Evaluate Result", function () {
     beforeEach(function () {
       states.evaluateResult.restoreState();
     });
 
     it("has all the correct elements", function () {
       elements.evaluateResult.container.assertShows();
+      elements.evaluateResult.container.get().within(() => {
+        elements.evaluateResult.timeResult.assertShows();
+      });
+    });
+
+    describe("displays the correct time", function () {
+      it("displays the time it was stopped at", function () {
+        getTestRunningWithMockedTime();
+        tick(1530);
+        elements.testRunning.timer.get().should("have.text", "1.5");
+        cy.pressKey(Key.space);
+        elements.evaluateResult.timeResult.get().should("have.text", "1.53");
+      });
+
+      it("displays two decimals on a whole second", function () {
+        getTestRunningWithMockedTime();
+        tick(1000);
+        elements.testRunning.timer.get().should("have.text", "1.0");
+        cy.pressKey(Key.space);
+        elements.evaluateResult.timeResult.get().should("have.text", "1.00");
+      });
+
+      it("displays two decimals on whole decisecond", function () {
+        getTestRunningWithMockedTime();
+        tick(600);
+        elements.testRunning.timer.get().should("have.text", "0.6");
+        cy.pressKey(Key.space);
+        elements.evaluateResult.timeResult.get().should("have.text", "0.60");
+      });
+
+      it("displays two decimals on single digit centisecond", function () {
+        getTestRunningWithMockedTime();
+        tick(1030);
+        elements.testRunning.timer.get().should("have.text", "1.0");
+        cy.pressKey(Key.space);
+        elements.evaluateResult.timeResult.get().should("have.text", "1.03");
+      });
+
+      describe("handles low granularity", function () {
+        it("0", function () {
+          getTestRunningWithMockedTime();
+          tick(100);
+          elements.testRunning.timer.get().should("have.text", "0.1");
+          cy.pressKey(Key.space);
+          elements.evaluateResult.timeResult.get().should("have.text", "0.10");
+        });
+        it("1", function () {
+          getTestRunningWithMockedTime();
+          tick(110);
+          elements.testRunning.timer.get().should("have.text", "0.1");
+          cy.pressKey(Key.space);
+          elements.evaluateResult.timeResult.get().should("have.text", "0.11");
+        });
+        it("2", function () {
+          getTestRunningWithMockedTime();
+          tick(120);
+          elements.testRunning.timer.get().should("have.text", "0.1");
+          cy.pressKey(Key.space);
+          elements.evaluateResult.timeResult.get().should("have.text", "0.12");
+        });
+      });
+    });
+
+    describe("approves correctly", function () {
+      it("approves on space pressed", function () {
+        cy.pressKey(Key.space);
+        elements.betweenTests.container.assertShows();
+        elements.betweenTests.correctMessage.assertShows();
+      });
+    });
+    describe("rejects correctly", function () {
+      it("on w key pressed", function () {
+        cy.pressKey(Key.w);
+        elements.betweenTests.container.assertShows();
+        elements.betweenTests.wrongMessage.assertShows();
+      });
+
+      it("on shift + w pressed", function () {
+        cy.pressKey(Key.W);
+        elements.betweenTests.container.assertShows();
+        elements.betweenTests.wrongMessage.assertShows();
+      });
     });
 
     describe("doesn't change state when", function () {
@@ -339,28 +414,22 @@ describe("AlgorithmTrainer", function () {
         });
       });
     });
-    describe("approves correctly", function () {
-      it("approves on space pressed", function () {
-        cy.pressKey(Key.space);
-        elements.betweenTests.container.assertShows();
-        elements.evaluateResult.correctMessage.assertShows();
-      });
-    });
-    describe("rejects correctly", function () {
-      it("on w key pressed", function () {
-        cy.pressKey(Key.w);
-        elements.betweenTests.container.assertShows();
-        elements.evaluateResult.wrongMessage.assertShows();
-      });
-
-      it("on shift + w pressed", function () {
-        cy.pressKey(Key.W);
-        elements.betweenTests.container.assertShows();
-        elements.evaluateResult.wrongMessage.assertShows();
-      });
-    });
   });
 });
+
+function getTestRunningWithMockedTime() {
+  // There are issues with the restore state functionality when mocking time.
+  // Specifically surrounding that the code stores timestamps and mocking
+  // changes the timestamps to 0 (or another constant), while the restored version
+  // may have saved a current real timestamp. Also seems like there may be other issues
+  // that we didn't bother investigating further.
+  // Therefore we manually go to that state instead of restoring
+  // in order to allow for the mocking time.
+  states.initial.restoreState();
+  installClock();
+  cy.pressKey(Key.space);
+  elements.testRunning.container.waitFor();
+}
 
 function buildAsserter(testId: string) {
   return function (options?: { log?: boolean }) {

@@ -7,6 +7,7 @@ import Html.Attributes exposing (..)
 import Json.Decode as Decode
 import Process
 import Task
+import Utils.TimeInterval as TimeInterval exposing (TimeInterval)
 
 
 main : Program () Model Msg
@@ -32,11 +33,11 @@ type alias Model =
 
 type TrainerState
     = BetweenTests EvaluationMessage
-    | TestRunning Float
-    | EvaluatingResult { correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool }
+    | TestRunning TimeInterval
+    | EvaluatingResult { correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool, result : TimeInterval }
 
 
-allPressed : { correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool } -> Bool
+allPressed : { a | correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool } -> Bool
 allPressed { correctKeyPressStarted, wrongKeyPressStarted } =
     correctKeyPressStarted && wrongKeyPressStarted
 
@@ -122,18 +123,18 @@ update msg model =
                 BetweenTests _ ->
                     case msg of
                         KeyUp Space ->
-                            ( { model | trainerState = TestRunning 0 }, Cmd.none )
+                            ( { model | trainerState = TestRunning TimeInterval.zero }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
 
-                TestRunning millisecondsElapsed ->
+                TestRunning intervalElapsed ->
                     case msg of
                         KeyDown _ ->
-                            ( { model | trainerState = EvaluatingResult { correctKeyPressStarted = False, wrongKeyPressStarted = False } }, Cmd.none )
+                            ( { model | trainerState = EvaluatingResult { correctKeyPressStarted = False, wrongKeyPressStarted = False, result = intervalElapsed } }, Cmd.none )
 
                         NextAnimationFrame timeDelta ->
-                            ( { model | trainerState = TestRunning (millisecondsElapsed + timeDelta) }, Cmd.none )
+                            ( { model | trainerState = TestRunning (TimeInterval.increment timeDelta intervalElapsed) }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
@@ -187,58 +188,23 @@ viewState : Model -> Html Msg
 viewState model =
     case model.trainerState of
         BetweenTests message ->
-            div [ attribute "data-testid" "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
+            div [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
 
-        TestRunning millisecondsElapsed ->
-            div [ attribute "data-testid" "test-running-container" ] [ text "Test Running", div [ attribute "data-testid" "timer" ] [ text <| displayTime millisecondsElapsed ] ]
+        TestRunning elapsedTime ->
+            div [ testid "test-running-container" ] [ text "Test Running", div [ testid "timer" ] [ text <| TimeInterval.displayOneDecimal elapsedTime ] ]
 
-        EvaluatingResult _ ->
-            div [ attribute "data-testid" "evaluate-test-result-container" ] [ text <| "Evaluating Result" ]
-
-
-displayTime : Float -> String
-displayTime millisecondsElapsed =
-    let
-        deciseconds =
-            time.milliseconds // 100
-
-        time =
-            buildTimeInterval millisecondsElapsed
-
-        onlySeconds =
-            String.fromInt time.seconds ++ "." ++ String.fromInt deciseconds
-
-        withMinutes =
-            String.fromInt time.minutes ++ ":" ++ onlySeconds
-
-        withHours =
-            String.fromInt time.hours ++ ":" ++ withMinutes
-    in
-    if time.hours > 0 then
-        withHours
-
-    else if time.minutes > 0 then
-        withMinutes
-
-    else
-        onlySeconds
+        EvaluatingResult { result } ->
+            div [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result ]
 
 
-type alias TimeInterval =
-    { milliseconds : Int, seconds : Int, minutes : Int, hours : Int }
+testid : String -> Attribute Msg
+testid =
+    attribute "data-testid"
 
 
-buildTimeInterval : Float -> TimeInterval
-buildTimeInterval floatMilliseconds =
-    let
-        millisecondsElapsed =
-            round floatMilliseconds
-    in
-    { milliseconds = remainderBy 1000 millisecondsElapsed
-    , seconds = remainderBy 60 (millisecondsElapsed // 1000)
-    , minutes = remainderBy 60 (millisecondsElapsed // (60 * 1000))
-    , hours = millisecondsElapsed // (60 * 60 * 1000)
-    }
+displayTimeResult : TimeInterval -> Html Msg
+displayTimeResult result =
+    div [ testid "time-result" ] [ text <| TimeInterval.displayTwoDecimals result ]
 
 
 viewSnackbar : String -> Html Msg
@@ -253,7 +219,7 @@ viewEvaluationMessage message =
             div [] [ text "Auto-deploy works!" ]
 
         CorrectEvaluation ->
-            div [ attribute "data-testid" "correct-evaluation-message" ] [ text "Correct" ]
+            div [ testid "correct-evaluation-message" ] [ text "Correct" ]
 
         WrongEvaluation ->
-            div [ attribute "data-testid" "wrong-evaluation-message" ] [ text "Wrong" ]
+            div [ testid "wrong-evaluation-message" ] [ text "Wrong" ]
