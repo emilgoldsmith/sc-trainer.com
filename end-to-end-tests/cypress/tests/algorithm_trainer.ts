@@ -40,36 +40,54 @@ class StateCache {
   }
 }
 
-// Between tests
-const assertBetweenTestsState = buildAsserter("between-tests-container");
-const waitForBetweenTestsState = buildWaiter("between-tests-container");
-// Test running
-const assertTestRunningState = buildAsserter("test-running-container");
-const waitForTestRunningState = buildWaiter("test-running-container");
-const getTestRunningContainer = buildGetter("test-running-container");
-const assertTimerShows = buildAsserter("timer");
-const getTimer = buildGetter("timer");
-// Evaluate result
-const assertEvaluateResultState = buildAsserter(
-  "evaluate-test-result-container"
-);
-const waitForEvaluateResultState = buildWaiter(
-  "evaluate-test-result-container"
-);
-const assertCorrectEvaluationMessage = buildAsserter(
-  "correct-evaluation-message"
-);
-const assertWrongEvaluationMessage = buildAsserter("wrong-evaluation-message");
+function buildElementsSingle<keys extends string>(
+  testIds: { [key in keys]: string }
+): {
+  [key in keys]: {
+    get: ReturnType<typeof buildGetter>;
+    waitFor: ReturnType<typeof buildWaiter>;
+    assertShows: ReturnType<typeof buildAsserter>;
+  };
+} {
+  return Cypress._.mapValues(testIds, (testId: string) => ({
+    get: buildGetter(testId),
+    waitFor: buildWaiter(testId),
+    assertShows: buildAsserter(testId),
+  })) as {
+    [key in keys]: {
+      get: ReturnType<typeof buildGetter>;
+      waitFor: ReturnType<typeof buildWaiter>;
+      assertShows: ReturnType<typeof buildAsserter>;
+    };
+  };
+}
+
+const elements = {
+  betweenTests: buildElementsSingle({ container: "between-tests-container" }),
+  testRunning: buildElementsSingle({
+    container: "test-running-container",
+    timer: "timer",
+  }),
+  evaluateResult: buildElementsSingle({
+    container: "evaluate-test-result-container",
+    correctMessage: "correct-evaluation-message",
+    wrongMessage: "wrong-evaluation-message",
+  }),
+};
 
 const states = {
-  initial: new StateCache("initial", () => {}, waitForBetweenTestsState),
+  initial: new StateCache(
+    "initial",
+    () => {},
+    elements.betweenTests.container.waitFor
+  ),
   testRunning: new StateCache(
     "testRunning",
     () => {
       states.initial.restoreState();
       cy.pressKey(Key.space);
     },
-    waitForTestRunningState
+    elements.testRunning.container.waitFor
   ),
   evaluateResult: new StateCache(
     "evaluateResult",
@@ -77,7 +95,7 @@ const states = {
       states.testRunning.restoreState();
       cy.pressKey(Key.space);
     },
-    waitForEvaluateResultState
+    elements.evaluateResult.container.waitFor
   ),
 } as const;
 
@@ -97,21 +115,21 @@ describe("AlgorithmTrainer", function () {
     });
 
     it("has all the correct elements", function () {
-      assertBetweenTestsState();
+      elements.betweenTests.container.assertShows();
     });
 
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
-      assertTestRunningState();
+      elements.testRunning.container.assertShows();
     });
 
     it("doesn't start test when pressing any other keys", function () {
       cy.pressKey(Key.a);
-      assertBetweenTestsState();
+      elements.betweenTests.container.assertShows();
       cy.pressKey(Key.x);
-      assertBetweenTestsState();
+      elements.betweenTests.container.assertShows();
       cy.pressKey(Key.capsLock);
-      assertBetweenTestsState();
+      elements.betweenTests.container.assertShows();
     });
   });
 
@@ -121,9 +139,9 @@ describe("AlgorithmTrainer", function () {
     });
 
     it("has all the correct elements", function () {
-      assertTestRunningState();
-      getTestRunningContainer().within(() => {
-        assertTimerShows();
+      elements.testRunning.container.assertShows();
+      elements.testRunning.container.get().within(() => {
+        elements.testRunning.timer.assertShows();
       });
     });
 
@@ -142,27 +160,27 @@ describe("AlgorithmTrainer", function () {
       const hour = 60 * minute;
 
       cy.pressKey(Key.space);
-      waitForTestRunningState();
+      elements.testRunning.container.waitFor();
       // Should start at 0
-      getTimer().should("have.text", "0.0");
+      elements.testRunning.timer.get().should("have.text", "0.0");
       // Just testing here that nothing happens with small increments
       tick(3);
-      getTimer().should("have.text", "0.0");
+      elements.testRunning.timer.get().should("have.text", "0.0");
       tick(10);
-      getTimer().should("have.text", "0.0");
+      elements.testRunning.timer.get().should("have.text", "0.0");
       tick(0.2 * second);
-      getTimer().should("have.text", "0.2");
+      elements.testRunning.timer.get().should("have.text", "0.2");
       tick(1.3 * second);
-      getTimer().should("have.text", "1.5");
+      elements.testRunning.timer.get().should("have.text", "1.5");
       // Switch to using time jumps as tick calls all setInterval times in the
       // time interval resulting in slow tests and excessive cpu usage
       setTimeTo(3 * minute + 16.8 * second);
-      getTimer().should("have.text", "3:16.8");
+      elements.testRunning.timer.get().should("have.text", "3:16.8");
       setTimeTo(4 * hour + 38 * minute + 45.7 * second);
-      getTimer().should("have.text", "4:38:45.7");
+      elements.testRunning.timer.get().should("have.text", "4:38:45.7");
       setTimeTo(234 * hour + 59 * minute + 18.1 * second);
       // Just ensuring a ridiculous amount works too, note we don't break it down to days
-      getTimer().should("have.text", "234:59:18.1");
+      elements.testRunning.timer.get().should("have.text", "234:59:18.1");
     });
 
     describe("ends test correctly", function () {
@@ -189,7 +207,7 @@ describe("AlgorithmTrainer", function () {
             },
             () => {
               cy.get("body", { log: false }).click(position, { log: false });
-              assertEvaluateResultState({ log: false });
+              elements.evaluateResult.container.assertShows({ log: false });
             }
           );
           cy.withOverallNameLogged(
@@ -219,7 +237,7 @@ describe("AlgorithmTrainer", function () {
             },
             () => {
               cy.pressKey(key, { log: false });
-              assertEvaluateResultState({ log: false });
+              elements.evaluateResult.container.assertShows({ log: false });
             }
           );
           cy.withOverallNameLogged(
@@ -253,7 +271,7 @@ describe("AlgorithmTrainer", function () {
             },
             () => {
               cy.longPressKey(key, { log: false });
-              assertEvaluateResultState({ log: false });
+              elements.evaluateResult.container.assertShows({ log: false });
             }
           );
           cy.withOverallNameLogged(
@@ -277,7 +295,7 @@ describe("AlgorithmTrainer", function () {
     });
 
     it("has all the correct elements", function () {
-      assertEvaluateResultState();
+      elements.evaluateResult.container.assertShows();
     });
 
     describe("doesn't change state when", function () {
@@ -301,7 +319,7 @@ describe("AlgorithmTrainer", function () {
             },
             () => {
               cy.get("body", { log: false }).click(position, { log: false });
-              assertEvaluateResultState({ log: false });
+              elements.evaluateResult.container.assertShows({ log: false });
             }
           );
         });
@@ -315,7 +333,7 @@ describe("AlgorithmTrainer", function () {
             },
             () => {
               cy.pressKey(key, { log: false });
-              assertEvaluateResultState({ log: false });
+              elements.evaluateResult.container.assertShows({ log: false });
             }
           );
         });
@@ -324,21 +342,21 @@ describe("AlgorithmTrainer", function () {
     describe("approves correctly", function () {
       it("approves on space pressed", function () {
         cy.pressKey(Key.space);
-        assertBetweenTestsState();
-        assertCorrectEvaluationMessage();
+        elements.betweenTests.container.assertShows();
+        elements.evaluateResult.correctMessage.assertShows();
       });
     });
     describe("rejects correctly", function () {
       it("on w key pressed", function () {
         cy.pressKey(Key.w);
-        assertBetweenTestsState();
-        assertWrongEvaluationMessage();
+        elements.betweenTests.container.assertShows();
+        elements.evaluateResult.wrongMessage.assertShows();
       });
 
       it("on shift + w pressed", function () {
         cy.pressKey(Key.W);
-        assertBetweenTestsState();
-        assertWrongEvaluationMessage();
+        elements.betweenTests.container.assertShows();
+        elements.evaluateResult.wrongMessage.assertShows();
       });
     });
   });
@@ -365,6 +383,7 @@ function buildGetter(testId: string) {
 let clock: {
   tick: (ms: number) => number;
   setSystemTime: (now: number) => void;
+  next: () => void;
 } | null = null;
 
 function getClock(): NonNullable<typeof clock> {
@@ -375,7 +394,10 @@ function getClock(): NonNullable<typeof clock> {
 }
 function installClock() {
   cy.window({ log: false }).then(
-    (window) => (clock = withGlobal(window).install() as any)
+    (window) =>
+      (clock = (withGlobal(window).install() as unknown) as NonNullable<
+        typeof clock
+      >)
   );
 }
 function tick(ms: number) {
