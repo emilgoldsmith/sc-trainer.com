@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "@sinonjs/fake-timers": "^7.0.2",
     "@typescript-eslint/eslint-plugin": "^4.14.2",
     "@typescript-eslint/parser": "^4.14.2",
     "cypress": "^6.6.0",

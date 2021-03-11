@@ -1,5 +1,6 @@
 import { interceptAddingElmModelObserversAndModifiers } from "support/elm-model-monkey-patching";
 import { getKeyValue, Key } from "support/keys";
+import { withGlobal } from "@sinonjs/fake-timers";
 
 class StateCache {
   private elmModel: Cypress.OurApplicationState | null = null;
@@ -28,7 +29,7 @@ class StateCache {
     );
   }
 
-  restoreState(options?: { log?: false }) {
+  restoreState(options?: { log?: boolean }) {
     if (this.elmModel === null)
       throw new Error(
         `Attempted to restore the ${this.name} state before cache was populated`
@@ -119,14 +120,14 @@ describe("AlgorithmTrainer", function () {
       states.testRunning.restoreState();
     });
 
-    it.only("has all the correct elements", function () {
+    it("has all the correct elements", function () {
       assertTestRunningState();
       getTestRunningContainer().within(() => {
         assertTimerShows();
       });
     });
 
-    it.only("tracks time correctly", function () {
+    it("tracks time correctly", function () {
       // There are issues with the restore state functionality when mocking time.
       // Specifically surrounding that the code stores timestamps and mocking
       // changes the timestamps to 0 (or another constant), while the restored version
@@ -134,7 +135,7 @@ describe("AlgorithmTrainer", function () {
       // that we didn't bother investigating further.
       // Therefore we manually go to that state instead, to allow for the mocking.
       states.initial.restoreState();
-      cy.clock();
+      installClock();
       const second = 1000;
       const minute = 60 * second;
       const hour = 60 * minute;
@@ -143,27 +144,32 @@ describe("AlgorithmTrainer", function () {
       waitForTestRunningState();
       getTimer().should("have.text", "0.0");
       // Just testing here that nothing happens with small increments
-      cy.tick(3);
+      tick(3);
       getTimer().should("have.text", "0.0");
-      cy.tick(10);
+      tick(10);
       getTimer().should("have.text", "0.0");
       // Note that for example doing just 200 milliseconds here failed when it was written.
       // This is because setInterval needs a granularity, so we just use values
       // that seem like "definitely should have been processed here", so with
       // a bit of a buffer.
-      cy.tick(0.23 * second);
+      tick(0.23 * second);
       getTimer().should("have.text", "0.2");
-      cy.tick(1.3 * second);
+      tick(1.3 * second);
       getTimer().should("have.text", "1.5");
-      cy.tick(3 * minute + 15.3 * second);
-      // sum 196843
+      setTimeTo(3 * minute + 16.8 * second);
       getTimer().should("have.text", "3:16.8");
-      cy.tick(4 * hour + 35 * minute);
-      getTimer().should("have.text", "4:38:16.8");
+      setTimeTo(4 * hour + 38 * minute + 45.7 * second);
+      getTimer().should("have.text", "4:38:45.7");
+      // Just ensuring a ridiculous amount works too, note we don't break it down to days
+      setTimeTo(234 * hour + 59 * minute + 18.1 * second);
+      getTimer().should("have.text", "234:59:18.1");
     });
 
     describe("ends test correctly", function () {
       it("on click anywhere", function () {
+        // We don't need time passing here, and we have suspicions it may
+        // cause some flakiness in the test because of the rerenders time causes
+        cy.clock();
         ([
           "center",
           "top",
@@ -354,4 +360,30 @@ function buildGetter(testId: string) {
   return function (options?: { log?: boolean }) {
     return cy.getByTestId(testId, options);
   };
+}
+
+let clock: {
+  tick: (ms: number) => number;
+  setSystemTime: (now: number) => void;
+} | null = null;
+
+function getClock(): NonNullable<typeof clock> {
+  if (clock === null) {
+    throw new Error("Can't call a clock method before you called install");
+  }
+  return clock;
+}
+function installClock() {
+  cy.window({ log: false }).then(
+    (window) => (clock = withGlobal(window).install() as any)
+  );
+}
+function tick(ms: number) {
+  cy.wrap(undefined, { log: false }).then(() => getClock().tick(ms));
+}
+function setTimeTo(now: number) {
+  cy.wrap(undefined, { log: false }).then(() => {
+    getClock().setSystemTime(now);
+    getClock().tick(50);
+  });
 }
