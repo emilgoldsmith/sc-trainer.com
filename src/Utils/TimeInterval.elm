@@ -1,4 +1,6 @@
-module Utils.TimeInterval exposing (TimeInterval, displayOneDecimal, displayTwoDecimals, increment, zero)
+module Utils.TimeInterval exposing (TimeInterval, betweenTimestamps, displayOneDecimal, displayTwoDecimals, increment, zero)
+
+import Time
 
 
 type TimeInterval
@@ -13,6 +15,11 @@ map f (TimeInterval milliseconds) =
 zero : TimeInterval
 zero =
     TimeInterval 0
+
+
+betweenTimestamps : { start : Time.Posix, end : Time.Posix } -> TimeInterval
+betweenTimestamps { start, end } =
+    TimeInterval <| toFloat <| Time.posixToMillis end - Time.posixToMillis start
 
 
 increment : Float -> TimeInterval -> TimeInterval

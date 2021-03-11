@@ -295,58 +295,47 @@ describe("AlgorithmTrainer", function () {
     });
 
     describe("displays the correct time", function () {
-      it("displays the time it was stopped at", function () {
+      function getEvaluateAfterTestRanFor({
+        milliseconds,
+      }: {
+        milliseconds: number;
+      }): void {
         getTestRunningWithMockedTime();
-        tick(1530);
-        elements.testRunning.timer.get().should("have.text", "1.5");
+        setTimeTo(milliseconds);
         cy.pressKey(Key.space);
+      }
+
+      it("displays the time it was stopped at", function () {
+        getEvaluateAfterTestRanFor({ milliseconds: 1530 });
         elements.evaluateResult.timeResult.get().should("have.text", "1.53");
       });
 
       it("displays two decimals on a whole second", function () {
-        getTestRunningWithMockedTime();
-        tick(1000);
-        elements.testRunning.timer.get().should("have.text", "1.0");
-        cy.pressKey(Key.space);
+        getEvaluateAfterTestRanFor({ milliseconds: 1000 });
         elements.evaluateResult.timeResult.get().should("have.text", "1.00");
       });
 
       it("displays two decimals on whole decisecond", function () {
-        getTestRunningWithMockedTime();
-        tick(600);
-        elements.testRunning.timer.get().should("have.text", "0.6");
-        cy.pressKey(Key.space);
+        getEvaluateAfterTestRanFor({ milliseconds: 600 });
         elements.evaluateResult.timeResult.get().should("have.text", "0.60");
       });
 
       it("displays two decimals on single digit centisecond", function () {
-        getTestRunningWithMockedTime();
-        tick(1030);
-        elements.testRunning.timer.get().should("have.text", "1.0");
-        cy.pressKey(Key.space);
+        getEvaluateAfterTestRanFor({ milliseconds: 1030 });
         elements.evaluateResult.timeResult.get().should("have.text", "1.03");
       });
 
       describe("handles low granularity", function () {
         it("0", function () {
-          getTestRunningWithMockedTime();
-          tick(100);
-          elements.testRunning.timer.get().should("have.text", "0.1");
-          cy.pressKey(Key.space);
+          getEvaluateAfterTestRanFor({ milliseconds: 100 });
           elements.evaluateResult.timeResult.get().should("have.text", "0.10");
         });
         it("1", function () {
-          getTestRunningWithMockedTime();
-          tick(110);
-          elements.testRunning.timer.get().should("have.text", "0.1");
-          cy.pressKey(Key.space);
+          getEvaluateAfterTestRanFor({ milliseconds: 110 });
           elements.evaluateResult.timeResult.get().should("have.text", "0.11");
         });
         it("2", function () {
-          getTestRunningWithMockedTime();
-          tick(120);
-          elements.testRunning.timer.get().should("have.text", "0.1");
-          cy.pressKey(Key.space);
+          getEvaluateAfterTestRanFor({ milliseconds: 120 });
           elements.evaluateResult.timeResult.get().should("have.text", "0.12");
         });
       });

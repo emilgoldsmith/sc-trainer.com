@@ -7,6 +7,7 @@ import Html.Attributes exposing (..)
 import Json.Decode as Decode
 import Process
 import Task
+import Time
 import Utils.TimeInterval as TimeInterval exposing (TimeInterval)
 
 
@@ -33,7 +34,7 @@ type alias Model =
 
 type TrainerState
     = BetweenTests EvaluationMessage
-    | TestRunning TimeInterval
+    | TestRunning Time.Posix TimeInterval
     | EvaluatingResult { correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool, result : TimeInterval }
 
 
@@ -53,6 +54,8 @@ type Msg
     | KeyDown Key
     | DeleteOldestSnackbar
     | NextAnimationFrame Float
+    | StartTest Time.Posix
+    | EndTest Time.Posix
 
 
 type Key
@@ -90,7 +93,7 @@ subscriptions model =
         BetweenTests _ ->
             Events.onKeyUp <| Decode.map KeyUp decodeKey
 
-        TestRunning _ ->
+        TestRunning _ _ ->
             Sub.batch
                 [ Events.onKeyDown <|
                     Decode.map KeyDown
@@ -123,18 +126,33 @@ update msg model =
                 BetweenTests _ ->
                     case msg of
                         KeyUp Space ->
-                            ( { model | trainerState = TestRunning TimeInterval.zero }, Cmd.none )
+                            ( model, Task.perform StartTest Time.now )
+
+                        StartTest startTime ->
+                            ( { model | trainerState = TestRunning startTime TimeInterval.zero }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
 
-                TestRunning intervalElapsed ->
+                TestRunning startTime intervalElapsed ->
                     case msg of
                         KeyDown _ ->
-                            ( { model | trainerState = EvaluatingResult { correctKeyPressStarted = False, wrongKeyPressStarted = False, result = intervalElapsed } }, Cmd.none )
+                            ( model, Task.perform EndTest Time.now )
+
+                        EndTest endTime ->
+                            ( { model
+                                | trainerState =
+                                    EvaluatingResult
+                                        { correctKeyPressStarted = False
+                                        , wrongKeyPressStarted = False
+                                        , result = TimeInterval.betweenTimestamps { start = startTime, end = endTime }
+                                        }
+                              }
+                            , Cmd.none
+                            )
 
                         NextAnimationFrame timeDelta ->
-                            ( { model | trainerState = TestRunning (TimeInterval.increment timeDelta intervalElapsed) }, Cmd.none )
+                            ( { model | trainerState = TestRunning startTime (TimeInterval.increment timeDelta intervalElapsed) }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
@@ -190,7 +208,7 @@ viewState model =
         BetweenTests message ->
             div [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
 
-        TestRunning elapsedTime ->
+        TestRunning _ elapsedTime ->
             div [ testid "test-running-container" ] [ text "Test Running", div [ testid "timer" ] [ text <| TimeInterval.displayOneDecimal elapsedTime ] ]
 
         EvaluatingResult { result } ->
