@@ -7,7 +7,6 @@ import Html.Attributes exposing (..)
 import Json.Decode as Decode
 import Process
 import Task
-import Time
 
 
 main : Program () Model Msg
@@ -33,7 +32,7 @@ type alias Model =
 
 type TrainerState
     = BetweenTests EvaluationMessage
-    | TestRunning { startTime : Time.Posix, currentTime : Time.Posix }
+    | TestRunning Float
     | EvaluatingResult { correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool }
 
 
@@ -52,8 +51,7 @@ type Msg
     = KeyUp Key
     | KeyDown Key
     | DeleteOldestSnackbar
-    | StartTest Time.Posix
-    | UpdateTimer Time.Posix
+    | NextAnimationFrame Float
 
 
 type Key
@@ -99,7 +97,7 @@ subscriptions model =
                 , Events.onMouseDown <|
                     Decode.succeed
                         (KeyDown <| SomeKey "mouseDown")
-                , Time.every 30 UpdateTimer
+                , Events.onAnimationFrameDelta NextAnimationFrame
                 ]
 
         EvaluatingResult keyStates ->
@@ -124,21 +122,18 @@ update msg model =
                 BetweenTests _ ->
                     case msg of
                         KeyUp Space ->
-                            ( model, Task.perform StartTest Time.now )
-
-                        StartTest startTime ->
-                            ( { model | trainerState = TestRunning { startTime = startTime, currentTime = startTime } }, Cmd.none )
+                            ( { model | trainerState = TestRunning 0 }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
 
-                TestRunning timestamps ->
+                TestRunning millisecondsElapsed ->
                     case msg of
                         KeyDown _ ->
                             ( { model | trainerState = EvaluatingResult { correctKeyPressStarted = False, wrongKeyPressStarted = False } }, Cmd.none )
 
-                        UpdateTimer time ->
-                            ( { model | trainerState = TestRunning { timestamps | currentTime = time } }, Cmd.none )
+                        NextAnimationFrame timeDelta ->
+                            ( { model | trainerState = TestRunning (millisecondsElapsed + timeDelta) }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
@@ -194,26 +189,21 @@ viewState model =
         BetweenTests message ->
             div [ attribute "data-testid" "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
 
-        TestRunning timestamps ->
-            div [ attribute "data-testid" "test-running-container" ] [ text "Test Running", div [ attribute "data-testid" "timer" ] [ text (timestamps |> millisecondsElapsed |> displayTime) ] ]
+        TestRunning millisecondsElapsed ->
+            div [ attribute "data-testid" "test-running-container" ] [ text "Test Running", div [ attribute "data-testid" "timer" ] [ text <| displayTime millisecondsElapsed ] ]
 
         EvaluatingResult _ ->
             div [ attribute "data-testid" "evaluate-test-result-container" ] [ text <| "Evaluating Result" ]
 
 
-millisecondsElapsed : { startTime : Time.Posix, currentTime : Time.Posix } -> Int
-millisecondsElapsed { startTime, currentTime } =
-    Time.posixToMillis currentTime - Time.posixToMillis startTime
-
-
-displayTime : Int -> String
-displayTime totalMilliseconds =
+displayTime : Float -> String
+displayTime millisecondsElapsed =
     let
         deciseconds =
             time.milliseconds // 100
 
         time =
-            buildTimeInterval totalMilliseconds
+            buildTimeInterval millisecondsElapsed
 
         onlySeconds =
             String.fromInt time.seconds ++ "." ++ String.fromInt deciseconds
@@ -238,12 +228,16 @@ type alias TimeInterval =
     { milliseconds : Int, seconds : Int, minutes : Int, hours : Int }
 
 
-buildTimeInterval : Int -> TimeInterval
-buildTimeInterval totalMilliseconds =
-    { milliseconds = remainderBy 1000 totalMilliseconds
-    , seconds = remainderBy 60 (totalMilliseconds // 1000)
-    , minutes = remainderBy 60 (totalMilliseconds // (60 * 1000))
-    , hours = totalMilliseconds // (60 * 60 * 1000)
+buildTimeInterval : Float -> TimeInterval
+buildTimeInterval floatMilliseconds =
+    let
+        millisecondsElapsed =
+            round floatMilliseconds
+    in
+    { milliseconds = remainderBy 1000 millisecondsElapsed
+    , seconds = remainderBy 60 (millisecondsElapsed // 1000)
+    , minutes = remainderBy 60 (millisecondsElapsed // (60 * 1000))
+    , hours = millisecondsElapsed // (60 * 60 * 1000)
     }
 
 

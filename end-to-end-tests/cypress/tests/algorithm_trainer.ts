@@ -133,7 +133,8 @@ describe("AlgorithmTrainer", function () {
       // changes the timestamps to 0 (or another constant), while the restored version
       // may have saved a current timestamp. Also seems like there may be other issues
       // that we didn't bother investigating further.
-      // Therefore we manually go to that state instead, to allow for the mocking.
+      // Therefore we manually go to that state instead of restoring
+      // in order to allow for the mocking time.
       states.initial.restoreState();
       installClock();
       const second = 1000;
@@ -142,26 +143,25 @@ describe("AlgorithmTrainer", function () {
 
       cy.pressKey(Key.space);
       waitForTestRunningState();
+      // Should start at 0
       getTimer().should("have.text", "0.0");
       // Just testing here that nothing happens with small increments
       tick(3);
       getTimer().should("have.text", "0.0");
       tick(10);
       getTimer().should("have.text", "0.0");
-      // Note that for example doing just 200 milliseconds here failed when it was written.
-      // This is because setInterval needs a granularity, so we just use values
-      // that seem like "definitely should have been processed here", so with
-      // a bit of a buffer.
-      tick(0.23 * second);
+      tick(0.2 * second);
       getTimer().should("have.text", "0.2");
       tick(1.3 * second);
       getTimer().should("have.text", "1.5");
+      // Switch to using time jumps as tick calls all setInterval times in the
+      // time interval resulting in slow tests and excessive cpu usage
       setTimeTo(3 * minute + 16.8 * second);
       getTimer().should("have.text", "3:16.8");
       setTimeTo(4 * hour + 38 * minute + 45.7 * second);
       getTimer().should("have.text", "4:38:45.7");
-      // Just ensuring a ridiculous amount works too, note we don't break it down to days
       setTimeTo(234 * hour + 59 * minute + 18.1 * second);
+      // Just ensuring a ridiculous amount works too, note we don't break it down to days
       getTimer().should("have.text", "234:59:18.1");
     });
 
@@ -383,7 +383,8 @@ function tick(ms: number) {
 }
 function setTimeTo(now: number) {
   cy.wrap(undefined, { log: false }).then(() => {
-    getClock().setSystemTime(now);
-    getClock().tick(50);
+    const clock = getClock();
+    clock.setSystemTime(now);
+    clock.next();
   });
 }
