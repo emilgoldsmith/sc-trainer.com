@@ -77,6 +77,8 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
 ) {
   // A somewhat arbitrary number that just is long enough for a very long press
   const LONG_TIME_MS = 3000;
+  const KEY_REPEAT_DELAY = 500;
+  const KEY_REPEAT_INTERVAL = 35;
   const stringDisplayableKey = "'" + getKeyValue(key) + "'";
   const event = buildKeyboardEvent(key);
   const handleKeyPress = () => {
@@ -84,7 +86,21 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
       .trigger("keydown", { ...event, log: false })
       .trigger("keypress", { ...event, log: false });
     if (options?.log !== false) cy.log(`Pressed down ${stringDisplayableKey}`);
-    cy.tick(LONG_TIME_MS);
+    let previous = 0;
+    let current: number;
+    for (
+      current = KEY_REPEAT_DELAY;
+      current < LONG_TIME_MS;
+      previous = current, current += KEY_REPEAT_INTERVAL
+    ) {
+      cy.tick(current - previous);
+      cy.document({ log: false })
+        .trigger("keydown", { ...event, log: false })
+        .trigger("keypress", { ...event, log: false });
+    }
+    const remainingTime = LONG_TIME_MS - previous;
+    console.log(remainingTime);
+    remainingTime > 0 && cy.tick(remainingTime);
     cy.document({ log: false })
       .trigger("keypress", { ...event, log: false })
       .trigger("keyup", { ...event, log: false });

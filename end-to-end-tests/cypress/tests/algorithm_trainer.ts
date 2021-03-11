@@ -282,7 +282,7 @@ describe("AlgorithmTrainer", function () {
     });
   });
 
-  describe.only("Evaluate Result", function () {
+  describe("Evaluate Result", function () {
     beforeEach(function () {
       states.evaluateResult.restoreState();
     });
