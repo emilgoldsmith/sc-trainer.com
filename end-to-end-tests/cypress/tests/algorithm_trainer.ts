@@ -282,7 +282,7 @@ describe("AlgorithmTrainer", function () {
           );
         });
       });
-      it("on button mash", function () {
+      it("on button mash space before w", function () {
         cy.clock();
         cy.buttonMash([
           Key.l,
@@ -293,6 +293,36 @@ describe("AlgorithmTrainer", function () {
           Key.leftCtrl,
           Key.w,
           Key.W,
+        ]);
+        elements.evaluateResult.container.assertShows();
+      });
+
+      it("on button mash w before space", function () {
+        cy.clock();
+        cy.buttonMash([
+          Key.w,
+          Key.W,
+          Key.l,
+          Key.five,
+          Key.shift,
+          Key.space,
+          Key.capsLock,
+          Key.leftCtrl,
+        ]);
+        elements.evaluateResult.container.assertShows();
+      });
+
+      it("on long button mash", function () {
+        cy.clock();
+        cy.longButtonMash([
+          Key.w,
+          Key.W,
+          Key.l,
+          Key.five,
+          Key.shift,
+          Key.space,
+          Key.capsLock,
+          Key.leftCtrl,
         ]);
         elements.evaluateResult.container.assertShows();
       });
@@ -358,8 +388,16 @@ describe("AlgorithmTrainer", function () {
       });
     });
 
+    function getEvaluateWithMockedTime() {
+      states.testRunning.restoreState();
+      cy.clock();
+      cy.pressKey(Key.space);
+      elements.evaluateResult.container.waitFor();
+    }
     describe("approves correctly", function () {
       it("approves on space pressed", function () {
+        getEvaluateWithMockedTime();
+        cy.tick(300);
         cy.pressKey(Key.space);
         elements.betweenTests.container.assertShows();
         elements.betweenTests.correctMessage.assertShows();
@@ -367,12 +405,16 @@ describe("AlgorithmTrainer", function () {
     });
     describe("rejects correctly", function () {
       it("on w key pressed", function () {
+        getEvaluateWithMockedTime();
+        cy.tick(300);
         cy.pressKey(Key.w);
         elements.betweenTests.container.assertShows();
         elements.betweenTests.wrongMessage.assertShows();
       });
 
       it("on shift + w pressed", function () {
+        getEvaluateWithMockedTime();
+        cy.tick(300);
         cy.pressKey(Key.W);
         elements.betweenTests.container.assertShows();
         elements.betweenTests.wrongMessage.assertShows();

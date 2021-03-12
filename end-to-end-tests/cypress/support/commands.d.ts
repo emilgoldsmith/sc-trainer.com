@@ -100,6 +100,18 @@ declare namespace Cypress {
     buttonMash(keys: Key[], options?: { log?: boolean }): void;
 
     /**
+     * Simulates something like a hand smashing down on the given keys on the keyboard
+     * and then taking a long time to release the keys
+     *
+     * Requires cy.clock() time mocking beforehand
+     *
+     * @example
+     * cy.clock();
+     * cy.longButtonMash([Key.space, Key.l, Key.leftCtrl]);
+     */
+    longButtonMash(keys: Key[], options?: { log?: boolean }): void;
+
+    /**
      * Get the current state of our application, do not try to modify it
      * just pass it in to setApplicationState at some point later to restore
      * the app to that state
