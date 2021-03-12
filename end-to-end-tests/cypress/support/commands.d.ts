@@ -80,10 +80,24 @@ declare namespace Cypress {
      * Holds down a key in the global scope for a "long" time before releasing it
      * not focusing on any specific node
      *
+     * Requires cy.clock() time mocking beforehand
+     *
      * @example
+     * cy.clock();
      * cy.longPressKey(Key.space);
      */
     longPressKey(key: Key, options?: { log?: boolean }): void;
+
+    /**
+     * Simulates something like a hand smashing down on the given keys on the keyboard
+     *
+     * Requires cy.clock() time mocking beforehand
+     *
+     * @example
+     * cy.clock();
+     * cy.buttonMash([Key.space, Key.l, Key.leftCtrl]);
+     */
+    buttonMash(keys: Key[], options?: { log?: boolean }): void;
 
     /**
      * Get the current state of our application, do not try to modify it

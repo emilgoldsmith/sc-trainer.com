@@ -99,7 +99,6 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
         .trigger("keypress", { ...event, log: false });
     }
     const remainingTime = LONG_TIME_MS - previous;
-    console.log(remainingTime);
     remainingTime > 0 && cy.tick(remainingTime);
     cy.document({ log: false })
       .trigger("keypress", { ...event, log: false })
@@ -125,6 +124,57 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
   );
 };
 Cypress.Commands.add("longPressKey", longPressKey);
+
+const buttonMash: Cypress.Chainable<undefined>["buttonMash"] = (
+  keys,
+  options
+) => {
+  if (keys === []) {
+    throw new Error("You must pass in at least one key to mash");
+  }
+  const handleButtonMash = () => {
+    const BUTTON_MASH_DURATION = 20;
+    const numKeys = keys.length;
+    let curTime = 0;
+    keys.forEach((key, index) => {
+      const timeToPress = (index / numKeys) * BUTTON_MASH_DURATION;
+      const timeUntilPress = timeToPress - curTime;
+      if (timeUntilPress > 0) {
+        cy.tick(timeUntilPress);
+        curTime += timeUntilPress;
+      }
+      const event = buildKeyboardEvent(key);
+      cy.document({ log: false })
+        .trigger("keydown", { ...event, log: false })
+        .trigger("keypress", { ...event, log: false });
+    });
+    const remainingTime = BUTTON_MASH_DURATION - curTime;
+    if (remainingTime > 0) {
+      cy.tick(remainingTime);
+      curTime += remainingTime;
+    }
+    keys.forEach((key) => {
+      const event = buildKeyboardEvent(key);
+      cy.document({ log: false }).trigger("keyup", { ...event, log: false });
+    });
+  };
+  if (options?.log === false) {
+    handleButtonMash();
+    return;
+  }
+  cy.withOverallNameLogged(
+    {
+      name: "buttonMash",
+      displayName: "MASH BUTTONS",
+      message: keys.map((key) => "'" + getKeyValue(key) + "'").join(", "),
+      consoleProps: () => ({
+        keys,
+      }),
+    },
+    handleButtonMash
+  );
+};
+Cypress.Commands.add("buttonMash", buttonMash);
 
 const getCustomWindow: Cypress.Chainable<undefined>["getCustomWindow"] = function (
   options = {}

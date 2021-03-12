@@ -217,7 +217,10 @@ describe("AlgorithmTrainer", function () {
       });
       it("on pressing any keyboard key", function () {
         ([
+          // Space, w and W are the important ones as they are also used to evaluate
           Key.space,
+          Key.w,
+          Key.W,
           Key.l,
           Key.five,
           Key.capsLock,
@@ -248,10 +251,10 @@ describe("AlgorithmTrainer", function () {
       it("on long-pressing any keyboard key", function () {
         cy.clock();
         ([
-          // Space is the special one that's the hard case to handle as we're
-          // also using space to evaluate a result as correct and the delayed
-          // "up" could cause issues
+          // Space, w and W are the important ones as they are also used to evaluate
           Key.space,
+          Key.w,
+          Key.W,
           Key.l,
           Key.five,
           Key.capsLock,
@@ -278,6 +281,20 @@ describe("AlgorithmTrainer", function () {
             }
           );
         });
+      });
+      it("on button mash", function () {
+        cy.clock();
+        cy.buttonMash([
+          Key.l,
+          Key.five,
+          Key.shift,
+          Key.space,
+          Key.capsLock,
+          Key.leftCtrl,
+          Key.w,
+          Key.W,
+        ]);
+        elements.evaluateResult.container.assertShows();
       });
     });
   });
