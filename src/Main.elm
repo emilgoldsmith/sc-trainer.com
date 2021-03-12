@@ -35,12 +35,12 @@ type alias Model =
 type TrainerState
     = BetweenTests EvaluationMessage
     | TestRunning Time.Posix TimeInterval
-    | EvaluatingResult { correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool, result : TimeInterval }
+    | EvaluatingResult { spacePressStarted : Bool, wPressStarted : Bool, keyHeldDownFromTest : Maybe Key, result : TimeInterval }
 
 
-allPressed : { a | correctKeyPressStarted : Bool, wrongKeyPressStarted : Bool } -> Bool
-allPressed { correctKeyPressStarted, wrongKeyPressStarted } =
-    correctKeyPressStarted && wrongKeyPressStarted
+allPressed : { a | spacePressStarted : Bool, wPressStarted : Bool } -> Bool
+allPressed { spacePressStarted, wPressStarted } =
+    spacePressStarted && wPressStarted
 
 
 type EvaluationMessage
@@ -55,7 +55,7 @@ type Msg
     | DeleteOldestSnackbar
     | NextAnimationFrame Float
     | StartTest Time.Posix
-    | EndTest Time.Posix
+    | EndTest Key Time.Posix
 
 
 type Key
@@ -136,15 +136,16 @@ update msg model =
 
                 TestRunning startTime intervalElapsed ->
                     case msg of
-                        KeyDown _ ->
-                            ( model, Task.perform EndTest Time.now )
+                        KeyDown key ->
+                            ( model, Task.perform (EndTest key) Time.now )
 
-                        EndTest endTime ->
+                        EndTest keyPressed endTime ->
                             ( { model
                                 | trainerState =
                                     EvaluatingResult
-                                        { correctKeyPressStarted = False
-                                        , wrongKeyPressStarted = False
+                                        { spacePressStarted = False
+                                        , wPressStarted = False
+                                        , keyHeldDownFromTest = Just keyPressed
                                         , result = TimeInterval.betweenTimestamps { start = startTime, end = endTime }
                                         }
                               }
@@ -157,31 +158,44 @@ update msg model =
                         _ ->
                             ( model, Cmd.none )
 
-                EvaluatingResult ({ correctKeyPressStarted, wrongKeyPressStarted } as keyStates) ->
+                EvaluatingResult ({ spacePressStarted, wPressStarted, keyHeldDownFromTest } as keyStates) ->
                     case msg of
                         KeyDown Space ->
-                            ( { model | trainerState = EvaluatingResult { keyStates | correctKeyPressStarted = True } }, Cmd.none )
+                            if keyHeldDownFromTest == Just Space then
+                                ( model, Cmd.none )
 
-                        KeyUp Space ->
-                            ( if correctKeyPressStarted then
-                                { model | trainerState = BetweenTests CorrectEvaluation }
-
-                              else
-                                model
-                            , Cmd.none
-                            )
+                            else
+                                ( { model | trainerState = EvaluatingResult { keyStates | spacePressStarted = True } }, Cmd.none )
 
                         KeyDown W ->
-                            ( { model | trainerState = EvaluatingResult { keyStates | wrongKeyPressStarted = True } }, Cmd.none )
+                            if keyHeldDownFromTest == Just W then
+                                ( model, Cmd.none )
 
-                        KeyUp W ->
-                            ( if wrongKeyPressStarted then
-                                { model | trainerState = BetweenTests WrongEvaluation }
+                            else
+                                ( { model | trainerState = EvaluatingResult { keyStates | wPressStarted = True } }, Cmd.none )
 
-                              else
-                                model
-                            , Cmd.none
-                            )
+                        KeyUp key ->
+                            if keyHeldDownFromTest == Just key then
+                                ( { model | trainerState = EvaluatingResult { keyStates | keyHeldDownFromTest = Nothing } }, Cmd.none )
+
+                            else
+                                case key of
+                                    Space ->
+                                        if spacePressStarted then
+                                            ( { model | trainerState = BetweenTests CorrectEvaluation }, Cmd.none )
+
+                                        else
+                                            ( model, Cmd.none )
+
+                                    W ->
+                                        if wPressStarted then
+                                            ( { model | trainerState = BetweenTests WrongEvaluation }, Cmd.none )
+
+                                        else
+                                            ( model, Cmd.none )
+
+                                    _ ->
+                                        ( model, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
