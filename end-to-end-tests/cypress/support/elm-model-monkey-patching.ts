@@ -25,6 +25,7 @@ function addToDocumentHead({
 
 function addE2ETestHelpersToWindow() {
   "use strict";
+  const documentEventListeners = trackDocumentEventListeners();
   let model: Cypress.OurApplicationState | null = null;
   let modelUpdater:
     | ((newModel: Cypress.OurApplicationState) => void)
@@ -48,11 +49,36 @@ function addE2ETestHelpersToWindow() {
       modelUpdater(newModel);
       model = newModel;
     },
+    getDocumentEventListeners() {
+      return new Set(documentEventListeners.values());
+    },
     internal: {
       setModel: (newModel) => (model = newModel),
       registerModelUpdater: (updater) => (modelUpdater = updater),
     },
   };
+  function trackDocumentEventListeners(): Set<keyof DocumentEventMap> {
+    const eventListeners = new Set<keyof DocumentEventMap>();
+    const add = document.addEventListener;
+    const remove = document.removeEventListener;
+    document.addEventListener = function (
+      eventName: keyof DocumentEventMap,
+      b: EventListenerOrEventListenerObject,
+      c?: boolean | AddEventListenerOptions
+    ) {
+      eventListeners.add(eventName);
+      add.call(this, eventName, b, c);
+    };
+    document.removeEventListener = function (
+      eventName: keyof DocumentEventMap,
+      b: EventListenerOrEventListenerObject,
+      c?: boolean | AddEventListenerOptions
+    ) {
+      eventListeners.delete(eventName);
+      remove.call(this, eventName, b, c);
+    };
+    return eventListeners;
+  }
 }
 
 function addObserversAndModifiers(htmlString: string) {

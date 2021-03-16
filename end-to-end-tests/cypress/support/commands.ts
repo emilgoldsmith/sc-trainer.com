@@ -246,15 +246,22 @@ Cypress.Commands.add("longButtonMash", longButtonMash);
 const getCustomWindow: Cypress.Chainable<undefined>["getCustomWindow"] = function (
   options = {}
 ) {
-  return cy.window(options).then((window) => {
-    const customWindow = window as Cypress.CustomWindow;
-    if (customWindow.END_TO_END_TEST_HELPERS === undefined) {
-      throw new Error(
-        "Not a populated custom window, doesn't have END_TO_END_TEST_HELPERS property"
-      );
-    }
-    return customWindow;
-  });
+  const getWindow = () =>
+    cy.window(options).then((window) => {
+      const customWindow = window as Cypress.CustomWindow;
+      if (customWindow.END_TO_END_TEST_HELPERS === undefined) {
+        throw new Error(
+          "Not a populated custom window, doesn't have END_TO_END_TEST_HELPERS property"
+        );
+      }
+      return customWindow;
+    });
+  const withRetries = () => {
+    getWindow().then((window) =>
+      cy.verifyUpcomingAssertions(window, {}, { onRetry: withRetries })
+    );
+  };
+  return withRetries();
 };
 Cypress.Commands.add("getCustomWindow", getCustomWindow);
 
@@ -350,3 +357,21 @@ const withOverallNameLogged: Cypress.Chainable<undefined>["withOverallNameLogged
   }
 };
 Cypress.Commands.add("withOverallNameLogged", withOverallNameLogged);
+
+const waitForDocumentEventListeners: Cypress.Chainable<undefined>["waitForDocumentEventListeners"] = function (
+  ...eventNames
+): void {
+  cy.getCustomWindow().should((window) => {
+    const actualEventNames = window.END_TO_END_TEST_HELPERS.getDocumentEventListeners();
+    eventNames.forEach((name) => {
+      expect(
+        actualEventNames.has(name),
+        `does not have expected event listener ${name}`
+      ).to.be.true;
+    });
+  });
+};
+Cypress.Commands.add(
+  "waitForDocumentEventListeners",
+  waitForDocumentEventListeners
+);

@@ -82,7 +82,10 @@ const states = {
   initial: new StateCache(
     "initial",
     () => {},
-    elements.betweenTests.container.waitFor
+    () => {
+      elements.betweenTests.container.waitFor();
+      cy.waitForDocumentEventListeners("keyup");
+    }
   ),
   testRunning: new StateCache(
     "testRunning",
@@ -90,7 +93,10 @@ const states = {
       states.initial.restoreState();
       cy.pressKey(Key.space);
     },
-    elements.testRunning.container.waitFor
+    () => {
+      elements.testRunning.container.waitFor();
+      cy.waitForDocumentEventListeners("mousedown", "keydown");
+    }
   ),
   evaluateResult: new StateCache(
     "evaluateResult",
@@ -98,7 +104,10 @@ const states = {
       states.testRunning.restoreState();
       cy.pressKey(Key.space);
     },
-    elements.evaluateResult.container.waitFor
+    () => {
+      elements.evaluateResult.container.waitFor();
+      cy.waitForDocumentEventListeners("keydown");
+    }
   ),
 } as const;
 

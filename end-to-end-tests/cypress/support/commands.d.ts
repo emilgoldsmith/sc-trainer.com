@@ -15,6 +15,10 @@ declare namespace Cypress {
          */
         setModel(newModel: Cypress.OurApplicationState): void;
         /**
+         * Get all the event listeners currently active on document
+         */
+        getDocumentEventListeners(): Set<keyof DocumentEventMap>;
+        /**
          * Only meant to be used within the javascript injection,
          * not ever within Cypress code
          */
@@ -172,5 +176,15 @@ declare namespace Cypress {
         ) => void
       ) => T
     ): T;
+
+    /**
+     * Wait for the given document event listeners to be present
+     *
+     * @example
+     * cy.waitForDocumentEventListeners("mousedown", "keydown");
+     */
+    waitForDocumentEventListeners(
+      ...eventNames: (keyof DocumentEventMap)[]
+    ): void;
   }
 }
