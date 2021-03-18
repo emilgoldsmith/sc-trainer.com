@@ -256,12 +256,15 @@ const getCustomWindow: Cypress.Chainable<undefined>["getCustomWindow"] = functio
       }
       return customWindow;
     });
-  const withRetries = () => {
-    getWindow().then((window) =>
-      cy.verifyUpcomingAssertions(window, {}, { onRetry: withRetries })
-    );
-  };
-  return withRetries();
+  return getWindow();
+  // You can try uncommenting this if we are interested in adding in retries to this command later
+  // Seemed to maybe retry forever?
+  // const withRetries = () => {
+  //   getWindow().then((window) =>
+  //     cy.verifyUpcomingAssertions(window, {}, { onRetry: withRetries })
+  //   );
+  // };
+  // return withRetries();
 };
 Cypress.Commands.add("getCustomWindow", getCustomWindow);
 
@@ -364,10 +367,8 @@ const waitForDocumentEventListeners: Cypress.Chainable<undefined>["waitForDocume
   cy.getCustomWindow().should((window) => {
     const actualEventNames = window.END_TO_END_TEST_HELPERS.getDocumentEventListeners();
     eventNames.forEach((name) => {
-      expect(
-        actualEventNames.has(name),
-        `does not have expected event listener ${name}`
-      ).to.be.true;
+      expect(actualEventNames.has(name), `has expected event listener ${name}`)
+        .to.be.true;
     });
   });
 };

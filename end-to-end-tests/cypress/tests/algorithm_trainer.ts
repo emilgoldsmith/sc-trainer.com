@@ -40,7 +40,7 @@ class StateCache {
   }
 }
 
-function buildElementsSingle<keys extends string>(
+function buildElementsCategory<keys extends string>(
   testIds: { [key in keys]: string }
 ): {
   [key in keys]: {
@@ -63,18 +63,22 @@ function buildElementsSingle<keys extends string>(
 }
 
 const elements = {
-  betweenTests: buildElementsSingle({
+  betweenTests: buildElementsCategory({
     container: "between-tests-container",
     correctMessage: "correct-evaluation-message",
     wrongMessage: "wrong-evaluation-message",
   }),
-  testRunning: buildElementsSingle({
+  testRunning: buildElementsCategory({
     container: "test-running-container",
     timer: "timer",
+    testCase: "test-case",
   }),
-  evaluateResult: buildElementsSingle({
+  evaluateResult: buildElementsCategory({
     container: "evaluate-test-result-container",
     timeResult: "time-result",
+  }),
+  globals: buildElementsCategory({
+    cube: "cube",
   }),
 };
 
@@ -154,6 +158,11 @@ describe("AlgorithmTrainer", function () {
       elements.testRunning.container.assertShows();
       elements.testRunning.container.get().within(() => {
         elements.testRunning.timer.assertShows();
+        elements.testRunning.testCase.assertShows();
+        // The test case is a cube
+        elements.testRunning.testCase.get().within(() => {
+          elements.globals.cube.assertShows();
+        });
       });
     });
 
@@ -187,9 +196,6 @@ describe("AlgorithmTrainer", function () {
 
     describe("ends test correctly", function () {
       it("on click anywhere", function () {
-        // We don't need time passing here, and we have suspicions it may
-        // cause some flakiness in the test because of the rerenders time causes
-        cy.clock();
         ([
           "center",
           "top",

@@ -1,9 +1,10 @@
-module Models.Cube exposing (Color(..), Cube, CubieRendering, Rendering, applyAlgorithm, render, solved)
+module Models.Cube exposing (CenterLocation(..), Color(..), CornerLocation, Cube, CubieRendering, EdgeLocation(..), FOrB(..), Face(..), LOrR(..), Rendering, UOrD(..), applyAlgorithm, centerLocations, cornerLocations, edgeLocations, faces, render, solved)
 
 {-| The Cube Model Module
 -}
 
 import Models.Algorithm as Algorithm exposing (Algorithm)
+import Utils.Enumerator
 import Utils.MappedPermutation as MappedPermutation exposing (MappedPermutation)
 
 
@@ -1286,3 +1287,155 @@ getColor face =
 
         LeftOrRight R ->
             RightColor
+
+
+
+-- ENUMERATORS
+
+
+{-| All possible faces
+
+    List.length faces --> 6
+
+-}
+faces : List Face
+faces =
+    let
+        fromU face =
+            case face of
+                UpOrDown U ->
+                    Just <| UpOrDown D
+
+                UpOrDown D ->
+                    Just <| LeftOrRight L
+
+                LeftOrRight L ->
+                    Just <| LeftOrRight R
+
+                LeftOrRight R ->
+                    Just <| FrontOrBack F
+
+                FrontOrBack F ->
+                    Just <| FrontOrBack B
+
+                FrontOrBack B ->
+                    Nothing
+    in
+    Utils.Enumerator.from (UpOrDown U) fromU
+
+
+{-| All possible corner locations
+
+    List.length cornerLocations --> 8
+
+-}
+cornerLocations : List CornerLocation
+cornerLocations =
+    let
+        fromUFL location =
+            case location of
+                ( U, F, L ) ->
+                    Just ( U, F, R )
+
+                ( U, F, R ) ->
+                    Just ( U, B, R )
+
+                ( U, B, R ) ->
+                    Just ( U, B, L )
+
+                ( U, B, L ) ->
+                    Just ( D, B, L )
+
+                ( D, B, L ) ->
+                    Just ( D, B, R )
+
+                ( D, B, R ) ->
+                    Just ( D, F, R )
+
+                ( D, F, R ) ->
+                    Just ( D, F, L )
+
+                ( D, F, L ) ->
+                    Nothing
+    in
+    Utils.Enumerator.from ( U, F, L ) fromUFL
+
+
+{-| All possible edge locations
+
+    List.length edgeLocations --> 12
+
+-}
+edgeLocations : List EdgeLocation
+edgeLocations =
+    let
+        fromUF location =
+            case location of
+                M ( U, F ) ->
+                    Just <| M ( U, B )
+
+                M ( U, B ) ->
+                    Just <| M ( D, B )
+
+                M ( D, B ) ->
+                    Just <| M ( D, F )
+
+                M ( D, F ) ->
+                    Just <| S ( U, L )
+
+                S ( U, L ) ->
+                    Just <| S ( U, R )
+
+                S ( U, R ) ->
+                    Just <| S ( D, R )
+
+                S ( D, R ) ->
+                    Just <| S ( D, L )
+
+                S ( D, L ) ->
+                    Just <| E ( F, L )
+
+                E ( F, L ) ->
+                    Just <| E ( F, R )
+
+                E ( F, R ) ->
+                    Just <| E ( B, R )
+
+                E ( B, R ) ->
+                    Just <| E ( B, L )
+
+                E ( B, L ) ->
+                    Nothing
+    in
+    Utils.Enumerator.from (M ( U, F )) fromUF
+
+
+{-| All possible center locations
+
+    List.length centerLocations --> 6
+
+-}
+centerLocations : List CenterLocation
+centerLocations =
+    let
+        fromU location =
+            case location of
+                CenterLocation (UpOrDown U) ->
+                    Just <| CenterLocation (UpOrDown D)
+
+                CenterLocation (UpOrDown D) ->
+                    Just <| CenterLocation (LeftOrRight L)
+
+                CenterLocation (LeftOrRight L) ->
+                    Just <| CenterLocation (LeftOrRight R)
+
+                CenterLocation (LeftOrRight R) ->
+                    Just <| CenterLocation (FrontOrBack F)
+
+                CenterLocation (FrontOrBack F) ->
+                    Just <| CenterLocation (FrontOrBack B)
+
+                CenterLocation (FrontOrBack B) ->
+                    Nothing
+    in
+    Utils.Enumerator.from (CenterLocation (UpOrDown U)) fromU
