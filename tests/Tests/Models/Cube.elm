@@ -359,6 +359,57 @@ suite =
                         |> Cube.applyAlgorithm alg
                         |> Cube.render
                         |> Expect.equal expectedColorSpec
+            , test "y performs expected transformation" <|
+                \_ ->
+                    let
+                        alg =
+                            Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.OneQuarter Algorithm.Clockwise ]
+
+                        -- The faces do the following transformation: F -> L -> B -> R -> F
+                        expectedColorSpec =
+                            { -- U Corners
+                              ufr = { plainCubie | u = UpColor, f = RightColor, r = BackColor }
+                            , ufl = { plainCubie | u = UpColor, f = RightColor, l = FrontColor }
+                            , ubl = { plainCubie | u = UpColor, b = LeftColor, l = FrontColor }
+                            , ubr = { plainCubie | u = UpColor, b = LeftColor, r = BackColor }
+
+                            -- D Corners
+                            , dbr = { plainCubie | d = DownColor, b = LeftColor, r = BackColor }
+                            , dbl = { plainCubie | d = DownColor, b = LeftColor, l = FrontColor }
+                            , dfl = { plainCubie | d = DownColor, f = RightColor, l = FrontColor }
+                            , dfr = { plainCubie | d = DownColor, f = RightColor, r = BackColor }
+
+                            -- M Edges
+                            , uf = { plainCubie | u = UpColor, f = RightColor }
+                            , ub = { plainCubie | u = UpColor, b = LeftColor }
+                            , db = { plainCubie | d = DownColor, b = LeftColor }
+                            , df = { plainCubie | d = DownColor, f = RightColor }
+
+                            -- S Edges
+                            , dl = { plainCubie | d = DownColor, l = FrontColor }
+                            , dr = { plainCubie | d = DownColor, r = BackColor }
+                            , ur = { plainCubie | u = UpColor, r = BackColor }
+                            , ul = { plainCubie | u = UpColor, l = FrontColor }
+
+                            -- E Edges
+                            , fl = { plainCubie | f = RightColor, l = FrontColor }
+                            , fr = { plainCubie | f = RightColor, r = BackColor }
+                            , br = { plainCubie | b = LeftColor, r = BackColor }
+                            , bl = { plainCubie | b = LeftColor, l = FrontColor }
+
+                            -- Centers
+                            , u = { plainCubie | u = UpColor }
+                            , d = { plainCubie | d = DownColor }
+                            , f = { plainCubie | f = RightColor }
+                            , b = { plainCubie | b = LeftColor }
+                            , l = { plainCubie | l = FrontColor }
+                            , r = { plainCubie | r = BackColor }
+                            }
+                    in
+                    Cube.solved
+                        |> Cube.applyAlgorithm alg
+                        |> Cube.render
+                        |> Expect.equal expectedColorSpec
             , test "0-length algorithm is identity operation to simplify types despite 0 length algorithm not making much sense" <|
                 \_ ->
                     Cube.solved |> Cube.applyAlgorithm (Algorithm.build []) |> Expect.equal Cube.solved
@@ -601,6 +652,9 @@ getParallelGroup turn =
             UpOrDownGroup
 
         Algorithm.Turn Algorithm.E _ _ ->
+            UpOrDownGroup
+
+        Algorithm.Turn Algorithm.Y _ _ ->
             UpOrDownGroup
 
         Algorithm.Turn Algorithm.F _ _ ->

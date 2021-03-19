@@ -209,6 +209,9 @@ renderTurnable x =
         Algorithm.X ->
             'x'
 
+        Algorithm.Y ->
+            'y'
+
 
 turnLength : Fuzz.Fuzzer Algorithm.TurnLength
 turnLength =

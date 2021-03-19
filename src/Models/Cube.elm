@@ -484,6 +484,13 @@ getClockwiseQuarterTurnDefinition turnable =
                 , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
                 ]
 
+        Algorithm.Y ->
+            Composed
+                [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
+                , Algorithm.Turn Algorithm.E Algorithm.OneQuarter Algorithm.CounterClockwise
+                , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.CounterClockwise
+                ]
+
 
 buildClockwiseQuarterTurnDefinition :
     List (List ( CornerLocation, OrientedCorner -> OrientedCorner ))
