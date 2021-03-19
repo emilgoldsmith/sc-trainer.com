@@ -112,8 +112,9 @@ algParser =
         looper currentAlgorithm =
             Parser.oneOf
                 [ Parser.succeed (\turn -> Parser.Loop (turn :: currentAlgorithm))
+                    |. Parser.chompWhile (\c -> c == '(')
                     |= turnParser
-                    |. Parser.chompWhile (\c -> c == ' ' || c == '\t')
+                    |. Parser.chompWhile (\c -> c == ' ' || c == '\t' || c == ')')
                 , Parser.succeed ()
                     |. Parser.end UnexpectedCharacter
                     |> Parser.map

@@ -40,6 +40,14 @@ fromStringTests =
                                 , Algorithm.Turn Algorithm.B Algorithm.OneQuarter Algorithm.CounterClockwise
                                 ]
                         )
+        , test "handles parentheses" <|
+            \_ ->
+                Algorithm.fromString "(U) U (U U)"
+                    |> Expect.equal
+                        (Ok <|
+                            Algorithm.build <|
+                                List.repeat 4 (Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise)
+                        )
         , fuzz obviouslyInvalidAlgorithmString "errors on invalid algorithms" <|
             Algorithm.fromString
                 >> Expect.err
