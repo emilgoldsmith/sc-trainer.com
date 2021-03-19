@@ -30,6 +30,8 @@ type Turnable
     | M
     | S
     | E
+      -- Whole cube rotations (lowercase type constructors not allowed in Elm)
+    | X
 
 
 type TurnLength
@@ -204,7 +206,7 @@ allTurns =
 
 {-| All possible turnables
 
-    List.length allTurnables --> 9
+    List.length allTurnables --> 10
 
 -}
 allTurnables : List Turnable
@@ -237,6 +239,9 @@ allTurnables =
                     Just E
 
                 E ->
+                    Just X
+
+                X ->
                     Nothing
     in
     Utils.Enumerator.from U fromU

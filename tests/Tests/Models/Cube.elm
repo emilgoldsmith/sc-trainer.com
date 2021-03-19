@@ -308,6 +308,57 @@ suite =
                         |> Cube.applyAlgorithm alg
                         |> Cube.render
                         |> Expect.equal expectedColorSpec
+            , test "x performs expected transformation" <|
+                \_ ->
+                    let
+                        alg =
+                            Algorithm.build [ Algorithm.Turn Algorithm.X Algorithm.OneQuarter Algorithm.Clockwise ]
+
+                        -- The faces do the following transformation: U -> B -> D -> F -> U
+                        expectedColorSpec =
+                            { -- U Corners
+                              ufr = { plainCubie | u = FrontColor, f = DownColor, r = RightColor }
+                            , ufl = { plainCubie | u = FrontColor, f = DownColor, l = LeftColor }
+                            , ubl = { plainCubie | u = FrontColor, b = UpColor, l = LeftColor }
+                            , ubr = { plainCubie | u = FrontColor, b = UpColor, r = RightColor }
+
+                            -- D Corners
+                            , dbr = { plainCubie | d = BackColor, b = UpColor, r = RightColor }
+                            , dbl = { plainCubie | d = BackColor, b = UpColor, l = LeftColor }
+                            , dfl = { plainCubie | d = BackColor, f = DownColor, l = LeftColor }
+                            , dfr = { plainCubie | d = BackColor, f = DownColor, r = RightColor }
+
+                            -- M Edges
+                            , uf = { plainCubie | u = FrontColor, f = DownColor }
+                            , ub = { plainCubie | u = FrontColor, b = UpColor }
+                            , db = { plainCubie | d = BackColor, b = UpColor }
+                            , df = { plainCubie | d = BackColor, f = DownColor }
+
+                            -- S Edges
+                            , dl = { plainCubie | d = BackColor, l = LeftColor }
+                            , dr = { plainCubie | d = BackColor, r = RightColor }
+                            , ur = { plainCubie | u = FrontColor, r = RightColor }
+                            , ul = { plainCubie | u = FrontColor, l = LeftColor }
+
+                            -- E Edges
+                            , fl = { plainCubie | f = DownColor, l = LeftColor }
+                            , fr = { plainCubie | f = DownColor, r = RightColor }
+                            , br = { plainCubie | b = UpColor, r = RightColor }
+                            , bl = { plainCubie | b = UpColor, l = LeftColor }
+
+                            -- Centers
+                            , u = { plainCubie | u = FrontColor }
+                            , d = { plainCubie | d = BackColor }
+                            , f = { plainCubie | f = DownColor }
+                            , b = { plainCubie | b = UpColor }
+                            , l = { plainCubie | l = LeftColor }
+                            , r = { plainCubie | r = RightColor }
+                            }
+                    in
+                    Cube.solved
+                        |> Cube.applyAlgorithm alg
+                        |> Cube.render
+                        |> Expect.equal expectedColorSpec
             , test "0-length algorithm is identity operation to simplify types despite 0 length algorithm not making much sense" <|
                 \_ ->
                     Cube.solved |> Cube.applyAlgorithm (Algorithm.build []) |> Expect.equal Cube.solved
@@ -321,27 +372,27 @@ testHelperTests =
         [ describe "parallel turns"
             [ test "up or down group is disjoint with front or back group" <|
                 \_ ->
-                    List.filter (\uOrD -> List.member uOrD frontOrBackParallelGroup) upOrDownParallelGroup
-                        |> Expect.equal []
+                    listsDisjoint upOrDownParallelGroup frontOrBackParallelGroup
+                        |> Expect.true "Expected groups to be disjoint"
             , test "up or down group is disjoint with left or right group" <|
                 \_ ->
-                    List.filter (\uOrD -> List.member uOrD leftOrRightParallelGroup) upOrDownParallelGroup
-                        |> Expect.equal []
+                    listsDisjoint upOrDownParallelGroup leftOrRightParallelGroup
+                        |> Expect.true "Expected groups to be disjoint"
             , test "front or back group is disjoint with left or right group" <|
                 \_ ->
-                    List.filter (\fOrB -> List.member fOrB leftOrRightParallelGroup) frontOrBackParallelGroup
-                        |> Expect.equal []
+                    listsDisjoint frontOrBackParallelGroup leftOrRightParallelGroup
+                        |> Expect.true "Expected groups to be disjoint"
             , test "three parallel groups have same length as all turns" <|
                 \_ ->
                     [ upOrDownParallelGroup, frontOrBackParallelGroup, leftOrRightParallelGroup ]
                         |> List.map List.length
                         |> List.sum
                         |> Expect.equal (List.length Algorithm.allTurns)
-            , test "parallelPairs and nonParallelPairs are disjoint" <|
+            , test "commutativePairs and nonCommutativePairs are disjoint" <|
                 \_ ->
-                    List.filter (\parallel -> List.member parallel nonCommutativePairs) commutativePairs
+                    List.filter (\commutative -> List.member commutative nonCommutativePairs) commutativePairs
                         |> Expect.equal []
-            , test "parallelPairs + nonParallelPairs have same length as amount of pairs of turns" <|
+            , test "commutativePairs + nonCommutativePairs have same length as amount of pairs of turns" <|
                 \_ ->
                     let
                         numTurns =
@@ -363,6 +414,11 @@ testHelperTests =
         ]
 
 
+listsDisjoint : List a -> List a -> Bool
+listsDisjoint a b =
+    List.filter (\aa -> List.member aa b) a == []
+
+
 commutativePairsFuzzer : Fuzz.Fuzzer ( Algorithm.Turn, Algorithm.Turn )
 commutativePairsFuzzer =
     Fuzz.oneOf <| List.map Fuzz.constant commutativePairs
@@ -381,7 +437,8 @@ nonCommutativePairs =
 
 commutativePairs : List ( Algorithm.Turn, Algorithm.Turn )
 commutativePairs =
-    List.concatMap uniqueCartesianProductWithSelf [ upOrDownParallelGroup, frontOrBackParallelGroup, leftOrRightParallelGroup ] ++ nonParallelCommutativePairs
+    List.concatMap uniqueCartesianProductWithSelf [ upOrDownParallelGroup, frontOrBackParallelGroup, leftOrRightParallelGroup ]
+        ++ nonParallelCommutativePairs
 
 
 uniqueCartesianProductWithSelf : List Algorithm.Turn -> List ( Algorithm.Turn, Algorithm.Turn )
@@ -427,24 +484,29 @@ uniqueCartesianProductWithSelf group =
 nonParallelCommutativePairs : List ( Algorithm.Turn, Algorithm.Turn )
 nonParallelCommutativePairs =
     let
-        sliceTurnables =
-            List.filter isSlice Algorithm.allTurnables
+        sliceAndRotationTurnables =
+            List.filter (\x -> isSlice x || isWholeRotation x) Algorithm.allTurnables
 
-        allDoubleSliceTurns =
+        allDoubleSliceOrRotationTurns =
             ListM.return Algorithm.Turn
-                |> ListM.applicative (ListM.fromList sliceTurnables)
+                |> ListM.applicative (ListM.fromList sliceAndRotationTurnables)
                 |> ListM.applicative (ListM.fromList [ Algorithm.Halfway ])
                 |> ListM.applicative (ListM.fromList Algorithm.allTurnDirections)
                 |> ListM.toList
     in
-    uniqueCartesianProductWithSelf allDoubleSliceTurns
-        -- Remove the parallel ones aka the ones that have equal turnables
-        |> List.filter (\( Algorithm.Turn a _ _, Algorithm.Turn b _ _ ) -> a /= b)
+    uniqueCartesianProductWithSelf allDoubleSliceOrRotationTurns
+        -- Remove the parallel ones
+        |> List.filter (Tuple.mapBoth getParallelGroup getParallelGroup >> (\( a, b ) -> a /= b))
 
 
 isSlice : Algorithm.Turnable -> Bool
 isSlice turnable =
     List.member turnable [ Algorithm.M, Algorithm.S, Algorithm.E ]
+
+
+isWholeRotation : Algorithm.Turnable -> Bool
+isWholeRotation turnable =
+    List.member turnable [ Algorithm.X ]
 
 
 compareTurns : Algorithm.Turn -> Algorithm.Turn -> Order
@@ -516,17 +578,17 @@ type ParallelGroup
 
 upOrDownParallelGroup : List Algorithm.Turn
 upOrDownParallelGroup =
-    List.partition (getParallelGroup >> isUpOrDownGroup) Algorithm.allTurns |> Tuple.first
+    List.partition (getParallelGroup >> (==) UpOrDownGroup) Algorithm.allTurns |> Tuple.first
 
 
 frontOrBackParallelGroup : List Algorithm.Turn
 frontOrBackParallelGroup =
-    List.partition (getParallelGroup >> isFrontOrBackGroup) Algorithm.allTurns |> Tuple.first
+    List.partition (getParallelGroup >> (==) FrontOrBackGroup) Algorithm.allTurns |> Tuple.first
 
 
 leftOrRightParallelGroup : List Algorithm.Turn
 leftOrRightParallelGroup =
-    List.partition (getParallelGroup >> isLeftOrRightGroup) Algorithm.allTurns |> Tuple.first
+    List.partition (getParallelGroup >> (==) LeftOrRightGroup) Algorithm.allTurns |> Tuple.first
 
 
 getParallelGroup : Algorithm.Turn -> ParallelGroup
@@ -559,44 +621,8 @@ getParallelGroup turn =
         Algorithm.Turn Algorithm.M _ _ ->
             LeftOrRightGroup
 
-
-isUpOrDownGroup : ParallelGroup -> Bool
-isUpOrDownGroup parallelGroup =
-    case parallelGroup of
-        UpOrDownGroup ->
-            True
-
-        FrontOrBackGroup ->
-            False
-
-        LeftOrRightGroup ->
-            False
-
-
-isFrontOrBackGroup : ParallelGroup -> Bool
-isFrontOrBackGroup parallelGroup =
-    case parallelGroup of
-        UpOrDownGroup ->
-            False
-
-        FrontOrBackGroup ->
-            True
-
-        LeftOrRightGroup ->
-            False
-
-
-isLeftOrRightGroup : ParallelGroup -> Bool
-isLeftOrRightGroup parallelGroup =
-    case parallelGroup of
-        UpOrDownGroup ->
-            False
-
-        FrontOrBackGroup ->
-            False
-
-        LeftOrRightGroup ->
-            True
+        Algorithm.Turn Algorithm.X _ _ ->
+            LeftOrRightGroup
 
 
 cubeFuzzer : Fuzz.Fuzzer Cube

@@ -277,6 +277,14 @@ type alias TurnDefinition =
     ( MappedPermutation CornerLocation OrientedCorner, MappedPermutation EdgeLocation OrientedEdge, MappedPermutation CenterLocation Center )
 
 
+composeTurnDefinition : TurnDefinition -> TurnDefinition -> TurnDefinition
+composeTurnDefinition ( corners1, edges1, centers1 ) ( corners2, edges2, centers2 ) =
+    ( MappedPermutation.compose corners1 corners2
+    , MappedPermutation.compose edges1 edges2
+    , MappedPermutation.compose centers1 centers2
+    )
+
+
 {-| Apply an algorithm to a cube, see example for [`solved`](Model.Cube#solved)
 -}
 applyAlgorithm : Algorithm -> Cube -> Cube
@@ -290,8 +298,8 @@ applyTurn =
 
 
 getTurnDefinition : Algorithm.Turn -> TurnDefinition
-getTurnDefinition turn =
-    turn
+getTurnDefinition ((Algorithm.Turn turnable _ _) as turn) =
+    turnable
         |> getClockwiseQuarterTurnDefinition
         |> toFullTurnDefinition turn
 
@@ -307,19 +315,21 @@ applyTurnDefinition ( cornerPermutation, edgePermutation, centerPermutation ) =
 -- First get the clockwise quarter turn permutation
 
 
-type alias ClockwiseQuarterTurnDefinition =
-    ( ClockwiseQuarterPermutation CornerLocation OrientedCorner
-    , ClockwiseQuarterPermutation EdgeLocation OrientedEdge
-    , ClockwiseQuarterPermutation CenterLocation Center
-    )
+type ClockwiseQuarterTurnDefinition
+    = Permutations
+        ( ClockwiseQuarterPermutation CornerLocation OrientedCorner
+        , ClockwiseQuarterPermutation EdgeLocation OrientedEdge
+        , ClockwiseQuarterPermutation CenterLocation Center
+        )
+    | Composed (List Algorithm.Turn)
 
 
 type ClockwiseQuarterPermutation location cubie
     = ClockwiseQuarterPermutation (MappedPermutation location cubie)
 
 
-getClockwiseQuarterTurnDefinition : Algorithm.Turn -> ClockwiseQuarterTurnDefinition
-getClockwiseQuarterTurnDefinition (Algorithm.Turn turnable _ _) =
+getClockwiseQuarterTurnDefinition : Algorithm.Turnable -> ClockwiseQuarterTurnDefinition
+getClockwiseQuarterTurnDefinition turnable =
     case turnable of
         -- Single face turns
         Algorithm.U ->
@@ -467,6 +477,13 @@ getClockwiseQuarterTurnDefinition (Algorithm.Turn turnable _ _) =
                   ]
                 ]
 
+        Algorithm.X ->
+            Composed
+                [ Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.CounterClockwise
+                , Algorithm.Turn Algorithm.M Algorithm.OneQuarter Algorithm.CounterClockwise
+                , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
+                ]
+
 
 buildClockwiseQuarterTurnDefinition :
     List (List ( CornerLocation, OrientedCorner -> OrientedCorner ))
@@ -474,10 +491,11 @@ buildClockwiseQuarterTurnDefinition :
     -> List (List ( CenterLocation, Center -> Center ))
     -> ClockwiseQuarterTurnDefinition
 buildClockwiseQuarterTurnDefinition corners edges centers =
-    ( corners |> (MappedPermutation.build >> ClockwiseQuarterPermutation)
-    , edges |> (MappedPermutation.build >> ClockwiseQuarterPermutation)
-    , centers |> (MappedPermutation.build >> ClockwiseQuarterPermutation)
-    )
+    Permutations
+        ( corners |> (MappedPermutation.build >> ClockwiseQuarterPermutation)
+        , edges |> (MappedPermutation.build >> ClockwiseQuarterPermutation)
+        , centers |> (MappedPermutation.build >> ClockwiseQuarterPermutation)
+        )
 
 
 noCentersMoved : List ( CenterLocation, Center -> Center )
@@ -495,11 +513,35 @@ noCornersMoved =
 
 
 toFullTurnDefinition : Algorithm.Turn -> ClockwiseQuarterTurnDefinition -> TurnDefinition
-toFullTurnDefinition turn ( corners, edges, centers ) =
-    ( corners |> toFullPermutation turn
-    , edges |> toFullPermutation turn
-    , centers |> toFullPermutation turn
-    )
+toFullTurnDefinition turn quarterTurnDefinition =
+    case quarterTurnDefinition of
+        Permutations ( corners, edges, centers ) ->
+            ( corners |> toFullPermutation turn
+            , edges |> toFullPermutation turn
+            , centers |> toFullPermutation turn
+            )
+
+        Composed quarterTurns ->
+            let
+                quarterDefinitions =
+                    List.map getTurnDefinition quarterTurns
+
+                ( quarterCorners, quarterEdges, quarterCenters ) =
+                    case quarterDefinitions of
+                        [] ->
+                            ( MappedPermutation.identity, MappedPermutation.identity, MappedPermutation.identity )
+
+                        x :: xs ->
+                            List.foldl composeTurnDefinition x xs
+
+                composedQuarterDefinition =
+                    Permutations
+                        ( ClockwiseQuarterPermutation quarterCorners
+                        , ClockwiseQuarterPermutation quarterEdges
+                        , ClockwiseQuarterPermutation quarterCenters
+                        )
+            in
+            toFullTurnDefinition turn composedQuarterDefinition
 
 
 toFullPermutation : Algorithm.Turn -> ClockwiseQuarterPermutation location cubie -> MappedPermutation location cubie

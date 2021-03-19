@@ -1,4 +1,4 @@
-module Utils.MappedPermutation exposing (MappedPermutation, apply, build, buildAccessor, reversePermutationButKeepMaps, toThePowerOf)
+module Utils.MappedPermutation exposing (MappedPermutation, apply, build, buildAccessor, compose, identity, reversePermutationButKeepMaps, toThePowerOf)
 
 {-| Not exposing a reverse as it doesn't seem to have a clear definition.
 
@@ -45,6 +45,16 @@ build mappedCycles =
 buildAccessor : Getter location container value -> Setter location container value -> Accessor location container value
 buildAccessor =
     Accessor
+
+
+identity : MappedPermutation location value
+identity =
+    MappedPermutation []
+
+
+compose : MappedPermutation location value -> MappedPermutation location value -> MappedPermutation location value
+compose (MappedPermutation cyclesA) (MappedPermutation cyclesB) =
+    MappedPermutation (cyclesA ++ cyclesB)
 
 
 apply : Accessor location container value -> MappedPermutation location value -> container -> container
@@ -105,7 +115,7 @@ cycleToThePowerOf : Int -> MappedCycle location value -> List (MappedCycle locat
 cycleToThePowerOf exponent (MappedCycle cycleArray) =
     let
         cycleIndices =
-            Array.initialize (Array.length cycleArray) identity
+            Array.initialize (Array.length cycleArray) Basics.identity
 
         addCycleStartingAt index ( cycleList, seen ) =
             let
@@ -158,7 +168,7 @@ traceExponentCycle exponent index cycle seen =
 composeAllMapsEncountered : Int -> Int -> Array ( location, value -> value ) -> Maybe (value -> value)
 composeAllMapsEncountered index exponent array =
     if exponent <= 0 then
-        Just identity
+        Just Basics.identity
 
     else
         let
