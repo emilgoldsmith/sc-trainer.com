@@ -1,4 +1,4 @@
-module Tests.Models.Cube exposing (suite, testHelperTests)
+module Tests.Models.Cube exposing (plainCubie, solvedCubeRendering, suite, testHelperTests)
 
 import Expect
 import Fuzz
