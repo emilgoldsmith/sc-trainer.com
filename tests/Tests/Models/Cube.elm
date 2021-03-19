@@ -35,11 +35,11 @@ suite =
                             cube |> Cube.applyAlgorithm alg1 |> Cube.applyAlgorithm alg2
                     in
                     appliedTogether |> Expect.equal appliedSeparately
-            , fuzz2 parallelPairsFuzzer cubeFuzzer "parallel turns are commutative" <|
+            , fuzz2 commutativePairsFuzzer cubeFuzzer "parallel turns are commutative" <|
                 \( turn1, turn2 ) cube ->
                     Cube.applyAlgorithm (Algorithm.build [ turn1, turn2 ]) cube
                         |> Expect.equal (Cube.applyAlgorithm (Algorithm.build [ turn2, turn1 ]) cube)
-            , fuzz2 nonParallelPairsFuzzer cubeFuzzer "non parallel turns are not commutative" <|
+            , fuzz2 nonCommutativePairsFuzzer cubeFuzzer "non parallel turns are not commutative" <|
                 \( turn1, turn2 ) cube ->
                     Cube.applyAlgorithm (Algorithm.build [ turn1, turn2 ]) cube
                         |> Expect.notEqual (Cube.applyAlgorithm (Algorithm.build [ turn2, turn1 ]) cube)
@@ -321,63 +321,191 @@ testHelperTests =
         [ describe "parallel turns"
             [ test "up or down group is disjoint with front or back group" <|
                 \_ ->
-                    List.filter (\uOrD -> List.member uOrD frontOrBackGroup) upOrDownGroup
+                    List.filter (\uOrD -> List.member uOrD frontOrBackParallelGroup) upOrDownParallelGroup
                         |> Expect.equal []
             , test "up or down group is disjoint with left or right group" <|
                 \_ ->
-                    List.filter (\uOrD -> List.member uOrD leftOrRightGroup) upOrDownGroup
+                    List.filter (\uOrD -> List.member uOrD leftOrRightParallelGroup) upOrDownParallelGroup
                         |> Expect.equal []
             , test "front or back group is disjoint with left or right group" <|
                 \_ ->
-                    List.filter (\fOrB -> List.member fOrB leftOrRightGroup) frontOrBackGroup
+                    List.filter (\fOrB -> List.member fOrB leftOrRightParallelGroup) frontOrBackParallelGroup
                         |> Expect.equal []
             , test "three parallel groups have same length as all turns" <|
                 \_ ->
-                    [ upOrDownGroup, frontOrBackGroup, leftOrRightGroup ]
+                    [ upOrDownParallelGroup, frontOrBackParallelGroup, leftOrRightParallelGroup ]
                         |> List.map List.length
                         |> List.sum
                         |> Expect.equal (List.length Algorithm.allTurns)
             , test "parallelPairs and nonParallelPairs are disjoint" <|
                 \_ ->
-                    List.filter (\parallel -> List.member parallel nonParallelPairs) parallelPairs
+                    List.filter (\parallel -> List.member parallel nonCommutativePairs) commutativePairs
                         |> Expect.equal []
             , test "parallelPairs + nonParallelPairs have same length as amount of pairs of turns" <|
                 \_ ->
-                    [ parallelPairs, nonParallelPairs ]
+                    let
+                        numTurns =
+                            List.length Algorithm.allTurns
+
+                        -- Every turn is matched with all turns that haven't been matched with yet
+                        -- to avoid (a, b) (b, a) duplicates. This gives us an arithmetic sequence
+                        -- of numTurns + (numTurns - 1) + ... + 1 which can be calculated with
+                        -- the below formula, where we can safely assume numTurns is even (and
+                        -- otherwise the test should fail anyway!)
+                        numUniquePairs =
+                            (numTurns + 1) * (numTurns // 2)
+                    in
+                    [ commutativePairs, nonCommutativePairs ]
                         |> List.map List.length
                         |> List.sum
-                        |> Expect.equal (List.length Algorithm.allTurns ^ 2)
+                        |> Expect.equal numUniquePairs
             ]
         ]
 
 
-parallelPairsFuzzer : Fuzz.Fuzzer ( Algorithm.Turn, Algorithm.Turn )
-parallelPairsFuzzer =
-    Fuzz.oneOf <| List.map Fuzz.constant parallelPairs
+commutativePairsFuzzer : Fuzz.Fuzzer ( Algorithm.Turn, Algorithm.Turn )
+commutativePairsFuzzer =
+    Fuzz.oneOf <| List.map Fuzz.constant commutativePairs
 
 
-nonParallelPairsFuzzer : Fuzz.Fuzzer ( Algorithm.Turn, Algorithm.Turn )
-nonParallelPairsFuzzer =
-    Fuzz.oneOf <| List.map Fuzz.constant nonParallelPairs
+nonCommutativePairsFuzzer : Fuzz.Fuzzer ( Algorithm.Turn, Algorithm.Turn )
+nonCommutativePairsFuzzer =
+    Fuzz.oneOf <| List.map Fuzz.constant nonCommutativePairs
 
 
-nonParallelPairs : List ( Algorithm.Turn, Algorithm.Turn )
-nonParallelPairs =
-    buildPairsForGroup Algorithm.allTurns
-        |> List.filter (\anyPair -> not <| List.member anyPair parallelPairs)
+nonCommutativePairs : List ( Algorithm.Turn, Algorithm.Turn )
+nonCommutativePairs =
+    uniqueCartesianProductWithSelf Algorithm.allTurns
+        |> List.filter (\anyPair -> not <| List.member anyPair commutativePairs)
 
 
-parallelPairs : List ( Algorithm.Turn, Algorithm.Turn )
-parallelPairs =
-    List.concatMap buildPairsForGroup [ upOrDownGroup, frontOrBackGroup, leftOrRightGroup ]
+commutativePairs : List ( Algorithm.Turn, Algorithm.Turn )
+commutativePairs =
+    List.concatMap uniqueCartesianProductWithSelf [ upOrDownParallelGroup, frontOrBackParallelGroup, leftOrRightParallelGroup ] ++ nonParallelCommutativePairs
 
 
-buildPairsForGroup : List Algorithm.Turn -> List ( Algorithm.Turn, Algorithm.Turn )
-buildPairsForGroup group =
+uniqueCartesianProductWithSelf : List Algorithm.Turn -> List ( Algorithm.Turn, Algorithm.Turn )
+uniqueCartesianProductWithSelf group =
     ListM.return Tuple.pair
         |> ListM.applicative (ListM.fromList group)
         |> ListM.applicative (ListM.fromList group)
         |> ListM.toList
+        |> List.map
+            (\( a, b ) ->
+                if compareTurns a b == GT then
+                    ( b, a )
+
+                else
+                    ( a, b )
+            )
+        |> List.sortWith
+            (\( aa, ab ) ( ba, bb ) ->
+                if compareTurns aa ba /= EQ then
+                    compareTurns aa ba
+
+                else
+                    compareTurns ab bb
+            )
+        |> List.foldl
+            (\next cur ->
+                case cur of
+                    [] ->
+                        [ next ]
+
+                    (x :: _) as all ->
+                        if next == x then
+                            all
+
+                        else
+                            next :: all
+            )
+            []
+
+
+{-| There are some moves that are commutative despite not being parallel to each other
+-}
+nonParallelCommutativePairs : List ( Algorithm.Turn, Algorithm.Turn )
+nonParallelCommutativePairs =
+    let
+        sliceTurnables =
+            List.filter isSlice Algorithm.allTurnables
+
+        allDoubleSliceTurns =
+            ListM.return Algorithm.Turn
+                |> ListM.applicative (ListM.fromList sliceTurnables)
+                |> ListM.applicative (ListM.fromList [ Algorithm.Halfway ])
+                |> ListM.applicative (ListM.fromList Algorithm.allTurnDirections)
+                |> ListM.toList
+    in
+    uniqueCartesianProductWithSelf allDoubleSliceTurns
+        -- Remove the parallel ones aka the ones that have equal turnables
+        |> List.filter (\( Algorithm.Turn a _ _, Algorithm.Turn b _ _ ) -> a /= b)
+
+
+isSlice : Algorithm.Turnable -> Bool
+isSlice turnable =
+    List.member turnable [ Algorithm.M, Algorithm.S, Algorithm.E ]
+
+
+compareTurns : Algorithm.Turn -> Algorithm.Turn -> Order
+compareTurns (Algorithm.Turn turnableA lengthA directionA) (Algorithm.Turn turnableB lengthB directionB) =
+    let
+        turnable =
+            compareTurnables turnableA turnableB
+
+        length =
+            compareTurnLengths lengthA lengthB
+
+        direction =
+            compareTurnDirections directionA directionB
+    in
+    if turnable /= EQ then
+        turnable
+
+    else if length /= EQ then
+        length
+
+    else
+        direction
+
+
+compareTurnables : Algorithm.Turnable -> Algorithm.Turnable -> Order
+compareTurnables =
+    compareByListOrder Algorithm.allTurnables
+
+
+compareTurnLengths : Algorithm.TurnLength -> Algorithm.TurnLength -> Order
+compareTurnLengths =
+    compareByListOrder Algorithm.allTurnLengths
+
+
+compareTurnDirections : Algorithm.TurnDirection -> Algorithm.TurnDirection -> Order
+compareTurnDirections =
+    compareByListOrder Algorithm.allTurnDirections
+
+
+compareByListOrder : List a -> a -> a -> Order
+compareByListOrder order a b =
+    let
+        orderedElements =
+            List.filter (\x -> x == a || x == b) order
+    in
+    if a == b then
+        EQ
+
+    else
+        List.head orderedElements
+            -- Unsafe function in the sense that we assume there are the two elements
+            -- we expect, so weird stuff could happen with bad inputs
+            |> Maybe.map
+                (\x ->
+                    if x == a then
+                        LT
+
+                    else
+                        GT
+                )
+            |> Maybe.withDefault EQ
 
 
 type ParallelGroup
@@ -386,15 +514,18 @@ type ParallelGroup
     | LeftOrRightGroup
 
 
-upOrDownGroup =
+upOrDownParallelGroup : List Algorithm.Turn
+upOrDownParallelGroup =
     List.partition (getParallelGroup >> isUpOrDownGroup) Algorithm.allTurns |> Tuple.first
 
 
-frontOrBackGroup =
+frontOrBackParallelGroup : List Algorithm.Turn
+frontOrBackParallelGroup =
     List.partition (getParallelGroup >> isFrontOrBackGroup) Algorithm.allTurns |> Tuple.first
 
 
-leftOrRightGroup =
+leftOrRightParallelGroup : List Algorithm.Turn
+leftOrRightParallelGroup =
     List.partition (getParallelGroup >> isLeftOrRightGroup) Algorithm.allTurns |> Tuple.first
 
 
