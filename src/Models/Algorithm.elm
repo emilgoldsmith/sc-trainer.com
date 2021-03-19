@@ -99,7 +99,7 @@ fromString string =
 
 
 type Problem
-    = ExpectingFaceOrSlice
+    = ExpectingTurnable
     | ExpectingNumQuarterTurns
     | ExpectingTurnDirection
     | UnexpectedCharacter
@@ -167,7 +167,7 @@ algParser =
                                     "y"
 
                         token =
-                            Parser.token (Parser.Token (turnableToString turnable) ExpectingFaceOrSlice)
+                            Parser.token (Parser.Token (turnableToString turnable) ExpectingTurnable)
                     in
                     Parser.map (\_ -> turnable) token
             in
@@ -209,7 +209,7 @@ renderError string deadEnds =
 renderProblem : Problem -> String
 renderProblem problem =
     case problem of
-        ExpectingFaceOrSlice ->
+        ExpectingTurnable ->
             "Expecting face or slice"
 
         ExpectingNumQuarterTurns ->
