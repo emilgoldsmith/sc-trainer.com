@@ -557,7 +557,7 @@ isSlice turnable =
 
 isWholeRotation : Algorithm.Turnable -> Bool
 isWholeRotation turnable =
-    List.member turnable [ Algorithm.X ]
+    List.member turnable [ Algorithm.X, Algorithm.Y ]
 
 
 compareTurns : Algorithm.Turn -> Algorithm.Turn -> Order
