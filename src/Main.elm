@@ -6,6 +6,7 @@ import Components.Cube
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Json.Decode as Decode
+import Models.Algorithm as Algorithm
 import Models.Cube as Cube
 import Process
 import Task
@@ -238,7 +239,7 @@ viewState model =
 
 displayTestCase : Html msg
 displayTestCase =
-    div [ testid "test-case" ] [ Components.Cube.view Cube.solved ]
+    div [ testid "test-case" ] [ Components.Cube.view (Cube.solved |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.M Algorithm.OneQuarter Algorithm.Clockwise ])) ]
 
 
 displayTimeResult : TimeInterval -> Html msg
