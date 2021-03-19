@@ -357,7 +357,7 @@ css theme =
   height: {cubeSideLength}em;
   transform-origin: center center -{halfCubeSideLength}em;
   transform-style: preserve-3d;
-  transform: rotate3d(1,1,1,45deg);
+  transform: rotateX(-30deg) rotateY(-45deg);
   position: relative;
 }
 .{faceClass} {
