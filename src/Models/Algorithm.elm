@@ -1,4 +1,4 @@
-module Models.Algorithm exposing (Algorithm, Turn(..), TurnDirection(..), TurnLength(..), Turnable(..), allTurnDirections, allTurnLengths, allTurnables, allTurns, appendTo, build, extractInternals, fromString, inverse)
+module Models.Algorithm exposing (Algorithm, Turn(..), TurnDirection(..), TurnLength(..), Turnable(..), allTurnDirections, allTurnLengths, allTurnables, allTurns, append, appendTo, build, extractInternals, fromString, inverse, withAllAufCombinations)
 
 -- import Parser.Advanced as Parser exposing ((|.), (|=), Parser)
 
@@ -63,9 +63,43 @@ build =
     Algorithm
 
 
+{-| We append to the first argument, so a ++ b
+-}
 appendTo : Algorithm -> Algorithm -> Algorithm
 appendTo (Algorithm a) (Algorithm b) =
     Algorithm (a ++ b)
+
+
+{-| We append the first argument, so b ++ a
+-}
+append : Algorithm -> Algorithm -> Algorithm
+append (Algorithm a) (Algorithm b) =
+    Algorithm (b ++ a)
+
+
+withAllAufCombinations : Algorithm -> List Algorithm
+withAllAufCombinations alg =
+    withAllPreAufCombinations alg
+        |> List.concatMap withAllPostAufCombinations
+
+
+withAllPreAufCombinations : Algorithm -> List Algorithm
+withAllPreAufCombinations alg =
+    List.map (append alg) aufs
+
+
+withAllPostAufCombinations : Algorithm -> List Algorithm
+withAllPostAufCombinations alg =
+    List.map (appendTo alg) aufs
+
+
+aufs : List Algorithm
+aufs =
+    [ build []
+    , build [ Turn U OneQuarter Clockwise ]
+    , build [ Turn U Halfway Clockwise ]
+    , build [ Turn U OneQuarter CounterClockwise ]
+    ]
 
 
 inverse : Algorithm -> Algorithm

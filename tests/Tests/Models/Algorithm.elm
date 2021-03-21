@@ -1,10 +1,11 @@
-module Tests.Models.Algorithm exposing (algorithmFuzzer, appendTests, fromStringTests, inverseAlgTests, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
+module Tests.Models.Algorithm exposing (algorithmFuzzer, appendTests, fromStringTests, inverseAlgTests, turnDirectionFuzzer, turnFuzzer, turnableFuzzer, withAllAufCombinationsTests)
 
 {-| This represents an Algorithm, which is an ordered sequence of moves to be applied
 to a cube. Enjoy!
 -}
 
 import Expect
+import Expect.Extra
 import Fuzz
 import Models.Algorithm as Algorithm exposing (Algorithm)
 import Test exposing (..)
@@ -115,23 +116,84 @@ inverseAlgTests =
 
 appendTests : Test
 appendTests =
-    describe "append"
-        [ fuzz2 turnFuzzer turnFuzzer "Appending two algorithms each consisting of a turn equals an algorithm with those two turns in a row" <|
-            \turn1 turn2 ->
-                Algorithm.appendTo (Algorithm.build [ turn1 ]) (Algorithm.build [ turn2 ])
-                    |> Expect.equal (Algorithm.build [ turn1, turn2 ])
-        , fuzz algorithmFuzzer "Appending to an empty algorithm equals the second algorithm" <|
-            \algorithm ->
-                Algorithm.appendTo (Algorithm.build []) algorithm
-                    |> Expect.equal algorithm
-        , fuzz algorithmFuzzer "Appending an empty algorithm to an algorithm equals the first algorithm" <|
-            \algorithm ->
-                Algorithm.appendTo algorithm (Algorithm.build [])
-                    |> Expect.equal algorithm
-        , test "Appending two empty algorithm equals an empty algorithm" <|
-            \_ ->
-                Algorithm.appendTo (Algorithm.build []) (Algorithm.build [])
-                    |> Expect.equal (Algorithm.build [])
+    describe "appenders"
+        [ describe "appendTo"
+            [ fuzz2 turnFuzzer turnFuzzer "Appending two algorithms each consisting of a turn equals an algorithm with those two turns in a row" <|
+                \turn1 turn2 ->
+                    Algorithm.appendTo (Algorithm.build [ turn1 ]) (Algorithm.build [ turn2 ])
+                        |> Expect.equal (Algorithm.build [ turn1, turn2 ])
+            , fuzz algorithmFuzzer "Appending to an empty algorithm equals the second algorithm" <|
+                \algorithm ->
+                    Algorithm.appendTo (Algorithm.build []) algorithm
+                        |> Expect.equal algorithm
+            , fuzz algorithmFuzzer "Appending an empty algorithm to an algorithm equals the first algorithm" <|
+                \algorithm ->
+                    Algorithm.appendTo algorithm (Algorithm.build [])
+                        |> Expect.equal algorithm
+            , test "Appending two empty algorithm equals an empty algorithm" <|
+                \_ ->
+                    Algorithm.appendTo (Algorithm.build []) (Algorithm.build [])
+                        |> Expect.equal (Algorithm.build [])
+            ]
+        , describe "append"
+            [ fuzz2 algorithmFuzzer algorithmFuzzer "is the opposite of appendTo" <|
+                \alg1 alg2 ->
+                    Algorithm.append alg1 alg2
+                        |> Expect.equal (Algorithm.appendTo alg2 alg1)
+            , fuzz algorithmFuzzer "Appending an empty algorithm equals the second algorithm" <|
+                \algorithm ->
+                    Algorithm.append (Algorithm.build []) algorithm
+                        |> Expect.equal algorithm
+            , fuzz algorithmFuzzer "Appending an algorithm to an empty algorithm equals the first algorithm" <|
+                \algorithm ->
+                    Algorithm.append algorithm (Algorithm.build [])
+                        |> Expect.equal algorithm
+            , test "Appending two empty algorithm equals an empty algorithm" <|
+                \_ ->
+                    Algorithm.append (Algorithm.build []) (Algorithm.build [])
+                        |> Expect.equal (Algorithm.build [])
+            ]
+        ]
+
+
+withAllAufCombinationsTests : Test
+withAllAufCombinationsTests =
+    describe "withAllAufCombinations"
+        [ fuzz algorithmFuzzer "adds all the combinations of pre and post aufs" <|
+            \alg ->
+                let
+                    expectedAlgs =
+                        [ alg
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
+                        , alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
+                        , alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
+                        , alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
+                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
+                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
+                        ]
+                in
+                Algorithm.withAllAufCombinations alg |> Expect.Extra.equalListMembers expectedAlgs
         ]
 
 
