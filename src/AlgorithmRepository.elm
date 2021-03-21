@@ -13,6 +13,7 @@ type alias PLL =
     -- Corners only
     , aa : Algorithm
     , ab : Algorithm
+    , e : Algorithm
     }
 
 
@@ -41,6 +42,9 @@ to read version of all the algorithms that are verified to be correct
 
     Models.Algorithm.fromString "R B' R F2 R' B R F2 R2"
     --> Ok referencePlls.ab
+
+    Models.Algorithm.fromString "D R' D2 F' D L D' F D2 R D' F' L' F"
+    --> Ok referencePlls.e
 
 -}
 referencePlls : PLL
@@ -121,5 +125,22 @@ referencePlls =
             , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
             , Algorithm.Turn Algorithm.F Algorithm.Halfway Algorithm.Clockwise
             , Algorithm.Turn Algorithm.R Algorithm.Halfway Algorithm.Clockwise
+            ]
+    , e =
+        Algorithm.build
+            [ Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.D Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.F Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.F Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.D Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.F Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.F Algorithm.OneQuarter Algorithm.Clockwise
             ]
     }
