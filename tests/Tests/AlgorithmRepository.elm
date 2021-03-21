@@ -91,6 +91,18 @@ pllTests =
                 in
                 AlgorithmRepository.referencePlls.e
                     |> expectEqualDisregardingAUF expectedRendering
+        , test "F perm" <|
+            \_ ->
+                let
+                    expectedRendering =
+                        solvedCubeRendering
+                            |> (\x -> { x | ufr = { plainCubie | u = UpColor, f = RightColor, r = BackColor } })
+                            |> (\x -> { x | ubr = { plainCubie | u = UpColor, b = RightColor, r = FrontColor } })
+                            |> (\x -> { x | ub = { plainCubie | u = UpColor, b = FrontColor } })
+                            |> (\x -> { x | uf = { plainCubie | u = UpColor, f = BackColor } })
+                in
+                AlgorithmRepository.referencePlls.f
+                    |> expectEqualDisregardingAUF expectedRendering
         ]
 
 

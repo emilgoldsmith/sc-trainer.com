@@ -412,7 +412,7 @@ suite =
                         |> Expect.equal expectedColorSpec
             , test "0-length algorithm is identity operation to simplify types despite 0 length algorithm not making much sense" <|
                 \_ ->
-                    Cube.solved |> Cube.applyAlgorithm (Algorithm.build []) |> Expect.equal Cube.solved
+                    Cube.solved |> Cube.applyAlgorithm Algorithm.empty |> Expect.equal Cube.solved
             ]
         ]
 

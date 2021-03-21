@@ -14,6 +14,9 @@ type alias PLL =
     , aa : Algorithm
     , ab : Algorithm
     , e : Algorithm
+
+    -- Edges And Corners
+    , f : Algorithm
     }
 
 
@@ -45,6 +48,9 @@ to read version of all the algorithms that are verified to be correct
 
     Models.Algorithm.fromString "D R' D2 F' D L D' F D2 R D' F' L' F"
     --> Ok referencePlls.e
+
+    Models.Algorithm.fromString "L F R' F' L' F' D2 B' L' B D2 F' R F2"
+    --> Ok referencePlls.f
 
 -}
 referencePlls : PLL
@@ -142,5 +148,22 @@ referencePlls =
             , Algorithm.Turn Algorithm.F Algorithm.OneQuarter Algorithm.CounterClockwise
             , Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.CounterClockwise
             , Algorithm.Turn Algorithm.F Algorithm.OneQuarter Algorithm.Clockwise
+            ]
+    , f =
+        Algorithm.build
+            [ Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.F Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.F Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.F Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.D Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.B Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.B Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.D Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.F Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.F Algorithm.Halfway Algorithm.Clockwise
             ]
     }

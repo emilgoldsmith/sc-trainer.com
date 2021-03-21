@@ -124,16 +124,16 @@ appendTests =
                         |> Expect.equal (Algorithm.build [ turn1, turn2 ])
             , fuzz algorithmFuzzer "Appending to an empty algorithm equals the second algorithm" <|
                 \algorithm ->
-                    Algorithm.appendTo (Algorithm.build []) algorithm
+                    Algorithm.appendTo Algorithm.empty algorithm
                         |> Expect.equal algorithm
             , fuzz algorithmFuzzer "Appending an empty algorithm to an algorithm equals the first algorithm" <|
                 \algorithm ->
-                    Algorithm.appendTo algorithm (Algorithm.build [])
+                    Algorithm.appendTo algorithm Algorithm.empty
                         |> Expect.equal algorithm
             , test "Appending two empty algorithm equals an empty algorithm" <|
                 \_ ->
-                    Algorithm.appendTo (Algorithm.build []) (Algorithm.build [])
-                        |> Expect.equal (Algorithm.build [])
+                    Algorithm.appendTo Algorithm.empty Algorithm.empty
+                        |> Expect.equal Algorithm.empty
             ]
         , describe "append"
             [ fuzz2 algorithmFuzzer algorithmFuzzer "is the opposite of appendTo" <|
@@ -142,16 +142,16 @@ appendTests =
                         |> Expect.equal (Algorithm.appendTo alg2 alg1)
             , fuzz algorithmFuzzer "Appending an empty algorithm equals the second algorithm" <|
                 \algorithm ->
-                    Algorithm.append (Algorithm.build []) algorithm
+                    Algorithm.append Algorithm.empty algorithm
                         |> Expect.equal algorithm
             , fuzz algorithmFuzzer "Appending an algorithm to an empty algorithm equals the first algorithm" <|
                 \algorithm ->
-                    Algorithm.append algorithm (Algorithm.build [])
+                    Algorithm.append algorithm Algorithm.empty
                         |> Expect.equal algorithm
             , test "Appending two empty algorithm equals an empty algorithm" <|
                 \_ ->
-                    Algorithm.append (Algorithm.build []) (Algorithm.build [])
-                        |> Expect.equal (Algorithm.build [])
+                    Algorithm.append Algorithm.empty Algorithm.empty
+                        |> Expect.equal Algorithm.empty
             ]
         ]
 
