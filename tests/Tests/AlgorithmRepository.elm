@@ -63,8 +63,8 @@ pllTests =
                     expectedRendering =
                         solvedCubeRendering
                             |> (\x -> { x | ufr = { plainCubie | u = UpColor, f = RightColor, r = BackColor } })
-                            |> (\x -> { x | ubr = { plainCubie | u = UpColor, b = LeftColor, r = BackColor } })
                             |> (\x -> { x | ubl = { plainCubie | u = UpColor, b = FrontColor, l = RightColor } })
+                            |> (\x -> { x | ubr = { plainCubie | u = UpColor, b = LeftColor, r = BackColor } })
                 in
                 AlgorithmRepository.referencePlls.aa
                     |> expectEqualDisregardingAUF expectedRendering
@@ -103,6 +103,62 @@ pllTests =
                 in
                 AlgorithmRepository.referencePlls.f
                     |> expectEqualDisregardingAUF expectedRendering
+        , test "Ga perm" <|
+            \_ ->
+                let
+                    expectedRendering =
+                        solvedCubeRendering
+                            |> (\x -> { x | ufr = { plainCubie | u = UpColor, f = RightColor, r = BackColor } })
+                            |> (\x -> { x | ubl = { plainCubie | u = UpColor, b = FrontColor, l = RightColor } })
+                            |> (\x -> { x | ubr = { plainCubie | u = UpColor, b = LeftColor, r = BackColor } })
+                            |> (\x -> { x | uf = { plainCubie | u = UpColor, f = BackColor } })
+                            |> (\x -> { x | ur = { plainCubie | u = UpColor, r = FrontColor } })
+                            |> (\x -> { x | ub = { plainCubie | u = UpColor, b = RightColor } })
+                in
+                AlgorithmRepository.referencePlls.ga
+                    |> expectEqualDisregardingAUF expectedRendering
+        , test "Gb perm" <|
+            \_ ->
+                let
+                    expectedRendering =
+                        solvedCubeRendering
+                            |> (\x -> { x | ufr = { plainCubie | u = UpColor, f = BackColor, r = LeftColor } })
+                            |> (\x -> { x | ubr = { plainCubie | u = UpColor, b = RightColor, r = FrontColor } })
+                            |> (\x -> { x | ubl = { plainCubie | u = UpColor, b = RightColor, l = BackColor } })
+                            |> (\x -> { x | uf = { plainCubie | u = UpColor, f = RightColor } })
+                            |> (\x -> { x | ub = { plainCubie | u = UpColor, b = FrontColor } })
+                            |> (\x -> { x | ur = { plainCubie | u = UpColor, r = BackColor } })
+                in
+                AlgorithmRepository.referencePlls.gb
+                    |> expectEqualDisregardingAUF expectedRendering
+        , test "Gc perm" <|
+            \_ ->
+                let
+                    expectedRendering =
+                        solvedCubeRendering
+                            |> (\x -> { x | ufr = { plainCubie | u = UpColor, f = BackColor, r = LeftColor } })
+                            |> (\x -> { x | ubr = { plainCubie | u = UpColor, b = RightColor, r = FrontColor } })
+                            |> (\x -> { x | ubl = { plainCubie | u = UpColor, b = RightColor, l = BackColor } })
+                            |> (\x -> { x | ul = { plainCubie | u = UpColor, l = RightColor } })
+                            |> (\x -> { x | ub = { plainCubie | u = UpColor, b = LeftColor } })
+                            |> (\x -> { x | ur = { plainCubie | u = UpColor, r = BackColor } })
+                in
+                AlgorithmRepository.referencePlls.gc
+                    |> expectEqualDisregardingAUF expectedRendering
+        , test "Gd perm" <|
+            \_ ->
+                let
+                    expectedRendering =
+                        solvedCubeRendering
+                            |> (\x -> { x | ufr = { plainCubie | u = UpColor, f = RightColor, r = BackColor } })
+                            |> (\x -> { x | ubl = { plainCubie | u = UpColor, b = FrontColor, l = RightColor } })
+                            |> (\x -> { x | ubr = { plainCubie | u = UpColor, b = LeftColor, r = BackColor } })
+                            |> (\x -> { x | ul = { plainCubie | u = UpColor, l = BackColor } })
+                            |> (\x -> { x | ur = { plainCubie | u = UpColor, r = LeftColor } })
+                            |> (\x -> { x | ub = { plainCubie | u = UpColor, b = RightColor } })
+                in
+                AlgorithmRepository.referencePlls.gd
+                    |> expectEqualDisregardingAUF expectedRendering
         ]
 
 
@@ -117,17 +173,35 @@ expectEqualDisregardingAUF expectedRendering alg =
         |> List.length
         |> Expect.greaterThan 0
         |> Expect.onFail
-            ("Algorithm with or without AUF did not produce the expected rendering. Diffs for each AUF:"
+            ("Algorithm with or without pre and post AUF did not produce the expected rendering. Closest diff was:"
                 ++ "\n\n"
                 ++ "(Actual != Expected)"
                 ++ "\n\n"
-                ++ (let
-                        diffs =
-                            List.map (\x -> compareCubeRenderings x expectedRendering) candidates
-                    in
-                    String.join "\n\n" diffs
-                   )
+                ++ getShortestDiff candidates expectedRendering
             )
+
+
+getShortestDiff : List Cube.Rendering -> Cube.Rendering -> String
+getShortestDiff candidates expected =
+    let
+        diffs =
+            List.map (\x -> compareCubeRenderings x expected) candidates
+    in
+    case diffs of
+        [] ->
+            "No candidates provided to getShortestDiff, this is an error"
+
+        x :: xs ->
+            List.foldl
+                (\a b ->
+                    if String.length a < String.length b then
+                        a
+
+                    else
+                        b
+                )
+                x
+                xs
 
 
 compareCubeRenderings : Cube.Rendering -> Cube.Rendering -> String
