@@ -154,7 +154,7 @@ update msg model =
                         , inTransition = True
                         , result = TimeInterval.betweenTimestamps { start = startTime, end = timestamp }
                         }
-                    , Task.perform (\_ -> EndTransition) (Process.sleep 100)
+                    , Task.perform (always EndTransition) (Process.sleep 100)
                     )
 
                 NextAnimationFrame timeDelta ->
