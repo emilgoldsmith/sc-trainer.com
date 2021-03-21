@@ -61,13 +61,36 @@ function addE2ETestHelpersToWindow() {
     const eventListeners = new Set<keyof DocumentEventMap>();
     const add = document.addEventListener;
     const remove = document.removeEventListener;
+    const documentCreationTime = Date.now();
+
     document.addEventListener = function (
       eventName: keyof DocumentEventMap,
-      b: EventListenerOrEventListenerObject,
+      eventListener: EventListenerOrEventListenerObject,
       c?: boolean | AddEventListenerOptions
     ) {
       eventListeners.add(eventName);
-      add.call(this, eventName, b, c);
+      /**
+       * We do this because otherwise it won't respect our time mocking as the event timestamp
+       * seems to be created in native code not using Date.now() etc.
+       */
+      const listenerWithTimestampOverriding = function (e: Event) {
+        const modifiedEvent: Event & { timeStampModified?: boolean } = e;
+        if (!modifiedEvent.timeStampModified) {
+          modifiedEvent.timeStampModified = true;
+          const newTimestamp = Date.now() - documentCreationTime;
+          Object.defineProperty(modifiedEvent, "timeStamp", {
+            get() {
+              return newTimestamp;
+            },
+          });
+          if ("handleEvent" in eventListener) {
+            eventListener.handleEvent(e);
+          } else {
+            eventListener(e);
+          }
+        }
+      };
+      add.call(this, eventName, listenerWithTimestampOverriding, c);
     };
     document.removeEventListener = function (
       eventName: keyof DocumentEventMap,

@@ -525,12 +525,11 @@ function getClock(): NonNullable<typeof clock> {
   return clock;
 }
 function installClock() {
-  cy.window({ log: false }).then(
-    (window) =>
-      (clock = (withGlobal(window).install() as unknown) as NonNullable<
-        typeof clock
-      >)
-  );
+  cy.window({ log: false }).then((window) => {
+    clock = (withGlobal(window).install() as unknown) as NonNullable<
+      typeof clock
+    >;
+  });
 }
 function tick(ms: number) {
   cy.wrap(undefined, { log: false }).then(() => getClock().tick(ms));
