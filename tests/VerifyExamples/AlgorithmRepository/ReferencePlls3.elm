@@ -17,12 +17,12 @@ import Models.Algorithm
 
 spec3 : Test.Test
 spec3 =
-    Test.test "#referencePlls: \n\n    Models.Algorithm.fromString \"F2' D (R' U R' U' R) D' F2 L' U L\"\n    --> Ok referencePlls.ga" <|
+    Test.test "#referencePlls: \n\n    Models.Algorithm.fromString \"R2' D' F U' F U F' D R2 B U' B'\"\n    --> Ok referencePlls.gc" <|
         \() ->
             Expect.equal
                 (
-                Models.Algorithm.fromString "F2' D (R' U R' U' R) D' F2 L' U L"
+                Models.Algorithm.fromString "R2' D' F U' F U F' D R2 B U' B'"
                 )
                 (
-                Ok referencePlls.ga
+                Ok referencePlls.gc
                 )

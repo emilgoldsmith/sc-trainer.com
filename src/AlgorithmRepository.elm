@@ -22,6 +22,8 @@ type alias PllAlgorithms =
     , gb : Algorithm.Algorithm
     , gc : Algorithm.Algorithm
     , gd : Algorithm.Algorithm
+    , ja : Algorithm.Algorithm
+    , jb : Algorithm.Algorithm
     }
 
 
@@ -29,12 +31,13 @@ type alias PllAlgorithms =
 
     import Utils.NonEmptyList as NonEmptyList
 
-    List.length <| NonEmptyList.toList pllList --> 12
+    List.length <| NonEmptyList.toList pllList --> 14
 
 -}
 pllList : NonEmptyList.NonEmptyList Algorithm.Algorithm
 pllList =
-    NonEmptyList.NonEmptyList referencePlls.h
+    NonEmptyList.NonEmptyList
+        referencePlls.h
         [ referencePlls.ua
         , referencePlls.ub
         , referencePlls.z
@@ -46,6 +49,8 @@ pllList =
         , referencePlls.gb
         , referencePlls.gc
         , referencePlls.gd
+        , referencePlls.ja
+        , referencePlls.jb
         ]
 
 
@@ -98,6 +103,12 @@ to read version of all the algorithms that are verified to be correct
 
     Models.Algorithm.fromString "R U R' F2 D' (L U' L' U L') D F2"
     --> Ok referencePlls.gd
+
+    Models.Algorithm.fromString "B2 R' U' R B2 L' D L' D' L2"
+    --> Ok referencePlls.ja
+
+    Models.Algorithm.fromString "B2 (L U L') B2 (R D' R D) R2"
+    --> Ok referencePlls.jb
 
 -}
 referencePlls : PllAlgorithms
@@ -272,5 +283,31 @@ referencePlls =
             , Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.CounterClockwise
             , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.Clockwise
             , Algorithm.Turn Algorithm.F Algorithm.Halfway Algorithm.Clockwise
+            ]
+    , ja =
+        Algorithm.build
+            [ Algorithm.Turn Algorithm.B Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.B Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.L Algorithm.Halfway Algorithm.Clockwise
+            ]
+    , jb =
+        Algorithm.build
+            [ Algorithm.Turn Algorithm.B Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.B Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.Halfway Algorithm.Clockwise
             ]
     }
