@@ -1,6 +1,7 @@
-module Expect.Extra exposing (equalListMembers)
+module Expect.Extra exposing (equalListMembers, equalNonEmptyListMembers)
 
 import Expect
+import Utils.NonEmptyList as NonEmptyList
 
 
 equalListMembers : List a -> List a -> Expect.Expectation
@@ -26,3 +27,19 @@ equalListMembers expected actual =
                 ++ "The list was missing these elements:\n"
                 ++ "\n"
                 ++ Debug.toString missingElements
+
+
+equalNonEmptyListMembers : NonEmptyList.NonEmptyList a -> NonEmptyList.NonEmptyList a -> Expect.Expectation
+equalNonEmptyListMembers (NonEmptyList.NonEmptyList expectedHead expectedTail) (NonEmptyList.NonEmptyList actualHead actualTail) =
+    if expectedHead /= actualHead then
+        Expect.fail <|
+            "Heads of non empty lists were not equal\n"
+                ++ "\n"
+                ++ "Expected: "
+                ++ Debug.toString expectedHead
+                ++ "\n\n"
+                ++ "But received: "
+                ++ Debug.toString actualHead
+
+    else
+        equalListMembers expectedTail actualTail

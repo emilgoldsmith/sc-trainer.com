@@ -1,27 +1,52 @@
-module AlgorithmRepository exposing (PLL, referencePlls)
+module AlgorithmRepository exposing (PllAlgorithms, pllList, referencePlls)
 
-import Models.Algorithm as Algorithm exposing (Algorithm)
+import Models.Algorithm as Algorithm
+import Utils.NonEmptyList as NonEmptyList
 
 
-type alias PLL =
+type alias PllAlgorithms =
     { -- Edges only
-      h : Algorithm
-    , ua : Algorithm
-    , ub : Algorithm
-    , z : Algorithm
+      h : Algorithm.Algorithm
+    , ua : Algorithm.Algorithm
+    , ub : Algorithm.Algorithm
+    , z : Algorithm.Algorithm
 
     -- Corners only
-    , aa : Algorithm
-    , ab : Algorithm
-    , e : Algorithm
+    , aa : Algorithm.Algorithm
+    , ab : Algorithm.Algorithm
+    , e : Algorithm.Algorithm
 
     -- Edges And Corners
-    , f : Algorithm
-    , ga : Algorithm
-    , gb : Algorithm
-    , gc : Algorithm
-    , gd : Algorithm
+    , f : Algorithm.Algorithm
+    , ga : Algorithm.Algorithm
+    , gb : Algorithm.Algorithm
+    , gc : Algorithm.Algorithm
+    , gd : Algorithm.Algorithm
     }
+
+
+{-| A list of all the reference plls. Should have length 21 when all are added
+
+    import Utils.NonEmptyList as NonEmptyList
+
+    List.length <| NonEmptyList.toList pllList --> 12
+
+-}
+pllList : NonEmptyList.NonEmptyList Algorithm.Algorithm
+pllList =
+    NonEmptyList.NonEmptyList referencePlls.h
+        [ referencePlls.ua
+        , referencePlls.ub
+        , referencePlls.z
+        , referencePlls.aa
+        , referencePlls.ab
+        , referencePlls.e
+        , referencePlls.f
+        , referencePlls.ga
+        , referencePlls.gb
+        , referencePlls.gc
+        , referencePlls.gd
+        ]
 
 
 {-| Plls verified to be correct so they can be used to verify user selected plls
@@ -75,7 +100,7 @@ to read version of all the algorithms that are verified to be correct
     --> Ok referencePlls.gd
 
 -}
-referencePlls : PLL
+referencePlls : PllAlgorithms
 referencePlls =
     { h =
         Algorithm.build

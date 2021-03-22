@@ -3,7 +3,7 @@ module Tests.Models.Cube exposing (plainCubie, solvedCubeRendering, suite, testH
 import Expect
 import Fuzz
 import Models.Algorithm as Algorithm
-import Models.Cube as Cube exposing (Color(..), Cube)
+import Models.Cube as Cube exposing (Color(..))
 import Monads.ListM as ListM
 import Parser exposing ((|.), (|=))
 import Test exposing (..)
@@ -679,7 +679,7 @@ getParallelGroup turn =
             LeftOrRightGroup
 
 
-cubeFuzzer : Fuzz.Fuzzer Cube
+cubeFuzzer : Fuzz.Fuzzer Cube.Type
 cubeFuzzer =
     Fuzz.constant Cube.solved
 

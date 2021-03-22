@@ -1,26 +1,28 @@
-module Utils.TimeInterval exposing (TimeInterval, betweenTimestamps, displayOneDecimal, displayTwoDecimals, increment, zero)
+module Utils.TimeInterval exposing (Type, betweenTimestamps, displayOneDecimal, displayTwoDecimals, increment, zero)
+
+import Time
 
 
-type TimeInterval
+type Type
     = TimeInterval Float
 
 
-map : (Float -> Float) -> TimeInterval -> TimeInterval
+map : (Float -> Float) -> Type -> Type
 map f (TimeInterval milliseconds) =
     TimeInterval (f milliseconds)
 
 
-zero : TimeInterval
+zero : Type
 zero =
     TimeInterval 0
 
 
-betweenTimestamps : { start : Float, end : Float } -> TimeInterval
+betweenTimestamps : { start : Time.Posix, end : Time.Posix } -> Type
 betweenTimestamps { start, end } =
-    TimeInterval <| end - start
+    TimeInterval <| toFloat <| Time.posixToMillis end - Time.posixToMillis start
 
 
-increment : Float -> TimeInterval -> TimeInterval
+increment : Float -> Type -> Type
 increment msToIncrement =
     map ((+) msToIncrement)
 
@@ -29,7 +31,7 @@ type alias TimeUnits =
     { milliseconds : Int, seconds : Int, minutes : Int, hours : Int }
 
 
-parseTimeUnits : TimeInterval -> TimeUnits
+parseTimeUnits : Type -> TimeUnits
 parseTimeUnits (TimeInterval floatMilliseconds) =
     let
         millisecondsElapsed =
@@ -42,7 +44,7 @@ parseTimeUnits (TimeInterval floatMilliseconds) =
     }
 
 
-displayTwoDecimals : TimeInterval -> String
+displayTwoDecimals : Type -> String
 displayTwoDecimals interval =
     let
         milliseconds =
@@ -61,7 +63,7 @@ displayTwoDecimals interval =
     displayWithoutDecimals interval ++ "." ++ precedingZeroes ++ String.fromInt centiseconds
 
 
-displayOneDecimal : TimeInterval -> String
+displayOneDecimal : Type -> String
 displayOneDecimal interval =
     let
         milliseconds =
@@ -73,7 +75,7 @@ displayOneDecimal interval =
     displayWithoutDecimals interval ++ "." ++ String.fromInt deciseconds
 
 
-displayWithoutDecimals : TimeInterval -> String
+displayWithoutDecimals : Type -> String
 displayWithoutDecimals interval =
     let
         time =

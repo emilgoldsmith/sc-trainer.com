@@ -1,9 +1,9 @@
-module Models.Cube exposing (CenterLocation(..), Color(..), CornerLocation, Cube, CubieRendering, EdgeLocation(..), FOrB(..), Face(..), LOrR(..), Rendering, UOrD(..), applyAlgorithm, centerLocations, cornerLocations, edgeLocations, faces, render, solved)
+module Models.Cube exposing (CenterLocation(..), Color(..), CornerLocation, CubieRendering, EdgeLocation(..), FOrB(..), Face(..), LOrR(..), Rendering, Type, UOrD(..), applyAlgorithm, centerLocations, cornerLocations, edgeLocations, faces, render, solved)
 
 {-| The Cube Model Module
 -}
 
-import Models.Algorithm as Algorithm exposing (Algorithm)
+import Models.Algorithm as Algorithm
 import Utils.Enumerator
 import Utils.MappedPermutation as MappedPermutation exposing (MappedPermutation)
 
@@ -12,7 +12,7 @@ import Utils.MappedPermutation as MappedPermutation exposing (MappedPermutation)
 -- CUBE MODEL
 
 
-type Cube
+type Type
     = Cube CornerPositions EdgePositions CenterPositions
 
 
@@ -219,7 +219,7 @@ get to that state like this:
     Cube.solved |> Cube.applyAlgorithm (Algorithm.fromString "RUR'U'R'FRF'")
 
 -}
-solved : Cube
+solved : Type
 solved =
     let
         orientedCorner location =
@@ -287,12 +287,12 @@ composeTurnDefinition ( corners1, edges1, centers1 ) ( corners2, edges2, centers
 
 {-| Apply an algorithm to a cube, see example for [`solved`](Model.Cube#solved)
 -}
-applyAlgorithm : Algorithm -> Cube -> Cube
+applyAlgorithm : Algorithm.Algorithm -> Type -> Type
 applyAlgorithm alg cube =
     List.foldl applyTurn cube (Algorithm.extractInternals alg)
 
 
-applyTurn : Algorithm.Turn -> Cube -> Cube
+applyTurn : Algorithm.Turn -> Type -> Type
 applyTurn =
     getTurnDefinition >> applyTurnDefinition
 
@@ -304,7 +304,7 @@ getTurnDefinition ((Algorithm.Turn turnable _ _) as turn) =
         |> toFullTurnDefinition turn
 
 
-applyTurnDefinition : TurnDefinition -> Cube -> Cube
+applyTurnDefinition : TurnDefinition -> Type -> Type
 applyTurnDefinition ( cornerPermutation, edgePermutation, centerPermutation ) =
     MappedPermutation.apply (MappedPermutation.buildAccessor getCorner setCorner) cornerPermutation
         >> MappedPermutation.apply (MappedPermutation.buildAccessor getEdge setEdge) edgePermutation
@@ -710,7 +710,7 @@ plainCubie =
     { u = PlasticColor, f = PlasticColor, r = PlasticColor, d = PlasticColor, l = PlasticColor, b = PlasticColor }
 
 
-render : Cube -> Rendering
+render : Type -> Rendering
 render cube =
     let
         corner =
@@ -771,7 +771,7 @@ we consider a corner oriented correctly if its U or D sticker is on the U or D l
 and respectively it is oriented clockwise / counterclockwise if the U / D sticker for
 the corner is a counter / counterclockwise turn away from the U / D
 -}
-renderCorner : Cube -> CornerLocation -> CubieRendering
+renderCorner : Type -> CornerLocation -> CubieRendering
 renderCorner cube location =
     let
         corner =
@@ -897,7 +897,7 @@ U or D sticker. For the last 4 edges we use the F/B layers. This works the same 
 corners. If the U/D F/B sticker is on the U/D F/B layer we consider the edge
 oriented correctly, otherwise we consider it flipped.
 -}
-renderEdge : Cube -> EdgeLocation -> CubieRendering
+renderEdge : Type -> EdgeLocation -> CubieRendering
 renderEdge cube location =
     let
         edge =
@@ -966,7 +966,7 @@ getEdgeColorOnOtherFace (OrientedEdge edge orientation) =
 -- CENTER RENDERING
 
 
-renderCenter : Cube -> CenterLocation -> CubieRendering
+renderCenter : Type -> CenterLocation -> CubieRendering
 renderCenter cube location =
     let
         center =
@@ -991,7 +991,7 @@ getCentersColor =
 -- Corner Location Helpers
 
 
-getCorner : CornerLocation -> Cube -> OrientedCorner
+getCorner : CornerLocation -> Type -> OrientedCorner
 getCorner location (Cube corners _ _) =
     case location of
         ( U, F, R ) ->
@@ -1019,7 +1019,7 @@ getCorner location (Cube corners _ _) =
             corners.dbl
 
 
-setCorner : CornerLocation -> OrientedCorner -> Cube -> Cube
+setCorner : CornerLocation -> OrientedCorner -> Type -> Type
 setCorner location cornerToSet (Cube corners edges centers) =
     let
         newCorners =
@@ -1083,7 +1083,7 @@ getSolvedCornerLocation corner =
 -- Edge Location Helpers
 
 
-getEdge : EdgeLocation -> Cube -> OrientedEdge
+getEdge : EdgeLocation -> Type -> OrientedEdge
 getEdge location (Cube _ edges _) =
     case location of
         -- M Edges
@@ -1126,7 +1126,7 @@ getEdge location (Cube _ edges _) =
             edges.bl
 
 
-setEdge : EdgeLocation -> OrientedEdge -> Cube -> Cube
+setEdge : EdgeLocation -> OrientedEdge -> Type -> Type
 setEdge location edgeToSet (Cube corners edges centers) =
     let
         newEdges =
@@ -1220,7 +1220,7 @@ getSolvedEdgeLocation edge =
 -- Center Location Helpers
 
 
-getCenter : CenterLocation -> Cube -> Center
+getCenter : CenterLocation -> Type -> Center
 getCenter location (Cube _ _ centers) =
     case location of
         CenterLocation (UpOrDown U) ->
@@ -1242,7 +1242,7 @@ getCenter location (Cube _ _ centers) =
             centers.r
 
 
-setCenter : CenterLocation -> Center -> Cube -> Cube
+setCenter : CenterLocation -> Center -> Type -> Type
 setCenter location center (Cube corners edges centers) =
     let
         newCenters =

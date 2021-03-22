@@ -2,10 +2,11 @@ module Tests.AlgorithmRepository exposing (pllTests)
 
 import AlgorithmRepository
 import Expect
-import Models.Algorithm as Algorithm exposing (Algorithm)
+import Models.Algorithm as Algorithm
 import Models.Cube as Cube exposing (Color(..))
 import Test exposing (..)
 import Tests.Models.Cube exposing (plainCubie, solvedCubeRendering)
+import Utils.NonEmptyList as NonEmptyList
 
 
 pllTests : Test
@@ -162,14 +163,14 @@ pllTests =
         ]
 
 
-expectEqualDisregardingAUF : Cube.Rendering -> Algorithm -> Expect.Expectation
+expectEqualDisregardingAUF : Cube.Rendering -> Algorithm.Algorithm -> Expect.Expectation
 expectEqualDisregardingAUF expectedRendering alg =
     let
         candidates =
             Algorithm.withAllAufCombinations alg
-                |> List.map ((\x -> Cube.applyAlgorithm x Cube.solved) >> Cube.render)
+                |> NonEmptyList.map ((\x -> Cube.applyAlgorithm x Cube.solved) >> Cube.render)
     in
-    List.filter ((==) expectedRendering) candidates
+    List.filter ((==) expectedRendering) (NonEmptyList.toList candidates)
         |> List.length
         |> Expect.greaterThan 0
         |> Expect.onFail
@@ -181,27 +182,22 @@ expectEqualDisregardingAUF expectedRendering alg =
             )
 
 
-getShortestDiff : List Cube.Rendering -> Cube.Rendering -> String
+getShortestDiff : NonEmptyList.NonEmptyList Cube.Rendering -> Cube.Rendering -> String
 getShortestDiff candidates expected =
     let
         diffs =
-            List.map (\x -> compareCubeRenderings x expected) candidates
+            NonEmptyList.map (\x -> compareCubeRenderings x expected) candidates
     in
-    case diffs of
-        [] ->
-            "No candidates provided to getShortestDiff, this is an error"
+    NonEmptyList.combineAll getShorterString diffs
 
-        x :: xs ->
-            List.foldl
-                (\a b ->
-                    if String.length a < String.length b then
-                        a
 
-                    else
-                        b
-                )
-                x
-                xs
+getShorterString : String -> String -> String
+getShorterString a b =
+    if String.length a < String.length b then
+        a
+
+    else
+        b
 
 
 compareCubeRenderings : Cube.Rendering -> Cube.Rendering -> String

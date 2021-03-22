@@ -7,8 +7,9 @@ to a cube. Enjoy!
 import Expect
 import Expect.Extra
 import Fuzz
-import Models.Algorithm as Algorithm exposing (Algorithm)
+import Models.Algorithm as Algorithm
 import Test exposing (..)
+import Utils.NonEmptyList as NonEmptyList
 
 
 fromStringTests : Test
@@ -163,37 +164,38 @@ withAllAufCombinationsTests =
             \alg ->
                 let
                     expectedAlgs =
-                        [ alg
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
-                        , alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
-                        , alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
-                        , alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
-                        , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
-                            |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
-                        ]
+                        NonEmptyList.NonEmptyList
+                            alg
+                            [ Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
+                            , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
+                            , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
+                            , alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
+                            , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
+                            , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
+                            , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
+                            , alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
+                            , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
+                            , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
+                            , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
+                            , alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
+                            , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]) alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
+                            , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ]) alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
+                            , Algorithm.appendTo (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ]) alg
+                                |> Algorithm.append (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
+                            ]
                 in
-                Algorithm.withAllAufCombinations alg |> Expect.Extra.equalListMembers expectedAlgs
+                Algorithm.withAllAufCombinations alg |> Expect.Extra.equalNonEmptyListMembers expectedAlgs
         ]
 
 
@@ -214,7 +216,7 @@ validAlgorithmString =
     Fuzz.map2 renderAlgorithm algorithmFuzzer turnSeparator
 
 
-algorithmFuzzer : Fuzz.Fuzzer Algorithm
+algorithmFuzzer : Fuzz.Fuzzer Algorithm.Algorithm
 algorithmFuzzer =
     let
         nonEmptyTurnList =
@@ -223,7 +225,7 @@ algorithmFuzzer =
     Fuzz.map Algorithm.build nonEmptyTurnList
 
 
-renderAlgorithm : Algorithm -> String -> String
+renderAlgorithm : Algorithm.Algorithm -> String -> String
 renderAlgorithm alg separator =
     let
         renderedTurnList =

@@ -1,5 +1,6 @@
 module Main exposing (main)
 
+import AlgorithmRepository
 import Browser
 import Browser.Events as Events
 import Components.Cube
@@ -9,10 +10,12 @@ import Json.Decode as Decode
 import Models.Algorithm as Algorithm
 import Models.Cube as Cube
 import Process
+import Random
 import Task
 import Time
 import Utils.Css exposing (testid)
-import Utils.TimeInterval as TimeInterval exposing (TimeInterval)
+import Utils.NonEmptyList as NonEmptyList
+import Utils.TimeInterval as TimeInterval
 
 
 main : Program () Model Msg
@@ -27,17 +30,18 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( BetweenTests NoEvaluationMessage, Cmd.none )
+    ( { trainerState = BetweenTests NoEvaluationMessage }, Cmd.none )
 
 
 type alias Model =
-    TrainerState
+    { trainerState : TrainerState
+    }
 
 
 type TrainerState
     = BetweenTests EvaluationMessage
-    | TestRunning Timestamp TimeInterval
-    | EvaluatingResult { spacePressStarted : Bool, wPressStarted : Bool, keysHeldDownFromTest : List Key, inTransition : Bool, result : TimeInterval }
+    | TestRunning Time.Posix TimeInterval.Type Algorithm.Algorithm
+    | EvaluatingResult { spacePressStarted : Bool, wPressStarted : Bool, keysHeldDownFromTest : List Key, inTransition : Bool, result : TimeInterval.Type, algorithmTested : Algorithm.Algorithm }
 
 
 allPressed : { a | spacePressStarted : Bool, wPressStarted : Bool } -> Bool
@@ -54,16 +58,19 @@ type EvaluationMessage
 type Msg
     = KeyUp KeyEvent
     | KeyDown KeyEvent
-    | NextAnimationFrame Float
+    | AlgToTestGenerated Algorithm.Algorithm
+    | StartTest Algorithm.Algorithm Time.Posix
+    | MillisecondsPassed Float
+    | EndTest Key Time.Posix
     | EndTransition
 
 
-type alias Timestamp =
+type alias MillisecondsSinceDocumentCreation =
     Float
 
 
 type KeyEvent
-    = KeyEvent Key Timestamp
+    = KeyEvent Key MillisecondsSinceDocumentCreation
 
 
 type Key
@@ -84,7 +91,7 @@ decodeKey =
     Decode.map toKey (Decode.field "key" Decode.string)
 
 
-decodeEventTimestamp : Decode.Decoder Timestamp
+decodeEventTimestamp : Decode.Decoder MillisecondsSinceDocumentCreation
 decodeEventTimestamp =
     Decode.field "timeStamp" Decode.float
 
@@ -107,11 +114,11 @@ toKey keyString =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model of
+    case model.trainerState of
         BetweenTests _ ->
             Events.onKeyUp <| Decode.map KeyUp decodeKeyEvent
 
-        TestRunning _ _ ->
+        TestRunning _ _ _ ->
             Sub.batch
                 [ Events.onKeyDown <|
                     Decode.map KeyDown
@@ -119,7 +126,7 @@ subscriptions model =
                 , Events.onMouseDown <|
                     Decode.map KeyDown <|
                         Decode.map (KeyEvent <| SomeKey "mouseDown") decodeEventTimestamp
-                , Events.onAnimationFrameDelta NextAnimationFrame
+                , Events.onAnimationFrameDelta MillisecondsPassed
                 ]
 
         EvaluatingResult keyStates ->
@@ -135,30 +142,43 @@ subscriptions model =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case model of
+    case model.trainerState of
         BetweenTests _ ->
             case msg of
                 KeyUp (KeyEvent Space timestamp) ->
-                    ( TestRunning timestamp TimeInterval.zero, Cmd.none )
+                    ( model, Random.generate AlgToTestGenerated generatePll )
+
+                AlgToTestGenerated alg ->
+                    ( model, Task.perform (StartTest alg) Time.now )
+
+                StartTest alg startTime ->
+                    ( { model | trainerState = TestRunning startTime TimeInterval.zero alg }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
 
-        TestRunning startTime intervalElapsed ->
+        TestRunning startTime intervalElapsed alg ->
             case msg of
-                KeyDown (KeyEvent key timestamp) ->
-                    ( EvaluatingResult
-                        { spacePressStarted = False
-                        , wPressStarted = False
-                        , keysHeldDownFromTest = [ key ]
-                        , inTransition = True
-                        , result = TimeInterval.betweenTimestamps { start = startTime, end = timestamp }
-                        }
+                KeyDown (KeyEvent key _) ->
+                    ( model, Task.perform (EndTest key) Time.now )
+
+                EndTest key endTime ->
+                    ( { model
+                        | trainerState =
+                            EvaluatingResult
+                                { spacePressStarted = False
+                                , wPressStarted = False
+                                , keysHeldDownFromTest = [ key ]
+                                , inTransition = True
+                                , result = TimeInterval.betweenTimestamps { start = startTime, end = endTime }
+                                , algorithmTested = alg
+                                }
+                      }
                     , Task.perform (always EndTransition) (Process.sleep 100)
                     )
 
-                NextAnimationFrame timeDelta ->
-                    ( TestRunning startTime (TimeInterval.increment timeDelta intervalElapsed), Cmd.none )
+                MillisecondsPassed timeDelta ->
+                    ( { model | trainerState = TestRunning startTime (TimeInterval.increment timeDelta intervalElapsed) alg }, Cmd.none )
 
                 _ ->
                     ( model, Cmd.none )
@@ -171,13 +191,13 @@ update msg model =
                             ( model, Cmd.none )
 
                         else
-                            ( EvaluatingResult { keyStates | keysHeldDownFromTest = List.append keysHeldDownFromTest [ key ] }, Cmd.none )
+                            ( { model | trainerState = EvaluatingResult { keyStates | keysHeldDownFromTest = List.append keysHeldDownFromTest [ key ] } }, Cmd.none )
 
                     KeyUp (KeyEvent key _) ->
-                        ( EvaluatingResult { keyStates | keysHeldDownFromTest = List.filter ((/=) key) keysHeldDownFromTest }, Cmd.none )
+                        ( { model | trainerState = EvaluatingResult { keyStates | keysHeldDownFromTest = List.filter ((/=) key) keysHeldDownFromTest } }, Cmd.none )
 
                     EndTransition ->
-                        ( EvaluatingResult { keyStates | inTransition = False }, Cmd.none )
+                        ( { model | trainerState = EvaluatingResult { keyStates | inTransition = False } }, Cmd.none )
 
                     _ ->
                         ( model, Cmd.none )
@@ -189,31 +209,31 @@ update msg model =
                             ( model, Cmd.none )
 
                         else
-                            ( EvaluatingResult { keyStates | spacePressStarted = True }, Cmd.none )
+                            ( { model | trainerState = EvaluatingResult { keyStates | spacePressStarted = True } }, Cmd.none )
 
                     KeyDown (KeyEvent W _) ->
                         if List.member W keysHeldDownFromTest then
                             ( model, Cmd.none )
 
                         else
-                            ( EvaluatingResult { keyStates | wPressStarted = True }, Cmd.none )
+                            ( { model | trainerState = EvaluatingResult { keyStates | wPressStarted = True } }, Cmd.none )
 
                     KeyUp (KeyEvent key _) ->
                         if List.member key keysHeldDownFromTest then
-                            ( EvaluatingResult { keyStates | keysHeldDownFromTest = [] }, Cmd.none )
+                            ( { model | trainerState = EvaluatingResult { keyStates | keysHeldDownFromTest = [] } }, Cmd.none )
 
                         else
                             case key of
                                 Space ->
                                     if spacePressStarted then
-                                        ( BetweenTests CorrectEvaluation, Cmd.none )
+                                        ( { model | trainerState = BetweenTests CorrectEvaluation }, Cmd.none )
 
                                     else
                                         ( model, Cmd.none )
 
                                 W ->
                                     if wPressStarted then
-                                        ( BetweenTests WrongEvaluation, Cmd.none )
+                                        ( { model | trainerState = BetweenTests WrongEvaluation }, Cmd.none )
 
                                     else
                                         ( model, Cmd.none )
@@ -232,23 +252,23 @@ view model =
 
 viewState : Model -> Html msg
 viewState model =
-    case model of
+    case model.trainerState of
         BetweenTests message ->
             div [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
 
-        TestRunning _ elapsedTime ->
-            div [ testid "test-running-container" ] [ text "Test Running", displayTestCase, div [ testid "timer" ] [ text <| TimeInterval.displayOneDecimal elapsedTime ] ]
+        TestRunning _ elapsedTime algTested ->
+            div [ testid "test-running-container" ] [ text "Test Running", displayTestCase algTested, div [ testid "timer" ] [ text <| TimeInterval.displayOneDecimal elapsedTime ] ]
 
         EvaluatingResult { result } ->
             div [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result ]
 
 
-displayTestCase : Html msg
-displayTestCase =
-    div [ testid "test-case" ] [ Components.Cube.view (Cube.solved |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.M Algorithm.OneQuarter Algorithm.Clockwise ])) ]
+displayTestCase : Algorithm.Algorithm -> Html msg
+displayTestCase algTested =
+    div [ testid "test-case" ] [ Components.Cube.view (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse <| algTested)) ]
 
 
-displayTimeResult : TimeInterval -> Html msg
+displayTimeResult : TimeInterval.Type -> Html msg
 displayTimeResult result =
     div [ testid "time-result" ] [ text <| TimeInterval.displayTwoDecimals result ]
 
@@ -264,3 +284,12 @@ viewEvaluationMessage message =
 
         WrongEvaluation ->
             div [ testid "wrong-evaluation-message" ] [ text "Wrong" ]
+
+
+generatePll : Random.Generator Algorithm.Algorithm
+generatePll =
+    let
+        (NonEmptyList.NonEmptyList x xs) =
+            NonEmptyList.concatMap Algorithm.withAllAufCombinations AlgorithmRepository.pllList
+    in
+    Random.uniform x xs

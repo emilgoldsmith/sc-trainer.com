@@ -2,7 +2,7 @@ module Components.Cube exposing (injectStyles, view)
 
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Models.Cube as Cube exposing (Cube)
+import Models.Cube as Cube
 import Utils.Css exposing (testid)
 
 
@@ -10,7 +10,7 @@ import Utils.Css exposing (testid)
 -- Exports
 
 
-view : Cube -> Html msg
+view : Cube.Type -> Html msg
 view cube =
     let
         rendering =
