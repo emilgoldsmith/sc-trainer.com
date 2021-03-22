@@ -195,41 +195,11 @@ describe("AlgorithmTrainer", function () {
     });
 
     describe("ends test correctly", function () {
-      it("on click anywhere", function () {
-        ([
-          "center",
-          "top",
-          "left",
-          "right",
-          "bottom",
-          "topLeft",
-          "topRight",
-          "bottomRight",
-          "bottomLeft",
-        ] as const).forEach((position) => {
-          cy.withOverallNameLogged(
-            {
-              name: "testing click",
-              displayName: "TESTING CLICK",
-              message: `position ${position}`,
-            },
-            () => {
-              cy.get("body", { log: false }).click(position, { log: false });
-              elements.evaluateResult.container.assertShows({ log: false });
-            }
-          );
-          cy.withOverallNameLogged(
-            {
-              name: "resetting state",
-              displayName: "RESETTING STATE",
-              message: "to testRunning state",
-            },
-            () => {
-              states.testRunning.restoreState({ log: false });
-            }
-          );
-        });
+      it("on clicking inbetween other elements on the screen", function () {
+        cy.get("body", { log: false }).click("center");
+        elements.evaluateResult.container.assertShows();
       });
+
       it("on pressing any keyboard key", function () {
         ([
           // Space, w and W are the important ones as they are also used to evaluate
