@@ -17,12 +17,12 @@ import Utils.NonEmptyList as NonEmptyList
 
 spec0 : Test.Test
 spec0 =
-    Test.test "#pllList: \n\n    List.length <| NonEmptyList.toList pllList\n    --> 14" <|
+    Test.test "#pllList: \n\n    List.length <| NonEmptyList.toList pllList\n    --> 16" <|
         \() ->
             Expect.equal
                 (
                 List.length <| NonEmptyList.toList pllList
                 )
                 (
-                14
+                16
                 )
