@@ -315,135 +315,143 @@ describe("AlgorithmTrainer", function () {
   });
 
   describe("Evaluate Result", function () {
-    beforeEach(function () {
-      states.evaluateResult.restoreState();
-    });
+    describe("starting at ignoring key presses state", function () {
+      beforeEach(function () {
+        states.evaluateResult.restoreState();
+      });
 
-    it("has all the correct elements", function () {
-      elements.evaluateResult.container.assertShows();
-      elements.evaluateResult.container.get().within(() => {
-        elements.evaluateResult.timeResult.assertShows();
+      it("has all the correct elements", function () {
+        elements.evaluateResult.container.assertShows();
+        elements.evaluateResult.container.get().within(() => {
+          elements.evaluateResult.timeResult.assertShows();
+        });
+      });
+
+      describe("displays the correct time", function () {
+        function getEvaluateAfterTestRanFor({
+          milliseconds,
+        }: {
+          milliseconds: number;
+        }): void {
+          getTestRunningWithMockedTime();
+          setTimeTo(milliseconds);
+          cy.pressKey(Key.space);
+        }
+
+        it("displays the time it was stopped at", function () {
+          getEvaluateAfterTestRanFor({ milliseconds: 1530 });
+          elements.evaluateResult.timeResult.get().should("have.text", "1.53");
+        });
+
+        it("displays two decimals on a whole second", function () {
+          getEvaluateAfterTestRanFor({ milliseconds: 1000 });
+          elements.evaluateResult.timeResult.get().should("have.text", "1.00");
+        });
+
+        it("displays two decimals on whole decisecond", function () {
+          getEvaluateAfterTestRanFor({ milliseconds: 600 });
+          elements.evaluateResult.timeResult.get().should("have.text", "0.60");
+        });
+
+        it("displays two decimals on single digit centisecond", function () {
+          getEvaluateAfterTestRanFor({ milliseconds: 1030 });
+          elements.evaluateResult.timeResult.get().should("have.text", "1.03");
+        });
+
+        describe("handles low granularity", function () {
+          it("0", function () {
+            getEvaluateAfterTestRanFor({ milliseconds: 100 });
+            elements.evaluateResult.timeResult
+              .get()
+              .should("have.text", "0.10");
+          });
+          it("1", function () {
+            getEvaluateAfterTestRanFor({ milliseconds: 110 });
+            elements.evaluateResult.timeResult
+              .get()
+              .should("have.text", "0.11");
+          });
+          it("2", function () {
+            getEvaluateAfterTestRanFor({ milliseconds: 120 });
+            elements.evaluateResult.timeResult
+              .get()
+              .should("have.text", "0.12");
+          });
+        });
       });
     });
 
-    describe("displays the correct time", function () {
-      function getEvaluateAfterTestRanFor({
-        milliseconds,
-      }: {
-        milliseconds: number;
-      }): void {
-        getTestRunningWithMockedTime();
-        setTimeTo(milliseconds);
+    describe("after ignoring key presses over", function () {
+      beforeEach(function () {
+        states.testRunning.restoreState();
+        cy.clock();
         cy.pressKey(Key.space);
-      }
-
-      it("displays the time it was stopped at", function () {
-        getEvaluateAfterTestRanFor({ milliseconds: 1530 });
-        elements.evaluateResult.timeResult.get().should("have.text", "1.53");
-      });
-
-      it("displays two decimals on a whole second", function () {
-        getEvaluateAfterTestRanFor({ milliseconds: 1000 });
-        elements.evaluateResult.timeResult.get().should("have.text", "1.00");
-      });
-
-      it("displays two decimals on whole decisecond", function () {
-        getEvaluateAfterTestRanFor({ milliseconds: 600 });
-        elements.evaluateResult.timeResult.get().should("have.text", "0.60");
-      });
-
-      it("displays two decimals on single digit centisecond", function () {
-        getEvaluateAfterTestRanFor({ milliseconds: 1030 });
-        elements.evaluateResult.timeResult.get().should("have.text", "1.03");
-      });
-
-      describe("handles low granularity", function () {
-        it("0", function () {
-          getEvaluateAfterTestRanFor({ milliseconds: 100 });
-          elements.evaluateResult.timeResult.get().should("have.text", "0.10");
-        });
-        it("1", function () {
-          getEvaluateAfterTestRanFor({ milliseconds: 110 });
-          elements.evaluateResult.timeResult.get().should("have.text", "0.11");
-        });
-        it("2", function () {
-          getEvaluateAfterTestRanFor({ milliseconds: 120 });
-          elements.evaluateResult.timeResult.get().should("have.text", "0.12");
-        });
-      });
-    });
-
-    function getEvaluateWithMockedTime() {
-      states.testRunning.restoreState();
-      cy.clock();
-      cy.pressKey(Key.space);
-      elements.evaluateResult.container.waitFor();
-    }
-    describe("approves correctly", function () {
-      it("approves on space pressed", function () {
-        getEvaluateWithMockedTime();
+        elements.evaluateResult.container.waitFor();
         cy.tick(300);
-        cy.pressKey(Key.space);
-        elements.betweenTests.container.assertShows();
-        elements.betweenTests.correctMessage.assertShows();
-      });
-    });
-    describe("rejects correctly", function () {
-      it("on w key pressed", function () {
-        getEvaluateWithMockedTime();
-        cy.tick(300);
-        cy.pressKey(Key.w);
-        elements.betweenTests.container.assertShows();
-        elements.betweenTests.wrongMessage.assertShows();
+        cy.waitForDocumentEventListeners("keydown", "keyup");
+        cy.clock().then((c) => c.restore());
       });
 
-      it("on shift + w pressed", function () {
-        getEvaluateWithMockedTime();
-        cy.tick(300);
-        cy.pressKey(Key.W);
-        elements.betweenTests.container.assertShows();
-        elements.betweenTests.wrongMessage.assertShows();
-      });
-    });
-
-    describe("doesn't change state when", function () {
-      it(`mouse clicked anywhere`, function () {
-        ([
-          "center",
-          "top",
-          "left",
-          "right",
-          "bottom",
-          "topLeft",
-          "topRight",
-          "bottomRight",
-          "bottomLeft",
-        ] as const).forEach((position) => {
-          cy.withOverallNameLogged(
-            {
-              name: "testing click",
-              displayName: "TESTING CLICK",
-              message: `position ${position}`,
-            },
-            () => {
-              cy.get("body", { log: false }).click(position, { log: false });
-              elements.evaluateResult.container.assertShows({ log: false });
-            }
-          );
+      describe("approves correctly", function () {
+        it("approves on space pressed", function () {
+          cy.pressKey(Key.space);
+          elements.betweenTests.container.assertShows();
+          elements.betweenTests.correctMessage.assertShows();
         });
       });
-      it(`keyboard key except space and w pressed`, function () {
-        [Key.leftCtrl, Key.five, Key.l].forEach((key) => {
-          cy.withOverallNameLogged(
-            {
-              displayName: "TESTING KEY",
-              message: getKeyValue(key),
-            },
-            () => {
-              cy.pressKey(key, { log: false });
-              elements.evaluateResult.container.assertShows({ log: false });
-            }
-          );
+      describe("rejects correctly", function () {
+        it("on w key pressed", function () {
+          cy.pressKey(Key.w);
+          elements.betweenTests.container.assertShows();
+          elements.betweenTests.wrongMessage.assertShows();
+        });
+
+        it("on shift + w pressed", function () {
+          cy.pressKey(Key.W);
+          elements.betweenTests.container.assertShows();
+          elements.betweenTests.wrongMessage.assertShows();
+        });
+      });
+
+      describe("doesn't change state when", function () {
+        it(`mouse clicked anywhere`, function () {
+          ([
+            "center",
+            "top",
+            "left",
+            "right",
+            "bottom",
+            "topLeft",
+            "topRight",
+            "bottomRight",
+            "bottomLeft",
+          ] as const).forEach((position) => {
+            cy.withOverallNameLogged(
+              {
+                name: "testing click",
+                displayName: "TESTING CLICK",
+                message: `position ${position}`,
+              },
+              () => {
+                cy.get("body", { log: false }).click(position, { log: false });
+                elements.evaluateResult.container.assertShows({ log: false });
+              }
+            );
+          });
+        });
+        it(`keyboard key except space and w pressed`, function () {
+          [Key.leftCtrl, Key.five, Key.l].forEach((key) => {
+            cy.withOverallNameLogged(
+              {
+                displayName: "TESTING KEY",
+                message: getKeyValue(key),
+              },
+              () => {
+                cy.pressKey(key, { log: false });
+                elements.evaluateResult.container.assertShows({ log: false });
+              }
+            );
+          });
         });
       });
     });
