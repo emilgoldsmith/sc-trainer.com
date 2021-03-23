@@ -14,17 +14,18 @@ class StateCache {
     interceptAddingElmModelObserversAndModifiers();
     cy.withOverallNameLogged(
       {
-        displayName: "NAVIGATING TO STATE",
+        displayName: "POPULATING CACHE FOR STATE",
         message: this.name,
       },
-      () => {
+      (consolePropsSetter) => {
         // TODO: Wait for model to be registered with a cy command
         cy.visit("/");
         this.getToThatState({ log: false });
         this.waitForStateToAppear({ log: false });
-        cy.getApplicationState(this.name, { log: false }).then(
-          (elmModel) => (this.elmModel = elmModel)
-        );
+        cy.getApplicationState(this.name, { log: false }).then((elmModel) => {
+          this.elmModel = elmModel;
+          consolePropsSetter({ "Elm Model": elmModel });
+        });
       }
     );
   }
