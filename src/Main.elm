@@ -41,7 +41,12 @@ type alias Model =
 type TrainerState
     = BetweenTests EvaluationMessage
     | TestRunning Time.Posix TimeInterval.Type Algorithm.Algorithm
-    | EvaluatingResult { spacePressStarted : Bool, wPressStarted : Bool, keysHeldDownFromTest : List Key, inTransition : Bool, result : TimeInterval.Type, algorithmTested : Algorithm.Algorithm }
+    | EvaluatingResult
+        { spacePressStarted : Bool
+        , wPressStarted : Bool
+        , ignoringKeyPressesAfterTransition : Bool
+        , result : TimeInterval.Type
+        }
 
 
 allPressed : { a | spacePressStarted : Bool, wPressStarted : Bool } -> Bool
@@ -62,8 +67,8 @@ type Msg
     | AlgToTestGenerated Algorithm.Algorithm
     | StartTest Algorithm.Algorithm Time.Posix
     | MillisecondsPassed Float
-    | EndTest Key Time.Posix
-    | EndTransition
+    | EndTest Time.Posix
+    | EndIgnoringKeyPressesAfterTransition
 
 
 type alias IsRepeatedKeyPressFlag =
@@ -131,14 +136,18 @@ subscriptions model =
                 ]
 
         EvaluatingResult keyStates ->
-            Sub.batch
-                [ if allPressed keyStates then
-                    Sub.none
+            if keyStates.ignoringKeyPressesAfterTransition then
+                Sub.none
 
-                  else
-                    Events.onKeyDown <| Decode.map (withIgnoreIfIsRepeated KeyDown) decodeKeyEvent
-                , Events.onKeyUp <| Decode.map (withIgnoreIfIsRepeated KeyUp) decodeKeyEvent
-                ]
+            else
+                Sub.batch
+                    [ if allPressed keyStates then
+                        Sub.none
+
+                      else
+                        Events.onKeyDown <| Decode.map (withIgnoreIfIsRepeated KeyDown) decodeKeyEvent
+                    , Events.onKeyUp <| Decode.map (withIgnoreIfIsRepeated KeyUp) decodeKeyEvent
+                    ]
 
 
 withIgnoreIfIsRepeated : (Key -> Msg) -> KeyEvent -> Msg
@@ -169,22 +178,20 @@ update msg model =
 
         TestRunning startTime intervalElapsed alg ->
             case msg of
-                KeyDown key ->
-                    ( model, Task.perform (EndTest key) Time.now )
+                KeyDown _ ->
+                    ( model, Task.perform EndTest Time.now )
 
-                EndTest key endTime ->
+                EndTest endTime ->
                     ( { model
                         | trainerState =
                             EvaluatingResult
                                 { spacePressStarted = False
                                 , wPressStarted = False
-                                , keysHeldDownFromTest = [ key ]
-                                , inTransition = True
+                                , ignoringKeyPressesAfterTransition = True
                                 , result = TimeInterval.betweenTimestamps { start = startTime, end = endTime }
-                                , algorithmTested = alg
                                 }
                       }
-                    , Task.perform (always EndTransition) (Process.sleep 100)
+                    , Task.perform (always EndIgnoringKeyPressesAfterTransition) (Process.sleep 100)
                     )
 
                 MillisecondsPassed timeDelta ->
@@ -193,66 +200,38 @@ update msg model =
                 _ ->
                     ( model, Cmd.none )
 
-        EvaluatingResult ({ spacePressStarted, wPressStarted, keysHeldDownFromTest, inTransition } as keyStates) ->
-            if inTransition then
-                case msg of
-                    KeyDown key ->
-                        if List.member key keysHeldDownFromTest then
+        EvaluatingResult ({ spacePressStarted, wPressStarted } as keyStates) ->
+            case msg of
+                EndIgnoringKeyPressesAfterTransition ->
+                    ( { model | trainerState = EvaluatingResult { keyStates | ignoringKeyPressesAfterTransition = False } }, Cmd.none )
+
+                KeyDown Space ->
+                    ( { model | trainerState = EvaluatingResult { keyStates | spacePressStarted = True } }, Cmd.none )
+
+                KeyDown W ->
+                    ( { model | trainerState = EvaluatingResult { keyStates | wPressStarted = True } }, Cmd.none )
+
+                KeyUp key ->
+                    case key of
+                        Space ->
+                            if spacePressStarted then
+                                ( { model | trainerState = BetweenTests CorrectEvaluation }, Cmd.none )
+
+                            else
+                                ( model, Cmd.none )
+
+                        W ->
+                            if wPressStarted then
+                                ( { model | trainerState = BetweenTests WrongEvaluation }, Cmd.none )
+
+                            else
+                                ( model, Cmd.none )
+
+                        _ ->
                             ( model, Cmd.none )
 
-                        else
-                            ( { model | trainerState = EvaluatingResult { keyStates | keysHeldDownFromTest = List.append keysHeldDownFromTest [ key ] } }, Cmd.none )
-
-                    KeyUp key ->
-                        ( { model | trainerState = EvaluatingResult { keyStates | keysHeldDownFromTest = List.filter ((/=) key) keysHeldDownFromTest } }, Cmd.none )
-
-                    EndTransition ->
-                        ( { model | trainerState = EvaluatingResult { keyStates | inTransition = False } }, Cmd.none )
-
-                    _ ->
-                        ( model, Cmd.none )
-
-            else
-                case msg of
-                    KeyDown Space ->
-                        if List.member Space keysHeldDownFromTest then
-                            ( model, Cmd.none )
-
-                        else
-                            ( { model | trainerState = EvaluatingResult { keyStates | spacePressStarted = True } }, Cmd.none )
-
-                    KeyDown W ->
-                        if List.member W keysHeldDownFromTest then
-                            ( model, Cmd.none )
-
-                        else
-                            ( { model | trainerState = EvaluatingResult { keyStates | wPressStarted = True } }, Cmd.none )
-
-                    KeyUp key ->
-                        if List.member key keysHeldDownFromTest then
-                            ( { model | trainerState = EvaluatingResult { keyStates | keysHeldDownFromTest = [] } }, Cmd.none )
-
-                        else
-                            case key of
-                                Space ->
-                                    if spacePressStarted then
-                                        ( { model | trainerState = BetweenTests CorrectEvaluation }, Cmd.none )
-
-                                    else
-                                        ( model, Cmd.none )
-
-                                W ->
-                                    if wPressStarted then
-                                        ( { model | trainerState = BetweenTests WrongEvaluation }, Cmd.none )
-
-                                    else
-                                        ( model, Cmd.none )
-
-                                _ ->
-                                    ( model, Cmd.none )
-
-                    _ ->
-                        ( model, Cmd.none )
+                _ ->
+                    ( model, Cmd.none )
 
 
 view : Model -> Html msg

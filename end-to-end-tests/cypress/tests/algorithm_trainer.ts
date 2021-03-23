@@ -111,7 +111,6 @@ const states = {
     },
     () => {
       elements.evaluateResult.container.waitFor();
-      cy.waitForDocumentEventListeners("keydown");
     }
   ),
 } as const;
