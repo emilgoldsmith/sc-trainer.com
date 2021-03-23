@@ -76,7 +76,7 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
   options
 ) {
   // A somewhat arbitrary number that just is long enough for a very long press
-  const LONG_TIME_MS = 3000;
+  const LONG_TIME_MS = 1500;
   const KEY_REPEAT_DELAY = 500;
   const KEY_REPEAT_INTERVAL = 35;
   const stringDisplayableKey = "'" + getKeyValue(key) + "'";
@@ -197,7 +197,7 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
         .trigger("keydown", { ...event, log: false })
         .trigger("keypress", { ...event, log: false });
     });
-    const LONG_TIME_MS = 3000;
+    const LONG_TIME_MS = 1500;
     const KEY_REPEAT_DELAY = 500;
     const KEY_REPEAT_INTERVAL = 35;
     let previous = 0;
