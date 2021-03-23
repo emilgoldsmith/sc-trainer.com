@@ -36,7 +36,7 @@ const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (
   key,
   options
 ) {
-  const event = buildKeyboardEvent(key);
+  const event = buildKeyboardEvent(key, false);
   const handleKeyPress = () => {
     cy.document({ log: false })
       .trigger("keydown", { ...event, log: false })
@@ -60,14 +60,15 @@ const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (
 Cypress.Commands.add("pressKey", pressKey);
 
 function buildKeyboardEvent(
-  key: Key
-): KeyboardEventInit &
-  Partial<Cypress.TriggerOptions> & { constructor: typeof KeyboardEvent } {
+  key: Key,
+  isRepeated: boolean
+): KeyboardEventInit & Partial<Cypress.TriggerOptions> {
   return {
     key: getKeyValue(key),
     code: getCode(key),
     keyCode: getKeyCode(key),
-    constructor: KeyboardEvent,
+    repeat: isRepeated,
+    eventConstructor: "KeyboardEvent",
   };
 }
 
@@ -80,11 +81,12 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
   const KEY_REPEAT_DELAY = 500;
   const KEY_REPEAT_INTERVAL = 35;
   const stringDisplayableKey = "'" + getKeyValue(key) + "'";
-  const event = buildKeyboardEvent(key);
+  const nonRepeatedEvent = buildKeyboardEvent(key, false);
+  const repeatedEvent = buildKeyboardEvent(key, true);
   const handleKeyPress = () => {
     cy.document({ log: false })
-      .trigger("keydown", { ...event, log: false })
-      .trigger("keypress", { ...event, log: false });
+      .trigger("keydown", { ...nonRepeatedEvent, log: false })
+      .trigger("keypress", { ...nonRepeatedEvent, log: false });
     if (options?.log !== false) cy.log(`Pressed down ${stringDisplayableKey}`);
     let previous = 0;
     let current: number;
@@ -95,12 +97,15 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
     ) {
       cy.tick(current - previous);
       cy.document({ log: false })
-        .trigger("keydown", { ...event, repeat: true, log: false })
-        .trigger("keypress", { ...event, repeat: true, log: false });
+        .trigger("keydown", { ...repeatedEvent, log: false })
+        .trigger("keypress", { ...repeatedEvent, log: false });
     }
     const remainingTime = LONG_TIME_MS - previous;
     remainingTime > 0 && cy.tick(remainingTime);
-    cy.document({ log: false }).trigger("keyup", { ...event, log: false });
+    cy.document({ log: false }).trigger("keyup", {
+      ...nonRepeatedEvent,
+      log: false,
+    });
     if (options?.log !== false) cy.log(`Released ${stringDisplayableKey}`);
   };
 
@@ -114,7 +119,7 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
       displayName: "LONG PRESS KEY",
       message: `${stringDisplayableKey} without any dom target`,
       consoleProps: () => ({
-        event,
+        event: nonRepeatedEvent,
         "Key Press Duration In Millisecond": LONG_TIME_MS,
       }),
     },
@@ -141,7 +146,7 @@ const buttonMash: Cypress.Chainable<undefined>["buttonMash"] = (
         cy.tick(timeUntilPress);
         curTime += timeUntilPress;
       }
-      const event = buildKeyboardEvent(key);
+      const event = buildKeyboardEvent(key, false);
       cy.document({ log: false })
         .trigger("keydown", { ...event, log: false })
         .trigger("keypress", { ...event, log: false });
@@ -152,7 +157,7 @@ const buttonMash: Cypress.Chainable<undefined>["buttonMash"] = (
       curTime += remainingTime;
     }
     keys.forEach((key) => {
-      const event = buildKeyboardEvent(key);
+      const event = buildKeyboardEvent(key, false);
       cy.document({ log: false }).trigger("keyup", { ...event, log: false });
     });
   };
@@ -192,10 +197,10 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
         cy.tick(timeUntilPress);
         curTime += timeUntilPress;
       }
-      const event = buildKeyboardEvent(key);
+      const nonRepeatedEvent = buildKeyboardEvent(key, false);
       cy.document({ log: false })
-        .trigger("keydown", { ...event, log: false })
-        .trigger("keypress", { ...event, log: false });
+        .trigger("keydown", { ...nonRepeatedEvent, log: false })
+        .trigger("keypress", { ...nonRepeatedEvent, log: false });
     });
     const LONG_TIME_MS = 1500;
     const KEY_REPEAT_DELAY = 500;
@@ -209,18 +214,21 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
     ) {
       cy.tick(current - previous);
       keys.forEach((key) => {
-        const event = buildKeyboardEvent(key);
+        const repeatedEvent = buildKeyboardEvent(key, true);
         cy.document({ log: false })
-          .trigger("keydown", { ...event, repeat: true, log: false })
-          .trigger("keypress", { ...event, repeat: true, log: false });
+          .trigger("keydown", { ...repeatedEvent, log: false })
+          .trigger("keypress", { ...repeatedEvent, log: false });
       });
     }
     const remainingTime = LONG_TIME_MS - previous;
     remainingTime > 0 && cy.tick(remainingTime);
     cy.tick(LONG_TIME_MS);
     keys.forEach((key) => {
-      const event = buildKeyboardEvent(key);
-      cy.document({ log: false }).trigger("keyup", { ...event, log: false });
+      const nonRepeatedEvent = buildKeyboardEvent(key, false);
+      cy.document({ log: false }).trigger("keyup", {
+        ...nonRepeatedEvent,
+        log: false,
+      });
     });
   };
   if (options?.log === false) {
