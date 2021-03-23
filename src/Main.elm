@@ -40,12 +40,12 @@ type alias Model =
 
 type TrainerState
     = BetweenTests EvaluationMessage
-    | TestRunning Time.Posix TimeInterval.Type Algorithm.Algorithm
+    | TestRunning Time.Posix TimeInterval.TimeInterval Algorithm.Algorithm
     | EvaluatingResult
         { spacePressStarted : Bool
         , wPressStarted : Bool
         , ignoringKeyPressesAfterTransition : Bool
-        , result : TimeInterval.Type
+        , result : TimeInterval.TimeInterval
         }
 
 
@@ -257,7 +257,7 @@ displayTestCase algTested =
     div [ testid "test-case" ] [ Components.Cube.view (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse <| algTested)) ]
 
 
-displayTimeResult : TimeInterval.Type -> Html msg
+displayTimeResult : TimeInterval.TimeInterval -> Html msg
 displayTimeResult result =
     div [ testid "time-result" ] [ text <| TimeInterval.displayTwoDecimals result ]
 

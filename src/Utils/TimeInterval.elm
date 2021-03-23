@@ -1,28 +1,28 @@
-module Utils.TimeInterval exposing (Type, betweenTimestamps, displayOneDecimal, displayTwoDecimals, increment, zero)
+module Utils.TimeInterval exposing (TimeInterval, betweenTimestamps, displayOneDecimal, displayTwoDecimals, increment, zero)
 
 import Time
 
 
-type Type
+type TimeInterval
     = TimeInterval Float
 
 
-map : (Float -> Float) -> Type -> Type
+map : (Float -> Float) -> TimeInterval -> TimeInterval
 map f (TimeInterval milliseconds) =
     TimeInterval (f milliseconds)
 
 
-zero : Type
+zero : TimeInterval
 zero =
     TimeInterval 0
 
 
-betweenTimestamps : { start : Time.Posix, end : Time.Posix } -> Type
+betweenTimestamps : { start : Time.Posix, end : Time.Posix } -> TimeInterval
 betweenTimestamps { start, end } =
     TimeInterval <| toFloat <| Time.posixToMillis end - Time.posixToMillis start
 
 
-increment : Float -> Type -> Type
+increment : Float -> TimeInterval -> TimeInterval
 increment msToIncrement =
     map ((+) msToIncrement)
 
@@ -31,7 +31,7 @@ type alias TimeUnits =
     { milliseconds : Int, seconds : Int, minutes : Int, hours : Int }
 
 
-parseTimeUnits : Type -> TimeUnits
+parseTimeUnits : TimeInterval -> TimeUnits
 parseTimeUnits (TimeInterval floatMilliseconds) =
     let
         millisecondsElapsed =
@@ -44,7 +44,7 @@ parseTimeUnits (TimeInterval floatMilliseconds) =
     }
 
 
-displayTwoDecimals : Type -> String
+displayTwoDecimals : TimeInterval -> String
 displayTwoDecimals interval =
     let
         milliseconds =
@@ -63,7 +63,7 @@ displayTwoDecimals interval =
     displayWithoutDecimals interval ++ "." ++ precedingZeroes ++ String.fromInt centiseconds
 
 
-displayOneDecimal : Type -> String
+displayOneDecimal : TimeInterval -> String
 displayOneDecimal interval =
     let
         milliseconds =
@@ -75,7 +75,7 @@ displayOneDecimal interval =
     displayWithoutDecimals interval ++ "." ++ String.fromInt deciseconds
 
 
-displayWithoutDecimals : Type -> String
+displayWithoutDecimals : TimeInterval -> String
 displayWithoutDecimals interval =
     let
         time =
