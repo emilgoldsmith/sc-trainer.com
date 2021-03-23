@@ -56,8 +56,8 @@ type EvaluationMessage
 
 
 type Msg
-    = KeyUp KeyEvent
-    | KeyDown KeyEvent
+    = KeyUp Key
+    | KeyDown Key
     | AlgToTestGenerated Algorithm.Algorithm
     | StartTest Algorithm.Algorithm Time.Posix
     | MillisecondsPassed Float
@@ -65,12 +65,8 @@ type Msg
     | EndTransition
 
 
-type alias MillisecondsSinceDocumentCreation =
-    Float
-
-
 type KeyEvent
-    = KeyEvent Key MillisecondsSinceDocumentCreation
+    = KeyEvent Key
 
 
 type Key
@@ -81,7 +77,7 @@ type Key
 
 decodeKeyEvent : Decode.Decoder KeyEvent
 decodeKeyEvent =
-    Decode.map2 KeyEvent decodeKey decodeEventTimestamp
+    Decode.map KeyEvent decodeKey
 
 
 {-| Heavily inspired by <https://github.com/elm/browser/blob/1.0.2/notes/keyboard.md>
@@ -89,11 +85,6 @@ decodeKeyEvent =
 decodeKey : Decode.Decoder Key
 decodeKey =
     Decode.map toKey (Decode.field "key" Decode.string)
-
-
-decodeEventTimestamp : Decode.Decoder MillisecondsSinceDocumentCreation
-decodeEventTimestamp =
-    Decode.field "timeStamp" Decode.float
 
 
 toKey : String -> Key
@@ -116,16 +107,16 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.trainerState of
         BetweenTests _ ->
-            Events.onKeyUp <| Decode.map KeyUp decodeKeyEvent
+            Events.onKeyUp <| Decode.map KeyUp decodeKey
 
         TestRunning _ _ _ ->
             Sub.batch
                 [ Events.onKeyDown <|
                     Decode.map KeyDown
-                        decodeKeyEvent
+                        decodeKey
                 , Events.onMouseDown <|
-                    Decode.map KeyDown <|
-                        Decode.map (KeyEvent <| SomeKey "mouseDown") decodeEventTimestamp
+                    Decode.succeed <|
+                        KeyDown (SomeKey "mouseDown")
                 , Events.onAnimationFrameDelta MillisecondsPassed
                 ]
 
@@ -135,8 +126,8 @@ subscriptions model =
                     Sub.none
 
                   else
-                    Events.onKeyDown <| Decode.map KeyDown decodeKeyEvent
-                , Events.onKeyUp <| Decode.map KeyUp decodeKeyEvent
+                    Events.onKeyDown <| Decode.map KeyDown decodeKey
+                , Events.onKeyUp <| Decode.map KeyUp decodeKey
                 ]
 
 
@@ -145,7 +136,7 @@ update msg model =
     case model.trainerState of
         BetweenTests _ ->
             case msg of
-                KeyUp (KeyEvent Space timestamp) ->
+                KeyUp Space ->
                     ( model, Random.generate AlgToTestGenerated generatePll )
 
                 AlgToTestGenerated alg ->
@@ -159,7 +150,7 @@ update msg model =
 
         TestRunning startTime intervalElapsed alg ->
             case msg of
-                KeyDown (KeyEvent key _) ->
+                KeyDown key ->
                     ( model, Task.perform (EndTest key) Time.now )
 
                 EndTest key endTime ->
@@ -186,14 +177,14 @@ update msg model =
         EvaluatingResult ({ spacePressStarted, wPressStarted, keysHeldDownFromTest, inTransition } as keyStates) ->
             if inTransition then
                 case msg of
-                    KeyDown (KeyEvent key _) ->
+                    KeyDown key ->
                         if List.member key keysHeldDownFromTest then
                             ( model, Cmd.none )
 
                         else
                             ( { model | trainerState = EvaluatingResult { keyStates | keysHeldDownFromTest = List.append keysHeldDownFromTest [ key ] } }, Cmd.none )
 
-                    KeyUp (KeyEvent key _) ->
+                    KeyUp key ->
                         ( { model | trainerState = EvaluatingResult { keyStates | keysHeldDownFromTest = List.filter ((/=) key) keysHeldDownFromTest } }, Cmd.none )
 
                     EndTransition ->
@@ -204,21 +195,21 @@ update msg model =
 
             else
                 case msg of
-                    KeyDown (KeyEvent Space _) ->
+                    KeyDown Space ->
                         if List.member Space keysHeldDownFromTest then
                             ( model, Cmd.none )
 
                         else
                             ( { model | trainerState = EvaluatingResult { keyStates | spacePressStarted = True } }, Cmd.none )
 
-                    KeyDown (KeyEvent W _) ->
+                    KeyDown W ->
                         if List.member W keysHeldDownFromTest then
                             ( model, Cmd.none )
 
                         else
                             ( { model | trainerState = EvaluatingResult { keyStates | wPressStarted = True } }, Cmd.none )
 
-                    KeyUp (KeyEvent key _) ->
+                    KeyUp key ->
                         if List.member key keysHeldDownFromTest then
                             ( { model | trainerState = EvaluatingResult { keyStates | keysHeldDownFromTest = [] } }, Cmd.none )
 
