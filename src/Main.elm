@@ -58,6 +58,7 @@ type EvaluationMessage
 type Msg
     = KeyUp Key
     | KeyDown Key
+    | IgnoredKeyEvent
     | AlgToTestGenerated Algorithm.Algorithm
     | StartTest Algorithm.Algorithm Time.Posix
     | MillisecondsPassed Float
@@ -65,8 +66,12 @@ type Msg
     | EndTransition
 
 
+type alias IsRepeatedKeyPressFlag =
+    Bool
+
+
 type KeyEvent
-    = KeyEvent Key
+    = KeyEvent Key IsRepeatedKeyPressFlag
 
 
 type Key
@@ -77,7 +82,7 @@ type Key
 
 decodeKeyEvent : Decode.Decoder KeyEvent
 decodeKeyEvent =
-    Decode.map KeyEvent decodeKey
+    Decode.map2 KeyEvent decodeKey decodeKeyRepeat
 
 
 {-| Heavily inspired by <https://github.com/elm/browser/blob/1.0.2/notes/keyboard.md>
@@ -85,6 +90,11 @@ decodeKeyEvent =
 decodeKey : Decode.Decoder Key
 decodeKey =
     Decode.map toKey (Decode.field "key" Decode.string)
+
+
+decodeKeyRepeat : Decode.Decoder IsRepeatedKeyPressFlag
+decodeKeyRepeat =
+    Decode.field "repeat" Decode.bool
 
 
 toKey : String -> Key
@@ -107,13 +117,13 @@ subscriptions : Model -> Sub Msg
 subscriptions model =
     case model.trainerState of
         BetweenTests _ ->
-            Events.onKeyUp <| Decode.map KeyUp decodeKey
+            Events.onKeyUp <| Decode.map (withIgnoreIfIsRepeated KeyUp) decodeKeyEvent
 
         TestRunning _ _ _ ->
             Sub.batch
                 [ Events.onKeyDown <|
-                    Decode.map KeyDown
-                        decodeKey
+                    Decode.map (withIgnoreIfIsRepeated KeyDown)
+                        decodeKeyEvent
                 , Events.onMouseDown <|
                     Decode.succeed <|
                         KeyDown (SomeKey "mouseDown")
@@ -126,9 +136,18 @@ subscriptions model =
                     Sub.none
 
                   else
-                    Events.onKeyDown <| Decode.map KeyDown decodeKey
-                , Events.onKeyUp <| Decode.map KeyUp decodeKey
+                    Events.onKeyDown <| Decode.map (withIgnoreIfIsRepeated KeyDown) decodeKeyEvent
+                , Events.onKeyUp <| Decode.map (withIgnoreIfIsRepeated KeyUp) decodeKeyEvent
                 ]
+
+
+withIgnoreIfIsRepeated : (Key -> Msg) -> KeyEvent -> Msg
+withIgnoreIfIsRepeated message (KeyEvent key isRepeated) =
+    if isRepeated then
+        IgnoredKeyEvent
+
+    else
+        message key
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
