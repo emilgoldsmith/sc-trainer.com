@@ -95,14 +95,12 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
     ) {
       cy.tick(current - previous);
       cy.document({ log: false })
-        .trigger("keydown", { ...event, log: false })
-        .trigger("keypress", { ...event, log: false });
+        .trigger("keydown", { ...event, repeat: true, log: false })
+        .trigger("keypress", { ...event, repeat: true, log: false });
     }
     const remainingTime = LONG_TIME_MS - previous;
     remainingTime > 0 && cy.tick(remainingTime);
-    cy.document({ log: false })
-      .trigger("keypress", { ...event, log: false })
-      .trigger("keyup", { ...event, log: false });
+    cy.document({ log: false }).trigger("keyup", { ...event, log: false });
     if (options?.log !== false) cy.log(`Released ${stringDisplayableKey}`);
   };
 
@@ -213,8 +211,8 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
       keys.forEach((key) => {
         const event = buildKeyboardEvent(key);
         cy.document({ log: false })
-          .trigger("keydown", { ...event, log: false })
-          .trigger("keypress", { ...event, log: false });
+          .trigger("keydown", { ...event, repeat: true, log: false })
+          .trigger("keypress", { ...event, repeat: true, log: false });
       });
     }
     const remainingTime = LONG_TIME_MS - previous;
