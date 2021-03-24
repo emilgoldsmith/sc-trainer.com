@@ -1,6 +1,8 @@
-module Expect.Extra exposing (equalListMembers, equalNonEmptyListMembers)
+module Expect.Extra exposing (equalCubeRenderings, equalListMembers, equalNonEmptyListMembers)
 
 import Expect
+import Models.Cube as Cube
+import TestHelpers.Cube
 import Utils.NonEmptyList as NonEmptyList
 
 
@@ -43,3 +45,17 @@ equalNonEmptyListMembers (NonEmptyList.NonEmptyList expectedHead expectedTail) (
 
     else
         equalListMembers expectedTail actualTail
+
+
+equalCubeRenderings : Cube.Rendering -> Cube.Rendering -> Expect.Expectation
+equalCubeRenderings expected actual =
+    if expected == actual then
+        Expect.pass
+
+    else
+        Expect.fail <|
+            "The given cube rendering does not match the expected rendering"
+                ++ "\n\n"
+                ++ "(Actual != Expected)"
+                ++ "\n\n"
+                ++ TestHelpers.Cube.compareCubeRenderings actual expected

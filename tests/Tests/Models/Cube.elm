@@ -1,12 +1,14 @@
-module Tests.Models.Cube exposing (applyAlgorithmTests, flipTests, plainCubie, solvedCubeRendering, testHelperTests)
+module Tests.Models.Cube exposing (applyAlgorithmTests, flipTests, testHelperTests)
 
 import Expect
+import Expect.Extra
 import Fuzz
 import Models.Algorithm as Algorithm
 import Models.Cube as Cube exposing (Color(..))
 import Monads.ListM as ListM
 import Parser exposing ((|.), (|=))
 import Test exposing (..)
+import TestHelpers.Cube exposing (cubeFuzzer, plainCubie, solvedCubeRendering)
 import Tests.Models.Algorithm exposing (algorithmFuzzer, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
 
 
@@ -117,14 +119,14 @@ applyAlgorithmTests =
             \_ ->
                 Cube.solved
                     |> Cube.render
-                    |> Expect.equal solvedCubeRendering
+                    |> Expect.Extra.equalCubeRenderings solvedCubeRendering
         , test "U performs expected transformation" <|
             \_ ->
                 let
                     alg =
                         Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ]
 
-                    expectedColorSpec =
+                    expectedRendering =
                         solvedCubeRendering
                             |> (\x -> { x | ufr = { plainCubie | u = UpColor, f = RightColor, r = BackColor } })
                             |> (\x -> { x | uf = { plainCubie | u = UpColor, f = RightColor } })
@@ -138,14 +140,14 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "D performs expected transformation" <|
             \_ ->
                 let
                     alg =
                         Algorithm.build [ Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.Clockwise ]
 
-                    expectedColorSpec =
+                    expectedRendering =
                         solvedCubeRendering
                             |> (\x -> { x | dfl = { plainCubie | d = DownColor, f = LeftColor, l = BackColor } })
                             |> (\x -> { x | df = { plainCubie | d = DownColor, f = LeftColor } })
@@ -159,14 +161,14 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "L performs expected transformation" <|
             \_ ->
                 let
                     alg =
                         Algorithm.build [ Algorithm.Turn Algorithm.L Algorithm.OneQuarter Algorithm.Clockwise ]
 
-                    expectedColorSpec =
+                    expectedRendering =
                         solvedCubeRendering
                             |> (\x -> { x | ubl = { plainCubie | u = BackColor, b = DownColor, l = LeftColor } })
                             |> (\x -> { x | ul = { plainCubie | u = BackColor, l = LeftColor } })
@@ -180,14 +182,14 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "R performs expected transformation" <|
             \_ ->
                 let
                     alg =
                         Algorithm.build [ Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise ]
 
-                    expectedColorSpec =
+                    expectedRendering =
                         solvedCubeRendering
                             |> (\x -> { x | ufr = { plainCubie | u = FrontColor, f = DownColor, r = RightColor } })
                             |> (\x -> { x | ur = { plainCubie | u = FrontColor, r = RightColor } })
@@ -201,14 +203,14 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "F performs expected transformation" <|
             \_ ->
                 let
                     alg =
                         Algorithm.build [ Algorithm.Turn Algorithm.F Algorithm.OneQuarter Algorithm.Clockwise ]
 
-                    expectedColorSpec =
+                    expectedRendering =
                         solvedCubeRendering
                             |> (\x -> { x | ufl = { plainCubie | u = LeftColor, f = FrontColor, l = DownColor } })
                             |> (\x -> { x | uf = { plainCubie | u = LeftColor, f = FrontColor } })
@@ -222,14 +224,14 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "B performs expected transformation" <|
             \_ ->
                 let
                     alg =
                         Algorithm.build [ Algorithm.Turn Algorithm.B Algorithm.OneQuarter Algorithm.Clockwise ]
 
-                    expectedColorSpec =
+                    expectedRendering =
                         solvedCubeRendering
                             |> (\x -> { x | ubr = { plainCubie | u = RightColor, b = BackColor, r = DownColor } })
                             |> (\x -> { x | ub = { plainCubie | u = RightColor, b = BackColor } })
@@ -243,14 +245,14 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "M performs expected transformation" <|
             \_ ->
                 let
                     alg =
                         Algorithm.build [ Algorithm.Turn Algorithm.M Algorithm.OneQuarter Algorithm.Clockwise ]
 
-                    expectedColorSpec =
+                    expectedRendering =
                         solvedCubeRendering
                             |> (\x -> { x | ub = { plainCubie | u = BackColor, b = DownColor } })
                             |> (\x -> { x | u = { plainCubie | u = BackColor } })
@@ -264,14 +266,14 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "S performs expected transformation" <|
             \_ ->
                 let
                     alg =
                         Algorithm.build [ Algorithm.Turn Algorithm.S Algorithm.OneQuarter Algorithm.Clockwise ]
 
-                    expectedColorSpec =
+                    expectedRendering =
                         solvedCubeRendering
                             |> (\x -> { x | ul = { plainCubie | u = LeftColor, l = DownColor } })
                             |> (\x -> { x | u = { plainCubie | u = LeftColor } })
@@ -285,14 +287,14 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "E performs expected transformation" <|
             \_ ->
                 let
                     alg =
                         Algorithm.build [ Algorithm.Turn Algorithm.E Algorithm.OneQuarter Algorithm.Clockwise ]
 
-                    expectedColorSpec =
+                    expectedRendering =
                         solvedCubeRendering
                             |> (\x -> { x | fl = { plainCubie | f = LeftColor, l = BackColor } })
                             |> (\x -> { x | f = { plainCubie | f = LeftColor } })
@@ -306,7 +308,7 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "x performs expected transformation" <|
             \_ ->
                 let
@@ -314,7 +316,7 @@ applyAlgorithmTests =
                         Algorithm.build [ Algorithm.Turn Algorithm.X Algorithm.OneQuarter Algorithm.Clockwise ]
 
                     -- The faces do the following transformation: U -> B -> D -> F -> U
-                    expectedColorSpec =
+                    expectedRendering =
                         { -- U Corners
                           ufr = { plainCubie | u = FrontColor, f = DownColor, r = RightColor }
                         , ufl = { plainCubie | u = FrontColor, f = DownColor, l = LeftColor }
@@ -357,7 +359,7 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "y performs expected transformation" <|
             \_ ->
                 let
@@ -365,7 +367,7 @@ applyAlgorithmTests =
                         Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.OneQuarter Algorithm.Clockwise ]
 
                     -- The faces do the following transformation: F -> L -> B -> R -> F
-                    expectedColorSpec =
+                    expectedRendering =
                         { -- U Corners
                           ufr = { plainCubie | u = UpColor, f = RightColor, r = BackColor }
                         , ufl = { plainCubie | u = UpColor, f = RightColor, l = FrontColor }
@@ -408,7 +410,7 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "z performs expected transformation" <|
             \_ ->
                 let
@@ -416,7 +418,7 @@ applyAlgorithmTests =
                         Algorithm.build [ Algorithm.Turn Algorithm.Z Algorithm.OneQuarter Algorithm.Clockwise ]
 
                     -- The faces do the following transformation: U -> R -> D -> L -> U
-                    expectedColorSpec =
+                    expectedRendering =
                         { -- U Corners
                           ufr = { plainCubie | u = LeftColor, f = FrontColor, r = UpColor }
                         , ufl = { plainCubie | u = LeftColor, f = FrontColor, l = DownColor }
@@ -459,7 +461,7 @@ applyAlgorithmTests =
                 Cube.solved
                     |> Cube.applyAlgorithm alg
                     |> Cube.render
-                    |> Expect.equal expectedColorSpec
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "0-length algorithm is identity operation to simplify types despite 0 length algorithm not making much sense" <|
             \_ ->
                 Cube.solved |> Cube.applyAlgorithm Algorithm.empty |> Expect.equal Cube.solved
@@ -515,7 +517,7 @@ flipTests =
                 Cube.solved
                     |> Cube.flip
                     |> Cube.render
-                    |> Expect.equal expectedRendering
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         , test "works after U applied" <|
             \_ ->
                 let
@@ -563,7 +565,7 @@ flipTests =
                     |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
                     |> Cube.flip
                     |> Cube.render
-                    |> Expect.equal expectedRendering
+                    |> Expect.Extra.equalCubeRenderings expectedRendering
         ]
 
 
@@ -830,55 +832,3 @@ getParallelGroup turn =
 
         Algorithm.Turn Algorithm.X _ _ ->
             LeftOrRightGroup
-
-
-cubeFuzzer : Fuzz.Fuzzer Cube.Cube
-cubeFuzzer =
-    Fuzz.constant Cube.solved
-
-
-plainCubie : Cube.CubieRendering
-plainCubie =
-    { u = PlasticColor, d = PlasticColor, f = PlasticColor, b = PlasticColor, l = PlasticColor, r = PlasticColor }
-
-
-solvedCubeRendering : Cube.Rendering
-solvedCubeRendering =
-    { -- U Corners
-      ufr = { plainCubie | u = UpColor, f = FrontColor, r = RightColor }
-    , ufl = { plainCubie | u = UpColor, f = FrontColor, l = LeftColor }
-    , ubl = { plainCubie | u = UpColor, b = BackColor, l = LeftColor }
-    , ubr = { plainCubie | u = UpColor, b = BackColor, r = RightColor }
-
-    -- D Corners
-    , dbr = { plainCubie | d = DownColor, b = BackColor, r = RightColor }
-    , dbl = { plainCubie | d = DownColor, b = BackColor, l = LeftColor }
-    , dfl = { plainCubie | d = DownColor, f = FrontColor, l = LeftColor }
-    , dfr = { plainCubie | d = DownColor, f = FrontColor, r = RightColor }
-
-    -- M Edges
-    , uf = { plainCubie | u = UpColor, f = FrontColor }
-    , ub = { plainCubie | u = UpColor, b = BackColor }
-    , db = { plainCubie | d = DownColor, b = BackColor }
-    , df = { plainCubie | d = DownColor, f = FrontColor }
-
-    -- S Edges
-    , dl = { plainCubie | d = DownColor, l = LeftColor }
-    , dr = { plainCubie | d = DownColor, r = RightColor }
-    , ur = { plainCubie | u = UpColor, r = RightColor }
-    , ul = { plainCubie | u = UpColor, l = LeftColor }
-
-    -- E Edges
-    , fl = { plainCubie | f = FrontColor, l = LeftColor }
-    , fr = { plainCubie | f = FrontColor, r = RightColor }
-    , br = { plainCubie | b = BackColor, r = RightColor }
-    , bl = { plainCubie | b = BackColor, l = LeftColor }
-
-    -- Centers
-    , u = { plainCubie | u = UpColor }
-    , d = { plainCubie | d = DownColor }
-    , f = { plainCubie | f = FrontColor }
-    , b = { plainCubie | b = BackColor }
-    , l = { plainCubie | l = LeftColor }
-    , r = { plainCubie | r = RightColor }
-    }
