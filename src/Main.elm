@@ -280,7 +280,7 @@ displayExpectedCubeState : Cube.Cube -> Html msg
 displayExpectedCubeState expectedCube =
     div []
         [ div [ testid "expected-cube-front" ] [ Components.Cube.view expectedCube ]
-        , div [ testid "expected-cube-back" ] [ Components.Cube.view expectedCube ]
+        , div [ testid "expected-cube-back" ] [ (Components.Cube.view << Cube.flip) expectedCube ]
         ]
 
 
