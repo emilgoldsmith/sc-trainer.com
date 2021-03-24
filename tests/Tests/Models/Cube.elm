@@ -518,7 +518,7 @@ flipTests =
                     |> Cube.flip
                     |> Cube.render
                     |> Expect.Extra.equalCubeRenderings expectedRendering
-        , test "works after U applied" <|
+        , test "works after U' applied" <|
             \_ ->
                 let
                     expectedRendering =
@@ -562,7 +562,7 @@ flipTests =
                         }
                 in
                 Cube.solved
-                    |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
+                    |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise ])
                     |> Cube.flip
                     |> Cube.render
                     |> Expect.Extra.equalCubeRenderings expectedRendering
