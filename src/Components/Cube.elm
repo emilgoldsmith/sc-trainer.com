@@ -10,7 +10,7 @@ import Utils.Css exposing (testid)
 -- Exports
 
 
-view : Cube.Type -> Html msg
+view : Cube.Cube -> Html msg
 view cube =
     let
         rendering =

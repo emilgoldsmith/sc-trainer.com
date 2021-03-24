@@ -35,6 +35,7 @@ type Turnable
       -- Whole cube rotations (lowercase type constructors not allowed in Elm)
     | X
     | Y
+    | Z
 
 
 type TurnLength
@@ -208,6 +209,9 @@ algParser =
                                 Y ->
                                     "y"
 
+                                Z ->
+                                    "z"
+
                         token =
                             Parser.token (Parser.Token (turnableToString turnable) ExpectingTurnable)
                     in
@@ -288,7 +292,7 @@ allTurns =
 
 {-| All possible turnables
 
-    List.length allTurnables --> 11
+    List.length allTurnables --> 12
 
 -}
 allTurnables : List Turnable
@@ -327,6 +331,9 @@ allTurnables =
                     Just Y
 
                 Y ->
+                    Just Z
+
+                Z ->
                     Nothing
     in
     Utils.Enumerator.from U fromU

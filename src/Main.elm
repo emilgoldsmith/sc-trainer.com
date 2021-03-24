@@ -30,11 +30,12 @@ main =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { trainerState = BetweenTests NoEvaluationMessage }, Cmd.none )
+    ( { trainerState = BetweenTests NoEvaluationMessage, expectedCube = Cube.solved }, Cmd.none )
 
 
 type alias Model =
     { trainerState : TrainerState
+    , expectedCube : Cube.Cube
     }
 
 
@@ -249,7 +250,7 @@ viewState model =
             div [ testid "test-running-container" ] [ text "Test Running", displayTestCase algTested, div [ testid "timer" ] [ text <| TimeInterval.displayOneDecimal elapsedTime ] ]
 
         EvaluatingResult { result } ->
-            div [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result ]
+            div [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result, displayExpectedCubeState model.expectedCube ]
 
 
 displayTestCase : Algorithm.Algorithm -> Html msg
@@ -273,6 +274,14 @@ viewEvaluationMessage message =
 
         WrongEvaluation ->
             div [ testid "wrong-evaluation-message" ] [ text "Wrong" ]
+
+
+displayExpectedCubeState : Cube.Cube -> Html msg
+displayExpectedCubeState expectedCube =
+    div []
+        [ div [ testid "expected-cube-front" ] [ Components.Cube.view expectedCube ]
+        , div [ testid "expected-cube-back" ] [ Components.Cube.view expectedCube ]
+        ]
 
 
 generatePll : Random.Generator Algorithm.Algorithm

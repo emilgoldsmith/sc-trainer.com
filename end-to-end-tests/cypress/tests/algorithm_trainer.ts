@@ -77,6 +77,8 @@ const elements = {
   evaluateResult: buildElementsCategory({
     container: "evaluate-test-result-container",
     timeResult: "time-result",
+    expectedCubeFront: "expected-cube-front",
+    expectedCubeBack: "expected-cube-back",
   }),
   globals: buildElementsCategory({
     cube: "cube",
@@ -324,6 +326,14 @@ describe("AlgorithmTrainer", function () {
         elements.evaluateResult.container.assertShows();
         elements.evaluateResult.container.get().within(() => {
           elements.evaluateResult.timeResult.assertShows();
+          elements.evaluateResult.expectedCubeFront.assertShows();
+          elements.evaluateResult.expectedCubeFront.get().within(() => {
+            elements.globals.cube.assertShows();
+          });
+          elements.evaluateResult.expectedCubeBack.assertShows();
+          elements.evaluateResult.expectedCubeBack.get().within(() => {
+            elements.globals.cube.assertShows();
+          });
         });
       });
 
