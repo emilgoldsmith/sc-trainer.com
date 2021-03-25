@@ -4,6 +4,7 @@ import Element
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Models.Cube as Cube
+import Random
 import Utils.Css exposing (htmlTestid)
 
 
@@ -18,12 +19,26 @@ view cube =
             rendering =
                 Cube.render cube
         in
-        div [ class classes.cube, style "top" "100px", style "left" "100px", htmlTestid "cube" ] <| List.map (\( a, b ) -> displayCubie b a) (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
+        div [ class classes.container ]
+            [ div [ class classes.cube, htmlTestid "cube" ] <|
+                List.map (\( a, b ) -> displayCubie b a)
+                    (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
+            ]
 
 
 injectStyles : Html msg
 injectStyles =
-    styleTag [] [ text (css defaultTheme) ]
+    let
+        original =
+            css defaultTheme
+
+        compressedCss =
+            original
+                |> String.split "\n"
+                |> List.map String.trim
+                |> String.join ""
+    in
+    styleTag [] [ text compressedCss ]
 
 
 
@@ -354,34 +369,41 @@ styleTag =
 css : CubeTheme -> String
 css theme =
     """
+.{containerClass} {
+    width: {containerWidth}em;
+    height: {containerHeight}em;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 .{cubeClass} {
-  width: {cubeSideLength}em;
-  height: {cubeSideLength}em;
-  transform-origin: center center -{halfCubeSideLength}em;
-  transform-style: preserve-3d;
-  transform: rotateX(-30deg) rotateY(-45deg);
-  position: relative;
+    width: {cubeSideLength}em;
+    height: {cubeSideLength}em;
+    transform-origin: center center -{halfCubeSideLength}em;
+    transform-style: preserve-3d;
+    transform: rotateY(-20deg) rotate3d(1,0,-0.4,-17deg);
+    position: relative;
 }
 .{faceClass} {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: {cubieSideLength}em;
-  height: {cubieSideLength}em;
-  transform-origin: center center -{halfCubieSideLength}em;
-  transform-style: preserve-3d;
-  border: {plasticColor} solid {cubieBorderLength}em;
-  box-sizing: border-box;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: {cubieSideLength}em;
+    height: {cubieSideLength}em;
+    transform-origin: center center -{halfCubieSideLength}em;
+    transform-style: preserve-3d;
+    border: {plasticColor} solid {cubieBorderLength}em;
+    box-sizing: border-box;
 }
 .{cubieClass} {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: {cubieSideLength}em;
-  height: {cubieSideLength}em;
-  transform-style: preserve-3d;
-  transform-origin: center center -{halfCubieSideLength}em;
-  display: inline-block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: {cubieSideLength}em;
+    height: {cubieSideLength}em;
+    transform-style: preserve-3d;
+    transform-origin: center center -{halfCubieSideLength}em;
+    display: inline-block;
 }
 .{upFaceClass} { transform: rotateX(90deg); }
 .{downFaceClass} { transform: rotateX(-90deg); }
@@ -397,9 +419,10 @@ css theme =
 .{rightColorClass} { background-color: {rightColor} }
 .{plasticColorClass} { background-color: {plasticColor} }
 """
-        |> String.replace "{faceClass}" classes.face
+        |> String.replace "{containerClass}" classes.container
         |> String.replace "{cubeClass}" classes.cube
         |> String.replace "{cubieClass}" classes.cubie
+        |> String.replace "{faceClass}" classes.face
         |> String.replace "{upFaceClass}" classes.upFace
         |> String.replace "{downFaceClass}" classes.downFace
         |> String.replace "{rightFaceClass}" classes.rightFace
@@ -425,12 +448,30 @@ css theme =
         |> String.replace "{cubieBorderLength}" (String.fromFloat cubieBorderWidth)
         |> String.replace "{cubeSideLength}" (String.fromFloat cubeSideLength)
         |> String.replace "{halfCubeSideLength}" (String.fromFloat (cubeSideLength / 2))
+        |> String.replace "{containerWidth}" (String.fromFloat (cubeSideLength * 1.4))
+        |> String.replace "{containerHeight}" (String.fromFloat (cubeSideLength * 1.4))
+
+
+cubieSideLength : Float
+cubieSideLength =
+    2
+
+
+cubeSideLength : Float
+cubeSideLength =
+    3 * cubieSideLength
+
+
+cubieBorderWidth : Float
+cubieBorderWidth =
+    cubieSideLength / 10
 
 
 type alias Classes =
-    { face : String
+    { container : String
     , cube : String
     , cubie : String
+    , face : String
     , upFace : String
     , downFace : String
     , rightFace : String
@@ -449,23 +490,40 @@ type alias Classes =
 
 classes : Classes
 classes =
-    { face = "face"
-    , cube = "cube"
-    , cubie = "cubie"
-    , upFace = "up"
-    , downFace = "down"
-    , rightFace = "right"
-    , leftFace = "left"
-    , frontFace = "front"
-    , backFace = "back"
-    , upColor = "u"
-    , downColor = "d"
-    , frontColor = "f"
-    , backColor = "b"
-    , leftColor = "l"
-    , rightColor = "r"
-    , plasticColor = "p"
+    { -- Suffix there is for unicity
+      container = "cube-container" ++ randomSuffix
+    , cube = "cube" ++ randomSuffix
+    , cubie = "cubie" ++ randomSuffix
+    , face = "face" ++ randomSuffix
+    , upFace = "up" ++ randomSuffix
+    , downFace = "down" ++ randomSuffix
+    , rightFace = "right" ++ randomSuffix
+    , leftFace = "left" ++ randomSuffix
+    , frontFace = "front" ++ randomSuffix
+    , backFace = "back" ++ randomSuffix
+    , upColor = "u" ++ randomSuffix
+    , downColor = "d" ++ randomSuffix
+    , frontColor = "f" ++ randomSuffix
+    , backColor = "b" ++ randomSuffix
+    , leftColor = "l" ++ randomSuffix
+    , rightColor = "r" ++ randomSuffix
+    , plasticColor = "p" ++ randomSuffix
     }
+
+
+randomSuffix : String
+randomSuffix =
+    let
+        generator =
+            Random.map (String.join "" << List.map String.fromInt) <|
+                Random.list 5 <|
+                    Random.int 0 9
+
+        seed =
+            -- Just the JS timestamp of when this code was written
+            Random.initialSeed 1616666856715
+    in
+    Tuple.first <| Random.step generator seed
 
 
 getColorClass : Cube.Face -> Cube.CubieRendering -> String
@@ -515,18 +573,3 @@ getColorClass face rendering =
                     classes.plasticColor
     in
     class
-
-
-cubieSideLength : Float
-cubieSideLength =
-    2
-
-
-cubeSideLength : Float
-cubeSideLength =
-    3 * cubieSideLength
-
-
-cubieBorderWidth : Float
-cubieBorderWidth =
-    cubieSideLength / 10
