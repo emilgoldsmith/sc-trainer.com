@@ -237,7 +237,7 @@ update msg model =
 
 view : Model -> Html.Html msg
 view model =
-    Html.div [] [ Components.Cube.injectStyles, layout [] <| viewState model ]
+    Html.div [] [ Components.Cube.injectStyles, layout [ padding 10 ] <| viewState model ]
 
 
 viewState : Model -> Element msg
