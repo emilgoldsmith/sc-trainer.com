@@ -242,15 +242,17 @@ view model =
 
 viewState : Model -> Element msg
 viewState model =
-    case model.trainerState of
-        BetweenTests message ->
-            column [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
+    el [ width fill, height <| px 1000 ] <|
+        el [ centerX, centerY ] <|
+            case model.trainerState of
+                BetweenTests message ->
+                    column [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
 
-        TestRunning _ elapsedTime algTested ->
-            column [ testid "test-running-container" ] [ text "Test Running", displayTestCase algTested, el [ testid "timer" ] <| text <| TimeInterval.displayOneDecimal elapsedTime ]
+                TestRunning _ elapsedTime algTested ->
+                    column [ testid "test-running-container" ] [ text "Test Running", displayTestCase algTested, el [ testid "timer" ] <| text <| TimeInterval.displayOneDecimal elapsedTime ]
 
-        EvaluatingResult { result } ->
-            column [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result, displayExpectedCubeState model.expectedCube ]
+                EvaluatingResult { result } ->
+                    column [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result, displayExpectedCubeState model.expectedCube ]
 
 
 displayTestCase : Algorithm.Algorithm -> Element msg
