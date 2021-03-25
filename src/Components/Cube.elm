@@ -1,22 +1,24 @@
 module Components.Cube exposing (injectStyles, view)
 
+import Element
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Models.Cube as Cube
-import Utils.Css exposing (testid)
+import Utils.Css exposing (htmlTestid)
 
 
 
 -- Exports
 
 
-view : Cube.Cube -> Html msg
+view : Cube.Cube -> Element.Element msg
 view cube =
-    let
-        rendering =
-            Cube.render cube
-    in
-    div [ class classes.cube, style "top" "100px", style "left" "100px", testid "cube" ] <| List.map (\( a, b ) -> displayCubie b a) (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
+    Element.html <|
+        let
+            rendering =
+                Cube.render cube
+        in
+        div [ class classes.cube, style "top" "100px", style "left" "100px", htmlTestid "cube" ] <| List.map (\( a, b ) -> displayCubie b a) (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
 
 
 injectStyles : Html msg

@@ -4,8 +4,8 @@ import AlgorithmRepository
 import Browser
 import Browser.Events as Events
 import Components.Cube
-import Html exposing (..)
-import Html.Attributes exposing (..)
+import Element exposing (..)
+import Html
 import Json.Decode as Decode
 import Models.Algorithm as Algorithm
 import Models.Cube as Cube
@@ -235,52 +235,52 @@ update msg model =
                     ( model, Cmd.none )
 
 
-view : Model -> Html msg
+view : Model -> Html.Html msg
 view model =
-    div [] [ Components.Cube.injectStyles, viewState model ]
+    Html.div [] [ Components.Cube.injectStyles, layout [] <| viewState model ]
 
 
-viewState : Model -> Html msg
+viewState : Model -> Element msg
 viewState model =
     case model.trainerState of
         BetweenTests message ->
-            div [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
+            column [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
 
         TestRunning _ elapsedTime algTested ->
-            div [ testid "test-running-container" ] [ text "Test Running", displayTestCase algTested, div [ testid "timer" ] [ text <| TimeInterval.displayOneDecimal elapsedTime ] ]
+            column [ testid "test-running-container" ] [ text "Test Running", displayTestCase algTested, el [ testid "timer" ] <| text <| TimeInterval.displayOneDecimal elapsedTime ]
 
         EvaluatingResult { result } ->
-            div [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result, displayExpectedCubeState model.expectedCube ]
+            column [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result, displayExpectedCubeState model.expectedCube ]
 
 
-displayTestCase : Algorithm.Algorithm -> Html msg
+displayTestCase : Algorithm.Algorithm -> Element msg
 displayTestCase algTested =
-    div [ testid "test-case" ] [ Components.Cube.view (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse <| algTested)) ]
+    el [ testid "test-case" ] <| Components.Cube.view (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse <| algTested))
 
 
-displayTimeResult : TimeInterval.TimeInterval -> Html msg
+displayTimeResult : TimeInterval.TimeInterval -> Element msg
 displayTimeResult result =
-    div [ testid "time-result" ] [ text <| TimeInterval.displayTwoDecimals result ]
+    el [ testid "time-result" ] <| text <| TimeInterval.displayTwoDecimals result
 
 
-viewEvaluationMessage : EvaluationMessage -> Html msg
+viewEvaluationMessage : EvaluationMessage -> Element msg
 viewEvaluationMessage message =
     case message of
         NoEvaluationMessage ->
-            div [] [ text "Auto-deploy works!" ]
+            el [] <| text "Auto-deploy works!"
 
         CorrectEvaluation ->
-            div [ testid "correct-evaluation-message" ] [ text "Correct" ]
+            el [ testid "correct-evaluation-message" ] <| text "Correct"
 
         WrongEvaluation ->
-            div [ testid "wrong-evaluation-message" ] [ text "Wrong" ]
+            el [ testid "wrong-evaluation-message" ] <| text "Wrong"
 
 
-displayExpectedCubeState : Cube.Cube -> Html msg
+displayExpectedCubeState : Cube.Cube -> Element msg
 displayExpectedCubeState expectedCube =
-    div []
-        [ div [ testid "expected-cube-front" ] [ Components.Cube.view expectedCube ]
-        , div [ testid "expected-cube-back" ] [ (Components.Cube.view << Cube.flip) expectedCube ]
+    row []
+        [ el [ testid "expected-cube-front" ] <| Components.Cube.view expectedCube
+        , el [ testid "expected-cube-back" ] <| (Components.Cube.view << Cube.flip) expectedCube
         ]
 
 

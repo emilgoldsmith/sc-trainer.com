@@ -1,9 +1,15 @@
-module Utils.Css exposing (testid)
+module Utils.Css exposing (htmlTestid, testid)
 
-import Html exposing (..)
-import Html.Attributes exposing (..)
+import Element exposing (..)
+import Html
+import Html.Attributes
 
 
 testid : String -> Attribute msg
 testid =
-    attribute "data-testid"
+    htmlTestid >> htmlAttribute
+
+
+htmlTestid : String -> Html.Attribute msg
+htmlTestid =
+    Html.Attributes.attribute "data-testid"
