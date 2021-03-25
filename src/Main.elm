@@ -191,6 +191,7 @@ update msg model =
                                 , ignoringKeyPressesAfterTransition = True
                                 , result = TimeInterval.betweenTimestamps { start = startTime, end = endTime }
                                 }
+                        , expectedCube = model.expectedCube |> Cube.applyAlgorithm alg
                       }
                     , Task.perform (always EndIgnoringKeyPressesAfterTransition) (Process.sleep 100)
                     )
