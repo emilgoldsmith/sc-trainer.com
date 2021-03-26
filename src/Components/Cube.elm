@@ -12,15 +12,15 @@ import Utils.Css exposing (htmlTestid)
 -- Exports
 
 
-view : Cube.Cube -> Element.Element msg
-view cube =
+view : Float -> Cube.Cube -> Element.Element msg
+view cubeSize cube =
     Element.html <|
         let
             rendering =
                 Cube.render cube
         in
-        div [ class classes.container ]
-            [ div [ class classes.cube, htmlTestid "cube" ] <|
+        div [ class classes.container, htmlTestid "cube", style "font-size" <| String.fromFloat cubeSize ++ "px" ]
+            [ div [ class classes.wholeCube ] <|
                 List.map (\( a, b ) -> displayCubie b a)
                     (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
             ]
@@ -376,9 +376,9 @@ css theme =
     justify-content: center;
     align-items: center;
 }
-.{cubeClass} {
-    width: {cubeSideLength}em;
-    height: {cubeSideLength}em;
+.{wholeCubeClass} {
+    width: {wholeCubeSideLength}em;
+    height: {wholeCubeSideLength}em;
     transform-origin: center center -{halfCubeSideLength}em;
     transform-style: preserve-3d;
     transform: rotateY(-20deg) rotate3d(1,0,-0.4,-17deg);
@@ -420,7 +420,7 @@ css theme =
 .{plasticColorClass} { background-color: {plasticColor} }
 """
         |> String.replace "{containerClass}" classes.container
-        |> String.replace "{cubeClass}" classes.cube
+        |> String.replace "{wholeCubeClass}" classes.wholeCube
         |> String.replace "{cubieClass}" classes.cubie
         |> String.replace "{faceClass}" classes.face
         |> String.replace "{upFaceClass}" classes.upFace
@@ -446,20 +446,25 @@ css theme =
         |> String.replace "{cubieSideLength}" (String.fromFloat cubieSideLength)
         |> String.replace "{halfCubieSideLength}" (String.fromFloat (cubieSideLength / 2))
         |> String.replace "{cubieBorderLength}" (String.fromFloat cubieBorderWidth)
-        |> String.replace "{cubeSideLength}" (String.fromFloat cubeSideLength)
-        |> String.replace "{halfCubeSideLength}" (String.fromFloat (cubeSideLength / 2))
-        |> String.replace "{containerWidth}" (String.fromFloat (cubeSideLength * 1.4))
-        |> String.replace "{containerHeight}" (String.fromFloat (cubeSideLength * 1.4))
+        |> String.replace "{wholeCubeSideLength}" (String.fromFloat wholeCubeSideLength)
+        |> String.replace "{halfCubeSideLength}" (String.fromFloat (wholeCubeSideLength / 2))
+        |> String.replace "{containerWidth}" (String.fromFloat (wholeCubeSideLength * 1.4))
+        |> String.replace "{containerHeight}" (String.fromFloat (wholeCubeSideLength * 1.4))
+
+
+cubeContainerSize : Float
+cubeContainerSize =
+    1
+
+
+wholeCubeSideLength : Float
+wholeCubeSideLength =
+    cubeContainerSize / 1.4
 
 
 cubieSideLength : Float
 cubieSideLength =
-    2
-
-
-cubeSideLength : Float
-cubeSideLength =
-    3 * cubieSideLength
+    wholeCubeSideLength / 3
 
 
 cubieBorderWidth : Float
@@ -469,7 +474,7 @@ cubieBorderWidth =
 
 type alias Classes =
     { container : String
-    , cube : String
+    , wholeCube : String
     , cubie : String
     , face : String
     , upFace : String
@@ -492,7 +497,7 @@ classes : Classes
 classes =
     { -- Suffix there is for unicity
       container = "cube-container" ++ randomSuffix
-    , cube = "cube" ++ randomSuffix
+    , wholeCube = "cube" ++ randomSuffix
     , cubie = "cubie" ++ randomSuffix
     , face = "face" ++ randomSuffix
     , upFace = "up" ++ randomSuffix

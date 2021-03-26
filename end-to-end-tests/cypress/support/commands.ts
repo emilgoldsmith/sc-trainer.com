@@ -257,7 +257,7 @@ const getCustomWindow: Cypress.Chainable<undefined>["getCustomWindow"] = functio
       const customWindow = window as Cypress.CustomWindow;
       if (customWindow.END_TO_END_TEST_HELPERS === undefined) {
         throw new Error(
-          "Not a populated custom window, doesn't have END_TO_END_TEST_HELPERS property"
+          "We expected a populated custom window, but didn't find END_TO_END_TEST_HELPERS property"
         );
       }
       return customWindow;

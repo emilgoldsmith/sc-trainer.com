@@ -5,6 +5,7 @@ import Browser
 import Browser.Events as Events
 import Components.Cube
 import Element exposing (..)
+import Element.Font exposing (size)
 import Html
 import Json.Decode as Decode
 import Models.Algorithm as Algorithm
@@ -18,7 +19,7 @@ import Utils.NonEmptyList as NonEmptyList
 import Utils.TimeInterval as TimeInterval
 
 
-main : Program () Model Msg
+main : Program ViewportSize Model Msg
 main =
     Browser.element
         { init = init
@@ -28,14 +29,26 @@ main =
         }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { trainerState = BetweenTests NoEvaluationMessage, expectedCube = Cube.solved }, Cmd.none )
+init : ViewportSize -> ( Model, Cmd Msg )
+init viewportSize =
+    ( { trainerState = BetweenTests NoEvaluationMessage
+      , expectedCube = Cube.solved
+      , viewportSize = viewportSize
+      }
+    , Cmd.none
+    )
+
+
+type alias ViewportSize =
+    { width : Int
+    , height : Int
+    }
 
 
 type alias Model =
     { trainerState : TrainerState
     , expectedCube : Cube.Cube
+    , viewportSize : { width : Int, height : Int }
     }
 
 
@@ -250,15 +263,24 @@ viewState model =
                     column [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
 
                 TestRunning _ elapsedTime algTested ->
-                    column [ testid "test-running-container" ] [ text "Test Running", displayTestCase algTested, el [ testid "timer" ] <| text <| TimeInterval.displayOneDecimal elapsedTime ]
+                    column [ testid "test-running-container" ]
+                        [ displayTestCase model.viewportSize algTested
+                        , el [ testid "timer", size (round <| 0.2 * toFloat model.viewportSize.height) ] <| text <| TimeInterval.displayOneDecimal elapsedTime
+                        ]
 
                 EvaluatingResult { result } ->
                     column [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result, displayExpectedCubeState model.expectedCube ]
 
 
-displayTestCase : Algorithm.Algorithm -> Element msg
-displayTestCase algTested =
-    el [ testid "test-case" ] <| Components.Cube.view (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse <| algTested))
+displayTestCase : ViewportSize -> Algorithm.Algorithm -> Element msg
+displayTestCase viewportSize algTested =
+    let
+        minDimension =
+            toFloat <| min viewportSize.height viewportSize.width
+    in
+    el [ testid "test-case" ] <|
+        Components.Cube.view (0.5 * minDimension) <|
+            (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse algTested))
 
 
 displayTimeResult : TimeInterval.TimeInterval -> Element msg
@@ -282,8 +304,8 @@ viewEvaluationMessage message =
 displayExpectedCubeState : Cube.Cube -> Element msg
 displayExpectedCubeState expectedCube =
     row []
-        [ el [ testid "expected-cube-front" ] <| Components.Cube.view expectedCube
-        , el [ testid "expected-cube-back" ] <| (Components.Cube.view << Cube.flip) expectedCube
+        [ el [ testid "expected-cube-front" ] <| Components.Cube.view 16 expectedCube
+        , el [ testid "expected-cube-back" ] <| (Components.Cube.view 16 << Cube.flip) expectedCube
         ]
 
 

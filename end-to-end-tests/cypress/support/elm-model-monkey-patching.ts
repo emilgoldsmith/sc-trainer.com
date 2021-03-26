@@ -1,5 +1,5 @@
 export function interceptAddingElmModelObserversAndModifiers(): void {
-  cy.intercept(Cypress.config().baseUrl + "{,/}", (req) => {
+  cy.intercept(Cypress.config().baseUrl + "{,/,/index.html}", (req) => {
     req.reply((res) => {
       const withE2eHelpers = addToDocumentHead({
         toAdd: `<script>
@@ -7,8 +7,18 @@ export function interceptAddingElmModelObserversAndModifiers(): void {
                   </script>`,
         htmlString: res.body,
       });
-      const withEverything = addObserversAndModifiers(withE2eHelpers);
-      res.send(withEverything);
+      res.send(withE2eHelpers);
+    });
+  });
+  cy.intercept(Cypress.config().baseUrl + "/main.js", (req) => {
+    req.reply((res) => {
+      if (res.statusCode === 304) {
+        // The server is saying main.js isn't modified so we don't need to
+        // modify either as the browser will know how to retrieve the previous version
+        return;
+      }
+      const withObserversAndModifiers = addObserversAndModifiers(res.body);
+      res.send(withObserversAndModifiers);
     });
   });
 }

@@ -156,14 +156,29 @@ describe("AlgorithmTrainer", function () {
       states.testRunning.restoreState();
     });
 
-    it("has all the correct elements", function () {
-      elements.testRunning.container.assertShows();
+    it.only("has all the correct elements", function () {
       elements.testRunning.container.get().within(() => {
-        elements.testRunning.timer.assertShows();
-        elements.testRunning.testCase.assertShows();
+        elements.testRunning.timer.assertShows().and((timerElement) => {
+          expect(timerElement.height()).to.be.at.least(
+            0.2 * Cypress.config().viewportHeight
+          );
+        });
         // The test case is a cube
         elements.testRunning.testCase.get().within(() => {
-          elements.globals.cube.assertShows();
+          elements.globals.cube.assertShows().and((cubeElement) => {
+            const minDimension = Math.min(
+              Cypress.config().viewportWidth,
+              Cypress.config().viewportHeight
+            );
+            expect(
+              cubeElement.width(),
+              "cube width to fill at least half of screen"
+            ).to.be.at.least(minDimension * 0.5);
+            expect(
+              cubeElement.height(),
+              "cube height to fill at least half of screen"
+            ).to.be.at.least(minDimension * 0.5);
+          });
         });
       });
     });
@@ -323,14 +338,11 @@ describe("AlgorithmTrainer", function () {
       });
 
       it("has all the correct elements", function () {
-        elements.evaluateResult.container.assertShows();
         elements.evaluateResult.container.get().within(() => {
           elements.evaluateResult.timeResult.assertShows();
-          elements.evaluateResult.expectedCubeFront.assertShows();
           elements.evaluateResult.expectedCubeFront.get().within(() => {
             elements.globals.cube.assertShows();
           });
-          elements.evaluateResult.expectedCubeBack.assertShows();
           elements.evaluateResult.expectedCubeBack.get().within(() => {
             elements.globals.cube.assertShows();
           });
@@ -484,7 +496,7 @@ function getTestRunningWithMockedTime() {
 
 function buildAsserter(testId: string) {
   return function (options?: { log?: boolean }) {
-    cy.getByTestId(testId, options).should("be.visible");
+    return cy.getByTestId(testId, options).should("be.visible");
   };
 }
 
