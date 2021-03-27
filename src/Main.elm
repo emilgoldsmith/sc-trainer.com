@@ -83,6 +83,7 @@ type Msg
     | MillisecondsPassed Float
     | EndTest Time.Posix
     | EndIgnoringKeyPressesAfterTransition
+    | WindowResized Int Int
 
 
 type alias IsRepeatedKeyPressFlag =
@@ -134,34 +135,38 @@ toKey keyString =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    case model.trainerState of
-        BetweenTests _ ->
-            Events.onKeyUp <| Decode.map (withIgnoreIfIsRepeated KeyUp) decodeKeyEvent
+    let
+        trainerSubscriptions =
+            case model.trainerState of
+                BetweenTests _ ->
+                    Events.onKeyUp <| Decode.map (withIgnoreIfIsRepeated KeyUp) decodeKeyEvent
 
-        TestRunning _ _ _ ->
-            Sub.batch
-                [ Events.onKeyDown <|
-                    Decode.map (withIgnoreIfIsRepeated KeyDown)
-                        decodeKeyEvent
-                , Events.onMouseDown <|
-                    Decode.succeed <|
-                        KeyDown (SomeKey "mouseDown")
-                , Events.onAnimationFrameDelta MillisecondsPassed
-                ]
+                TestRunning _ _ _ ->
+                    Sub.batch
+                        [ Events.onKeyDown <|
+                            Decode.map (withIgnoreIfIsRepeated KeyDown)
+                                decodeKeyEvent
+                        , Events.onMouseDown <|
+                            Decode.succeed <|
+                                KeyDown (SomeKey "mouseDown")
+                        , Events.onAnimationFrameDelta MillisecondsPassed
+                        ]
 
-        EvaluatingResult keyStates ->
-            if keyStates.ignoringKeyPressesAfterTransition then
-                Sub.none
-
-            else
-                Sub.batch
-                    [ if allPressed keyStates then
+                EvaluatingResult keyStates ->
+                    if keyStates.ignoringKeyPressesAfterTransition then
                         Sub.none
 
-                      else
-                        Events.onKeyDown <| Decode.map (withIgnoreIfIsRepeated KeyDown) decodeKeyEvent
-                    , Events.onKeyUp <| Decode.map (withIgnoreIfIsRepeated KeyUp) decodeKeyEvent
-                    ]
+                    else
+                        Sub.batch
+                            [ if allPressed keyStates then
+                                Sub.none
+
+                              else
+                                Events.onKeyDown <| Decode.map (withIgnoreIfIsRepeated KeyDown) decodeKeyEvent
+                            , Events.onKeyUp <| Decode.map (withIgnoreIfIsRepeated KeyUp) decodeKeyEvent
+                            ]
+    in
+    Sub.batch [ trainerSubscriptions, Events.onResize WindowResized ]
 
 
 withIgnoreIfIsRepeated : (Key -> Msg) -> KeyEvent -> Msg
@@ -175,98 +180,125 @@ withIgnoreIfIsRepeated message (KeyEvent key isRepeated) =
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    case model.trainerState of
-        BetweenTests _ ->
-            case msg of
-                KeyUp Space ->
-                    ( model, Random.generate AlgToTestGenerated generatePll )
+    case msg of
+        WindowResized width height ->
+            ( { model | viewportSize = { width = width, height = height } }, Cmd.none )
 
-                AlgToTestGenerated alg ->
-                    ( model, Task.perform (StartTest alg) Time.now )
+        _ ->
+            case model.trainerState of
+                BetweenTests _ ->
+                    case msg of
+                        KeyUp Space ->
+                            ( model, Random.generate AlgToTestGenerated generatePll )
 
-                StartTest alg startTime ->
-                    ( { model | trainerState = TestRunning startTime TimeInterval.zero alg }, Cmd.none )
+                        AlgToTestGenerated alg ->
+                            ( model, Task.perform (StartTest alg) Time.now )
 
-                _ ->
-                    ( model, Cmd.none )
-
-        TestRunning startTime intervalElapsed alg ->
-            case msg of
-                KeyDown _ ->
-                    ( model, Task.perform EndTest Time.now )
-
-                EndTest endTime ->
-                    ( { model
-                        | trainerState =
-                            EvaluatingResult
-                                { spacePressStarted = False
-                                , wPressStarted = False
-                                , ignoringKeyPressesAfterTransition = True
-                                , result = TimeInterval.betweenTimestamps { start = startTime, end = endTime }
-                                }
-                        , expectedCube = model.expectedCube |> Cube.applyAlgorithm alg
-                      }
-                    , Task.perform (always EndIgnoringKeyPressesAfterTransition) (Process.sleep 100)
-                    )
-
-                MillisecondsPassed timeDelta ->
-                    ( { model | trainerState = TestRunning startTime (TimeInterval.increment timeDelta intervalElapsed) alg }, Cmd.none )
-
-                _ ->
-                    ( model, Cmd.none )
-
-        EvaluatingResult ({ spacePressStarted, wPressStarted } as keyStates) ->
-            case msg of
-                EndIgnoringKeyPressesAfterTransition ->
-                    ( { model | trainerState = EvaluatingResult { keyStates | ignoringKeyPressesAfterTransition = False } }, Cmd.none )
-
-                KeyDown Space ->
-                    ( { model | trainerState = EvaluatingResult { keyStates | spacePressStarted = True } }, Cmd.none )
-
-                KeyDown W ->
-                    ( { model | trainerState = EvaluatingResult { keyStates | wPressStarted = True } }, Cmd.none )
-
-                KeyUp key ->
-                    case key of
-                        Space ->
-                            if spacePressStarted then
-                                ( { model | trainerState = BetweenTests CorrectEvaluation }, Cmd.none )
-
-                            else
-                                ( model, Cmd.none )
-
-                        W ->
-                            if wPressStarted then
-                                ( { model | trainerState = BetweenTests WrongEvaluation }, Cmd.none )
-
-                            else
-                                ( model, Cmd.none )
+                        StartTest alg startTime ->
+                            ( { model | trainerState = TestRunning startTime TimeInterval.zero alg }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
 
-                _ ->
-                    ( model, Cmd.none )
+                TestRunning startTime intervalElapsed alg ->
+                    case msg of
+                        KeyDown _ ->
+                            ( model, Task.perform EndTest Time.now )
+
+                        EndTest endTime ->
+                            ( { model
+                                | trainerState =
+                                    EvaluatingResult
+                                        { spacePressStarted = False
+                                        , wPressStarted = False
+                                        , ignoringKeyPressesAfterTransition = True
+                                        , result = TimeInterval.betweenTimestamps { start = startTime, end = endTime }
+                                        }
+                                , expectedCube = model.expectedCube |> Cube.applyAlgorithm alg
+                              }
+                            , Task.perform (always EndIgnoringKeyPressesAfterTransition) (Process.sleep 100)
+                            )
+
+                        MillisecondsPassed timeDelta ->
+                            ( { model | trainerState = TestRunning startTime (TimeInterval.increment timeDelta intervalElapsed) alg }, Cmd.none )
+
+                        _ ->
+                            ( model, Cmd.none )
+
+                EvaluatingResult ({ spacePressStarted, wPressStarted } as keyStates) ->
+                    case msg of
+                        EndIgnoringKeyPressesAfterTransition ->
+                            ( { model | trainerState = EvaluatingResult { keyStates | ignoringKeyPressesAfterTransition = False } }, Cmd.none )
+
+                        KeyDown Space ->
+                            ( { model | trainerState = EvaluatingResult { keyStates | spacePressStarted = True } }, Cmd.none )
+
+                        KeyDown W ->
+                            ( { model | trainerState = EvaluatingResult { keyStates | wPressStarted = True } }, Cmd.none )
+
+                        KeyUp key ->
+                            case key of
+                                Space ->
+                                    if spacePressStarted then
+                                        ( { model | trainerState = BetweenTests CorrectEvaluation }, Cmd.none )
+
+                                    else
+                                        ( model, Cmd.none )
+
+                                W ->
+                                    if wPressStarted then
+                                        ( { model | trainerState = BetweenTests WrongEvaluation }, Cmd.none )
+
+                                    else
+                                        ( model, Cmd.none )
+
+                                _ ->
+                                    ( model, Cmd.none )
+
+                        _ ->
+                            ( model, Cmd.none )
 
 
 view : Model -> Html.Html msg
 view model =
-    Html.div [] [ Components.Cube.injectStyles, layout [ padding 10 ] <| viewState model ]
+    Html.div [] [ Components.Cube.injectStyles, layout [ padding 10, inFront <| viewFullScreen model ] <| viewState model ]
+
+
+viewFullScreen : Model -> Element msg
+viewFullScreen model =
+    case model.trainerState of
+        TestRunning _ elapsedTime algTested ->
+            el
+                [ testid "test-running-container"
+
+                -- , width (px model.viewportSize.width)
+                -- , height (px model.viewportSize.height)
+                , width fill
+                , height fill
+                ]
+            <|
+                column
+                    [ centerX
+                    , centerY
+                    ]
+                    [ displayTestCase model.viewportSize algTested
+                    , el [ testid "timer", size (round <| 0.2 * toFloat model.viewportSize.height) ] <| text <| TimeInterval.displayOneDecimal elapsedTime
+                    ]
+
+        _ ->
+            none
 
 
 viewState : Model -> Element msg
 viewState model =
-    el [ width fill, height <| px 1000 ] <|
-        el [ centerX, centerY ] <|
+    el [] <|
+        el [] <|
             case model.trainerState of
                 BetweenTests message ->
                     column [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
 
-                TestRunning _ elapsedTime algTested ->
-                    column [ testid "test-running-container" ]
-                        [ displayTestCase model.viewportSize algTested
-                        , el [ testid "timer", size (round <| 0.2 * toFloat model.viewportSize.height) ] <| text <| TimeInterval.displayOneDecimal elapsedTime
-                        ]
+                TestRunning _ _ _ ->
+                    none
 
                 EvaluatingResult { result } ->
                     column [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result, displayExpectedCubeState model.expectedCube ]

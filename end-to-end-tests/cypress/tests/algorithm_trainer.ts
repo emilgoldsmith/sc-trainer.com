@@ -157,30 +157,40 @@ describe("AlgorithmTrainer", function () {
     });
 
     it.only("has all the correct elements", function () {
-      elements.testRunning.container.get().within(() => {
-        elements.testRunning.timer.assertShows().and((timerElement) => {
-          expect(timerElement.height()).to.be.at.least(
-            0.2 * Cypress.config().viewportHeight
+      elements.testRunning.container
+        .get()
+        .should((containerElement) => {
+          expect(containerElement.width()).to.equal(
+            Cypress.config().viewportWidth
           );
-        });
-        // The test case is a cube
-        elements.testRunning.testCase.get().within(() => {
-          elements.globals.cube.assertShows().and((cubeElement) => {
-            const minDimension = Math.min(
-              Cypress.config().viewportWidth,
-              Cypress.config().viewportHeight
+          expect(containerElement.height()).to.equal(
+            Cypress.config().viewportHeight
+          );
+        })
+        .within(() => {
+          elements.testRunning.timer.assertShows().and((timerElement) => {
+            expect(timerElement.height()).to.be.at.least(
+              0.2 * Cypress.config().viewportHeight
             );
-            expect(
-              cubeElement.width(),
-              "cube width to fill at least half of screen"
-            ).to.be.at.least(minDimension * 0.5);
-            expect(
-              cubeElement.height(),
-              "cube height to fill at least half of screen"
-            ).to.be.at.least(minDimension * 0.5);
+          });
+          // The test case is a cube
+          elements.testRunning.testCase.get().within(() => {
+            elements.globals.cube.assertShows().and((cubeElement) => {
+              const minDimension = Math.min(
+                Cypress.config().viewportWidth,
+                Cypress.config().viewportHeight
+              );
+              expect(
+                cubeElement.width(),
+                "cube width to fill at least half of screen"
+              ).to.be.at.least(minDimension * 0.5);
+              expect(
+                cubeElement.height(),
+                "cube height to fill at least half of screen"
+              ).to.be.at.least(minDimension * 0.5);
+            });
           });
         });
-      });
     });
 
     it("tracks time correctly", function () {
