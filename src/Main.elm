@@ -83,7 +83,7 @@ type Msg
     | IgnoredKeyEvent
     | StartTest TestStartData
     | MillisecondsPassed Float
-    | EndTest Time.Posix
+    | EndTest (Maybe Time.Posix)
     | EndIgnoringKeyPressesAfterTransition
     | WindowResized Int Int
 
@@ -91,7 +91,7 @@ type Msg
 type TestStartData
     = NothingGenerated
     | AlgGenerated Algorithm.Algorithm
-    | AllGenerated Algorithm.Algorithm Time.Posix
+    | EverythingGenerated Algorithm.Algorithm Time.Posix
 
 
 type alias IsRepeatedKeyPressFlag =
@@ -149,8 +149,8 @@ subscriptions model =
                 BetweenTests _ ->
                     Events.onKeyUp <|
                         Decode.map
-                            (\(KeyEvent key _) ->
-                                if key == Space then
+                            (\(KeyEvent key isRepeated) ->
+                                if key == Space && isRepeated == False then
                                     StartTest NothingGenerated
 
                                 else
@@ -161,11 +161,18 @@ subscriptions model =
                 TestRunning _ _ _ ->
                     Sub.batch
                         [ Events.onKeyDown <|
-                            Decode.map (withIgnoreIfIsRepeated KeyDown)
+                            Decode.map
+                                (\(KeyEvent _ isRepeated) ->
+                                    if isRepeated == False then
+                                        EndTest Nothing
+
+                                    else
+                                        IgnoredKeyEvent
+                                )
                                 decodeKeyEvent
                         , Events.onMouseDown <|
                             Decode.succeed <|
-                                KeyDown (SomeKey "mouseDown")
+                                EndTest Nothing
                         , Events.onAnimationFrameDelta MillisecondsPassed
                         ]
 
@@ -212,9 +219,9 @@ update msg model =
                             ( model, Random.generate (\alg -> StartTest (AlgGenerated alg)) generatePll )
 
                         StartTest (AlgGenerated alg) ->
-                            ( model, Task.perform (\time -> StartTest (AllGenerated alg time)) Time.now )
+                            ( model, Task.perform (\time -> StartTest (EverythingGenerated alg time)) Time.now )
 
-                        StartTest (AllGenerated alg startTime) ->
+                        StartTest (EverythingGenerated alg startTime) ->
                             ( { model | trainerState = TestRunning startTime TimeInterval.zero alg }, Cmd.none )
 
                         _ ->
@@ -222,10 +229,10 @@ update msg model =
 
                 TestRunning startTime intervalElapsed alg ->
                     case msg of
-                        KeyDown _ ->
-                            ( model, Task.perform EndTest Time.now )
+                        EndTest Nothing ->
+                            ( model, Task.perform (\time -> EndTest (Just time)) Time.now )
 
-                        EndTest endTime ->
+                        EndTest (Just endTime) ->
                             ( { model
                                 | trainerState =
                                     EvaluatingResult
