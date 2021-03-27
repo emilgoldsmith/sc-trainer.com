@@ -215,12 +215,24 @@ describe("AlgorithmTrainer", function () {
       elements.testRunning.timer.get().should("have.text", "1.5");
       // Switch to using time jumps as tick calls all setInterval times in the
       // time interval resulting in slow tests and excessive cpu usage
+
+      // Checking two digit seconds alone
+      setTimeTo(19.2 * second);
+      elements.testRunning.timer.get().should("have.text", "19.2");
+      // Checking "normal" minute
       setTimeTo(3 * minute + 16.8 * second);
       elements.testRunning.timer.get().should("have.text", "3:16.8");
+      // Checking single digit seconds when above minute still shows two digits
+      setTimeTo(4 * minute + 7.3 * second);
+      elements.testRunning.timer.get().should("have.text", "4:07.3");
+      // Check that it shows hours
       setTimeTo(4 * hour + 38 * minute + 45.7 * second);
       elements.testRunning.timer.get().should("have.text", "4:38:45.7");
-      setTimeTo(234 * hour + 59 * minute + 18.1 * second);
+      // Check that it shows double digits for minutes and seconds when in hours
+      setTimeTo(5 * hour + 1 * minute + 4 * second);
+      elements.testRunning.timer.get().should("have.text", "5:01:04.0");
       // Just ensuring a ridiculous amount works too, note we don't break it down to days
+      setTimeTo(234 * hour + 59 * minute + 18.1 * second);
       elements.testRunning.timer.get().should("have.text", "234:59:18.1");
     });
 

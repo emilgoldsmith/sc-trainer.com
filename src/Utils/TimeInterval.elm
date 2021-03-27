@@ -80,21 +80,25 @@ displayWithoutDecimals interval =
     let
         time =
             parseTimeUnits interval
-
-        onlySeconds =
-            String.fromInt time.seconds
-
-        withMinutes =
-            String.fromInt time.minutes ++ ":" ++ onlySeconds
-
-        withHours =
-            String.fromInt time.hours ++ ":" ++ withMinutes
     in
     if time.hours > 0 then
-        withHours
+        String.fromInt time.hours ++ ":" ++ withTwoDigitsEnsured time.minutes ++ ":" ++ withTwoDigitsEnsured time.seconds
 
     else if time.minutes > 0 then
-        withMinutes
+        String.fromInt time.minutes ++ ":" ++ withTwoDigitsEnsured time.seconds
 
     else
-        onlySeconds
+        String.fromInt time.seconds
+
+
+withTwoDigitsEnsured : Int -> String
+withTwoDigitsEnsured number =
+    if number < 0 then
+        -- Should never happen
+        "00"
+
+    else if number < 10 then
+        "0" ++ String.fromInt number
+
+    else
+        String.fromInt number
