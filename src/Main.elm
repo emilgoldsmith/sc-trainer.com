@@ -91,6 +91,12 @@ type BetweenTestsMsg
     | DoNothingBetweenTests
 
 
+type TestStartData
+    = NothingGenerated
+    | AlgGenerated Algorithm.Algorithm
+    | EverythingGenerated Algorithm.Algorithm Time.Posix
+
+
 type TestRunningMsg
     = MillisecondsPassed Float
     | EndTest (Maybe Time.Posix)
@@ -103,16 +109,6 @@ type EvaluateResultMsg
     | WStarted
     | WEnded
     | DoNothingEvaluateResult
-
-
-type TestStartData
-    = NothingGenerated
-    | AlgGenerated Algorithm.Algorithm
-    | EverythingGenerated Algorithm.Algorithm Time.Posix
-
-
-type alias IsRepeatedKeyPressFlag =
-    Bool
 
 
 type Key
@@ -145,7 +141,7 @@ decodeKey =
     Decode.map toKey (Decode.field "key" Decode.string)
 
 
-decodeKeyRepeat : Decode.Decoder IsRepeatedKeyPressFlag
+decodeKeyRepeat : Decode.Decoder Bool
 decodeKeyRepeat =
     Decode.field "repeat" Decode.bool
 
