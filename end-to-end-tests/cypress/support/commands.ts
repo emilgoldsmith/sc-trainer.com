@@ -382,3 +382,50 @@ Cypress.Commands.add(
   "waitForDocumentEventListeners",
   waitForDocumentEventListeners
 );
+
+const assertNoHorizontalScrollbar: Cypress.Chainable<undefined>["assertNoHorizontalScrollbar"] = function () {
+  cy.withOverallNameLogged(
+    {
+      name: "assertNoHorizontalScrollbar",
+      displayName: "ASSERT SCROLLBAR",
+      message: `no horizontal allowed`,
+    },
+    () => {
+      cy.document({ log: false }).then((document) =>
+        cy.window({ log: false }).should((window) => {
+          expect(
+            Cypress.$(document).width(),
+            "document width at most window width"
+          ).to.be.at.most(Cypress.$(window).width() as number);
+        })
+      );
+    }
+  );
+};
+
+Cypress.Commands.add(
+  "assertNoHorizontalScrollbar",
+  assertNoHorizontalScrollbar
+);
+
+const assertNoVerticalScrollbar: Cypress.Chainable<undefined>["assertNoVerticalScrollbar"] = function () {
+  cy.withOverallNameLogged(
+    {
+      name: "assertNoVerticalScrollbar",
+      displayName: "ASSERT SCROLLBAR",
+      message: `no vertical allowed`,
+    },
+    () => {
+      cy.document({ log: false }).then((document) =>
+        cy.window({ log: false }).should((window) => {
+          expect(
+            Cypress.$(document).height(),
+            "document height at most window height"
+          ).to.be.at.most(Cypress.$(window).height() as number);
+        })
+      );
+    }
+  );
+};
+
+Cypress.Commands.add("assertNoVerticalScrollbar", assertNoVerticalScrollbar);

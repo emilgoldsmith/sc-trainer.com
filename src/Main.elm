@@ -270,9 +270,6 @@ viewFullScreen model =
         TestRunning _ elapsedTime algTested ->
             el
                 [ testid "test-running-container"
-
-                -- , width (px model.viewportSize.width)
-                -- , height (px model.viewportSize.height)
                 , width fill
                 , height fill
                 ]
@@ -280,9 +277,10 @@ viewFullScreen model =
                 column
                     [ centerX
                     , centerY
+                    , spacing 50
                     ]
-                    [ displayTestCase model.viewportSize algTested
-                    , el [ testid "timer", size (round <| 0.2 * toFloat model.viewportSize.height) ] <| text <| TimeInterval.displayOneDecimal elapsedTime
+                    [ el [ centerX ] <| displayTestCase model.viewportSize algTested
+                    , el [ testid "timer", centerX, size (round <| 0.2 * toFloat model.viewportSize.height) ] <| text <| TimeInterval.displayOneDecimal elapsedTime
                     ]
 
         _ ->

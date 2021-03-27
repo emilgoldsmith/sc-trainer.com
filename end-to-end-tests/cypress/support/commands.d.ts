@@ -186,5 +186,9 @@ declare namespace Cypress {
     waitForDocumentEventListeners(
       ...eventNames: (keyof DocumentEventMap)[]
     ): void;
+
+    assertNoVerticalScrollbar(): void;
+
+    assertNoHorizontalScrollbar(): void;
   }
 }

@@ -157,8 +157,11 @@ describe("AlgorithmTrainer", function () {
     });
 
     it.only("has all the correct elements", function () {
+      cy.assertNoHorizontalScrollbar();
+      cy.assertNoVerticalScrollbar();
       elements.testRunning.container
         .get()
+        // Check it fills whole screen
         .should((containerElement) => {
           expect(containerElement.width()).to.equal(
             Cypress.config().viewportWidth
