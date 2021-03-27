@@ -5,7 +5,10 @@ import Browser
 import Browser.Events as Events
 import Components.Cube
 import Element exposing (..)
-import Element.Font exposing (size)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
+import Element.Input as Input
 import Html
 import Json.Decode as Decode
 import Models.Algorithm as Algorithm
@@ -259,16 +262,35 @@ update msg model =
                             ( model, Cmd.none )
 
 
-view : Model -> Html.Html msg
+view : Model -> Html.Html Msg
 view model =
     Html.div [] [ Components.Cube.injectStyles, layout [ padding 10, inFront <| viewFullScreen model ] <| viewState model ]
 
 
-viewFullScreen : Model -> Element msg
+viewFullScreen : Model -> Element Msg
 viewFullScreen model =
     case model.trainerState of
         BetweenTests message ->
-            column [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
+            el
+                [ testid "between-tests-container"
+                , width fill
+                , height fill
+                ]
+            <|
+                column [ centerX, centerY, spacing 50, padding 50 ]
+                    [ el [ centerX ] <| text "Between Tests"
+                    , el [ centerX ] <| viewEvaluationMessage message
+                    , Input.button
+                        [ testid "begin-button"
+                        , centerX
+                        , Background.color <| rgb255 0 128 0
+                        , padding 25
+                        , Border.rounded 15
+                        ]
+                        { onPress = Just (KeyUp Space)
+                        , label = text "Begin"
+                        }
+                    ]
 
         TestRunning _ elapsedTime algTested ->
             el
@@ -283,7 +305,7 @@ viewFullScreen model =
                     , spacing 50
                     ]
                     [ el [ centerX ] <| displayTestCase model.viewportSize algTested
-                    , el [ testid "timer", centerX, size (min model.viewportSize.height model.viewportSize.width // 5) ] <| text <| TimeInterval.displayOneDecimal elapsedTime
+                    , el [ testid "timer", centerX, Font.size (min model.viewportSize.height model.viewportSize.width // 5) ] <| text <| TimeInterval.displayOneDecimal elapsedTime
                     ]
 
         EvaluatingResult { result } ->

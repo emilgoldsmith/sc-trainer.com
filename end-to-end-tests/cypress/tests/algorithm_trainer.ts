@@ -66,6 +66,7 @@ function buildElementsCategory<keys extends string>(
 const elements = {
   betweenTests: buildElementsCategory({
     container: "between-tests-container",
+    beginButton: "begin-button",
     correctMessage: "correct-evaluation-message",
     wrongMessage: "wrong-evaluation-message",
   }),
@@ -133,11 +134,18 @@ describe("AlgorithmTrainer", function () {
     });
 
     it("has all the correct elements", function () {
-      elements.betweenTests.container.assertShows();
+      elements.betweenTests.container.assertShows().within(() => {
+        elements.betweenTests.beginButton.assertShows();
+      });
     });
 
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
+      elements.testRunning.container.assertShows();
+    });
+
+    it("starts when pressing the begin button", function () {
+      elements.betweenTests.beginButton.get().click();
       elements.testRunning.container.assertShows();
     });
 
