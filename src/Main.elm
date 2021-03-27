@@ -66,11 +66,6 @@ type TrainerState
         }
 
 
-allPressed : { a | spacePressStarted : Bool, wPressStarted : Bool } -> Bool
-allPressed { spacePressStarted, wPressStarted } =
-    spacePressStarted && wPressStarted
-
-
 type EvaluationMessage
     = NoEvaluationMessage
     | CorrectEvaluation
@@ -78,13 +73,15 @@ type EvaluationMessage
 
 
 type Msg
-    = KeyUp Key
-    | KeyDown Key
-    | IgnoredKeyEvent
+    = IgnoredKeyEvent
     | StartTest TestStartData
     | MillisecondsPassed Float
     | EndTest (Maybe Time.Posix)
     | EndIgnoringKeyPressesAfterTransition
+    | SpaceStarted
+    | SpaceEnded
+    | WStarted
+    | WEnded
     | WindowResized Int Int
 
 
@@ -176,33 +173,62 @@ subscriptions model =
                         , Events.onAnimationFrameDelta MillisecondsPassed
                         ]
 
-                EvaluatingResult keyStates ->
-                    if keyStates.ignoringKeyPressesAfterTransition then
+                EvaluatingResult { ignoringKeyPressesAfterTransition, spacePressStarted, wPressStarted } ->
+                    if ignoringKeyPressesAfterTransition then
                         Sub.none
 
                     else
                         Sub.batch
-                            [ if allPressed keyStates then
-                                Sub.none
+                            [ Events.onKeyDown <|
+                                Decode.map
+                                    (\(KeyEvent key isRepeated) ->
+                                        if isRepeated == True then
+                                            IgnoredKeyEvent
 
-                              else
-                                Events.onKeyDown <| Decode.map (withIgnoreIfIsRepeated KeyDown) decodeKeyEvent
-                            , Events.onKeyUp <| Decode.map (withIgnoreIfIsRepeated KeyUp) decodeKeyEvent
+                                        else
+                                            case key of
+                                                Space ->
+                                                    SpaceStarted
+
+                                                W ->
+                                                    WStarted
+
+                                                _ ->
+                                                    IgnoredKeyEvent
+                                    )
+                                    decodeKeyEvent
+                            , Events.onKeyUp <|
+                                Decode.map
+                                    (\(KeyEvent key isRepeated) ->
+                                        if isRepeated == True then
+                                            IgnoredKeyEvent
+
+                                        else
+                                            case key of
+                                                Space ->
+                                                    if spacePressStarted then
+                                                        SpaceEnded
+
+                                                    else
+                                                        IgnoredKeyEvent
+
+                                                W ->
+                                                    if wPressStarted then
+                                                        WEnded
+
+                                                    else
+                                                        IgnoredKeyEvent
+
+                                                _ ->
+                                                    IgnoredKeyEvent
+                                    )
+                                    decodeKeyEvent
                             ]
 
         globalSubscriptions =
             Events.onResize WindowResized
     in
     Sub.batch [ trainerSubscriptions, globalSubscriptions ]
-
-
-withIgnoreIfIsRepeated : (Key -> Msg) -> KeyEvent -> Msg
-withIgnoreIfIsRepeated message (KeyEvent key isRepeated) =
-    if isRepeated then
-        IgnoredKeyEvent
-
-    else
-        message key
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -252,35 +278,22 @@ update msg model =
                         _ ->
                             ( model, Cmd.none )
 
-                EvaluatingResult ({ spacePressStarted, wPressStarted } as keyStates) ->
+                EvaluatingResult keyStates ->
                     case msg of
                         EndIgnoringKeyPressesAfterTransition ->
                             ( { model | trainerState = EvaluatingResult { keyStates | ignoringKeyPressesAfterTransition = False } }, Cmd.none )
 
-                        KeyDown Space ->
+                        SpaceStarted ->
                             ( { model | trainerState = EvaluatingResult { keyStates | spacePressStarted = True } }, Cmd.none )
 
-                        KeyDown W ->
+                        WStarted ->
                             ( { model | trainerState = EvaluatingResult { keyStates | wPressStarted = True } }, Cmd.none )
 
-                        KeyUp key ->
-                            case key of
-                                Space ->
-                                    if spacePressStarted then
-                                        ( { model | trainerState = BetweenTests CorrectEvaluation }, Cmd.none )
+                        SpaceEnded ->
+                            ( { model | trainerState = BetweenTests CorrectEvaluation }, Cmd.none )
 
-                                    else
-                                        ( model, Cmd.none )
-
-                                W ->
-                                    if wPressStarted then
-                                        ( { model | trainerState = BetweenTests WrongEvaluation }, Cmd.none )
-
-                                    else
-                                        ( model, Cmd.none )
-
-                                _ ->
-                                    ( model, Cmd.none )
+                        WEnded ->
+                            ( { model | trainerState = BetweenTests WrongEvaluation }, Cmd.none )
 
                         _ ->
                             ( model, Cmd.none )
