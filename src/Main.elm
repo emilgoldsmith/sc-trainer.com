@@ -81,12 +81,17 @@ type Msg
     = KeyUp Key
     | KeyDown Key
     | IgnoredKeyEvent
-    | AlgToTestGenerated Algorithm.Algorithm
-    | StartTest Algorithm.Algorithm Time.Posix
+    | StartTest TestStartData
     | MillisecondsPassed Float
     | EndTest Time.Posix
     | EndIgnoringKeyPressesAfterTransition
     | WindowResized Int Int
+
+
+type TestStartData
+    = NothingGenerated
+    | AlgGenerated Algorithm.Algorithm
+    | AllGenerated Algorithm.Algorithm Time.Posix
 
 
 type alias IsRepeatedKeyPressFlag =
@@ -142,7 +147,16 @@ subscriptions model =
         trainerSubscriptions =
             case model.trainerState of
                 BetweenTests _ ->
-                    Events.onKeyUp <| Decode.map (withIgnoreIfIsRepeated KeyUp) decodeKeyEvent
+                    Events.onKeyUp <|
+                        Decode.map
+                            (\(KeyEvent key _) ->
+                                if key == Space then
+                                    StartTest NothingGenerated
+
+                                else
+                                    IgnoredKeyEvent
+                            )
+                            decodeKeyEvent
 
                 TestRunning _ _ _ ->
                     Sub.batch
@@ -168,8 +182,11 @@ subscriptions model =
                                 Events.onKeyDown <| Decode.map (withIgnoreIfIsRepeated KeyDown) decodeKeyEvent
                             , Events.onKeyUp <| Decode.map (withIgnoreIfIsRepeated KeyUp) decodeKeyEvent
                             ]
+
+        globalSubscriptions =
+            Events.onResize WindowResized
     in
-    Sub.batch [ trainerSubscriptions, Events.onResize WindowResized ]
+    Sub.batch [ trainerSubscriptions, globalSubscriptions ]
 
 
 withIgnoreIfIsRepeated : (Key -> Msg) -> KeyEvent -> Msg
@@ -191,13 +208,13 @@ update msg model =
             case model.trainerState of
                 BetweenTests _ ->
                     case msg of
-                        KeyUp Space ->
-                            ( model, Random.generate AlgToTestGenerated generatePll )
+                        StartTest NothingGenerated ->
+                            ( model, Random.generate (\alg -> StartTest (AlgGenerated alg)) generatePll )
 
-                        AlgToTestGenerated alg ->
-                            ( model, Task.perform (StartTest alg) Time.now )
+                        StartTest (AlgGenerated alg) ->
+                            ( model, Task.perform (\time -> StartTest (AllGenerated alg time)) Time.now )
 
-                        StartTest alg startTime ->
+                        StartTest (AllGenerated alg startTime) ->
                             ( { model | trainerState = TestRunning startTime TimeInterval.zero alg }, Cmd.none )
 
                         _ ->
@@ -287,7 +304,7 @@ viewFullScreen model =
                         , padding 25
                         , Border.rounded 15
                         ]
-                        { onPress = Just (KeyUp Space)
+                        { onPress = Just <| StartTest NothingGenerated
                         , label = text "Begin"
                         }
                     ]
