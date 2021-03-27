@@ -95,19 +95,27 @@ type alias IsRepeatedKeyPressFlag =
     Bool
 
 
-type KeyEvent
-    = KeyEvent Key IsRepeatedKeyPressFlag
-
-
 type Key
     = Space
     | SomeKey String
     | W
 
 
-decodeKeyEvent : Decode.Decoder KeyEvent
-decodeKeyEvent =
-    Decode.map2 KeyEvent decodeKey decodeKeyRepeat
+decodeNonRepeatedKeyEvent : Decode.Decoder Key
+decodeNonRepeatedKeyEvent =
+    let
+        fields =
+            Decode.map2 Tuple.pair decodeKey decodeKeyRepeat
+    in
+    fields
+        |> Decode.andThen
+            (\( key, isRepeated ) ->
+                if isRepeated == True then
+                    Decode.fail "Was a repeated key press"
+
+                else
+                    Decode.succeed key
+            )
 
 
 {-| Heavily inspired by <https://github.com/elm/browser/blob/1.0.2/notes/keyboard.md>
@@ -146,27 +154,21 @@ subscriptions model =
                 BetweenTests _ ->
                     Events.onKeyUp <|
                         Decode.map
-                            (\(KeyEvent key isRepeated) ->
-                                if key == Space && isRepeated == False then
+                            (\key ->
+                                if key == Space then
                                     StartTest NothingGenerated
 
                                 else
                                     IgnoredKeyEvent
                             )
-                            decodeKeyEvent
+                            decodeNonRepeatedKeyEvent
 
                 TestRunning _ _ _ ->
                     Sub.batch
                         [ Events.onKeyDown <|
                             Decode.map
-                                (\(KeyEvent _ isRepeated) ->
-                                    if isRepeated == False then
-                                        EndTest Nothing
-
-                                    else
-                                        IgnoredKeyEvent
-                                )
-                                decodeKeyEvent
+                                (always <| EndTest Nothing)
+                                decodeNonRepeatedKeyEvent
                         , Events.onMouseDown <|
                             Decode.succeed <|
                                 EndTest Nothing
@@ -181,48 +183,40 @@ subscriptions model =
                         Sub.batch
                             [ Events.onKeyDown <|
                                 Decode.map
-                                    (\(KeyEvent key isRepeated) ->
-                                        if isRepeated == True then
-                                            IgnoredKeyEvent
+                                    (\key ->
+                                        case key of
+                                            Space ->
+                                                SpaceStarted
 
-                                        else
-                                            case key of
-                                                Space ->
-                                                    SpaceStarted
+                                            W ->
+                                                WStarted
 
-                                                W ->
-                                                    WStarted
-
-                                                _ ->
-                                                    IgnoredKeyEvent
+                                            _ ->
+                                                IgnoredKeyEvent
                                     )
-                                    decodeKeyEvent
+                                    decodeNonRepeatedKeyEvent
                             , Events.onKeyUp <|
                                 Decode.map
-                                    (\(KeyEvent key isRepeated) ->
-                                        if isRepeated == True then
-                                            IgnoredKeyEvent
+                                    (\key ->
+                                        case key of
+                                            Space ->
+                                                if spacePressStarted then
+                                                    SpaceEnded
 
-                                        else
-                                            case key of
-                                                Space ->
-                                                    if spacePressStarted then
-                                                        SpaceEnded
-
-                                                    else
-                                                        IgnoredKeyEvent
-
-                                                W ->
-                                                    if wPressStarted then
-                                                        WEnded
-
-                                                    else
-                                                        IgnoredKeyEvent
-
-                                                _ ->
+                                                else
                                                     IgnoredKeyEvent
+
+                                            W ->
+                                                if wPressStarted then
+                                                    WEnded
+
+                                                else
+                                                    IgnoredKeyEvent
+
+                                            _ ->
+                                                IgnoredKeyEvent
                                     )
-                                    decodeKeyEvent
+                                    decodeNonRepeatedKeyEvent
                             ]
 
         globalSubscriptions =
