@@ -156,7 +156,7 @@ describe("AlgorithmTrainer", function () {
       states.testRunning.restoreState();
     });
 
-    it.only("has all the correct elements", function () {
+    it("has all the correct elements", function () {
       cy.assertNoHorizontalScrollbar();
       cy.assertNoVerticalScrollbar();
       elements.testRunning.container
