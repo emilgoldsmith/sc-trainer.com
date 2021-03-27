@@ -157,8 +157,30 @@ describe("AlgorithmTrainer", function () {
     });
 
     it("has all the correct elements", function () {
+      elements.testRunning.container.get().within(() => {
+        elements.testRunning.timer.assertShows();
+        // The test case is a cube
+        elements.testRunning.testCase.get().within(() => {
+          elements.globals.cube.assertShows();
+        });
+      });
+    });
+
+    it("sizes things approximately correct", function () {
+      // We set the timer to double digit hours to test the limits of the width, that seems like it could be plausible
+      // for a huge multiblind attempt if we for some reason support that in the future,
+      // but three digits seems implausible so no need to test that
+      getTestRunningWithMockedTime();
+      // 15 hours
+      setTimeTo(1000 * 60 * 60 * 15);
+      elements.testRunning.timer.get().should("have.text", "15:00:00.0");
+
       cy.assertNoHorizontalScrollbar();
       cy.assertNoVerticalScrollbar();
+      const minDimension = Math.min(
+        Cypress.config().viewportWidth,
+        Cypress.config().viewportHeight
+      );
       elements.testRunning.container
         .get()
         // Check it fills whole screen
@@ -170,19 +192,17 @@ describe("AlgorithmTrainer", function () {
             Cypress.config().viewportHeight
           );
         })
-        .within(() => {
-          elements.testRunning.timer.assertShows().and((timerElement) => {
-            expect(timerElement.height()).to.be.at.least(
-              0.2 * Cypress.config().viewportHeight
+        // Check contents
+        .within((containerElement) => {
+          elements.testRunning.timer.get().should((timerElement) => {
+            expect(timerElement.height()).to.be.at.least(0.2 * minDimension);
+            expect(timerElement.width()).to.be.at.most(
+              // The - 20 is just to ensure there's also always a bit of padding on the sides
+              (containerElement.width() as number) - 20
             );
           });
-          // The test case is a cube
           elements.testRunning.testCase.get().within(() => {
             elements.globals.cube.assertShows().and((cubeElement) => {
-              const minDimension = Math.min(
-                Cypress.config().viewportWidth,
-                Cypress.config().viewportHeight
-              );
               expect(
                 cubeElement.width(),
                 "cube width to fill at least half of screen"
@@ -198,10 +218,10 @@ describe("AlgorithmTrainer", function () {
 
     it("tracks time correctly", function () {
       getTestRunningWithMockedTime();
+
       const second = 1000;
       const minute = 60 * second;
       const hour = 60 * minute;
-
       // Should start at 0
       elements.testRunning.timer.get().should("have.text", "0.0");
       // Just testing here that nothing happens with small increments

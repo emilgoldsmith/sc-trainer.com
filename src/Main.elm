@@ -267,6 +267,9 @@ view model =
 viewFullScreen : Model -> Element msg
 viewFullScreen model =
     case model.trainerState of
+        BetweenTests message ->
+            column [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
+
         TestRunning _ elapsedTime algTested ->
             el
                 [ testid "test-running-container"
@@ -280,36 +283,26 @@ viewFullScreen model =
                     , spacing 50
                     ]
                     [ el [ centerX ] <| displayTestCase model.viewportSize algTested
-                    , el [ testid "timer", centerX, size (round <| 0.2 * toFloat model.viewportSize.height) ] <| text <| TimeInterval.displayOneDecimal elapsedTime
+                    , el [ testid "timer", centerX, size (min model.viewportSize.height model.viewportSize.width // 5) ] <| text <| TimeInterval.displayOneDecimal elapsedTime
                     ]
 
-        _ ->
-            none
+        EvaluatingResult { result } ->
+            column [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result, displayExpectedCubeState model.expectedCube ]
 
 
 viewState : Model -> Element msg
-viewState model =
-    el [] <|
-        el [] <|
-            case model.trainerState of
-                BetweenTests message ->
-                    column [ testid "between-tests-container" ] [ text "Between Tests", viewEvaluationMessage message ]
-
-                TestRunning _ _ _ ->
-                    none
-
-                EvaluatingResult { result } ->
-                    column [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result, displayExpectedCubeState model.expectedCube ]
+viewState _ =
+    none
 
 
 displayTestCase : ViewportSize -> Algorithm.Algorithm -> Element msg
 displayTestCase viewportSize algTested =
     let
         minDimension =
-            toFloat <| min viewportSize.height viewportSize.width
+            min viewportSize.height viewportSize.width
     in
     el [ testid "test-case" ] <|
-        Components.Cube.view (0.5 * minDimension) <|
+        Components.Cube.view (minDimension // 2) <|
             (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse algTested))
 
 

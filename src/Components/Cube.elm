@@ -12,14 +12,14 @@ import Utils.Css exposing (htmlTestid)
 -- Exports
 
 
-view : Float -> Cube.Cube -> Element.Element msg
+view : Int -> Cube.Cube -> Element.Element msg
 view cubeSize cube =
     Element.html <|
         let
             rendering =
                 Cube.render cube
         in
-        div [ class classes.container, htmlTestid "cube", style "font-size" <| String.fromFloat cubeSize ++ "px" ]
+        div [ class classes.container, htmlTestid "cube", style "font-size" <| String.fromInt cubeSize ++ "px" ]
             [ div [ class classes.wholeCube ] <|
                 List.map (\( a, b ) -> displayCubie b a)
                     (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
