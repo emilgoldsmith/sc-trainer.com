@@ -368,7 +368,12 @@ viewFullScreen model =
                     , height fill
                     ]
                 <|
-                    column [ centerX, centerY, spacing 50, padding 50 ]
+                    column
+                        [ centerX
+                        , centerY
+                        , spacing 50
+                        , padding 50
+                        ]
                         [ el [ centerX ] <| text "Between Tests"
                         , el [ centerX ] <| viewEvaluationMessage message
                         , Input.button
