@@ -276,14 +276,25 @@ describe("AlgorithmTrainer", function () {
         elements.evaluateResult.container.assertShows();
       });
 
-      it("has no delays on touching", function () {
+      it.only("has no delays on touching", function () {
         /**
-         * This is sadly the best assertion we can think of to check it doesn't have
+         * These are sadly the best assertion we can think of to check it doesn't have
          * the annoying delay
          */
         elements.testRunning.container
           .get()
           .should("have.css", "touch-action", "none");
+        cy.document().should((document) => {
+          const tag = document.head.querySelector(
+            'meta[name="viewport"][content]'
+          );
+
+          // This should help according to
+          // https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away
+          expect((tag as Element & { content: string }).content).to.equal(
+            "width=device-width"
+          );
+        });
       });
 
       it("on pressing any keyboard key", function () {
