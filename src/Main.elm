@@ -390,9 +390,9 @@ viewFullScreen model =
                     , width fill
                     , height fill
 
-                    -- This is important to avoid a delay in the user experience when they
-                    -- end the test
-                    , htmlAttribute <| Html.Attributes.style "touch-action" "manipulation"
+                    -- -- This is important to avoid a delay in the user experience when they
+                    -- -- end the test
+                    -- , htmlAttribute <| Html.Attributes.style "touch-action" "manipulation"
                     ]
                 <|
                     column

@@ -44,7 +44,7 @@
        * PORTS
        */
       app.ports.logError.subscribe(() => {});
-      document.addEventListener("touchstart", (event) => {app.ports.onTouchStart.send(event); document.getElementById("debug").innerText += event.type + "no css";}, passiveSupported ? {passive: true} : false);
+      document.addEventListener("touchstart", (event) => {app.ports.onTouchStart.send(event); document.getElementById("debug").innerText += event.type + "v2";}, passiveSupported ? {passive: true} : false);
     </script>
     <div id="debug"></div>
   </body>
