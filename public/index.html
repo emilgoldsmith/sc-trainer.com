@@ -17,6 +17,21 @@
         }
       });
       app.ports.logError.subscribe(() => {});
+      function stringifyEvent(e) {
+        const obj = {};
+        for (let k in e) {
+          obj[k] = e[k];
+        }
+        return JSON.stringify(obj, (k, v) => {
+          if (v instanceof Node) return 'Node';
+          if (v instanceof Window) return 'Window';
+          return v;
+        }, ' ');
+      }
+      document.onmousedown = (e) => document.getElementById("debug").innerText += "\n\n" + e.type;
+      document.ontouchstart = (e) => document.getElementById("debug").innerText += "\n\n" + e.type;
+      document.onpointerdown = (e) => document.getElementById("debug").innerText += "\n\n" + e.type;
     </script>
+    <div id="debug"></div>
   </body>
 </html>
