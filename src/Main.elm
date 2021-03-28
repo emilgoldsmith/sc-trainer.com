@@ -310,10 +310,39 @@ update messageCategory model =
 
         ( msg, trainerState ) ->
             ( model
-            , logError
-                ("Message received during unexpected state"
-                    ++ Debug.toString msg
-                    ++ Debug.toString trainerState
+            , let
+                msgString =
+                    case msg of
+                        GlobalMessage _ ->
+                            "GlobalMessage"
+
+                        BetweenTestsMessage _ ->
+                            "BetweenTestsMessage"
+
+                        TestRunningMessage _ ->
+                            "TestRunningMessage"
+
+                        EvaluateResultMessage _ ->
+                            "EvaluateResultMessage"
+
+                trainerStateString =
+                    case trainerState of
+                        BetweenTests _ ->
+                            "BetweenTests"
+
+                        TestRunning _ _ _ ->
+                            "TestRunning"
+
+                        EvaluatingResult _ ->
+                            "EvaluatingResult"
+              in
+              logError
+                ("Message received during unexpected state: "
+                    ++ "("
+                    ++ msgString
+                    ++ ", "
+                    ++ trainerStateString
+                    ++ ")"
                 )
             )
 
