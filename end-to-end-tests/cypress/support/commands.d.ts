@@ -190,5 +190,7 @@ declare namespace Cypress {
     assertNoVerticalScrollbar(): void;
 
     assertNoHorizontalScrollbar(): void;
+
+    touch(): void;
   }
 }

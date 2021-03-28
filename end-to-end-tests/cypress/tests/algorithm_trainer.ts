@@ -265,8 +265,14 @@ describe("AlgorithmTrainer", function () {
     });
 
     describe("ends test correctly", function () {
-      it("on clicking inbetween other elements on the screen", function () {
-        cy.get("body", { log: false }).click("center");
+      it("on clicking anywhere on the screen", function () {
+        // Just proxy "anywhere" as the top left corner
+        cy.get("body", { log: false }).click("topLeft");
+        elements.evaluateResult.container.assertShows();
+      });
+
+      it("on touching the screen from a touch device", function () {
+        cy.touch();
         elements.evaluateResult.container.assertShows();
       });
 

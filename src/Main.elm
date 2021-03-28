@@ -35,6 +35,9 @@ main =
 port logError : String -> Cmd msg
 
 
+port onTouchStart : (Decode.Value -> msg) -> Sub msg
+
+
 init : ViewportSize -> ( Model, Cmd Msg )
 init viewportSize =
     ( { trainerState = BetweenTests NoEvaluationMessage
@@ -190,6 +193,7 @@ subscriptions model =
                             , Events.onMouseDown <|
                                 Decode.succeed <|
                                     EndTest Nothing
+                            , onTouchStart (always (EndTest Nothing))
                             , Events.onAnimationFrameDelta MillisecondsPassed
                             ]
 

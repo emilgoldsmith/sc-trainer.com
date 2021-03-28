@@ -429,3 +429,23 @@ const assertNoVerticalScrollbar: Cypress.Chainable<undefined>["assertNoVerticalS
 };
 
 Cypress.Commands.add("assertNoVerticalScrollbar", assertNoVerticalScrollbar);
+
+const touch: Cypress.Chainable<undefined>["touch"] = function () {
+  const event = {
+    eventConstructor: "TouchEvent",
+  };
+  cy.withOverallNameLogged(
+    {
+      name: "touch",
+      displayName: "TOUCH",
+      message: `on document element`,
+      consoleProps: () => ({ event }),
+    },
+    () => {
+      cy.document({ log: false })
+        .trigger("touchstart", { ...event, log: false })
+        .trigger("touchend", { ...event, log: false });
+    }
+  );
+};
+Cypress.Commands.add("touch", touch);
