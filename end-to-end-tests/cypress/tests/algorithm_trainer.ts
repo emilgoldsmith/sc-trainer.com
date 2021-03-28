@@ -276,7 +276,7 @@ describe("AlgorithmTrainer", function () {
         elements.evaluateResult.container.assertShows();
       });
 
-      it.only("has no delays on touching", function () {
+      it("has no delays on touching", function () {
         /**
          * These are sadly the best assertion we can think of to check it doesn't have
          * the annoying delay
