@@ -10,6 +10,7 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Html
+import Html.Attributes
 import Json.Decode as Decode
 import Models.Algorithm as Algorithm
 import Models.Cube as Cube
@@ -388,6 +389,10 @@ viewFullScreen model =
                     [ testid "test-running-container"
                     , width fill
                     , height fill
+
+                    -- This is important to avoid a delay in the user experience when they
+                    -- end the test
+                    , htmlAttribute <| Html.Attributes.style "touch-action" "none"
                     ]
                 <|
                     column
@@ -395,13 +400,25 @@ viewFullScreen model =
                         , centerY
                         , spacing 50
                         ]
-                        [ el [ centerX ] <| displayTestCase model.viewportSize algTested
-                        , el [ testid "timer", centerX, Font.size (min model.viewportSize.height model.viewportSize.width // 5) ] <| text <| TimeInterval.displayOneDecimal elapsedTime
+                        [ el [ centerX ] <|
+                            displayTestCase model.viewportSize algTested
+                        , el
+                            [ testid "timer"
+                            , centerX
+                            , Font.size (min model.viewportSize.height model.viewportSize.width // 5)
+                            ]
+                          <|
+                            text <|
+                                TimeInterval.displayOneDecimal elapsedTime
                         ]
 
         EvaluatingResult { result } ->
             Element.map EvaluateResultMessage <|
-                column [ testid "evaluate-test-result-container" ] [ text <| "Evaluating Result", displayTimeResult result, displayExpectedCubeState model.expectedCube ]
+                column [ testid "evaluate-test-result-container" ]
+                    [ text <| "Evaluating Result"
+                    , displayTimeResult result
+                    , displayExpectedCubeState model.expectedCube
+                    ]
 
 
 viewState : Model -> Element msg

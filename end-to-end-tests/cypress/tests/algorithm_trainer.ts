@@ -276,6 +276,16 @@ describe("AlgorithmTrainer", function () {
         elements.evaluateResult.container.assertShows();
       });
 
+      it("has no delays on touching", function () {
+        /**
+         * This is sadly the best assertion we can think of to check it doesn't have
+         * the annoying delay
+         */
+        elements.testRunning.container
+          .get()
+          .should("have.css", "touch-action", "none");
+      });
+
       it("on pressing any keyboard key", function () {
         ([
           // Space, w and W are the important ones as they are also used to evaluate
