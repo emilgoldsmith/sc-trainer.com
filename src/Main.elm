@@ -384,7 +384,7 @@ viewFullScreen model =
                         ]
 
         TestRunning _ elapsedTime algTested ->
-            Element.map BetweenTestsMessage <|
+            Element.map TestRunningMessage <|
                 el
                     [ testid "test-running-container"
                     , width fill
@@ -392,7 +392,7 @@ viewFullScreen model =
 
                     -- This is important to avoid a delay in the user experience when they
                     -- end the test
-                    , htmlAttribute <| Html.Attributes.style "touch-action" "none"
+                    , htmlAttribute <| Html.Attributes.style "touch-action" "manipulation"
                     ]
                 <|
                     column
