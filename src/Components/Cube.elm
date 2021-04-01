@@ -448,8 +448,8 @@ css theme =
         |> String.replace "{cubieBorderLength}" (String.fromFloat cubieBorderWidth)
         |> String.replace "{wholeCubeSideLength}" (String.fromFloat wholeCubeSideLength)
         |> String.replace "{halfCubeSideLength}" (String.fromFloat (wholeCubeSideLength / 2))
-        |> String.replace "{containerWidth}" (String.fromFloat (wholeCubeSideLength * 1.4))
-        |> String.replace "{containerHeight}" (String.fromFloat (wholeCubeSideLength * 1.4))
+        |> String.replace "{containerWidth}" (String.fromFloat cubeContainerSize)
+        |> String.replace "{containerHeight}" (String.fromFloat cubeContainerSize)
 
 
 cubeContainerSize : Float
