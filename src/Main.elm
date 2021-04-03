@@ -419,10 +419,71 @@ viewFullScreen model =
 
         EvaluatingResult { result } ->
             Element.map EvaluateResultMessage <|
-                column [ testid "evaluate-test-result-container" ]
-                    [ text <| "Evaluating Result"
-                    , displayTimeResult result
-                    , displayExpectedCubeState model.expectedCube
+                let
+                    minDimension =
+                        min model.viewportSize.height model.viewportSize.width
+
+                    overallPadding =
+                        minDimension // 20
+
+                    cubeSize =
+                        minDimension // 3
+
+                    timerSize =
+                        minDimension // 6
+
+                    buttonSize =
+                        minDimension // 15
+
+                    buttonPadding =
+                        buttonSize * 2 // 3
+
+                    buttonRounding =
+                        buttonSize // 3
+
+                    buttonSpacing =
+                        buttonSize
+                in
+                column
+                    [ testid "evaluate-test-result-container"
+                    , centerX
+                    , centerY
+                    , height (fill |> maximum minDimension)
+                    , spaceEvenly
+                    , padding overallPadding
+                    ]
+                    [ el
+                        [ testid "time-result"
+                        , centerX
+                        , Font.size timerSize
+                        ]
+                      <|
+                        text <|
+                            TimeInterval.displayTwoDecimals result
+                    , row [ centerX ]
+                        [ el [ testid "expected-cube-front" ] <|
+                            Components.Cube.view cubeSize model.expectedCube
+                        , el [ testid "expected-cube-back" ] <|
+                            (model.expectedCube |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.Halfway Algorithm.Clockwise ]) |> Components.Cube.view cubeSize)
+                        ]
+                    , row [ centerX, spacing buttonSpacing ]
+                        [ Input.button
+                            [ testid "correct-button"
+                            , Background.color <| rgb255 0 128 0
+                            , padding buttonPadding
+                            , Border.rounded buttonRounding
+                            , Font.size buttonSize
+                            ]
+                            { onPress = Nothing, label = text "Correct" }
+                        , Input.button
+                            [ testid "wrong-button"
+                            , Background.color <| rgb255 255 0 0
+                            , padding buttonPadding
+                            , Border.rounded buttonRounding
+                            , Font.size buttonSize
+                            ]
+                            { onPress = Nothing, label = text "Wrong" }
+                        ]
                     ]
 
 
@@ -442,11 +503,6 @@ displayTestCase viewportSize algTested =
             (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse algTested))
 
 
-displayTimeResult : TimeInterval.TimeInterval -> Element msg
-displayTimeResult result =
-    el [ testid "time-result" ] <| text <| TimeInterval.displayTwoDecimals result
-
-
 viewEvaluationMessage : EvaluationMessage -> Element msg
 viewEvaluationMessage message =
     case message of
@@ -458,14 +514,6 @@ viewEvaluationMessage message =
 
         WrongEvaluation ->
             el [ testid "wrong-evaluation-message" ] <| text "Wrong"
-
-
-displayExpectedCubeState : Cube.Cube -> Element msg
-displayExpectedCubeState expectedCube =
-    row []
-        [ el [ testid "expected-cube-front" ] <| Components.Cube.view 16 expectedCube
-        , el [ testid "expected-cube-back" ] <| (Components.Cube.view 16 << Cube.flip) expectedCube
-        ]
 
 
 generatePll : Random.Generator Algorithm.Algorithm

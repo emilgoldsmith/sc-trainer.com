@@ -80,6 +80,8 @@ const elements = {
     timeResult: "time-result",
     expectedCubeFront: "expected-cube-front",
     expectedCubeBack: "expected-cube-back",
+    correctButton: "correct-button",
+    wrongButton: "wrong-button",
   }),
   globals: buildElementsCategory({
     cube: "cube",
@@ -175,13 +177,8 @@ describe("AlgorithmTrainer", function () {
     });
 
     it("sizes things approximately correct", function () {
-      // We set the timer to double digit hours to test the limits of the width, that seems like it could be plausible
-      // for a huge multiblind attempt if we for some reason support that in the future,
-      // but three digits seems implausible so no need to test that
-      getTestRunningWithMockedTime();
-      // 15 hours
-      setTimeTo(1000 * 60 * 60 * 15);
-      elements.testRunning.timer.get().should("have.text", "15:00:00.0");
+      // Get max length timer to stress test content fitting
+      getTestRunningWithMaxLengthTimer();
 
       cy.assertNoHorizontalScrollbar();
       cy.assertNoVerticalScrollbar();
@@ -426,7 +423,74 @@ describe("AlgorithmTrainer", function () {
           elements.evaluateResult.expectedCubeBack.get().within(() => {
             elements.globals.cube.assertShows();
           });
+          elements.evaluateResult.correctButton.assertShows();
+          elements.evaluateResult.wrongButton.assertShows();
         });
+      });
+
+      it("sizes things approximately correct", function () {
+        // Get max length timer to stress test content fitting
+        getTestRunningWithMaxLengthTimer();
+        cy.pressKey(Key.space);
+        elements.evaluateResult.container.waitFor();
+
+        cy.assertNoHorizontalScrollbar();
+        cy.assertNoVerticalScrollbar();
+        const minDimension = Math.min(
+          Cypress.config().viewportWidth,
+          Cypress.config().viewportHeight
+        );
+        elements.evaluateResult.container
+          .get()
+          // Check contents
+          .within(() => {
+            [
+              elements.evaluateResult.expectedCubeFront,
+              elements.evaluateResult.expectedCubeBack,
+            ].forEach((cubeContainer) =>
+              cubeContainer.get().within(() => {
+                elements.globals.cube.get().should((cubeElement) => {
+                  expect(
+                    cubeElement.width(),
+                    "cube width to fill at least a quarter of min dimension"
+                  ).to.be.at.least(minDimension / 4);
+                  expect(
+                    cubeElement.height(),
+                    "cube height to fill at least a quarter of min dimension"
+                  ).to.be.at.least(minDimension / 4);
+                  expect(
+                    cubeElement.height(),
+                    "cube height to fill at most half of screen height"
+                  ).to.be.at.most(Cypress.config().viewportHeight / 2);
+                });
+              })
+            );
+            elements.evaluateResult.timeResult.get().should((timerElement) => {
+              expect(
+                timerElement.height(),
+                "time result height at least 10% of min dimension"
+              ).to.be.at.least(minDimension / 10);
+              expect(
+                timerElement.height(),
+                "time result at most a third of screen height"
+              ).to.be.at.most(Cypress.config().viewportHeight / 3);
+            });
+            [
+              elements.evaluateResult.correctButton,
+              elements.evaluateResult.wrongButton,
+            ].forEach((buttonGetter) => {
+              buttonGetter.get().should((buttonElement) => {
+                expect(
+                  buttonElement.height(),
+                  "button height at least 5% of min dimension"
+                ).to.be.at.least(minDimension / 20);
+                expect(
+                  buttonElement.height(),
+                  "button height at most a third of screen height"
+                ).to.be.at.most(Cypress.config().viewportHeight / 3);
+              });
+            });
+          });
       });
 
       describe("displays the correct time", function () {
@@ -572,6 +636,16 @@ function getTestRunningWithMockedTime() {
   installClock();
   cy.pressKey(Key.space);
   elements.testRunning.container.waitFor();
+}
+
+function getTestRunningWithMaxLengthTimer() {
+  // We set the timer to double digit hours to test the limits of the width, that seems like it could be plausible
+  // for a huge multiblind attempt if we for some reason support that in the future,
+  // but three digit hours seems implausible so no need to test that
+  getTestRunningWithMockedTime();
+  // 15 hours
+  setTimeTo(1000 * 60 * 60 * 15);
+  elements.testRunning.timer.get().should("have.text", "15:00:00.0");
 }
 
 function buildAsserter(testId: string) {
