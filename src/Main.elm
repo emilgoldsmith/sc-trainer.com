@@ -109,9 +109,9 @@ type TestRunningMsg
 type EvaluateResultMsg
     = EndIgnoringKeyPressesAfterTransition
     | SpaceStarted
-    | SpaceEnded
     | WStarted
-    | WEnded
+    | EvaluateCorrect
+    | EvaluateWrong
     | DoNothingEvaluateResult
 
 
@@ -225,14 +225,14 @@ subscriptions model =
                                             case key of
                                                 Space ->
                                                     if spacePressStarted then
-                                                        SpaceEnded
+                                                        EvaluateCorrect
 
                                                     else
                                                         DoNothingEvaluateResult
 
                                                 W ->
                                                     if wPressStarted then
-                                                        WEnded
+                                                        EvaluateWrong
 
                                                     else
                                                         DoNothingEvaluateResult
@@ -304,10 +304,10 @@ update messageCategory model =
                     WStarted ->
                         ( { model | trainerState = EvaluatingResult { keyStates | wPressStarted = True } }, Cmd.none )
 
-                    SpaceEnded ->
+                    EvaluateCorrect ->
                         ( { model | trainerState = BetweenTests CorrectEvaluation }, Cmd.none )
 
-                    WEnded ->
+                    EvaluateWrong ->
                         ( { model | trainerState = BetweenTests WrongEvaluation }, Cmd.none )
 
                     DoNothingEvaluateResult ->
@@ -474,7 +474,7 @@ viewFullScreen model =
                             , Border.rounded buttonRounding
                             , Font.size buttonSize
                             ]
-                            { onPress = Nothing, label = text "Correct" }
+                            { onPress = Just EvaluateCorrect, label = text "Correct" }
                         , Input.button
                             [ testid "wrong-button"
                             , Background.color <| rgb255 255 0 0
@@ -482,7 +482,7 @@ viewFullScreen model =
                             , Border.rounded buttonRounding
                             , Font.size buttonSize
                             ]
-                            { onPress = Nothing, label = text "Wrong" }
+                            { onPress = Just EvaluateWrong, label = text "Wrong" }
                         ]
                     ]
 

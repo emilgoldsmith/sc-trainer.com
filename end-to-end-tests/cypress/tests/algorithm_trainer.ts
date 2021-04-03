@@ -559,8 +559,13 @@ describe("AlgorithmTrainer", function () {
       });
 
       describe("approves correctly", function () {
-        it("approves on space pressed", function () {
+        it("on space pressed", function () {
           cy.pressKey(Key.space);
+          elements.betweenTests.container.assertShows();
+          elements.betweenTests.correctMessage.assertShows();
+        });
+        it("on button pressed", function () {
+          elements.evaluateResult.correctButton.get().click();
           elements.betweenTests.container.assertShows();
           elements.betweenTests.correctMessage.assertShows();
         });
@@ -574,6 +579,12 @@ describe("AlgorithmTrainer", function () {
 
         it("on shift + w pressed", function () {
           cy.pressKey(Key.W);
+          elements.betweenTests.container.assertShows();
+          elements.betweenTests.wrongMessage.assertShows();
+        });
+
+        it("on button pressed", function () {
+          elements.evaluateResult.wrongButton.get().click();
           elements.betweenTests.container.assertShows();
           elements.betweenTests.wrongMessage.assertShows();
         });
