@@ -64,11 +64,10 @@ function buildElementsCategory<keys extends string>(
 }
 
 const elements = {
-  betweenTests: buildElementsCategory({
-    container: "between-tests-container",
-    beginButton: "begin-button",
-    correctMessage: "correct-evaluation-message",
-    wrongMessage: "wrong-evaluation-message",
+  startPage: buildElementsCategory({
+    container: "start-page-container",
+    cubeStartState: "cube-start-state",
+    startButton: "start-button",
   }),
   testRunning: buildElementsCategory({
     container: "test-running-container",
@@ -83,6 +82,15 @@ const elements = {
     correctButton: "correct-button",
     wrongButton: "wrong-button",
   }),
+  correctPage: buildElementsCategory({
+    container: "correct-container",
+    nextButton: "next-button",
+  }),
+  wrongPage: buildElementsCategory({
+    container: "wrong-container",
+    cubeStartState: "cube-start-state",
+    nextButton: "next-button",
+  }),
   globals: buildElementsCategory({
     cube: "cube",
   }),
@@ -93,7 +101,7 @@ const states = {
     "initial",
     () => {},
     () => {
-      elements.betweenTests.container.waitFor();
+      elements.startPage.container.waitFor();
       cy.waitForDocumentEventListeners("keyup");
     }
   ),
@@ -120,7 +128,7 @@ const states = {
   ),
 } as const;
 
-describe("AlgorithmTrainer", function () {
+describe("Algorithm Trainer", function () {
   before(function () {
     states.initial.populateCache();
     states.testRunning.populateCache();
@@ -130,15 +138,23 @@ describe("AlgorithmTrainer", function () {
     cy.visit("/");
   });
 
-  describe("Between Tests", function () {
+  describe("Start Page", function () {
     beforeEach(function () {
       states.initial.restoreState();
     });
 
     it("has all the correct elements", function () {
-      elements.betweenTests.container.assertShows().within(() => {
-        elements.betweenTests.beginButton.assertShows();
+      elements.startPage.container.assertShows().within(() => {
+        elements.startPage.startButton.assertShows();
+        elements.startPage.cubeStartState.get().within(() => {
+          elements.globals.cube.assertShows();
+        });
       });
+    });
+
+    it("sizes elements reasonably", function () {
+      cy.assertNoHorizontalScrollbar();
+      cy.assertNoVerticalScrollbar();
     });
 
     it("starts test when pressing space", function () {
@@ -147,17 +163,17 @@ describe("AlgorithmTrainer", function () {
     });
 
     it("starts when pressing the begin button", function () {
-      elements.betweenTests.beginButton.get().click();
+      elements.startPage.startButton.get().click();
       elements.testRunning.container.assertShows();
     });
 
     it("doesn't start test when pressing any other keys", function () {
       cy.pressKey(Key.a);
-      elements.betweenTests.container.assertShows();
+      elements.startPage.container.assertShows();
       cy.pressKey(Key.x);
-      elements.betweenTests.container.assertShows();
+      elements.startPage.container.assertShows();
       cy.pressKey(Key.capsLock);
-      elements.betweenTests.container.assertShows();
+      elements.startPage.container.assertShows();
     });
   });
 
@@ -176,7 +192,7 @@ describe("AlgorithmTrainer", function () {
       });
     });
 
-    it("sizes things approximately correct", function () {
+    it("sizes elements reasonably", function () {
       // Get max length timer to stress test content fitting
       getTestRunningWithMaxLengthTimer();
 
@@ -186,39 +202,23 @@ describe("AlgorithmTrainer", function () {
         Cypress.config().viewportWidth,
         Cypress.config().viewportHeight
       );
-      elements.testRunning.container
-        .get()
-        // Check it fills whole screen
-        .should((containerElement) => {
-          expect(containerElement.width()).to.equal(
-            Cypress.config().viewportWidth
-          );
-          expect(containerElement.height()).to.equal(
-            Cypress.config().viewportHeight
-          );
-        })
-        // Check contents
-        .within((containerElement) => {
-          elements.testRunning.timer.get().should((timerElement) => {
-            expect(timerElement.height()).to.be.at.least(0.2 * minDimension);
-            expect(timerElement.width()).to.be.at.most(
-              // The - 20 is just to ensure there's also always a bit of padding on the sides
-              (containerElement.width() as number) - 20
-            );
-          });
-          elements.testRunning.testCase.get().within(() => {
-            elements.globals.cube.assertShows().and((cubeElement) => {
-              expect(
-                cubeElement.width(),
-                "cube width to fill at least half of screen"
-              ).to.be.at.least(minDimension * 0.5);
-              expect(
-                cubeElement.height(),
-                "cube height to fill at least half of screen"
-              ).to.be.at.least(minDimension * 0.5);
-            });
+      elements.testRunning.container.get().within(() => {
+        elements.testRunning.timer.get().should((timerElement) => {
+          expect(timerElement.height()).to.be.at.least(0.2 * minDimension);
+        });
+        elements.testRunning.testCase.get().within(() => {
+          elements.globals.cube.assertShows().and((cubeElement) => {
+            expect(
+              cubeElement.width(),
+              "cube width to fill at least half of screen"
+            ).to.be.at.least(minDimension * 0.5);
+            expect(
+              cubeElement.height(),
+              "cube height to fill at least half of screen"
+            ).to.be.at.least(minDimension * 0.5);
           });
         });
+      });
     });
 
     it("tracks time correctly", function () {
@@ -428,7 +428,7 @@ describe("AlgorithmTrainer", function () {
         });
       });
 
-      it("sizes things approximately correct", function () {
+      it("sizes elements reasonably", function () {
         // Get max length timer to stress test content fitting
         getTestRunningWithMaxLengthTimer();
         cy.pressKey(Key.space);
@@ -558,35 +558,30 @@ describe("AlgorithmTrainer", function () {
         cy.clock().then((c) => c.restore());
       });
 
-      describe("approves correctly", function () {
+      describe.skip("approves correctly", function () {
         it("on space pressed", function () {
           cy.pressKey(Key.space);
-          elements.betweenTests.container.assertShows();
-          elements.betweenTests.correctMessage.assertShows();
+          elements.correctPage.container.assertShows();
         });
         it("on button pressed", function () {
           elements.evaluateResult.correctButton.get().click();
-          elements.betweenTests.container.assertShows();
-          elements.betweenTests.correctMessage.assertShows();
+          elements.correctPage.container.assertShows();
         });
       });
-      describe("rejects correctly", function () {
+      describe.skip("rejects correctly", function () {
         it("on w key pressed", function () {
           cy.pressKey(Key.w);
-          elements.betweenTests.container.assertShows();
-          elements.betweenTests.wrongMessage.assertShows();
+          elements.wrongPage.container.assertShows();
         });
 
         it("on shift + w pressed", function () {
           cy.pressKey(Key.W);
-          elements.betweenTests.container.assertShows();
-          elements.betweenTests.wrongMessage.assertShows();
+          elements.wrongPage.container.assertShows();
         });
 
         it("on button pressed", function () {
           elements.evaluateResult.wrongButton.get().click();
-          elements.betweenTests.container.assertShows();
-          elements.betweenTests.wrongMessage.assertShows();
+          elements.wrongPage.container.assertShows();
         });
       });
 

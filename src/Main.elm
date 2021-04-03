@@ -10,7 +10,6 @@ import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
 import Html
-import Html.Attributes
 import Json.Decode as Decode
 import Models.Algorithm as Algorithm
 import Models.Cube as Cube
@@ -41,7 +40,7 @@ port onTouchStart : (Decode.Value -> msg) -> Sub msg
 
 init : ViewportSize -> ( Model, Cmd Msg )
 init viewportSize =
-    ( { trainerState = BetweenTests NoEvaluationMessage
+    ( { trainerState = StartPage
       , expectedCube = Cube.solved
       , viewportSize = viewportSize
       }
@@ -63,7 +62,7 @@ type alias Model =
 
 
 type TrainerState
-    = BetweenTests EvaluationMessage
+    = StartPage
     | TestRunning Time.Posix TimeInterval.TimeInterval Algorithm.Algorithm
     | EvaluatingResult
         { spacePressStarted : Bool
@@ -73,15 +72,9 @@ type TrainerState
         }
 
 
-type EvaluationMessage
-    = NoEvaluationMessage
-    | CorrectEvaluation
-    | WrongEvaluation
-
-
 type Msg
     = GlobalMessage GlobalMsg
-    | BetweenTestsMessage BetweenTestsMsg
+    | StartPageMessage StartPageMsg
     | TestRunningMessage TestRunningMsg
     | EvaluateResultMessage EvaluateResultMsg
 
@@ -90,9 +83,9 @@ type GlobalMsg
     = WindowResized Int Int
 
 
-type BetweenTestsMsg
+type StartPageMsg
     = StartTest TestStartData
-    | DoNothingBetweenTests
+    | DoNothingStartPage
 
 
 type TestStartData
@@ -171,8 +164,8 @@ subscriptions model =
     let
         trainerSubscriptions =
             case model.trainerState of
-                BetweenTests _ ->
-                    Sub.map BetweenTestsMessage <|
+                StartPage ->
+                    Sub.map StartPageMessage <|
                         Events.onKeyUp <|
                             Decode.map
                                 (\key ->
@@ -180,7 +173,7 @@ subscriptions model =
                                         StartTest NothingGenerated
 
                                     else
-                                        DoNothingBetweenTests
+                                        DoNothingStartPage
                                 )
                                 decodeNonRepeatedKeyEvent
 
@@ -255,8 +248,8 @@ update messageCategory model =
         ( GlobalMessage (WindowResized width height), _ ) ->
             ( { model | viewportSize = { width = width, height = height } }, Cmd.none )
 
-        ( BetweenTestsMessage msg, BetweenTests _ ) ->
-            Tuple.mapSecond (Cmd.map BetweenTestsMessage) <|
+        ( StartPageMessage msg, StartPage ) ->
+            Tuple.mapSecond (Cmd.map StartPageMessage) <|
                 case msg of
                     StartTest NothingGenerated ->
                         ( model, Random.generate (\alg -> StartTest (AlgGenerated alg)) generatePll )
@@ -267,7 +260,7 @@ update messageCategory model =
                     StartTest (EverythingGenerated alg startTime) ->
                         ( { model | trainerState = TestRunning startTime TimeInterval.zero alg }, Cmd.none )
 
-                    DoNothingBetweenTests ->
+                    DoNothingStartPage ->
                         ( model, Cmd.none )
 
         ( TestRunningMessage msg, TestRunning startTime intervalElapsed alg ) ->
@@ -305,10 +298,10 @@ update messageCategory model =
                         ( { model | trainerState = EvaluatingResult { keyStates | wPressStarted = True } }, Cmd.none )
 
                     EvaluateCorrect ->
-                        ( { model | trainerState = BetweenTests CorrectEvaluation }, Cmd.none )
+                        ( { model | trainerState = StartPage }, Cmd.none )
 
                     EvaluateWrong ->
-                        ( { model | trainerState = BetweenTests WrongEvaluation, expectedCube = Cube.solved }, Cmd.none )
+                        ( { model | trainerState = StartPage, expectedCube = Cube.solved }, Cmd.none )
 
                     DoNothingEvaluateResult ->
                         ( model, Cmd.none )
@@ -321,8 +314,8 @@ update messageCategory model =
                         GlobalMessage _ ->
                             "GlobalMessage"
 
-                        BetweenTestsMessage _ ->
-                            "BetweenTestsMessage"
+                        StartPageMessage _ ->
+                            "StartPageMessage"
 
                         TestRunningMessage _ ->
                             "TestRunningMessage"
@@ -332,8 +325,8 @@ update messageCategory model =
 
                 trainerStateString =
                     case trainerState of
-                        BetweenTests _ ->
-                            "BetweenTests"
+                        StartPage ->
+                            "StartPage"
 
                         TestRunning _ _ _ ->
                             "TestRunning"
@@ -360,80 +353,78 @@ view model =
 viewFullScreen : Model -> Element Msg
 viewFullScreen model =
     case model.trainerState of
-        BetweenTests message ->
-            Element.map BetweenTestsMessage <|
-                el
-                    [ testid "between-tests-container"
-                    , width fill
-                    , height fill
+        StartPage ->
+            Element.map StartPageMessage <|
+                column
+                    [ testid "start-page-container"
+                    , centerX
+                    , centerY
+                    , spacing (minDimension model.viewportSize // 20)
                     ]
-                <|
-                    column
+                    [ el
                         [ centerX
-                        , centerY
-                        , spacing 50
-                        , padding 50
+                        , Font.center
+                        , Font.size (minDimension model.viewportSize // 20)
                         ]
-                        [ el [ centerX ] <| text "Between Tests"
-                        , el [ centerX ] <| viewEvaluationMessage message
-                        , Input.button
-                            [ testid "begin-button"
-                            , centerX
-                            , Background.color <| rgb255 0 128 0
-                            , padding 25
-                            , Border.rounded 15
-                            ]
-                            { onPress = Just <| StartTest NothingGenerated
-                            , label = text "Begin"
-                            }
+                      <|
+                        text "Orient Cube Like This:"
+                    , el
+                        [ testid "cube-start-state"
+                        , centerX
                         ]
+                      <|
+                        Components.Cube.view (minDimension model.viewportSize // 4) Cube.solved
+                    , Input.button
+                        [ testid "start-button"
+                        , centerX
+                        , Background.color <| rgb255 0 128 0
+                        , padding (minDimension model.viewportSize // 40)
+                        , Border.rounded (minDimension model.viewportSize // 45)
+                        , Font.size (minDimension model.viewportSize // 25)
+                        ]
+                        { onPress = Just <| StartTest NothingGenerated
+                        , label = text "Start"
+                        }
+                    ]
 
         TestRunning _ elapsedTime algTested ->
             Element.map TestRunningMessage <|
-                el
+                column
                     [ testid "test-running-container"
-                    , width fill
-                    , height fill
-
-                    -- -- This is important to avoid a delay in the user experience when they
-                    -- -- end the test
-                    -- , htmlAttribute <| Html.Attributes.style "touch-action" "manipulation"
+                    , centerX
+                    , centerY
+                    , spacing (minDimension model.viewportSize // 10)
                     ]
-                <|
-                    column
-                        [ centerX
-                        , centerY
-                        , spacing 50
+                    [ el [ testid "test-case", centerX ] <|
+                        Components.Cube.view (minDimension model.viewportSize // 2) <|
+                            (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse algTested))
+                    , el
+                        [ testid "timer"
+                        , centerX
+                        , Font.size (min model.viewportSize.height model.viewportSize.width // 5)
                         ]
-                        [ el [ centerX ] <|
-                            displayTestCase model.viewportSize algTested
-                        , el
-                            [ testid "timer"
-                            , centerX
-                            , Font.size (min model.viewportSize.height model.viewportSize.width // 5)
-                            ]
-                          <|
-                            text <|
-                                TimeInterval.displayOneDecimal elapsedTime
-                        ]
+                      <|
+                        text <|
+                            TimeInterval.displayOneDecimal elapsedTime
+                    ]
 
         EvaluatingResult { result } ->
             Element.map EvaluateResultMessage <|
                 let
-                    minDimension =
-                        min model.viewportSize.height model.viewportSize.width
-
                     overallPadding =
-                        minDimension // 20
+                        minDimension model.viewportSize // 20
 
                     cubeSize =
-                        minDimension // 3
+                        minDimension model.viewportSize // 3
+
+                    cubeSpacing =
+                        minDimension model.viewportSize // 15
 
                     timerSize =
-                        minDimension // 6
+                        minDimension model.viewportSize // 6
 
                     buttonSize =
-                        minDimension // 15
+                        minDimension model.viewportSize // 15
 
                     buttonPadding =
                         buttonSize * 2 // 3
@@ -448,7 +439,7 @@ viewFullScreen model =
                     [ testid "evaluate-test-result-container"
                     , centerX
                     , centerY
-                    , height (fill |> maximum minDimension)
+                    , height (fill |> maximum (minDimension model.viewportSize))
                     , spaceEvenly
                     , padding overallPadding
                     ]
@@ -460,11 +451,17 @@ viewFullScreen model =
                       <|
                         text <|
                             TimeInterval.displayTwoDecimals result
-                    , row [ centerX ]
+                    , row
+                        [ centerX
+                        , spacing cubeSpacing
+                        ]
                         [ el [ testid "expected-cube-front" ] <|
                             Components.Cube.view cubeSize model.expectedCube
                         , el [ testid "expected-cube-back" ] <|
-                            (model.expectedCube |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.Halfway Algorithm.Clockwise ]) |> Components.Cube.view cubeSize)
+                            (model.expectedCube
+                                |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.Halfway Algorithm.Clockwise ])
+                                |> Components.Cube.view cubeSize
+                            )
                         ]
                     , row [ centerX, spacing buttonSpacing ]
                         [ Input.button
@@ -473,6 +470,8 @@ viewFullScreen model =
                             , padding buttonPadding
                             , Border.rounded buttonRounding
                             , Font.size buttonSize
+                            , Font.center
+                            , width (px <| minDimension model.viewportSize // 3)
                             ]
                             { onPress = Just EvaluateCorrect, label = text "Correct" }
                         , Input.button
@@ -481,6 +480,8 @@ viewFullScreen model =
                             , padding buttonPadding
                             , Border.rounded buttonRounding
                             , Font.size buttonSize
+                            , Font.center
+                            , width (px <| minDimension model.viewportSize // 3)
                             ]
                             { onPress = Just EvaluateWrong, label = text "Wrong" }
                         ]
@@ -492,30 +493,6 @@ viewState _ =
     none
 
 
-displayTestCase : ViewportSize -> Algorithm.Algorithm -> Element msg
-displayTestCase viewportSize algTested =
-    let
-        minDimension =
-            min viewportSize.height viewportSize.width
-    in
-    el [ testid "test-case" ] <|
-        Components.Cube.view (minDimension // 2) <|
-            (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse algTested))
-
-
-viewEvaluationMessage : EvaluationMessage -> Element msg
-viewEvaluationMessage message =
-    case message of
-        NoEvaluationMessage ->
-            el [] <| text "Auto-deploy works!"
-
-        CorrectEvaluation ->
-            el [ testid "correct-evaluation-message" ] <| text "Correct"
-
-        WrongEvaluation ->
-            el [ testid "wrong-evaluation-message" ] <| text "Wrong"
-
-
 generatePll : Random.Generator Algorithm.Algorithm
 generatePll =
     let
@@ -523,3 +500,8 @@ generatePll =
             NonEmptyList.concatMap Algorithm.withAllAufCombinations AlgorithmRepository.pllList
     in
     Random.uniform x xs
+
+
+minDimension : ViewportSize -> Int
+minDimension { width, height } =
+    min width height
