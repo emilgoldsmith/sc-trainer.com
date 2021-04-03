@@ -308,7 +308,7 @@ update messageCategory model =
                         ( { model | trainerState = BetweenTests CorrectEvaluation }, Cmd.none )
 
                     EvaluateWrong ->
-                        ( { model | trainerState = BetweenTests WrongEvaluation }, Cmd.none )
+                        ( { model | trainerState = BetweenTests WrongEvaluation, expectedCube = Cube.solved }, Cmd.none )
 
                     DoNothingEvaluateResult ->
                         ( model, Cmd.none )
