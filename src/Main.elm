@@ -71,6 +71,7 @@ type TrainerState
         , result : TimeInterval.TimeInterval
         }
     | CorrectPage
+    | WrongPage
 
 
 type Msg
@@ -182,6 +183,9 @@ subscriptions model =
                     betweenTestsSubscriptions
 
                 CorrectPage ->
+                    betweenTestsSubscriptions
+
+                WrongPage ->
                     betweenTestsSubscriptions
 
                 TestRunning _ _ _ ->
@@ -299,7 +303,7 @@ update messageCategory model =
                         ( { model | trainerState = CorrectPage }, Cmd.none )
 
                     EvaluateWrong ->
-                        ( { model | trainerState = StartPage, expectedCube = Cube.solved }, Cmd.none )
+                        ( { model | trainerState = WrongPage, expectedCube = Cube.solved }, Cmd.none )
 
                     DoNothingEvaluateResult ->
                         ( model, Cmd.none )
@@ -334,6 +338,9 @@ update messageCategory model =
 
                         CorrectPage ->
                             "CorrectPage"
+
+                        WrongPage ->
+                            "WrongPage"
               in
               logError
                 ("Message received during unexpected state: "
@@ -522,6 +529,40 @@ viewFullScreen model =
                         ]
                         { onPress = Just <| StartTest NothingGenerated
                         , label = text "Next"
+                        }
+                    ]
+
+        WrongPage ->
+            Element.map BetweenTestsMessage <|
+                column
+                    [ testid "wrong-container"
+                    , centerX
+                    , centerY
+                    , spacing (minDimension model.viewportSize // 20)
+                    ]
+                    [ el
+                        [ Font.center
+                        , Font.size (minDimension model.viewportSize // 20)
+                        , testid "cube-start-explanation"
+                        ]
+                      <|
+                        text "Orient Solved Cube Like This:"
+                    , el
+                        [ testid "cube-start-state"
+                        , centerX
+                        ]
+                      <|
+                        Components.Cube.view (minDimension model.viewportSize // 4) model.expectedCube
+                    , Input.button
+                        [ testid "start-button"
+                        , centerX
+                        , Background.color <| rgb255 0 128 0
+                        , padding (minDimension model.viewportSize // 40)
+                        , Border.rounded (minDimension model.viewportSize // 45)
+                        , Font.size (minDimension model.viewportSize // 25)
+                        ]
+                        { onPress = Just <| StartTest NothingGenerated
+                        , label = text "Start"
                         }
                     ]
 

@@ -582,7 +582,7 @@ describe("Algorithm Trainer", function () {
           elements.correctPage.container.assertShows();
         });
       });
-      describe.skip("rejects correctly", function () {
+      describe("rejects correctly", function () {
         it("on w key pressed", function () {
           cy.pressKey(Key.w);
           elements.wrongPage.container.assertShows();
