@@ -98,8 +98,8 @@ const elements = {
 };
 
 const states = {
-  initial: new StateCache(
-    "initial",
+  startPage: new StateCache(
+    "startPage",
     () => {},
     () => {
       elements.startPage.container.waitFor();
@@ -109,8 +109,8 @@ const states = {
   testRunning: new StateCache(
     "testRunning",
     () => {
-      states.initial.restoreState();
-      cy.pressKey(Key.space);
+      states.startPage.restoreState();
+      elements.startPage.startButton.get().click();
     },
     () => {
       elements.testRunning.container.waitFor();
@@ -127,13 +127,25 @@ const states = {
       elements.evaluateResult.container.waitFor();
     }
   ),
+  correctPage: new StateCache(
+    "correctPage",
+    () => {
+      states.evaluateResult.restoreState();
+      elements.evaluateResult.correctButton.get().click();
+    },
+    () => {
+      elements.correctPage.container.waitFor();
+      cy.waitForDocumentEventListeners("keyup");
+    }
+  ),
 } as const;
 
 describe("Algorithm Trainer", function () {
   before(function () {
-    states.initial.populateCache();
+    states.startPage.populateCache();
     states.testRunning.populateCache();
     states.evaluateResult.populateCache();
+    states.correctPage.populateCache();
   });
   beforeEach(function () {
     cy.visit("/");
@@ -141,7 +153,7 @@ describe("Algorithm Trainer", function () {
 
   describe("Start Page", function () {
     beforeEach(function () {
-      states.initial.restoreState();
+      states.startPage.restoreState();
     });
 
     it("has all the correct elements", function () {
@@ -630,6 +642,41 @@ describe("Algorithm Trainer", function () {
       });
     });
   });
+  describe.only("Correct Page", function () {
+    beforeEach(function () {
+      states.correctPage.restoreState();
+    });
+
+    it("has all the correct elements", function () {
+      elements.correctPage.container.get().within(() => {
+        elements.correctPage.nextButton.assertShows();
+      });
+    });
+
+    it("sizes elements reasonably", function () {
+      cy.assertNoHorizontalScrollbar();
+      cy.assertNoVerticalScrollbar();
+    });
+
+    it("starts test when pressing space", function () {
+      cy.pressKey(Key.space);
+      elements.testRunning.container.assertShows();
+    });
+
+    it("starts when pressing the begin button", function () {
+      elements.correctPage.nextButton.get().click();
+      elements.testRunning.container.assertShows();
+    });
+
+    it("doesn't start test when pressing any other keys", function () {
+      cy.pressKey(Key.a);
+      elements.correctPage.container.assertShows();
+      cy.pressKey(Key.x);
+      elements.correctPage.container.assertShows();
+      cy.pressKey(Key.capsLock);
+      elements.correctPage.container.assertShows();
+    });
+  });
 });
 
 function getTestRunningWithMockedTime() {
@@ -640,7 +687,7 @@ function getTestRunningWithMockedTime() {
   // that we didn't bother investigating further.
   // Therefore we manually go to that state instead of restoring
   // in order to allow for the mocking time.
-  states.initial.restoreState();
+  states.startPage.restoreState();
   installClock();
   cy.pressKey(Key.space);
   elements.testRunning.container.waitFor();

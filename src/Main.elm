@@ -256,19 +256,10 @@ update messageCategory model =
             ( { model | viewportSize = { width = width, height = height } }, Cmd.none )
 
         ( BetweenTestsMessage msg, StartPage ) ->
-            Tuple.mapSecond (Cmd.map BetweenTestsMessage) <|
-                case msg of
-                    StartTest NothingGenerated ->
-                        ( model, Random.generate (\alg -> StartTest (AlgGenerated alg)) generatePll )
+            updateBetweenTests model msg
 
-                    StartTest (AlgGenerated alg) ->
-                        ( model, Task.perform (\time -> StartTest (EverythingGenerated alg time)) Time.now )
-
-                    StartTest (EverythingGenerated alg startTime) ->
-                        ( { model | trainerState = TestRunning startTime TimeInterval.zero alg }, Cmd.none )
-
-                    DoNothingBetweenTests ->
-                        ( model, Cmd.none )
+        ( BetweenTestsMessage msg, CorrectPage ) ->
+            updateBetweenTests model msg
 
         ( TestRunningMessage msg, TestRunning startTime intervalElapsed alg ) ->
             case msg of
@@ -353,6 +344,23 @@ update messageCategory model =
                     ++ ")"
                 )
             )
+
+
+updateBetweenTests : Model -> BetweenTestsMsg -> ( Model, Cmd Msg )
+updateBetweenTests model msg =
+    Tuple.mapSecond (Cmd.map BetweenTestsMessage) <|
+        case msg of
+            StartTest NothingGenerated ->
+                ( model, Random.generate (\alg -> StartTest (AlgGenerated alg)) generatePll )
+
+            StartTest (AlgGenerated alg) ->
+                ( model, Task.perform (\time -> StartTest (EverythingGenerated alg time)) Time.now )
+
+            StartTest (EverythingGenerated alg startTime) ->
+                ( { model | trainerState = TestRunning startTime TimeInterval.zero alg }, Cmd.none )
+
+            DoNothingBetweenTests ->
+                ( model, Cmd.none )
 
 
 view : Model -> Html.Html Msg
@@ -503,23 +511,9 @@ viewFullScreen model =
                     [ testid "correct-container"
                     , centerX
                     , centerY
-                    , spacing (minDimension model.viewportSize // 20)
                     ]
-                    [ el
-                        [ Font.center
-                        , Font.size (minDimension model.viewportSize // 20)
-                        , testid "cube-start-explanation"
-                        ]
-                      <|
-                        text "Orient Solved Cube Like This:"
-                    , el
-                        [ testid "cube-start-state"
-                        , centerX
-                        ]
-                      <|
-                        Components.Cube.view (minDimension model.viewportSize // 4) Cube.solved
-                    , Input.button
-                        [ testid "start-button"
+                    [ Input.button
+                        [ testid "next-button"
                         , centerX
                         , Background.color <| rgb255 0 128 0
                         , padding (minDimension model.viewportSize // 40)
@@ -527,7 +521,7 @@ viewFullScreen model =
                         , Font.size (minDimension model.viewportSize // 25)
                         ]
                         { onPress = Just <| StartTest NothingGenerated
-                        , label = text "Start"
+                        , label = text "Next"
                         }
                     ]
 

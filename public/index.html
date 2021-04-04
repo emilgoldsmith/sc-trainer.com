@@ -43,7 +43,7 @@
       /**
        * PORTS
        */
-      app.ports.logError.subscribe(() => {});
+      app.ports.logError.subscribe(console.error);
       document.addEventListener("touchstart", (event) => {document.getElementById("debug").innerText += event.type + "before";app.ports.onTouchStart.send(event); document.getElementById("debug").innerText += event.type + "after";}, passiveSupported ? {passive: true} : false);
     </script>
     <div id="debug"></div>
