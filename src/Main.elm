@@ -11,6 +11,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Html
 import Json.Decode as Decode
+import List.Nonempty
 import Models.Algorithm as Algorithm
 import Models.Cube as Cube
 import Process
@@ -18,7 +19,6 @@ import Random
 import Task
 import Time
 import Utils.Css exposing (testid)
-import Utils.NonEmptyList as NonEmptyList
 import Utils.TimeInterval as TimeInterval
 
 
@@ -602,8 +602,8 @@ viewState _ =
 generatePll : Random.Generator Algorithm.Algorithm
 generatePll =
     let
-        (NonEmptyList.NonEmptyList x xs) =
-            NonEmptyList.concatMap Algorithm.withAllAufCombinations (NonEmptyList.map AlgorithmRepository.getPllAlg AlgorithmRepository.allPlls)
+        (List.Nonempty.Nonempty x xs) =
+            List.Nonempty.concatMap Algorithm.withAllAufCombinations (List.Nonempty.map AlgorithmRepository.getPllAlg AlgorithmRepository.allPlls)
     in
     Random.uniform x xs
 

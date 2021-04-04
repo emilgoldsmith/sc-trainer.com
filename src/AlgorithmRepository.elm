@@ -1,8 +1,8 @@
 module AlgorithmRepository exposing (PLL(..), PllAlgorithms, allPlls, getPllAlg, referencePlls)
 
+import List.Nonempty
 import Models.Algorithm as Algorithm
 import Utils.Enumerator
-import Utils.NonEmptyList as NonEmptyList exposing (NonEmptyList)
 
 
 type alias PllAlgorithms =
@@ -58,12 +58,12 @@ type PLL
 
 {-| All the PLLs. Should have length 21 when all are added
 
-    import Utils.NonEmptyList
+    import List.Nonempty
 
-    List.length <| Utils.NonEmptyList.toList <| allPlls --> 18
+    List.Nonempty.length allPlls --> 18
 
 -}
-allPlls : NonEmptyList.NonEmptyList PLL
+allPlls : List.Nonempty.Nonempty PLL
 allPlls =
     let
         fromH pll =
@@ -125,10 +125,10 @@ allPlls =
     case Utils.Enumerator.from H fromH of
         [] ->
             -- This should not happen, and the test also verifies that
-            NonEmptyList.singleton H
+            List.Nonempty.fromElement H
 
         x :: xs ->
-            NonEmptyList.NonEmptyList x xs
+            List.Nonempty.Nonempty x xs
 
 
 getPllAlg : PLL -> Algorithm.Algorithm

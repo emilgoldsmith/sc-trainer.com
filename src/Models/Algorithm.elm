@@ -2,10 +2,10 @@ module Models.Algorithm exposing (Algorithm, Turn(..), TurnDirection(..), TurnLe
 
 -- import Parser.Advanced as Parser exposing ((|.), (|=), Parser)
 
+import List.Nonempty
 import Monads.ListM as ListM
 import Parser.Advanced as Parser exposing ((|.), (|=), Parser)
 import Utils.Enumerator
-import Utils.NonEmptyList as NonEmptyList
 
 
 
@@ -84,26 +84,26 @@ append (Algorithm a) (Algorithm b) =
     Algorithm (b ++ a)
 
 
-withAllAufCombinations : Algorithm -> NonEmptyList.NonEmptyList Algorithm
+withAllAufCombinations : Algorithm -> List.Nonempty.Nonempty Algorithm
 withAllAufCombinations alg =
     withAllPreAufCombinations alg
-        |> NonEmptyList.concatMap withAllPostAufCombinations
+        |> List.Nonempty.concatMap withAllPostAufCombinations
 
 
-withAllPreAufCombinations : Algorithm -> NonEmptyList.NonEmptyList Algorithm
+withAllPreAufCombinations : Algorithm -> List.Nonempty.Nonempty Algorithm
 withAllPreAufCombinations alg =
-    NonEmptyList.map (append alg) aufs
+    List.Nonempty.map (append alg) aufs
 
 
-withAllPostAufCombinations : Algorithm -> NonEmptyList.NonEmptyList Algorithm
+withAllPostAufCombinations : Algorithm -> List.Nonempty.Nonempty Algorithm
 withAllPostAufCombinations alg =
-    NonEmptyList.map (appendTo alg) aufs
+    List.Nonempty.map (appendTo alg) aufs
 
 
-aufs : NonEmptyList.NonEmptyList Algorithm
+aufs : List.Nonempty.Nonempty Algorithm
 aufs =
-    NonEmptyList.NonEmptyList
-        (build [])
+    List.Nonempty.Nonempty
+        empty
         [ build [ Turn U OneQuarter Clockwise ]
         , build [ Turn U Halfway Clockwise ]
         , build [ Turn U OneQuarter CounterClockwise ]
