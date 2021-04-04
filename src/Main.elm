@@ -539,7 +539,13 @@ viewFullScreen model =
                         , Font.size (minDimension model.viewportSize // 20)
                         ]
                       <|
-                        text "Correct! Continue When Ready"
+                        text "Correct!"
+                    , el
+                        [ centerX
+                        , Font.size (minDimension model.viewportSize // 20)
+                        ]
+                      <|
+                        text "Continue When Ready"
                     , Input.button
                         [ testid "next-button"
                         , centerX
