@@ -390,7 +390,7 @@ viewFullScreen model =
                     , spacing (minDimension model.viewportSize // 20)
                     ]
                     [ el
-                        [ Font.center
+                        [ centerX
                         , Font.size (minDimension model.viewportSize // 20)
                         , testid "cube-start-explanation"
                         ]
@@ -521,8 +521,15 @@ viewFullScreen model =
                     [ testid "correct-container"
                     , centerX
                     , centerY
+                    , spacing (minDimension model.viewportSize // 20)
                     ]
-                    [ Input.button
+                    [ el
+                        [ centerX
+                        , Font.size (minDimension model.viewportSize // 20)
+                        ]
+                      <|
+                        text "Correct! Continue When Ready"
+                    , Input.button
                         [ testid "next-button"
                         , centerX
                         , Background.color <| rgb255 0 128 0
@@ -544,12 +551,12 @@ viewFullScreen model =
                     , spacing (minDimension model.viewportSize // 20)
                     ]
                     [ el
-                        [ Font.center
+                        [ centerX
                         , Font.size (minDimension model.viewportSize // 20)
                         , testid "test-case-name"
                         ]
                       <|
-                        text "Orient Solved Cube Like This:"
+                        text "The Correct Answer Was J-perm"
                     , row
                         [ testid "full-test-case"
                         , centerX
@@ -561,12 +568,12 @@ viewFullScreen model =
                             )
                         ]
                     , el
-                        [ Font.center
+                        [ centerX
                         , Font.size (minDimension model.viewportSize // 20)
                         , testid "cube-start-explanation"
                         ]
                       <|
-                        text "Orient Solved Cube Like This:"
+                        text "Solve Cube And Orient Like This Before Restarting:"
                     , el
                         [ testid "cube-start-state"
                         , centerX
