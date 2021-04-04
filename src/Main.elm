@@ -362,12 +362,12 @@ viewFullScreen model =
                     , spacing (minDimension model.viewportSize // 20)
                     ]
                     [ el
-                        [ centerX
-                        , Font.center
+                        [ Font.center
                         , Font.size (minDimension model.viewportSize // 20)
+                        , testid "cube-start-explanation"
                         ]
                       <|
-                        text "Orient Cube Like This:"
+                        text "Orient Solved Cube Like This:"
                     , el
                         [ testid "cube-start-state"
                         , centerX

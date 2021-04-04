@@ -66,6 +66,7 @@ function buildElementsCategory<keys extends string>(
 const elements = {
   startPage: buildElementsCategory({
     container: "start-page-container",
+    cubeStartExplanation: "cube-start-explanation",
     cubeStartState: "cube-start-state",
     startButton: "start-button",
   }),
@@ -146,6 +147,7 @@ describe("Algorithm Trainer", function () {
     it("has all the correct elements", function () {
       elements.startPage.container.assertShows().within(() => {
         elements.startPage.startButton.assertShows();
+        elements.startPage.cubeStartExplanation.assertShows();
         elements.startPage.cubeStartState.get().within(() => {
           elements.globals.cube.assertShows();
         });
