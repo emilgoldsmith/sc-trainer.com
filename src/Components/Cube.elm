@@ -1,8 +1,9 @@
-module Components.Cube exposing (injectStyles, view)
+module Components.Cube exposing (injectStyles, viewUBL, viewUFR)
 
 import Element
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Models.Algorithm as Algorithm
 import Models.Cube as Cube
 import Random
 import Utils.Css exposing (htmlTestid)
@@ -12,8 +13,8 @@ import Utils.Css exposing (htmlTestid)
 -- Exports
 
 
-view : Int -> Cube.Cube -> Element.Element msg
-view cubeSize cube =
+viewUFR : Int -> Cube.Cube -> Element.Element msg
+viewUFR cubeSize cube =
     Element.html <|
         let
             rendering =
@@ -24,6 +25,17 @@ view cubeSize cube =
                 List.map (\( a, b ) -> displayCubie b a)
                     (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
             ]
+
+
+viewUBL : Int -> Cube.Cube -> Element.Element msg
+viewUBL cubeSize cube =
+    let
+        rotatedCube =
+            Cube.applyAlgorithm
+                (Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.Halfway Algorithm.Clockwise ])
+                cube
+    in
+    viewUFR cubeSize rotatedCube
 
 
 injectStyles : Html msg

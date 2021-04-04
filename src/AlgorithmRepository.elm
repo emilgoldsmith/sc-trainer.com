@@ -1,4 +1,4 @@
-module AlgorithmRepository exposing (PLL(..), PllAlgorithms, allPlls, getPllAlg, referencePlls)
+module AlgorithmRepository exposing (PLL(..), PllAlgorithms, allPlls, getPllAlg, getPllLetters, referencePlls)
 
 import List.Nonempty
 import Models.Algorithm as Algorithm
@@ -54,6 +54,64 @@ type PLL
     | Nb
     | Ra
     | Rb
+
+
+getPllLetters : PLL -> String
+getPllLetters pll =
+    case pll of
+        H ->
+            "H"
+
+        Ua ->
+            "Ua"
+
+        Ub ->
+            "Ub"
+
+        Z ->
+            "Z"
+
+        Aa ->
+            "Aa"
+
+        Ab ->
+            "Ab"
+
+        E ->
+            "E"
+
+        F ->
+            "F"
+
+        Ga ->
+            "Ga"
+
+        Gb ->
+            "Gb"
+
+        Gc ->
+            "Gc"
+
+        Gd ->
+            "Gd"
+
+        Ja ->
+            "Ja"
+
+        Jb ->
+            "Jb"
+
+        Na ->
+            "Na"
+
+        Nb ->
+            "Nb"
+
+        Ra ->
+            "Ra"
+
+        Rb ->
+            "Rb"
 
 
 {-| All the PLLs. Should have length 21 when all are added

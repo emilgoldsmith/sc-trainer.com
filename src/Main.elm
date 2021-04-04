@@ -80,9 +80,10 @@ type TrainerState
         , wPressStarted : Bool
         , ignoringKeyPressesAfterTransition : Bool
         , result : TimeInterval.TimeInterval
+        , testCase : TestCase
         }
     | CorrectPage
-    | WrongPage
+    | WrongPage TestCase
 
 
 type Msg
@@ -196,7 +197,7 @@ subscriptions model =
                 CorrectPage ->
                     betweenTestsSubscriptions
 
-                WrongPage ->
+                WrongPage testCase ->
                     betweenTestsSubscriptions
 
                 TestRunning _ _ _ ->
@@ -276,7 +277,7 @@ update messageCategory model =
         ( BetweenTestsMessage msg, CorrectPage ) ->
             updateBetweenTests model msg
 
-        ( BetweenTestsMessage msg, WrongPage ) ->
+        ( BetweenTestsMessage msg, WrongPage testCase ) ->
             updateBetweenTests model msg
 
         ( TestRunningMessage msg, TestRunning startTime intervalElapsed testCase ) ->
@@ -292,6 +293,7 @@ update messageCategory model =
                                 , wPressStarted = False
                                 , ignoringKeyPressesAfterTransition = True
                                 , result = TimeInterval.betweenTimestamps { start = startTime, end = endTime }
+                                , testCase = testCase
                                 }
                         , expectedCube = model.expectedCube |> Cube.applyAlgorithm (toAlg testCase)
                       }
@@ -317,7 +319,7 @@ update messageCategory model =
                         ( { model | trainerState = CorrectPage }, Cmd.none )
 
                     EvaluateWrong ->
-                        ( { model | trainerState = WrongPage, expectedCube = Cube.solved }, Cmd.none )
+                        ( { model | trainerState = WrongPage keyStates.testCase, expectedCube = Cube.solved }, Cmd.none )
 
                     DoNothingEvaluateResult ->
                         ( model, Cmd.none )
@@ -353,7 +355,7 @@ update messageCategory model =
                         CorrectPage ->
                             "CorrectPage"
 
-                        WrongPage ->
+                        WrongPage _ ->
                             "WrongPage"
               in
               logError
@@ -412,7 +414,7 @@ viewFullScreen model =
                         , centerX
                         ]
                       <|
-                        Components.Cube.view (minDimension model.viewportSize // 4) model.expectedCube
+                        Components.Cube.viewUFR (minDimension model.viewportSize // 4) model.expectedCube
                     , Input.button
                         [ testid "start-button"
                         , centerX
@@ -435,7 +437,7 @@ viewFullScreen model =
                     , spacing (minDimension model.viewportSize // 10)
                     ]
                     [ el [ testid "test-case", centerX ] <|
-                        Components.Cube.view (minDimension model.viewportSize // 2) <|
+                        Components.Cube.viewUFR (minDimension model.viewportSize // 2) <|
                             (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse (toAlg testCase)))
                     , el
                         [ testid "timer"
@@ -495,12 +497,9 @@ viewFullScreen model =
                         , spacing cubeSpacing
                         ]
                         [ el [ testid "expected-cube-front" ] <|
-                            Components.Cube.view cubeSize model.expectedCube
+                            Components.Cube.viewUFR cubeSize model.expectedCube
                         , el [ testid "expected-cube-back" ] <|
-                            (model.expectedCube
-                                |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.Halfway Algorithm.Clockwise ])
-                                |> Components.Cube.view cubeSize
-                            )
+                            Components.Cube.viewUBL cubeSize model.expectedCube
                         ]
                     , row [ centerX, spacing buttonSpacing ]
                         [ Input.button
@@ -559,7 +558,13 @@ viewFullScreen model =
                         }
                     ]
 
-        WrongPage ->
+        WrongPage (( _, pll, _ ) as testCase) ->
+            let
+                testCaseCube =
+                    Cube.applyAlgorithm
+                        (Algorithm.inverse <| toAlg testCase)
+                        model.expectedCube
+            in
             Element.map BetweenTestsMessage <|
                 column
                     [ testid "wrong-container"
@@ -573,16 +578,17 @@ viewFullScreen model =
                         , testid "test-case-name"
                         ]
                       <|
-                        text "The Correct Answer Was J-perm"
+                        text ("The Correct Answer Was " ++ pllToString pll)
                     , row
                         [ testid "full-test-case"
                         , centerX
                         ]
-                        [ Components.Cube.view (minDimension model.viewportSize // 4) model.expectedCube
-                        , Components.Cube.view (minDimension model.viewportSize // 4)
-                            (model.expectedCube
-                                |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.Halfway Algorithm.Clockwise ])
-                            )
+                        [ Components.Cube.viewUFR
+                            (minDimension model.viewportSize // 4)
+                            testCaseCube
+                        , Components.Cube.viewUBL
+                            (minDimension model.viewportSize // 4)
+                            testCaseCube
                         ]
                     , el
                         [ centerX
@@ -596,7 +602,7 @@ viewFullScreen model =
                         , centerX
                         ]
                       <|
-                        Components.Cube.view (minDimension model.viewportSize // 4) model.expectedCube
+                        Components.Cube.viewUFR (minDimension model.viewportSize // 4) model.expectedCube
                     , Input.button
                         [ testid "next-button"
                         , centerX
@@ -627,3 +633,8 @@ generateTestCase =
 minDimension : ViewportSize -> Int
 minDimension { width, height } =
     min width height
+
+
+pllToString : AlgorithmRepository.PLL -> String
+pllToString pll =
+    AlgorithmRepository.getPllLetters pll ++ "-perm"
