@@ -1,7 +1,8 @@
-module AlgorithmRepository exposing (PllAlgorithms, pllList, referencePlls)
+module AlgorithmRepository exposing (PLL(..), PllAlgorithms, allPlls, getPllAlg, referencePlls)
 
 import Models.Algorithm as Algorithm
-import Utils.NonEmptyList as NonEmptyList
+import Utils.Enumerator
+import Utils.NonEmptyList as NonEmptyList exposing (NonEmptyList)
 
 
 type alias PllAlgorithms =
@@ -31,35 +32,161 @@ type alias PllAlgorithms =
     }
 
 
-{-| A list of all the reference plls. Should have length 21 when all are added
+type PLL
+    = -- Edges only
+      H
+    | Ua
+    | Ub
+    | Z
+      -- Corners only
+    | Aa
+    | Ab
+    | E
+      -- Edges And Corners
+    | F
+    | Ga
+    | Gb
+    | Gc
+    | Gd
+    | Ja
+    | Jb
+    | Na
+    | Nb
+    | Ra
+    | Rb
 
-    import Utils.NonEmptyList as NonEmptyList
 
-    List.length <| NonEmptyList.toList pllList --> 18
+{-| All the PLLs. Should have length 21 when all are added
+
+    import Utils.NonEmptyList
+
+    List.length <| Utils.NonEmptyList.toList <| allPlls --> 18
 
 -}
-pllList : NonEmptyList.NonEmptyList Algorithm.Algorithm
-pllList =
-    NonEmptyList.NonEmptyList
-        referencePlls.h
-        [ referencePlls.ua
-        , referencePlls.ub
-        , referencePlls.z
-        , referencePlls.aa
-        , referencePlls.ab
-        , referencePlls.e
-        , referencePlls.f
-        , referencePlls.ga
-        , referencePlls.gb
-        , referencePlls.gc
-        , referencePlls.gd
-        , referencePlls.ja
-        , referencePlls.jb
-        , referencePlls.na
-        , referencePlls.nb
-        , referencePlls.ra
-        , referencePlls.rb
-        ]
+allPlls : NonEmptyList.NonEmptyList PLL
+allPlls =
+    let
+        fromH pll =
+            case pll of
+                H ->
+                    Just Ua
+
+                Ua ->
+                    Just Ub
+
+                Ub ->
+                    Just Z
+
+                Z ->
+                    Just Aa
+
+                Aa ->
+                    Just Ab
+
+                Ab ->
+                    Just E
+
+                E ->
+                    Just F
+
+                F ->
+                    Just Ga
+
+                Ga ->
+                    Just Gb
+
+                Gb ->
+                    Just Gc
+
+                Gc ->
+                    Just Gd
+
+                Gd ->
+                    Just Ja
+
+                Ja ->
+                    Just Jb
+
+                Jb ->
+                    Just Na
+
+                Na ->
+                    Just Nb
+
+                Nb ->
+                    Just Ra
+
+                Ra ->
+                    Just Rb
+
+                Rb ->
+                    Nothing
+    in
+    case Utils.Enumerator.from H fromH of
+        [] ->
+            -- This should not happen, and the test also verifies that
+            NonEmptyList.singleton H
+
+        x :: xs ->
+            NonEmptyList.NonEmptyList x xs
+
+
+getPllAlg : PLL -> Algorithm.Algorithm
+getPllAlg pll =
+    case pll of
+        H ->
+            referencePlls.h
+
+        Ua ->
+            referencePlls.ua
+
+        Ub ->
+            referencePlls.ub
+
+        Z ->
+            referencePlls.z
+
+        Aa ->
+            referencePlls.aa
+
+        Ab ->
+            referencePlls.ab
+
+        E ->
+            referencePlls.e
+
+        F ->
+            referencePlls.f
+
+        Ga ->
+            referencePlls.ga
+
+        Gb ->
+            referencePlls.gb
+
+        Gc ->
+            referencePlls.gc
+
+        Gd ->
+            referencePlls.gd
+
+        Ja ->
+            referencePlls.ja
+
+        Jb ->
+            referencePlls.jb
+
+        Na ->
+            referencePlls.na
+
+        Nb ->
+            referencePlls.nb
+
+        Ra ->
+            referencePlls.ra
+
+        Rb ->
+            referencePlls.rb
 
 
 {-| Plls verified to be correct so they can be used to verify user selected plls

@@ -603,7 +603,7 @@ generatePll : Random.Generator Algorithm.Algorithm
 generatePll =
     let
         (NonEmptyList.NonEmptyList x xs) =
-            NonEmptyList.concatMap Algorithm.withAllAufCombinations AlgorithmRepository.pllList
+            NonEmptyList.concatMap Algorithm.withAllAufCombinations (NonEmptyList.map AlgorithmRepository.getPllAlg AlgorithmRepository.allPlls)
     in
     Random.uniform x xs
 
