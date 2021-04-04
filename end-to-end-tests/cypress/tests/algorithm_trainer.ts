@@ -42,7 +42,72 @@ class StateCache {
 }
 
 function buildElementsCategory<keys extends string>(
-  testIds: { [key in keys]: string }
+  testIds: { container: string } & {
+    [key in keys]: string;
+  }
+): {
+  container: {
+    get: ReturnType<typeof buildGetter>;
+    waitFor: ReturnType<typeof buildWaiter>;
+    assertShows: ReturnType<typeof buildAsserter>;
+  };
+} & {
+  [key in keys]: {
+    get: ReturnType<typeof buildGetter>;
+    waitFor: ReturnType<typeof buildWaiter>;
+    assertShows: ReturnType<typeof buildAsserter>;
+  };
+} {
+  const getContainer = buildGetter(testIds.container);
+  function buildWithinContainer(
+    builder: typeof buildGetter,
+    testId: string
+  ): ReturnType<typeof buildGetter> {
+    const fn = builder(testId);
+    return function (...args: Parameters<ReturnType<typeof buildGetter>>) {
+      return getContainer({ log: false }).then((containerElement) => {
+        let options = args[0];
+        if (!options) {
+          options = { withinSubject: containerElement };
+        } else if (options.withinSubject === undefined) {
+          options.withinSubject = containerElement;
+        }
+        return fn(options);
+      });
+    };
+  }
+
+  return Cypress._.mapValues(testIds, (testId: string, key: string) => {
+    if (key === "container") {
+      return {
+        get: buildGetter(testId),
+        waitFor: buildWaiter(testId),
+        assertShows: buildAsserter(testId),
+      };
+    }
+    return {
+      get: buildWithinContainer(buildGetter, testId),
+      waitFor: buildWithinContainer(buildWaiter, testId),
+      assertShows: buildWithinContainer(buildAsserter, testId),
+    };
+  }) as {
+    container: {
+      get: ReturnType<typeof buildGetter>;
+      waitFor: ReturnType<typeof buildWaiter>;
+      assertShows: ReturnType<typeof buildAsserter>;
+    };
+  } & {
+    [key in keys]: {
+      get: ReturnType<typeof buildGetter>;
+      waitFor: ReturnType<typeof buildWaiter>;
+      assertShows: ReturnType<typeof buildAsserter>;
+    };
+  };
+}
+function buildGlobalsCategory<keys extends string>(
+  testIds: {
+    [key in keys]: string;
+  }
 ): {
   [key in keys]: {
     get: ReturnType<typeof buildGetter>;
@@ -89,10 +154,13 @@ const elements = {
   }),
   wrongPage: buildElementsCategory({
     container: "wrong-container",
+    testCaseName: "test-case-name",
+    fullTestCase: "full-test-case",
+    cubeStartExplanation: "cube-start-explanation",
     cubeStartState: "cube-start-state",
     nextButton: "next-button",
   }),
-  globals: buildElementsCategory({
+  globals: buildGlobalsCategory({
     cube: "cube",
   }),
 };
@@ -138,6 +206,17 @@ const states = {
       cy.waitForDocumentEventListeners("keyup");
     }
   ),
+  wrongPage: new StateCache(
+    "wrongPage",
+    () => {
+      states.evaluateResult.restoreState();
+      elements.evaluateResult.wrongButton.get().click();
+    },
+    () => {
+      elements.wrongPage.container.waitFor();
+      cy.waitForDocumentEventListeners("keyup");
+    }
+  ),
 } as const;
 
 describe("Algorithm Trainer", function () {
@@ -146,6 +225,7 @@ describe("Algorithm Trainer", function () {
     states.testRunning.populateCache();
     states.evaluateResult.populateCache();
     states.correctPage.populateCache();
+    states.wrongPage.populateCache();
   });
   beforeEach(function () {
     cy.visit("/");
@@ -157,12 +237,10 @@ describe("Algorithm Trainer", function () {
     });
 
     it("has all the correct elements", function () {
-      elements.startPage.container.assertShows().within(() => {
-        elements.startPage.startButton.assertShows();
-        elements.startPage.cubeStartExplanation.assertShows();
-        elements.startPage.cubeStartState.get().within(() => {
-          elements.globals.cube.assertShows();
-        });
+      elements.startPage.startButton.assertShows();
+      elements.startPage.cubeStartExplanation.assertShows();
+      elements.startPage.cubeStartState.get().within(() => {
+        elements.globals.cube.assertShows();
       });
     });
 
@@ -197,12 +275,10 @@ describe("Algorithm Trainer", function () {
     });
 
     it("has all the correct elements", function () {
-      elements.testRunning.container.get().within(() => {
-        elements.testRunning.timer.assertShows();
-        // The test case is a cube
-        elements.testRunning.testCase.get().within(() => {
-          elements.globals.cube.assertShows();
-        });
+      elements.testRunning.timer.assertShows();
+      // The test case is a cube
+      elements.testRunning.testCase.get().within(() => {
+        elements.globals.cube.assertShows();
       });
     });
 
@@ -216,21 +292,19 @@ describe("Algorithm Trainer", function () {
         Cypress.config().viewportWidth,
         Cypress.config().viewportHeight
       );
-      elements.testRunning.container.get().within(() => {
-        elements.testRunning.timer.get().should((timerElement) => {
-          expect(timerElement.height()).to.be.at.least(0.2 * minDimension);
-        });
-        elements.testRunning.testCase.get().within(() => {
-          elements.globals.cube.assertShows().and((cubeElement) => {
-            expect(
-              cubeElement.width(),
-              "cube width to fill at least half of screen"
-            ).to.be.at.least(minDimension * 0.5);
-            expect(
-              cubeElement.height(),
-              "cube height to fill at least half of screen"
-            ).to.be.at.least(minDimension * 0.5);
-          });
+      elements.testRunning.timer.get().should((timerElement) => {
+        expect(timerElement.height()).to.be.at.least(0.2 * minDimension);
+      });
+      elements.testRunning.testCase.get().within(() => {
+        elements.globals.cube.assertShows().and((cubeElement) => {
+          expect(
+            cubeElement.width(),
+            "cube width to fill at least half of screen"
+          ).to.be.at.least(minDimension * 0.5);
+          expect(
+            cubeElement.height(),
+            "cube height to fill at least half of screen"
+          ).to.be.at.least(minDimension * 0.5);
         });
       });
     });
@@ -429,17 +503,15 @@ describe("Algorithm Trainer", function () {
       });
 
       it("has all the correct elements", function () {
-        elements.evaluateResult.container.get().within(() => {
-          elements.evaluateResult.timeResult.assertShows();
-          elements.evaluateResult.expectedCubeFront.get().within(() => {
-            elements.globals.cube.assertShows();
-          });
-          elements.evaluateResult.expectedCubeBack.get().within(() => {
-            elements.globals.cube.assertShows();
-          });
-          elements.evaluateResult.correctButton.assertShows();
-          elements.evaluateResult.wrongButton.assertShows();
+        elements.evaluateResult.timeResult.assertShows();
+        elements.evaluateResult.expectedCubeFront.get().within(() => {
+          elements.globals.cube.assertShows();
         });
+        elements.evaluateResult.expectedCubeBack.get().within(() => {
+          elements.globals.cube.assertShows();
+        });
+        elements.evaluateResult.correctButton.assertShows();
+        elements.evaluateResult.wrongButton.assertShows();
       });
 
       it("sizes elements reasonably", function () {
@@ -454,57 +526,52 @@ describe("Algorithm Trainer", function () {
           Cypress.config().viewportWidth,
           Cypress.config().viewportHeight
         );
-        elements.evaluateResult.container
-          .get()
-          // Check contents
-          .within(() => {
-            [
-              elements.evaluateResult.expectedCubeFront,
-              elements.evaluateResult.expectedCubeBack,
-            ].forEach((cubeContainer) =>
-              cubeContainer.get().within(() => {
-                elements.globals.cube.get().should((cubeElement) => {
-                  expect(
-                    cubeElement.width(),
-                    "cube width to fill at least a quarter of min dimension"
-                  ).to.be.at.least(minDimension / 4);
-                  expect(
-                    cubeElement.height(),
-                    "cube height to fill at least a quarter of min dimension"
-                  ).to.be.at.least(minDimension / 4);
-                  expect(
-                    cubeElement.height(),
-                    "cube height to fill at most half of screen height"
-                  ).to.be.at.most(Cypress.config().viewportHeight / 2);
-                });
-              })
-            );
-            elements.evaluateResult.timeResult.get().should((timerElement) => {
+        [
+          elements.evaluateResult.expectedCubeFront,
+          elements.evaluateResult.expectedCubeBack,
+        ].forEach((cubeContainer) =>
+          cubeContainer.get().within(() => {
+            elements.globals.cube.get().should((cubeElement) => {
               expect(
-                timerElement.height(),
-                "time result height at least 10% of min dimension"
-              ).to.be.at.least(minDimension / 10);
+                cubeElement.width(),
+                "cube width to fill at least a quarter of min dimension"
+              ).to.be.at.least(minDimension / 4);
               expect(
-                timerElement.height(),
-                "time result at most a third of screen height"
-              ).to.be.at.most(Cypress.config().viewportHeight / 3);
+                cubeElement.height(),
+                "cube height to fill at least a quarter of min dimension"
+              ).to.be.at.least(minDimension / 4);
+              expect(
+                cubeElement.height(),
+                "cube height to fill at most half of screen height"
+              ).to.be.at.most(Cypress.config().viewportHeight / 2);
             });
-            [
-              elements.evaluateResult.correctButton,
-              elements.evaluateResult.wrongButton,
-            ].forEach((buttonGetter) => {
-              buttonGetter.get().should((buttonElement) => {
-                expect(
-                  buttonElement.height(),
-                  "button height at least 5% of min dimension"
-                ).to.be.at.least(minDimension / 20);
-                expect(
-                  buttonElement.height(),
-                  "button height at most a third of screen height"
-                ).to.be.at.most(Cypress.config().viewportHeight / 3);
-              });
-            });
+          })
+        );
+        elements.evaluateResult.timeResult.get().should((timerElement) => {
+          expect(
+            timerElement.height(),
+            "time result height at least 10% of min dimension"
+          ).to.be.at.least(minDimension / 10);
+          expect(
+            timerElement.height(),
+            "time result at most a third of screen height"
+          ).to.be.at.most(Cypress.config().viewportHeight / 3);
+        });
+        [
+          elements.evaluateResult.correctButton,
+          elements.evaluateResult.wrongButton,
+        ].forEach((buttonGetter) => {
+          buttonGetter.get().should((buttonElement) => {
+            expect(
+              buttonElement.height(),
+              "button height at least 5% of min dimension"
+            ).to.be.at.least(minDimension / 20);
+            expect(
+              buttonElement.height(),
+              "button height at most a third of screen height"
+            ).to.be.at.most(Cypress.config().viewportHeight / 3);
           });
+        });
       });
 
       describe("displays the correct time", function () {
@@ -648,9 +715,7 @@ describe("Algorithm Trainer", function () {
     });
 
     it("has all the correct elements", function () {
-      elements.correctPage.container.get().within(() => {
-        elements.correctPage.nextButton.assertShows();
-      });
+      elements.correctPage.nextButton.assertShows();
     });
 
     it("sizes elements reasonably", function () {
@@ -663,7 +728,7 @@ describe("Algorithm Trainer", function () {
       elements.testRunning.container.assertShows();
     });
 
-    it("starts when pressing the begin button", function () {
+    it("starts when pressing the next button", function () {
       elements.correctPage.nextButton.get().click();
       elements.testRunning.container.assertShows();
     });
@@ -675,6 +740,47 @@ describe("Algorithm Trainer", function () {
       elements.correctPage.container.assertShows();
       cy.pressKey(Key.capsLock);
       elements.correctPage.container.assertShows();
+    });
+  });
+  describe("Wrong Page", function () {
+    beforeEach(function () {
+      states.wrongPage.restoreState();
+    });
+
+    it("has all the correct elements", function () {
+      elements.wrongPage.testCaseName.assertShows();
+      elements.wrongPage.fullTestCase.get().within(() => {
+        elements.globals.cube.get().should("have.length", 2).and("be.visible");
+      });
+      elements.wrongPage.cubeStartExplanation.assertShows();
+      elements.wrongPage.cubeStartState.get().within(() => {
+        elements.globals.cube.assertShows();
+      });
+      elements.wrongPage.nextButton.assertShows();
+    });
+
+    it("sizes elements reasonably", function () {
+      cy.assertNoHorizontalScrollbar();
+      cy.assertNoVerticalScrollbar();
+    });
+
+    it("starts test when pressing space", function () {
+      cy.pressKey(Key.space);
+      elements.testRunning.container.assertShows();
+    });
+
+    it("starts when pressing the next button", function () {
+      elements.wrongPage.nextButton.get().click();
+      elements.testRunning.container.assertShows();
+    });
+
+    it("doesn't start test when pressing any other keys", function () {
+      cy.pressKey(Key.a);
+      elements.wrongPage.container.assertShows();
+      cy.pressKey(Key.x);
+      elements.wrongPage.container.assertShows();
+      cy.pressKey(Key.capsLock);
+      elements.wrongPage.container.assertShows();
     });
   });
 });
@@ -704,19 +810,28 @@ function getTestRunningWithMaxLengthTimer() {
 }
 
 function buildAsserter(testId: string) {
-  return function (options?: { log?: boolean }) {
+  return function (options?: {
+    log?: boolean;
+    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  }) {
     return cy.getByTestId(testId, options).should("be.visible");
   };
 }
 
 function buildWaiter(testId: string) {
-  return function (options?: { log?: boolean }) {
-    cy.getByTestId(testId, options);
+  return function (options?: {
+    log?: boolean;
+    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  }) {
+    return cy.getByTestId(testId, options);
   };
 }
 
 function buildGetter(testId: string) {
-  return function (options?: { log?: boolean }) {
+  return function (options?: {
+    log?: boolean;
+    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  }) {
     return cy.getByTestId(testId, options);
   };
 }

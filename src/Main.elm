@@ -265,6 +265,9 @@ update messageCategory model =
         ( BetweenTestsMessage msg, CorrectPage ) ->
             updateBetweenTests model msg
 
+        ( BetweenTestsMessage msg, WrongPage ) ->
+            updateBetweenTests model msg
+
         ( TestRunningMessage msg, TestRunning startTime intervalElapsed alg ) ->
             case msg of
                 EndTest Nothing ->
@@ -543,6 +546,23 @@ viewFullScreen model =
                     [ el
                         [ Font.center
                         , Font.size (minDimension model.viewportSize // 20)
+                        , testid "test-case-name"
+                        ]
+                      <|
+                        text "Orient Solved Cube Like This:"
+                    , row
+                        [ testid "full-test-case"
+                        , centerX
+                        ]
+                        [ Components.Cube.view (minDimension model.viewportSize // 4) model.expectedCube
+                        , Components.Cube.view (minDimension model.viewportSize // 4)
+                            (model.expectedCube
+                                |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.Halfway Algorithm.Clockwise ])
+                            )
+                        ]
+                    , el
+                        [ Font.center
+                        , Font.size (minDimension model.viewportSize // 20)
                         , testid "cube-start-explanation"
                         ]
                       <|
@@ -554,7 +574,7 @@ viewFullScreen model =
                       <|
                         Components.Cube.view (minDimension model.viewportSize // 4) model.expectedCube
                     , Input.button
-                        [ testid "start-button"
+                        [ testid "next-button"
                         , centerX
                         , Background.color <| rgb255 0 128 0
                         , padding (minDimension model.viewportSize // 40)
@@ -562,7 +582,7 @@ viewFullScreen model =
                         , Font.size (minDimension model.viewportSize // 25)
                         ]
                         { onPress = Just <| StartTest NothingGenerated
-                        , label = text "Start"
+                        , label = text "Next"
                         }
                     ]
 
