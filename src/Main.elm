@@ -391,7 +391,7 @@ viewFullScreen model =
                         , centerX
                         ]
                       <|
-                        Components.Cube.view (minDimension model.viewportSize // 4) Cube.solved
+                        Components.Cube.view (minDimension model.viewportSize // 4) model.expectedCube
                     , Input.button
                         [ testid "start-button"
                         , centerX
