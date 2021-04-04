@@ -1,4 +1,4 @@
-module Models.Algorithm exposing (Algorithm, Turn(..), TurnDirection(..), TurnLength(..), Turnable(..), allTurnDirections, allTurnLengths, allTurnables, allTurns, append, appendTo, build, empty, extractInternals, fromString, inverse, withAllAufCombinations)
+module Models.Algorithm exposing (Algorithm, Turn(..), TurnDirection(..), TurnLength(..), Turnable(..), allTurnDirections, allTurnLengths, allTurnables, allTurns, append, appendTo, aufs, build, empty, extractInternals, fromString, inverse)
 
 -- import Parser.Advanced as Parser exposing ((|.), (|=), Parser)
 
@@ -82,12 +82,6 @@ appendTo (Algorithm a) (Algorithm b) =
 append : Algorithm -> Algorithm -> Algorithm
 append (Algorithm a) (Algorithm b) =
     Algorithm (b ++ a)
-
-
-withAllAufCombinations : Algorithm -> List.Nonempty.Nonempty Algorithm
-withAllAufCombinations alg =
-    withAllPreAufCombinations alg
-        |> List.Nonempty.concatMap withAllPostAufCombinations
 
 
 withAllPreAufCombinations : Algorithm -> List.Nonempty.Nonempty Algorithm

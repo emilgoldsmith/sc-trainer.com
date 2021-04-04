@@ -61,9 +61,20 @@ type alias Model =
     }
 
 
+type alias TestCase =
+    ( Algorithm.Algorithm, AlgorithmRepository.PLL, Algorithm.Algorithm )
+
+
+toAlg : TestCase -> Algorithm.Algorithm
+toAlg ( preauf, pll, postauf ) =
+    preauf
+        |> Algorithm.append (AlgorithmRepository.getPllAlg pll)
+        |> Algorithm.append postauf
+
+
 type TrainerState
     = StartPage
-    | TestRunning Time.Posix TimeInterval.TimeInterval Algorithm.Algorithm
+    | TestRunning Time.Posix TimeInterval.TimeInterval TestCase
     | EvaluatingResult
         { spacePressStarted : Bool
         , wPressStarted : Bool
@@ -92,8 +103,8 @@ type BetweenTestsMsg
 
 type TestStartData
     = NothingGenerated
-    | AlgGenerated Algorithm.Algorithm
-    | EverythingGenerated Algorithm.Algorithm Time.Posix
+    | TestCaseGenerated TestCase
+    | EverythingGenerated TestCase Time.Posix
 
 
 type TestRunningMsg
@@ -268,7 +279,7 @@ update messageCategory model =
         ( BetweenTestsMessage msg, WrongPage ) ->
             updateBetweenTests model msg
 
-        ( TestRunningMessage msg, TestRunning startTime intervalElapsed alg ) ->
+        ( TestRunningMessage msg, TestRunning startTime intervalElapsed testCase ) ->
             case msg of
                 EndTest Nothing ->
                     ( model, Task.perform (\time -> TestRunningMessage <| EndTest (Just time)) Time.now )
@@ -282,13 +293,13 @@ update messageCategory model =
                                 , ignoringKeyPressesAfterTransition = True
                                 , result = TimeInterval.betweenTimestamps { start = startTime, end = endTime }
                                 }
-                        , expectedCube = model.expectedCube |> Cube.applyAlgorithm alg
+                        , expectedCube = model.expectedCube |> Cube.applyAlgorithm (toAlg testCase)
                       }
                     , Task.perform (always <| EvaluateResultMessage EndIgnoringKeyPressesAfterTransition) (Process.sleep 100)
                     )
 
                 MillisecondsPassed timeDelta ->
-                    ( { model | trainerState = TestRunning startTime (TimeInterval.increment timeDelta intervalElapsed) alg }, Cmd.none )
+                    ( { model | trainerState = TestRunning startTime (TimeInterval.increment timeDelta intervalElapsed) testCase }, Cmd.none )
 
         ( EvaluateResultMessage msg, EvaluatingResult keyStates ) ->
             Tuple.mapSecond (Cmd.map EvaluateResultMessage) <|
@@ -361,9 +372,9 @@ updateBetweenTests model msg =
     Tuple.mapSecond (Cmd.map BetweenTestsMessage) <|
         case msg of
             StartTest NothingGenerated ->
-                ( model, Random.generate (\alg -> StartTest (AlgGenerated alg)) generatePll )
+                ( model, Random.generate (\alg -> StartTest (TestCaseGenerated alg)) generateTestCase )
 
-            StartTest (AlgGenerated alg) ->
+            StartTest (TestCaseGenerated alg) ->
                 ( model, Task.perform (\time -> StartTest (EverythingGenerated alg time)) Time.now )
 
             StartTest (EverythingGenerated alg startTime) ->
@@ -415,7 +426,7 @@ viewFullScreen model =
                         }
                     ]
 
-        TestRunning _ elapsedTime algTested ->
+        TestRunning _ elapsedTime testCase ->
             Element.map TestRunningMessage <|
                 column
                     [ testid "test-running-container"
@@ -425,7 +436,7 @@ viewFullScreen model =
                     ]
                     [ el [ testid "test-case", centerX ] <|
                         Components.Cube.view (minDimension model.viewportSize // 2) <|
-                            (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse algTested))
+                            (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse (toAlg testCase)))
                     , el
                         [ testid "timer"
                         , centerX
@@ -599,13 +610,12 @@ viewState _ =
     none
 
 
-generatePll : Random.Generator Algorithm.Algorithm
-generatePll =
-    let
-        (List.Nonempty.Nonempty x xs) =
-            List.Nonempty.concatMap Algorithm.withAllAufCombinations (List.Nonempty.map AlgorithmRepository.getPllAlg AlgorithmRepository.allPlls)
-    in
-    Random.uniform x xs
+generateTestCase : Random.Generator TestCase
+generateTestCase =
+    Random.map3 (\a b c -> ( a, b, c ))
+        (List.Nonempty.sample Algorithm.aufs)
+        (List.Nonempty.sample AlgorithmRepository.allPlls)
+        (List.Nonempty.sample Algorithm.aufs)
 
 
 minDimension : ViewportSize -> Int
