@@ -642,7 +642,7 @@ describe("Algorithm Trainer", function () {
       });
     });
   });
-  describe.only("Correct Page", function () {
+  describe("Correct Page", function () {
     beforeEach(function () {
       states.correctPage.restoreState();
     });
