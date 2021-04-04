@@ -590,13 +590,13 @@ viewFullScreen model =
                             (minDimension model.viewportSize // 4)
                             testCaseCube
                         ]
-                    , el
+                    , paragraph
                         [ centerX
+                        , Font.center
                         , Font.size (minDimension model.viewportSize // 20)
                         , testid "cube-start-explanation"
                         ]
-                      <|
-                        text "Solve Cube And Orient Like This Before Restarting:"
+                        [ text "Solve Cube And Orient Like This Before Restarting:" ]
                     , el
                         [ testid "cube-start-state"
                         , centerX
