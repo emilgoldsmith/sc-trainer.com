@@ -70,11 +70,12 @@ type TrainerState
         , ignoringKeyPressesAfterTransition : Bool
         , result : TimeInterval.TimeInterval
         }
+    | CorrectPage
 
 
 type Msg
     = GlobalMessage GlobalMsg
-    | StartPageMessage StartPageMsg
+    | BetweenTestsMessage BetweenTestsMsg
     | TestRunningMessage TestRunningMsg
     | EvaluateResultMessage EvaluateResultMsg
 
@@ -83,9 +84,9 @@ type GlobalMsg
     = WindowResized Int Int
 
 
-type StartPageMsg
+type BetweenTestsMsg
     = StartTest TestStartData
-    | DoNothingStartPage
+    | DoNothingBetweenTests
 
 
 type TestStartData
@@ -162,20 +163,26 @@ toKey keyString =
 subscriptions : Model -> Sub Msg
 subscriptions model =
     let
+        betweenTestsSubscriptions =
+            Sub.map BetweenTestsMessage <|
+                Events.onKeyUp <|
+                    Decode.map
+                        (\key ->
+                            if key == Space then
+                                StartTest NothingGenerated
+
+                            else
+                                DoNothingBetweenTests
+                        )
+                        decodeNonRepeatedKeyEvent
+
         trainerSubscriptions =
             case model.trainerState of
                 StartPage ->
-                    Sub.map StartPageMessage <|
-                        Events.onKeyUp <|
-                            Decode.map
-                                (\key ->
-                                    if key == Space then
-                                        StartTest NothingGenerated
+                    betweenTestsSubscriptions
 
-                                    else
-                                        DoNothingStartPage
-                                )
-                                decodeNonRepeatedKeyEvent
+                CorrectPage ->
+                    betweenTestsSubscriptions
 
                 TestRunning _ _ _ ->
                     Sub.map TestRunningMessage <|
@@ -248,8 +255,8 @@ update messageCategory model =
         ( GlobalMessage (WindowResized width height), _ ) ->
             ( { model | viewportSize = { width = width, height = height } }, Cmd.none )
 
-        ( StartPageMessage msg, StartPage ) ->
-            Tuple.mapSecond (Cmd.map StartPageMessage) <|
+        ( BetweenTestsMessage msg, StartPage ) ->
+            Tuple.mapSecond (Cmd.map BetweenTestsMessage) <|
                 case msg of
                     StartTest NothingGenerated ->
                         ( model, Random.generate (\alg -> StartTest (AlgGenerated alg)) generatePll )
@@ -260,7 +267,7 @@ update messageCategory model =
                     StartTest (EverythingGenerated alg startTime) ->
                         ( { model | trainerState = TestRunning startTime TimeInterval.zero alg }, Cmd.none )
 
-                    DoNothingStartPage ->
+                    DoNothingBetweenTests ->
                         ( model, Cmd.none )
 
         ( TestRunningMessage msg, TestRunning startTime intervalElapsed alg ) ->
@@ -298,7 +305,7 @@ update messageCategory model =
                         ( { model | trainerState = EvaluatingResult { keyStates | wPressStarted = True } }, Cmd.none )
 
                     EvaluateCorrect ->
-                        ( { model | trainerState = StartPage }, Cmd.none )
+                        ( { model | trainerState = CorrectPage }, Cmd.none )
 
                     EvaluateWrong ->
                         ( { model | trainerState = StartPage, expectedCube = Cube.solved }, Cmd.none )
@@ -314,8 +321,8 @@ update messageCategory model =
                         GlobalMessage _ ->
                             "GlobalMessage"
 
-                        StartPageMessage _ ->
-                            "StartPageMessage"
+                        BetweenTestsMessage _ ->
+                            "BetweenTestsMessage"
 
                         TestRunningMessage _ ->
                             "TestRunningMessage"
@@ -333,6 +340,9 @@ update messageCategory model =
 
                         EvaluatingResult _ ->
                             "EvaluatingResult"
+
+                        CorrectPage ->
+                            "CorrectPage"
               in
               logError
                 ("Message received during unexpected state: "
@@ -354,7 +364,7 @@ viewFullScreen : Model -> Element Msg
 viewFullScreen model =
     case model.trainerState of
         StartPage ->
-            Element.map StartPageMessage <|
+            Element.map BetweenTestsMessage <|
                 column
                     [ testid "start-page-container"
                     , centerX
@@ -485,6 +495,40 @@ viewFullScreen model =
                             ]
                             { onPress = Just EvaluateWrong, label = text "Wrong" }
                         ]
+                    ]
+
+        CorrectPage ->
+            Element.map BetweenTestsMessage <|
+                column
+                    [ testid "correct-container"
+                    , centerX
+                    , centerY
+                    , spacing (minDimension model.viewportSize // 20)
+                    ]
+                    [ el
+                        [ Font.center
+                        , Font.size (minDimension model.viewportSize // 20)
+                        , testid "cube-start-explanation"
+                        ]
+                      <|
+                        text "Orient Solved Cube Like This:"
+                    , el
+                        [ testid "cube-start-state"
+                        , centerX
+                        ]
+                      <|
+                        Components.Cube.view (minDimension model.viewportSize // 4) Cube.solved
+                    , Input.button
+                        [ testid "start-button"
+                        , centerX
+                        , Background.color <| rgb255 0 128 0
+                        , padding (minDimension model.viewportSize // 40)
+                        , Border.rounded (minDimension model.viewportSize // 45)
+                        , Font.size (minDimension model.viewportSize // 25)
+                        ]
+                        { onPress = Just <| StartTest NothingGenerated
+                        , label = text "Start"
+                        }
                     ]
 
 

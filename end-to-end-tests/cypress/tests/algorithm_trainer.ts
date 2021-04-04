@@ -560,7 +560,7 @@ describe("Algorithm Trainer", function () {
         cy.clock().then((c) => c.restore());
       });
 
-      describe.skip("approves correctly", function () {
+      describe("approves correctly", function () {
         it("on space pressed", function () {
           cy.pressKey(Key.space);
           elements.correctPage.container.assertShows();
