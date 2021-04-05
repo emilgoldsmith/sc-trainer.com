@@ -197,7 +197,7 @@ subscriptions model =
                 CorrectPage ->
                     betweenTestsSubscriptions
 
-                WrongPage testCase ->
+                WrongPage _ ->
                     betweenTestsSubscriptions
 
                 TestRunning _ _ _ ->
@@ -277,7 +277,7 @@ update messageCategory model =
         ( BetweenTestsMessage msg, CorrectPage ) ->
             updateBetweenTests model msg
 
-        ( BetweenTestsMessage msg, WrongPage testCase ) ->
+        ( BetweenTestsMessage msg, WrongPage _ ) ->
             updateBetweenTests model msg
 
         ( TestRunningMessage msg, TestRunning startTime intervalElapsed testCase ) ->
