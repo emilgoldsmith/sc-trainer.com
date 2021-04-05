@@ -457,7 +457,19 @@ viewFullScreen model =
                     ]
 
         GetReadyScreen ->
-            el [ testid "get-ready-container" ] <| el [ testid "get-ready-explanation" ] <| text "something"
+            el
+                [ testid "get-ready-container"
+                , centerX
+                , centerY
+                ]
+            <|
+                paragraph
+                    [ testid "get-ready-explanation"
+                    , Font.size (minDimension model.viewportSize * 2 // 9)
+                    , Font.center
+                    , padding 2
+                    ]
+                    [ text "Go To Home Grip" ]
 
         TestRunning _ elapsedTime testCase ->
             Element.map TestRunningMessage <|
