@@ -7,7 +7,7 @@ import Test
 import Expect
 
 import AlgorithmRepository exposing (..)
-import Utils.NonEmptyList
+import List.Nonempty
 
 
 
@@ -17,11 +17,11 @@ import Utils.NonEmptyList
 
 spec0 : Test.Test
 spec0 =
-    Test.test "#allPlls: \n\n    List.length <| Utils.NonEmptyList.toList <| allPlls\n    --> 18" <|
+    Test.test "#allPlls: \n\n    List.Nonempty.length allPlls\n    --> 18" <|
         \() ->
             Expect.equal
                 (
-                List.length <| Utils.NonEmptyList.toList <| allPlls
+                List.Nonempty.length allPlls
                 )
                 (
                 18

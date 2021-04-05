@@ -2,11 +2,11 @@ module Tests.AlgorithmRepository exposing (pllTests)
 
 import AlgorithmRepository
 import Expect
+import List.Nonempty
 import Models.Algorithm as Algorithm
 import Models.Cube as Cube exposing (Color(..))
 import Test exposing (..)
 import TestHelpers.Cube exposing (plainCubie, solvedCubeRendering)
-import Utils.NonEmptyList as NonEmptyList
 
 
 pllTests : Test
@@ -238,11 +238,16 @@ pllTests =
 expectEqualDisregardingAUF : Cube.Rendering -> Algorithm.Algorithm -> Expect.Expectation
 expectEqualDisregardingAUF expectedRendering alg =
     let
+        algWithAllAufs =
+            Algorithm.aufs
+                |> List.Nonempty.map (Algorithm.append alg)
+                |> List.Nonempty.concatMap (\withPreAuf -> List.Nonempty.map (Algorithm.appendTo withPreAuf) Algorithm.aufs)
+
         candidates =
-            Algorithm.withAllAufCombinations alg
-                |> NonEmptyList.map ((\x -> Cube.applyAlgorithm x Cube.solved) >> Cube.render)
+            algWithAllAufs
+                |> List.Nonempty.map ((\x -> Cube.applyAlgorithm x Cube.solved) >> Cube.render)
     in
-    List.filter ((==) expectedRendering) (NonEmptyList.toList candidates)
+    List.filter ((==) expectedRendering) (List.Nonempty.toList candidates)
         |> List.length
         |> Expect.greaterThan 0
         |> Expect.onFail
@@ -254,13 +259,13 @@ expectEqualDisregardingAUF expectedRendering alg =
             )
 
 
-getShortestDiff : NonEmptyList.NonEmptyList Cube.Rendering -> Cube.Rendering -> String
+getShortestDiff : List.Nonempty.Nonempty Cube.Rendering -> Cube.Rendering -> String
 getShortestDiff candidates expected =
     let
         diffs =
-            NonEmptyList.map (\x -> TestHelpers.Cube.compareCubeRenderings x expected) candidates
+            List.Nonempty.map (\x -> TestHelpers.Cube.compareCubeRenderings x expected) candidates
     in
-    NonEmptyList.combineAll getShorterString diffs
+    List.Nonempty.foldl1 getShorterString diffs
 
 
 getShorterString : String -> String -> String

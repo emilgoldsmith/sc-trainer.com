@@ -1,9 +1,9 @@
 module Expect.Extra exposing (equalCubeRenderings, equalListMembers, equalNonEmptyListMembers)
 
 import Expect
+import List.Nonempty
 import Models.Cube as Cube
 import TestHelpers.Cube
-import Utils.NonEmptyList as NonEmptyList
 
 
 equalListMembers : List a -> List a -> Expect.Expectation
@@ -31,8 +31,8 @@ equalListMembers expected actual =
                 ++ Debug.toString missingElements
 
 
-equalNonEmptyListMembers : NonEmptyList.NonEmptyList a -> NonEmptyList.NonEmptyList a -> Expect.Expectation
-equalNonEmptyListMembers (NonEmptyList.NonEmptyList expectedHead expectedTail) (NonEmptyList.NonEmptyList actualHead actualTail) =
+equalNonEmptyListMembers : List.Nonempty.Nonempty a -> List.Nonempty.Nonempty a -> Expect.Expectation
+equalNonEmptyListMembers (List.Nonempty.Nonempty expectedHead expectedTail) (List.Nonempty.Nonempty actualHead actualTail) =
     if expectedHead /= actualHead then
         Expect.fail <|
             "Heads of non empty lists were not equal\n"
