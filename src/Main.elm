@@ -74,6 +74,7 @@ toAlg ( preauf, pll, postauf ) =
 
 type TrainerState
     = StartPage
+    | GetReadyScreen
     | TestRunning Time.Posix TimeInterval.TimeInterval TestCase
     | EvaluatingResult
         { spacePressStarted : Bool
@@ -89,6 +90,7 @@ type TrainerState
 type Msg
     = GlobalMessage GlobalMsg
     | BetweenTestsMessage BetweenTestsMsg
+    | GetReadyMessage GetReadyMsg
     | TestRunningMessage TestRunningMsg
     | EvaluateResultMessage EvaluateResultMsg
 
@@ -98,8 +100,12 @@ type GlobalMsg
 
 
 type BetweenTestsMsg
-    = StartTest TestStartData
+    = StartTestGetReady
     | DoNothingBetweenTests
+
+
+type GetReadyMsg
+    = StartTest TestStartData
 
 
 type TestStartData
@@ -182,7 +188,7 @@ subscriptions model =
                     Decode.map
                         (\key ->
                             if key == Space then
-                                StartTest NothingGenerated
+                                StartTestGetReady
 
                             else
                                 DoNothingBetweenTests
@@ -199,6 +205,9 @@ subscriptions model =
 
                 WrongPage _ ->
                     betweenTestsSubscriptions
+
+                GetReadyScreen ->
+                    Sub.none
 
                 TestRunning _ _ _ ->
                     Sub.map TestRunningMessage <|
@@ -280,6 +289,18 @@ update messageCategory model =
         ( BetweenTestsMessage msg, WrongPage _ ) ->
             updateBetweenTests model msg
 
+        ( GetReadyMessage msg, GetReadyScreen ) ->
+            Tuple.mapSecond (Cmd.map GetReadyMessage) <|
+                case msg of
+                    StartTest NothingGenerated ->
+                        ( model, Random.generate (\alg -> StartTest (TestCaseGenerated alg)) generateTestCase )
+
+                    StartTest (TestCaseGenerated alg) ->
+                        ( model, Task.perform (\time -> StartTest (EverythingGenerated alg time)) Time.now )
+
+                    StartTest (EverythingGenerated alg startTime) ->
+                        ( { model | trainerState = TestRunning startTime TimeInterval.zero alg }, Cmd.none )
+
         ( TestRunningMessage msg, TestRunning startTime intervalElapsed testCase ) ->
             case msg of
                 EndTest Nothing ->
@@ -335,6 +356,9 @@ update messageCategory model =
                         BetweenTestsMessage _ ->
                             "BetweenTestsMessage"
 
+                        GetReadyMessage _ ->
+                            "GetReadyMessage"
+
                         TestRunningMessage _ ->
                             "TestRunningMessage"
 
@@ -345,6 +369,9 @@ update messageCategory model =
                     case trainerState of
                         StartPage ->
                             "StartPage"
+
+                        GetReadyScreen ->
+                            "GetReadyScreen"
 
                         TestRunning _ _ _ ->
                             "TestRunning"
@@ -371,19 +398,14 @@ update messageCategory model =
 
 updateBetweenTests : Model -> BetweenTestsMsg -> ( Model, Cmd Msg )
 updateBetweenTests model msg =
-    Tuple.mapSecond (Cmd.map BetweenTestsMessage) <|
-        case msg of
-            StartTest NothingGenerated ->
-                ( model, Random.generate (\alg -> StartTest (TestCaseGenerated alg)) generateTestCase )
+    case msg of
+        StartTestGetReady ->
+            ( { model | trainerState = GetReadyScreen }
+            , Task.perform (always <| GetReadyMessage (StartTest NothingGenerated)) <| Process.sleep 1000
+            )
 
-            StartTest (TestCaseGenerated alg) ->
-                ( model, Task.perform (\time -> StartTest (EverythingGenerated alg time)) Time.now )
-
-            StartTest (EverythingGenerated alg startTime) ->
-                ( { model | trainerState = TestRunning startTime TimeInterval.zero alg }, Cmd.none )
-
-            DoNothingBetweenTests ->
-                ( model, Cmd.none )
+        DoNothingBetweenTests ->
+            ( model, Cmd.none )
 
 
 view : Model -> Html.Html Msg
@@ -427,12 +449,15 @@ viewFullScreen model =
                         , padding (minDimension model.viewportSize // 40)
                         , Border.rounded (minDimension model.viewportSize // 45)
                         ]
-                        { onPress = Just <| StartTest NothingGenerated
+                        { onPress = Just StartTestGetReady
                         , labelText = "Start"
                         , fontSize = minDimension model.viewportSize // 25
                         , keyboardShortcut = Space
                         }
                     ]
+
+        GetReadyScreen ->
+            el [ testid "get-ready-container" ] <| el [ testid "get-ready-explanation" ] <| text "something"
 
         TestRunning _ elapsedTime testCase ->
             Element.map TestRunningMessage <|
@@ -567,7 +592,7 @@ viewFullScreen model =
                         , padding (minDimension model.viewportSize // 40)
                         , Border.rounded (minDimension model.viewportSize // 45)
                         ]
-                        { onPress = Just <| StartTest NothingGenerated
+                        { onPress = Just StartTestGetReady
                         , labelText = "Next"
                         , keyboardShortcut = Space
                         , fontSize = minDimension model.viewportSize // 25
@@ -627,7 +652,7 @@ viewFullScreen model =
                         , padding (minDimension model.viewportSize // 40)
                         , Border.rounded (minDimension model.viewportSize // 45)
                         ]
-                        { onPress = Just <| StartTest NothingGenerated
+                        { onPress = Just StartTestGetReady
                         , labelText = "Next"
                         , keyboardShortcut = Space
                         , fontSize = minDimension model.viewportSize // 25

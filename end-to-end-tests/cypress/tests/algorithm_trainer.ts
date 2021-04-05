@@ -50,12 +50,14 @@ function buildElementsCategory<keys extends string>(
     get: ReturnType<typeof buildGetter>;
     waitFor: ReturnType<typeof buildWaiter>;
     assertShows: ReturnType<typeof buildAsserter>;
+    assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
   };
 } & {
   [key in keys]: {
     get: ReturnType<typeof buildGetter>;
     waitFor: ReturnType<typeof buildWaiter>;
     assertShows: ReturnType<typeof buildAsserter>;
+    assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
   };
 } {
   const getContainer = buildGetter(testIds.container);
@@ -83,24 +85,28 @@ function buildElementsCategory<keys extends string>(
         get: buildGetter(testId),
         waitFor: buildWaiter(testId),
         assertShows: buildAsserter(testId),
+        assertDoesntExist: buildNotExistAsserter(testId),
       };
     }
     return {
       get: buildWithinContainer(buildGetter, testId),
       waitFor: buildWithinContainer(buildWaiter, testId),
       assertShows: buildWithinContainer(buildAsserter, testId),
+      assertDoesntExist: buildWithinContainer(buildNotExistAsserter, testId),
     };
   }) as {
     container: {
       get: ReturnType<typeof buildGetter>;
       waitFor: ReturnType<typeof buildWaiter>;
       assertShows: ReturnType<typeof buildAsserter>;
+      assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
     };
   } & {
     [key in keys]: {
       get: ReturnType<typeof buildGetter>;
       waitFor: ReturnType<typeof buildWaiter>;
       assertShows: ReturnType<typeof buildAsserter>;
+      assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
     };
   };
 }
@@ -113,17 +119,20 @@ function buildGlobalsCategory<keys extends string>(
     get: ReturnType<typeof buildGetter>;
     waitFor: ReturnType<typeof buildWaiter>;
     assertShows: ReturnType<typeof buildAsserter>;
+    assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
   };
 } {
   return Cypress._.mapValues(testIds, (testId: string) => ({
     get: buildGetter(testId),
     waitFor: buildWaiter(testId),
     assertShows: buildAsserter(testId),
+    assertDoesntExist: buildNotExistAsserter(testId),
   })) as {
     [key in keys]: {
       get: ReturnType<typeof buildGetter>;
       waitFor: ReturnType<typeof buildWaiter>;
       assertShows: ReturnType<typeof buildAsserter>;
+      assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
     };
   };
 }
@@ -134,6 +143,10 @@ const elements = {
     cubeStartExplanation: "cube-start-explanation",
     cubeStartState: "cube-start-state",
     startButton: "start-button",
+  }),
+  getReadyScreen: buildElementsCategory({
+    container: "get-ready-container",
+    getReadyExplanation: "get-ready-explanation",
   }),
   testRunning: buildElementsCategory({
     container: "test-running-container",
@@ -174,11 +187,26 @@ const states = {
       cy.waitForDocumentEventListeners("keyup");
     }
   ),
+  getReadyScreen: new StateCache(
+    "getReadyScreen",
+
+    () => {
+      states.startPage.restoreState();
+      elements.startPage.startButton.get().click();
+    },
+    () => {
+      elements.getReadyScreen.container.waitFor();
+    }
+  ),
   testRunning: new StateCache(
     "testRunning",
     () => {
       states.startPage.restoreState();
+      cy.clock();
       elements.startPage.startButton.get().click();
+      elements.getReadyScreen.container.waitFor();
+      cy.tick(1000);
+      cy.clock().then((clock) => clock.restore());
     },
     () => {
       elements.testRunning.container.waitFor();
@@ -193,6 +221,21 @@ const states = {
     },
     () => {
       elements.evaluateResult.container.waitFor();
+    }
+  ),
+  evaluateResultAfterIgnoringKeyPresses: new StateCache(
+    "evaluateResultAfterIgnoringKeyPresses",
+    () => {
+      states.testRunning.restoreState();
+      cy.clock();
+      cy.pressKey(Key.space);
+      elements.evaluateResult.container.waitFor();
+      cy.tick(300);
+      cy.clock().then((clock) => clock.restore());
+    },
+    () => {
+      elements.evaluateResult.container.waitFor();
+      cy.waitForDocumentEventListeners("keydown", "keyup");
     }
   ),
   correctPage: new StateCache(
@@ -222,8 +265,10 @@ const states = {
 describe("Algorithm Trainer", function () {
   before(function () {
     states.startPage.populateCache();
+    states.getReadyScreen.populateCache();
     states.testRunning.populateCache();
     states.evaluateResult.populateCache();
+    states.evaluateResultAfterIgnoringKeyPresses.populateCache();
     states.correctPage.populateCache();
     states.wrongPage.populateCache();
   });
@@ -270,228 +315,246 @@ describe("Algorithm Trainer", function () {
   });
 
   describe("Test Running", function () {
-    beforeEach(function () {
-      states.testRunning.restoreState();
-    });
+    describe("Get Ready Screen", function () {
+      beforeEach(function () {
+        states.getReadyScreen.restoreState();
+      });
 
-    it("has all the correct elements", function () {
-      elements.testRunning.timer.assertShows();
-      // The test case is a cube
-      elements.testRunning.testCase.get().within(() => {
-        elements.globals.cube.assertShows();
+      it("has all the correct elements", function () {
+        elements.testRunning.container.assertDoesntExist();
+        elements.getReadyScreen.container.assertShows();
+        elements.getReadyScreen.getReadyExplanation.assertShows();
+      });
+
+      it("sizes elements reasonably", function () {
+        cy.assertNoHorizontalScrollbar();
+        cy.assertNoVerticalScrollbar();
       });
     });
-
-    it("sizes elements reasonably", function () {
-      // Get max length timer to stress test content fitting
-      getTestRunningWithMaxLengthTimer();
-
-      cy.assertNoHorizontalScrollbar();
-      cy.assertNoVerticalScrollbar();
-      const minDimension = Math.min(
-        Cypress.config().viewportWidth,
-        Cypress.config().viewportHeight
-      );
-      elements.testRunning.timer.get().should((timerElement) => {
-        expect(timerElement.height()).to.be.at.least(0.2 * minDimension);
-      });
-      elements.testRunning.testCase.get().within(() => {
-        elements.globals.cube.assertShows().and((cubeElement) => {
-          expect(
-            cubeElement.width(),
-            "cube width to fill at least half of screen"
-          ).to.be.at.least(minDimension * 0.5);
-          expect(
-            cubeElement.height(),
-            "cube height to fill at least half of screen"
-          ).to.be.at.least(minDimension * 0.5);
-        });
-      });
-    });
-
-    it("tracks time correctly", function () {
-      getTestRunningWithMockedTime();
-
-      const second = 1000;
-      const minute = 60 * second;
-      const hour = 60 * minute;
-      // Should start at 0
-      elements.testRunning.timer.get().should("have.text", "0.0");
-      // Just testing here that nothing happens with small increments
-      tick(3);
-      elements.testRunning.timer.get().should("have.text", "0.0");
-      tick(10);
-      elements.testRunning.timer.get().should("have.text", "0.0");
-      tick(0.2 * second);
-      elements.testRunning.timer.get().should("have.text", "0.2");
-      tick(1.3 * second);
-      elements.testRunning.timer.get().should("have.text", "1.5");
-      // Switch to using time jumps as tick calls all setInterval times in the
-      // time interval resulting in slow tests and excessive cpu usage
-
-      // Checking two digit seconds alone
-      setTimeTo(19.2 * second);
-      elements.testRunning.timer.get().should("have.text", "19.2");
-      // Checking "normal" minute
-      setTimeTo(3 * minute + 16.8 * second);
-      elements.testRunning.timer.get().should("have.text", "3:16.8");
-      // Checking single digit seconds when above minute still shows two digits
-      setTimeTo(4 * minute + 7.3 * second);
-      elements.testRunning.timer.get().should("have.text", "4:07.3");
-      // Check that it shows hours
-      setTimeTo(4 * hour + 38 * minute + 45.7 * second);
-      elements.testRunning.timer.get().should("have.text", "4:38:45.7");
-      // Check that it shows double digits for minutes and seconds when in hours
-      setTimeTo(5 * hour + 1 * minute + 4 * second);
-      elements.testRunning.timer.get().should("have.text", "5:01:04.0");
-      // Just ensuring a ridiculous amount works too, note we don't break it down to days
-      setTimeTo(234 * hour + 59 * minute + 18.1 * second);
-      elements.testRunning.timer.get().should("have.text", "234:59:18.1");
-    });
-
-    describe("ends test correctly", function () {
-      it("on clicking anywhere on the screen", function () {
-        // Just proxy "anywhere" as the top left corner
-        cy.get("body", { log: false }).click("topLeft");
-        elements.evaluateResult.container.assertShows();
+    describe("During Test", function () {
+      beforeEach(function () {
+        states.testRunning.restoreState();
       });
 
-      it("on touching the screen from a touch device", function () {
-        cy.touch();
-        elements.evaluateResult.container.assertShows();
-      });
-
-      it.skip("has no delays on touching", function () {
-        /**
-         * These are sadly the best assertion we can think of to check it doesn't have
-         * the annoying delay
-         */
-        elements.testRunning.container
-          .get()
-          .should("have.css", "touch-action", "none");
-        cy.document().should((document) => {
-          const tag = document.head.querySelector(
-            'meta[name="viewport"][content]'
-          );
-
-          // This should help according to
-          // https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away
-          expect((tag as Element & { content: string }).content).to.equal(
-            "width=device-width"
-          );
+      it("has all the correct elements", function () {
+        elements.testRunning.timer.assertShows();
+        // The test case is a cube
+        elements.testRunning.testCase.get().within(() => {
+          elements.globals.cube.assertShows();
         });
       });
 
-      it("on pressing any keyboard key", function () {
-        ([
-          // Space, w and W are the important ones as they are also used to evaluate
-          Key.space,
-          Key.w,
-          Key.W,
-          Key.l,
-          Key.five,
-          Key.capsLock,
-          Key.leftCtrl,
-        ] as const).forEach((key) => {
-          cy.withOverallNameLogged(
-            {
-              displayName: "TESTING KEY",
-              message: getKeyValue(key),
-            },
-            () => {
-              cy.pressKey(key, { log: false });
-              elements.evaluateResult.container.assertShows({ log: false });
-            }
-          );
-          cy.withOverallNameLogged(
-            {
-              name: "resetting state",
-              displayName: "RESETTING STATE",
-              message: "to testRunning state",
-            },
-            () => {
-              states.testRunning.restoreState({ log: false });
-            }
-          );
+      it("sizes elements reasonably", function () {
+        // Get max length timer to stress test content fitting
+        getTestRunningWithMaxLengthTimer();
+
+        cy.assertNoHorizontalScrollbar();
+        cy.assertNoVerticalScrollbar();
+        const minDimension = Math.min(
+          Cypress.config().viewportWidth,
+          Cypress.config().viewportHeight
+        );
+        elements.testRunning.timer.get().should((timerElement) => {
+          expect(timerElement.height()).to.be.at.least(0.2 * minDimension);
+        });
+        elements.testRunning.testCase.get().within(() => {
+          elements.globals.cube.assertShows().and((cubeElement) => {
+            expect(
+              cubeElement.width(),
+              "cube width to fill at least half of screen"
+            ).to.be.at.least(minDimension * 0.5);
+            expect(
+              cubeElement.height(),
+              "cube height to fill at least half of screen"
+            ).to.be.at.least(minDimension * 0.5);
+          });
         });
       });
-      it("on long-pressing any keyboard key", function () {
-        cy.clock();
-        ([
-          // Space, w and W are the important ones as they are also used to evaluate
-          Key.space,
-          Key.w,
-          Key.W,
-          Key.l,
-          Key.five,
-          Key.capsLock,
-          Key.leftCtrl,
-        ] as const).forEach((key) => {
-          cy.withOverallNameLogged(
-            {
-              displayName: "TESTING KEY",
-              message: getKeyValue(key),
-            },
-            () => {
-              cy.longPressKey(key, { log: false });
-              elements.evaluateResult.container.assertShows({ log: false });
-            }
-          );
-          cy.withOverallNameLogged(
-            {
-              name: "resetting state",
-              displayName: "RESETTING STATE",
-              message: "to testRunning state",
-            },
-            () => {
-              states.testRunning.restoreState({ log: false });
-            }
-          );
+
+      it("tracks time correctly", function () {
+        const startTime = getTestRunningWithMockedTime();
+
+        const second = 1000;
+        const minute = 60 * second;
+        const hour = 60 * minute;
+        // Should start at 0
+        elements.testRunning.timer.get().should("have.text", "0.0");
+        // Just testing here that nothing happens with small increments
+        tick(3);
+        elements.testRunning.timer.get().should("have.text", "0.0");
+        tick(10);
+        elements.testRunning.timer.get().should("have.text", "0.0");
+        tick(0.2 * second);
+        elements.testRunning.timer.get().should("have.text", "0.2");
+        tick(1.3 * second);
+        elements.testRunning.timer.get().should("have.text", "1.5");
+        // Switch to using time jumps as tick calls all setInterval times in the
+        // time interval resulting in slow tests and excessive cpu usage
+
+        // Checking two digit seconds alone
+        setTimeTo(19.2 * second + startTime);
+        elements.testRunning.timer.get().should("have.text", "19.2");
+        // Checking "normal" minute
+        setTimeTo(3 * minute + 16.8 * second + startTime);
+        elements.testRunning.timer.get().should("have.text", "3:16.8");
+        // Checking single digit seconds when above minute still shows two digits
+        setTimeTo(4 * minute + 7.3 * second + startTime);
+        elements.testRunning.timer.get().should("have.text", "4:07.3");
+        // Check that it shows hours
+        setTimeTo(4 * hour + 38 * minute + 45.7 * second + startTime);
+        elements.testRunning.timer.get().should("have.text", "4:38:45.7");
+        // Check that it shows double digits for minutes and seconds when in hours
+        setTimeTo(5 * hour + 1 * minute + 4 * second + startTime);
+        elements.testRunning.timer.get().should("have.text", "5:01:04.0");
+        // Just ensuring a ridiculous amount works too, note we don't break it down to days
+        setTimeTo(234 * hour + 59 * minute + 18.1 * second + startTime);
+        elements.testRunning.timer.get().should("have.text", "234:59:18.1");
+      });
+
+      describe("ends test correctly", function () {
+        it("on clicking anywhere on the screen", function () {
+          // Just proxy "anywhere" as the top left corner
+          cy.get("body", { log: false }).click("topLeft");
+          elements.evaluateResult.container.assertShows();
         });
-      });
-      it("on button mash space before w", function () {
-        cy.clock();
-        cy.buttonMash([
-          Key.l,
-          Key.five,
-          Key.shift,
-          Key.space,
-          Key.capsLock,
-          Key.leftCtrl,
-          Key.w,
-          Key.W,
-        ]);
-        elements.evaluateResult.container.assertShows();
-      });
 
-      it("on button mash w before space", function () {
-        cy.clock();
-        cy.buttonMash([
-          Key.w,
-          Key.W,
-          Key.l,
-          Key.five,
-          Key.shift,
-          Key.space,
-          Key.capsLock,
-          Key.leftCtrl,
-        ]);
-        elements.evaluateResult.container.assertShows();
-      });
+        it("on touching the screen from a touch device", function () {
+          cy.touch();
+          elements.evaluateResult.container.assertShows();
+        });
 
-      it("on long button mash", function () {
-        cy.clock();
-        cy.longButtonMash([
-          Key.w,
-          Key.W,
-          Key.l,
-          Key.five,
-          Key.shift,
-          Key.space,
-          Key.capsLock,
-          Key.leftCtrl,
-        ]);
-        elements.evaluateResult.container.assertShows();
+        it.skip("has no delays on touching", function () {
+          /**
+           * These are sadly the best assertion we can think of to check it doesn't have
+           * the annoying delay
+           */
+          elements.testRunning.container
+            .get()
+            .should("have.css", "touch-action", "none");
+          cy.document().should((document) => {
+            const tag = document.head.querySelector(
+              'meta[name="viewport"][content]'
+            );
+
+            // This should help according to
+            // https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away
+            expect((tag as Element & { content: string }).content).to.equal(
+              "width=device-width"
+            );
+          });
+        });
+
+        it("on pressing any keyboard key", function () {
+          ([
+            // Space, w and W are the important ones as they are also used to evaluate
+            Key.space,
+            Key.w,
+            Key.W,
+            Key.l,
+            Key.five,
+            Key.capsLock,
+            Key.leftCtrl,
+          ] as const).forEach((key) => {
+            cy.withOverallNameLogged(
+              {
+                displayName: "TESTING KEY",
+                message: getKeyValue(key),
+              },
+              () => {
+                cy.pressKey(key, { log: false });
+                elements.evaluateResult.container.assertShows({ log: false });
+              }
+            );
+            cy.withOverallNameLogged(
+              {
+                name: "resetting state",
+                displayName: "RESETTING STATE",
+                message: "to testRunning state",
+              },
+              () => {
+                states.testRunning.restoreState({ log: false });
+              }
+            );
+          });
+        });
+        it("on long-pressing any keyboard key", function () {
+          cy.clock();
+          ([
+            // Space, w and W are the important ones as they are also used to evaluate
+            Key.space,
+            Key.w,
+            Key.W,
+            Key.l,
+            Key.five,
+            Key.capsLock,
+            Key.leftCtrl,
+          ] as const).forEach((key) => {
+            cy.withOverallNameLogged(
+              {
+                displayName: "TESTING KEY",
+                message: "'" + getKeyValue(key) + "'",
+              },
+              () => {
+                cy.longPressKey(key, { log: false });
+                elements.evaluateResult.container.assertShows({ log: false });
+              }
+            );
+            cy.withOverallNameLogged(
+              {
+                name: "resetting state",
+                displayName: "RESETTING STATE",
+                message: "to testRunning state",
+              },
+              () => {
+                states.testRunning.restoreState();
+              }
+            );
+          });
+        });
+        it("on button mash space before w", function () {
+          cy.clock();
+          cy.buttonMash([
+            Key.l,
+            Key.five,
+            Key.shift,
+            Key.space,
+            Key.capsLock,
+            Key.leftCtrl,
+            Key.w,
+            Key.W,
+          ]);
+          elements.evaluateResult.container.assertShows();
+        });
+
+        it("on button mash w before space", function () {
+          cy.clock();
+          cy.buttonMash([
+            Key.w,
+            Key.W,
+            Key.l,
+            Key.five,
+            Key.shift,
+            Key.space,
+            Key.capsLock,
+            Key.leftCtrl,
+          ]);
+          elements.evaluateResult.container.assertShows();
+        });
+
+        it("on long button mash", function () {
+          cy.clock();
+          cy.longButtonMash([
+            Key.w,
+            Key.W,
+            Key.l,
+            Key.five,
+            Key.shift,
+            Key.space,
+            Key.capsLock,
+            Key.leftCtrl,
+          ]);
+          elements.evaluateResult.container.assertShows();
+        });
       });
     });
   });
@@ -580,8 +643,8 @@ describe("Algorithm Trainer", function () {
         }: {
           milliseconds: number;
         }): void {
-          getTestRunningWithMockedTime();
-          setTimeTo(milliseconds);
+          const startTime = getTestRunningWithMockedTime();
+          setTimeTo(milliseconds + startTime);
           cy.pressKey(Key.space);
         }
 
@@ -630,13 +693,7 @@ describe("Algorithm Trainer", function () {
 
     describe("after ignoring key presses over", function () {
       beforeEach(function () {
-        states.testRunning.restoreState();
-        cy.clock();
-        cy.pressKey(Key.space);
-        elements.evaluateResult.container.waitFor();
-        cy.tick(300);
-        cy.waitForDocumentEventListeners("keydown", "keyup");
-        cy.clock().then((c) => c.restore());
+        states.evaluateResultAfterIgnoringKeyPresses.restoreState();
       });
 
       describe("approves correctly", function () {
@@ -697,7 +754,7 @@ describe("Algorithm Trainer", function () {
             cy.withOverallNameLogged(
               {
                 displayName: "TESTING KEY",
-                message: getKeyValue(key),
+                message: "'" + getKeyValue(key) + "'",
               },
               () => {
                 cy.pressKey(key, { log: false });
@@ -785,7 +842,7 @@ describe("Algorithm Trainer", function () {
   });
 });
 
-function getTestRunningWithMockedTime() {
+function getTestRunningWithMockedTime(): number {
   // There are issues with the restore state functionality when mocking time.
   // Specifically surrounding that the code stores timestamps and mocking
   // changes the timestamps to 0 (or another constant), while the restored version
@@ -795,17 +852,24 @@ function getTestRunningWithMockedTime() {
   // in order to allow for the mocking time.
   states.startPage.restoreState();
   installClock();
+  let curTime = 0;
   cy.pressKey(Key.space);
+  elements.getReadyScreen.container.waitFor();
+  // This has to match exactly with the applications one sadly, so pretty brittle
+  const timeForGetReadyTransition = 1000;
+  tick(timeForGetReadyTransition);
+  curTime += timeForGetReadyTransition;
   elements.testRunning.container.waitFor();
+  return curTime;
 }
 
 function getTestRunningWithMaxLengthTimer() {
   // We set the timer to double digit hours to test the limits of the width, that seems like it could be plausible
   // for a huge multiblind attempt if we for some reason support that in the future,
   // but three digit hours seems implausible so no need to test that
-  getTestRunningWithMockedTime();
+  const startTime = getTestRunningWithMockedTime();
   // 15 hours
-  setTimeTo(1000 * 60 * 60 * 15);
+  setTimeTo(1000 * 60 * 60 * 15 + startTime);
   elements.testRunning.timer.get().should("have.text", "15:00:00.0");
 }
 
@@ -815,6 +879,15 @@ function buildAsserter(testId: string) {
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
     return cy.getByTestId(testId, options).should("be.visible");
+  };
+}
+
+function buildNotExistAsserter(testId: string) {
+  return function (options?: {
+    log?: boolean;
+    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  }) {
+    return cy.getByTestId(testId, options).should("not.exist");
   };
 }
 

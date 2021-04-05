@@ -5,6 +5,9 @@ const elements = {
     container: "start-page-container",
     startButton: "start-button",
   }),
+  getReadyScreen: buildElementsCategory({
+    container: "get-ready-container",
+  }),
   testRunning: buildElementsCategory({
     container: "test-running-container",
   }),
@@ -35,6 +38,8 @@ describe("Algorithm Trainer Desktop Only", function () {
 
     // Note this also checks the space shortcut actually works
     cy.pressKey(Key.space);
+    elements.getReadyScreen.container.waitFor();
+    cy.tick(1000);
     elements.testRunning.container.waitFor();
     cy.pressKey(Key.space);
     elements.evaluateResult.container.waitFor();
@@ -54,6 +59,8 @@ describe("Algorithm Trainer Desktop Only", function () {
 
     // Note this also checks the space shortcut actually works
     cy.pressKey(Key.space);
+    elements.getReadyScreen.container.waitFor();
+    cy.tick(1000);
     elements.testRunning.container.waitFor();
 
     // And now we go back to evaluateResult so we can do the wrong path
@@ -76,7 +83,7 @@ describe("Algorithm Trainer Desktop Only", function () {
     // Check space actually works as a shortcut too, just to make sure we're
     // asserting the right thing. It's more thoroughly checked in main test
     cy.pressKey(Key.space);
-    elements.testRunning.container.waitFor();
+    elements.getReadyScreen.container.waitFor();
   });
 });
 
