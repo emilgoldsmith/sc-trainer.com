@@ -673,13 +673,13 @@ buttonWithShortcut deviceClass attributes { onPress, labelText, keyboardShortcut
                     keyStr
 
         shortcutText =
-            text <| "( " ++ keyString ++ " )"
+            text <| "(" ++ keyString ++ ")"
 
         withShortcutLabel =
             Input.button attributes
                 { onPress = onPress
                 , label =
-                    column []
+                    column [ centerX ]
                         [ el [ centerX, Font.size fontSize ] <| text labelText
                         , el [ centerX, Font.size (fontSize // 2) ] shortcutText
                         ]
