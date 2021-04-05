@@ -393,6 +393,10 @@ view model =
 
 viewFullScreen : Model -> Element Msg
 viewFullScreen model =
+    let
+        device =
+            classifyDevice model.viewportSize
+    in
     case model.trainerState of
         StartPage ->
             Element.map BetweenTestsMessage <|
@@ -415,16 +419,18 @@ viewFullScreen model =
                         ]
                       <|
                         Components.Cube.viewUFR (minDimension model.viewportSize // 4) model.expectedCube
-                    , Input.button
+                    , buttonWithShortcut
+                        device.class
                         [ testid "start-button"
                         , centerX
                         , Background.color <| rgb255 0 128 0
                         , padding (minDimension model.viewportSize // 40)
                         , Border.rounded (minDimension model.viewportSize // 45)
-                        , Font.size (minDimension model.viewportSize // 25)
                         ]
                         { onPress = Just <| StartTest NothingGenerated
-                        , label = text "Start"
+                        , labelText = "Start"
+                        , fontSize = minDimension model.viewportSize // 25
+                        , keyboardShortcut = Space
                         }
                     ]
 
@@ -502,26 +508,34 @@ viewFullScreen model =
                             Components.Cube.viewUBL cubeSize model.expectedCube
                         ]
                     , row [ centerX, spacing buttonSpacing ]
-                        [ Input.button
+                        [ buttonWithShortcut
+                            device.class
                             [ testid "correct-button"
                             , Background.color <| rgb255 0 128 0
                             , padding buttonPadding
                             , Border.rounded buttonRounding
-                            , Font.size buttonSize
                             , Font.center
                             , width (px <| minDimension model.viewportSize // 3)
                             ]
-                            { onPress = Just EvaluateCorrect, label = text "Correct" }
-                        , Input.button
+                            { onPress = Just EvaluateCorrect
+                            , labelText = "Correct"
+                            , keyboardShortcut = Space
+                            , fontSize = buttonSize
+                            }
+                        , buttonWithShortcut
+                            device.class
                             [ testid "wrong-button"
                             , Background.color <| rgb255 255 0 0
                             , padding buttonPadding
                             , Border.rounded buttonRounding
-                            , Font.size buttonSize
                             , Font.center
                             , width (px <| minDimension model.viewportSize // 3)
                             ]
-                            { onPress = Just EvaluateWrong, label = text "Wrong" }
+                            { onPress = Just EvaluateWrong
+                            , labelText = "Wrong"
+                            , keyboardShortcut = W
+                            , fontSize = buttonSize
+                            }
                         ]
                     ]
 
@@ -545,16 +559,18 @@ viewFullScreen model =
                         ]
                       <|
                         text "Continue When Ready"
-                    , Input.button
+                    , buttonWithShortcut
+                        device.class
                         [ testid "next-button"
                         , centerX
                         , Background.color <| rgb255 0 128 0
                         , padding (minDimension model.viewportSize // 40)
                         , Border.rounded (minDimension model.viewportSize // 45)
-                        , Font.size (minDimension model.viewportSize // 25)
                         ]
                         { onPress = Just <| StartTest NothingGenerated
-                        , label = text "Next"
+                        , labelText = "Next"
+                        , keyboardShortcut = Space
+                        , fontSize = minDimension model.viewportSize // 25
                         }
                     ]
 
@@ -603,16 +619,18 @@ viewFullScreen model =
                         ]
                       <|
                         Components.Cube.viewUFR (minDimension model.viewportSize // 4) model.expectedCube
-                    , Input.button
+                    , buttonWithShortcut
+                        device.class
                         [ testid "next-button"
                         , centerX
                         , Background.color <| rgb255 0 128 0
                         , padding (minDimension model.viewportSize // 40)
                         , Border.rounded (minDimension model.viewportSize // 45)
-                        , Font.size (minDimension model.viewportSize // 25)
                         ]
                         { onPress = Just <| StartTest NothingGenerated
-                        , label = text "Next"
+                        , labelText = "Next"
+                        , keyboardShortcut = Space
+                        , fontSize = minDimension model.viewportSize // 25
                         }
                     ]
 
@@ -638,3 +656,51 @@ minDimension { width, height } =
 pllToString : AlgorithmRepository.PLL -> String
 pllToString pll =
     AlgorithmRepository.getPllLetters pll ++ "-perm"
+
+
+buttonWithShortcut : DeviceClass -> List (Attribute msg) -> { a | onPress : Maybe msg, labelText : String, fontSize : Int, keyboardShortcut : Key } -> Element msg
+buttonWithShortcut deviceClass attributes { onPress, labelText, keyboardShortcut, fontSize } =
+    let
+        keyString =
+            case keyboardShortcut of
+                W ->
+                    "W"
+
+                Space ->
+                    "Space"
+
+                SomeKey keyStr ->
+                    keyStr
+
+        shortcutText =
+            text <| "( " ++ keyString ++ " )"
+
+        withShortcutLabel =
+            Input.button attributes
+                { onPress = onPress
+                , label =
+                    column []
+                        [ el [ centerX, Font.size fontSize ] <| text labelText
+                        , el [ centerX, Font.size (fontSize // 2) ] shortcutText
+                        ]
+                }
+
+        withoutShortcutLabel =
+            Input.button attributes
+                { onPress = onPress
+                , label =
+                    el [ centerX, Font.size fontSize ] <| text labelText
+                }
+    in
+    case deviceClass of
+        Phone ->
+            withoutShortcutLabel
+
+        Tablet ->
+            withoutShortcutLabel
+
+        Desktop ->
+            withShortcutLabel
+
+        BigDesktop ->
+            withShortcutLabel
