@@ -16,7 +16,6 @@ export class StateCache {
         message: this.name,
       },
       (consolePropsSetter) => {
-        // TODO: Wait for model to be registered with a cy command
         cy.visit("/");
         this.getToThatState({ log: false });
         this.waitForStateToAppear({ log: false });
@@ -33,7 +32,6 @@ export class StateCache {
       throw new Error(
         `Attempted to restore the ${this.name} state before cache was populated`
       );
-    // TODO: Wait for model to be registered with a cy command
     cy.setApplicationState(this.elmModel, this.name, options);
     this.waitForStateToAppear(options);
   }
