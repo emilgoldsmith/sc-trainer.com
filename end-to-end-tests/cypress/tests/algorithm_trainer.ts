@@ -364,6 +364,11 @@ describe("Algorithm Trainer", function () {
       // This one we accept possibly having to scroll for so just check it exists
       // We check it's visibility including scroll in the element sizing
       elements.startPage.instructionsText.get().should("exist");
+
+      // A smoke test that we have added some links for the cubing terms
+      elements.startPage.container.get().within(() => {
+        cy.get("a").should("have.length.above", 0);
+      });
     });
 
     it("sizes elements reasonably", function () {
