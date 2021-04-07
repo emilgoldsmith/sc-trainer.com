@@ -95,13 +95,14 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
       current < LONG_TIME_MS;
       previous = current, current += KEY_REPEAT_INTERVAL
     ) {
-      cy.tick(current - previous);
+      cy.tick(current - previous, { log: false });
       cy.document({ log: false })
         .trigger("keydown", { ...repeatedEvent, log: false })
         .trigger("keypress", { ...repeatedEvent, log: false });
     }
     const remainingTime = LONG_TIME_MS - previous;
-    remainingTime > 0 && cy.tick(remainingTime);
+    remainingTime > 0 && cy.tick(remainingTime, { log: false });
+    if (options?.log !== false) cy.log(`${LONG_TIME_MS}ms passed`);
     cy.document({ log: false }).trigger("keyup", {
       ...nonRepeatedEvent,
       log: false,
@@ -143,7 +144,7 @@ const buttonMash: Cypress.Chainable<undefined>["buttonMash"] = (
       const timeToPress = (index / numKeys) * BUTTON_MASH_DURATION;
       const timeUntilPress = timeToPress - curTime;
       if (timeUntilPress > 0) {
-        cy.tick(timeUntilPress);
+        cy.tick(timeUntilPress, { log: false });
         curTime += timeUntilPress;
       }
       const event = buildKeyboardEvent(key, false);
@@ -153,7 +154,7 @@ const buttonMash: Cypress.Chainable<undefined>["buttonMash"] = (
     });
     const remainingTime = BUTTON_MASH_DURATION - curTime;
     if (remainingTime > 0) {
-      cy.tick(remainingTime);
+      cy.tick(remainingTime, { log: false });
       curTime += remainingTime;
     }
     keys.forEach((key) => {
@@ -194,7 +195,7 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
       const timeToPress = (index / numKeys) * BUTTON_MASH_DURATION;
       const timeUntilPress = timeToPress - curTime;
       if (timeUntilPress > 0) {
-        cy.tick(timeUntilPress);
+        cy.tick(timeUntilPress, { log: false });
         curTime += timeUntilPress;
       }
       const nonRepeatedEvent = buildKeyboardEvent(key, false);
@@ -202,6 +203,7 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
         .trigger("keydown", { ...nonRepeatedEvent, log: false })
         .trigger("keypress", { ...nonRepeatedEvent, log: false });
     });
+    if (options?.log !== false) cy.log("All buttons pressed down");
     const LONG_TIME_MS = 1500;
     const KEY_REPEAT_DELAY = 500;
     const KEY_REPEAT_INTERVAL = 35;
@@ -212,7 +214,7 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
       current < LONG_TIME_MS;
       previous = current, current += KEY_REPEAT_INTERVAL
     ) {
-      cy.tick(current - previous);
+      cy.tick(current - previous, { log: false });
       keys.forEach((key) => {
         const repeatedEvent = buildKeyboardEvent(key, true);
         cy.document({ log: false })
@@ -221,8 +223,9 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
       });
     }
     const remainingTime = LONG_TIME_MS - previous;
-    remainingTime > 0 && cy.tick(remainingTime);
-    cy.tick(LONG_TIME_MS);
+    remainingTime > 0 && cy.tick(remainingTime, { log: false });
+    cy.tick(LONG_TIME_MS, { log: false });
+    if (options?.log !== false) cy.log(`${LONG_TIME_MS}ms passed`);
     keys.forEach((key) => {
       const nonRepeatedEvent = buildKeyboardEvent(key, false);
       cy.document({ log: false }).trigger("keyup", {
@@ -230,6 +233,7 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
         log: false,
       });
     });
+    if (options?.log !== false) cy.log("All keys released");
   };
   if (options?.log === false) {
     handleButtonMash();
