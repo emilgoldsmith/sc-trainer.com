@@ -51,6 +51,12 @@ function buildElementsCategory<keys extends string>(
     waitFor: ReturnType<typeof buildWaiter>;
     assertShows: ReturnType<typeof buildAsserter>;
     assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
+    assertContainedByWindow: ReturnType<typeof buildContainedByWindowAsserter>;
+    assertConsumableViaScroll: ReturnType<
+      typeof buildConsumableViaScrollAsserter
+    >;
+    isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
+    testId: string;
   };
 } & {
   [key in keys]: {
@@ -58,13 +64,27 @@ function buildElementsCategory<keys extends string>(
     waitFor: ReturnType<typeof buildWaiter>;
     assertShows: ReturnType<typeof buildAsserter>;
     assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
+    assertContainedByWindow: ReturnType<typeof buildContainedByWindowAsserter>;
+    assertConsumableViaScroll: ReturnType<
+      typeof buildConsumableViaScrollAsserter
+    >;
+    isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
+    testId: string;
   };
 } {
   const getContainer = buildGetter(testIds.container);
-  function buildWithinContainer(
-    builder: typeof buildGetter,
+  function buildWithinContainer<T>(
+    builder: (
+      testId: string
+    ) => (options?: {
+      log?: boolean;
+      withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+    }) => Cypress.Chainable<T>,
     testId: string
-  ): ReturnType<typeof buildGetter> {
+  ): (options?: {
+    log?: boolean;
+    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  }) => Cypress.Chainable<T> {
     const fn = builder(testId);
     return function (...args: Parameters<ReturnType<typeof buildGetter>>) {
       return getContainer({ log: false }).then((containerElement) => {
@@ -86,6 +106,10 @@ function buildElementsCategory<keys extends string>(
         waitFor: buildWaiter(testId),
         assertShows: buildAsserter(testId),
         assertDoesntExist: buildNotExistAsserter(testId),
+        assertContainedByWindow: buildContainedByWindowAsserter(testId),
+        assertConsumableViaScroll: buildConsumableViaScrollAsserter(testId),
+        isContainedByWindow: buildContainedByWindow(testId),
+        testId,
       };
     }
     return {
@@ -93,6 +117,14 @@ function buildElementsCategory<keys extends string>(
       waitFor: buildWithinContainer(buildWaiter, testId),
       assertShows: buildWithinContainer(buildAsserter, testId),
       assertDoesntExist: buildWithinContainer(buildNotExistAsserter, testId),
+      assertContainedByWindow: buildWithinContainer(
+        buildContainedByWindowAsserter,
+        testId
+      ),
+      // TODO: Make this work within container too
+      assertConsumableViaScroll: buildConsumableViaScrollAsserter(testId),
+      isContainedByWindow: buildWithinContainer(buildContainedByWindow, testId),
+      testId,
     };
   }) as {
     container: {
@@ -100,6 +132,14 @@ function buildElementsCategory<keys extends string>(
       waitFor: ReturnType<typeof buildWaiter>;
       assertShows: ReturnType<typeof buildAsserter>;
       assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
+      assertContainedByWindow: ReturnType<
+        typeof buildContainedByWindowAsserter
+      >;
+      assertConsumableViaScroll: ReturnType<
+        typeof buildConsumableViaScrollAsserter
+      >;
+      isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
+      testId: string;
     };
   } & {
     [key in keys]: {
@@ -107,6 +147,14 @@ function buildElementsCategory<keys extends string>(
       waitFor: ReturnType<typeof buildWaiter>;
       assertShows: ReturnType<typeof buildAsserter>;
       assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
+      assertContainedByWindow: ReturnType<
+        typeof buildContainedByWindowAsserter
+      >;
+      assertConsumableViaScroll: ReturnType<
+        typeof buildConsumableViaScrollAsserter
+      >;
+      isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
+      testId: string;
     };
   };
 }
@@ -120,6 +168,12 @@ function buildGlobalsCategory<keys extends string>(
     waitFor: ReturnType<typeof buildWaiter>;
     assertShows: ReturnType<typeof buildAsserter>;
     assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
+    assertContainedByWindow: ReturnType<typeof buildContainedByWindowAsserter>;
+    assertConsumableViaScroll: ReturnType<
+      typeof buildConsumableViaScrollAsserter
+    >;
+    isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
+    testId: string;
   };
 } {
   return Cypress._.mapValues(testIds, (testId: string) => ({
@@ -127,12 +181,24 @@ function buildGlobalsCategory<keys extends string>(
     waitFor: buildWaiter(testId),
     assertShows: buildAsserter(testId),
     assertDoesntExist: buildNotExistAsserter(testId),
+    assertContainedByWindow: buildContainedByWindowAsserter(testId),
+    assertConsumableViaScroll: buildConsumableViaScrollAsserter(testId),
+    isContainedByWindow: buildContainedByWindow(testId),
+    testId,
   })) as {
     [key in keys]: {
       get: ReturnType<typeof buildGetter>;
       waitFor: ReturnType<typeof buildWaiter>;
       assertShows: ReturnType<typeof buildAsserter>;
       assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
+      assertContainedByWindow: ReturnType<
+        typeof buildContainedByWindowAsserter
+      >;
+      assertConsumableViaScroll: ReturnType<
+        typeof buildConsumableViaScrollAsserter
+      >;
+      isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
+      testId: string;
     };
   };
 }
@@ -140,9 +206,11 @@ function buildGlobalsCategory<keys extends string>(
 const elements = {
   startPage: buildElementsCategory({
     container: "start-page-container",
+    welcomeText: "welcome-text",
     cubeStartExplanation: "cube-start-explanation",
     cubeStartState: "cube-start-state",
     startButton: "start-button",
+    instructionsText: "instructions-text",
   }),
   getReadyScreen: buildElementsCategory({
     container: "get-ready-container",
@@ -282,16 +350,29 @@ describe("Algorithm Trainer", function () {
     });
 
     it("has all the correct elements", function () {
-      elements.startPage.startButton.assertShows();
+      // These elements should all display without scrolling
+      elements.startPage.welcomeText.assertShows();
+      elements.startPage.welcomeText.assertContainedByWindow();
       elements.startPage.cubeStartExplanation.assertShows();
+      elements.startPage.cubeStartExplanation.assertContainedByWindow();
       elements.startPage.cubeStartState.get().within(() => {
         elements.globals.cube.assertShows();
+        elements.globals.cube.assertContainedByWindow();
       });
+      elements.startPage.startButton.assertShows();
+      elements.startPage.startButton.assertContainedByWindow();
+      // This one we accept possibly having to scroll for so just check it exists
+      // We check it's visibility including scroll in the element sizing
+      elements.startPage.instructionsText.get().should("exist");
     });
 
     it("sizes elements reasonably", function () {
       cy.assertNoHorizontalScrollbar();
-      cy.assertNoVerticalScrollbar();
+      // This one is allowed vertical scrolling, but we want to check
+      // that we can actually scroll down to see instructionsText if its missing
+      elements.startPage.instructionsText.assertConsumableViaScroll(
+        elements.startPage.container.testId
+      );
     });
 
     it("starts test when pressing space", function () {
@@ -906,6 +987,148 @@ function buildGetter(testId: string) {
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
     return cy.getByTestId(testId, options);
+  };
+}
+
+function buildContainedByWindow(testId: string) {
+  return function (options?: {
+    log?: boolean;
+    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  }) {
+    return cy.getByTestId(testId, options).then((instructionsElement) => {
+      const instructionsTop = instructionsElement.offset()?.top;
+      if (instructionsTop === undefined) {
+        throw new Error("Element has no offset");
+      }
+      const instructionsBottom =
+        instructionsTop + (instructionsElement.height() as number);
+      if (instructionsBottom === undefined) {
+        throw new Error("Element has no height");
+      }
+      return cy.window(options).then((window) => {
+        const windowTop = 0;
+        const windowBottom = Cypress.$(window).height();
+        if (windowBottom === undefined) {
+          throw new Error("Window has no height");
+        }
+
+        return (
+          instructionsTop >= windowTop && instructionsBottom <= windowBottom
+        );
+      });
+    });
+  };
+}
+
+function buildContainedByWindowAsserter(testId: string) {
+  return function (options?: {
+    log?: boolean;
+    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  }) {
+    return cy.getByTestId(testId, options).then((instructionsElement) => {
+      const instructionsTop = instructionsElement.offset()?.top;
+      if (instructionsTop === undefined) {
+        throw new Error("Element has no offset");
+      }
+      const instructionsBottom =
+        instructionsTop + (instructionsElement.height() as number);
+      if (instructionsBottom === undefined) {
+        throw new Error("Element has no height");
+      }
+      cy.window(options).should((window) => {
+        const windowTop = 0;
+        const windowBottom = Cypress.$(window).height();
+        if (windowBottom === undefined) {
+          throw new Error("Window has no height");
+        }
+        expect(
+          instructionsTop,
+          "element shouldn't poke over top of window"
+        ).to.be.at.least(windowTop);
+        expect(
+          instructionsBottom,
+          "element shouldn't poke under bottom of window"
+        ).to.be.at.most(windowBottom);
+      });
+    });
+  };
+}
+
+function buildConsumableViaScrollAsserter(testId: string) {
+  return function (
+    scrollableContainerTestId: string,
+    options?: {
+      log?: boolean;
+      withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+    }
+  ) {
+    return cy.getByTestId(testId, options).then((ourElement) => {
+      const ourElementTop = ourElement.offset()?.top;
+      if (ourElementTop === undefined) {
+        throw new Error("Element has no offset");
+      }
+      const ourElementHeight = ourElement.outerHeight() as number;
+      if (ourElementHeight === undefined) {
+        throw new Error("Element has no height");
+      }
+      const ourElementBottom = ourElementTop + ourElementHeight;
+      cy.getByTestId(scrollableContainerTestId, options).then((container) => {
+        const containerTop = container.offset()?.top;
+        if (containerTop === undefined) {
+          throw new Error("Couldn't get offset for container");
+        }
+        const containerHeight = container.outerHeight();
+        if (containerHeight === undefined) {
+          throw new Error("Window has no height");
+        }
+        const containerBottom = containerTop + containerHeight;
+        if (ourElementHeight <= containerHeight) {
+          if (
+            ourElementTop >= containerTop &&
+            ourElementBottom <= containerBottom
+          ) {
+            cy.should(() => {
+              expect(
+                ourElementTop,
+                "element shouldn't overflow over top of container"
+              ).to.be.at.least(containerTop);
+              expect(
+                ourElementHeight,
+                "element shouldn't overflow under bottom of container"
+              ).to.be.at.most(containerBottom);
+            });
+          } else {
+            cy.getByTestId(testId, options)
+              .scrollIntoView()
+              .should(() => {
+                expect(
+                  ourElementTop,
+                  "element shouldn't overflow over top of container"
+                ).to.be.at.least(containerTop);
+                expect(
+                  ourElementHeight,
+                  "element shouldn't overflow under bottom of container"
+                ).to.be.at.most(containerBottom);
+              });
+          }
+        } else {
+          cy.getByTestId(testId).scrollIntoView().should("be.visible");
+          cy.getByTestId(scrollableContainerTestId, options).scrollTo("top");
+          cy.should(() => {
+            expect(ourElement.offset()?.top as number).to.be.at.least(
+              containerTop
+            );
+          });
+          cy.getByTestId(scrollableContainerTestId, options).scrollTo("bottom");
+          cy.should(() => {
+            expect(
+              (ourElement.offset()?.top as number) +
+                (ourElement.outerHeight() as number)
+            ).to.be.at.most(containerBottom);
+          });
+        }
+      });
+    });
   };
 }
 

@@ -9,6 +9,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Element.Region as Region
 import Html
 import Json.Decode as Decode
 import List.Nonempty
@@ -427,33 +428,97 @@ viewFullScreen model =
                     , centerX
                     , centerY
                     , spacing (minDimension model.viewportSize // 20)
+                    , padding 15
+                    , width fill
+                    , scrollbarY
                     ]
-                    [ el
+                    [ column
+                        [ testid "welcome-text"
+                        , centerX
+                        , Font.center
+                        , width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                        , spacing 15
+                        , Font.size 20
+                        ]
+                        [ paragraph [ Font.size 30, Region.heading 1 ]
+                            [ text "Welcome!" ]
+                        , paragraph []
+                            [ text "This is a "
+                            , newTabLink [] { label = text "PLL", url = "https://www.speedsolving.com/wiki/index.php/PLL" }
+                            , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from home grip, and including recognition and pre- and post-"
+                            , newTabLink [] { label = text "AUF", url = "https://www.speedsolving.com/wiki/index.php/AUF" }
+                            , text
+                                " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
+                            ]
+                        , el
+                            [ testid "divider"
+                            , width fill
+                            , Border.solid
+                            , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
+                            , Border.color (rgb255 0 0 0)
+                            ]
+                            none
+                        ]
+                    , paragraph
                         [ centerX
-                        , Font.size (minDimension model.viewportSize // 20)
+                        , Font.size 30
+                        , Font.center
                         , testid "cube-start-explanation"
+                        , Region.heading 1
                         ]
                       <|
-                        text "Orient Solved Cube Like This:"
+                        [ text "Orient Solved Cube Like This:" ]
                     , el
                         [ testid "cube-start-state"
                         , centerX
                         ]
                       <|
-                        Components.Cube.viewUFR (minDimension model.viewportSize // 4) model.expectedCube
+                        Components.Cube.viewUFR 200 model.expectedCube
                     , buttonWithShortcut
                         device.class
                         [ testid "start-button"
                         , centerX
                         , Background.color <| rgb255 0 128 0
-                        , padding (minDimension model.viewportSize // 40)
-                        , Border.rounded (minDimension model.viewportSize // 45)
+                        , padding 20
+                        , Border.rounded 15
                         ]
                         { onPress = Just StartTestGetReady
                         , labelText = "Start"
-                        , fontSize = minDimension model.viewportSize // 25
+                        , fontSize = 25
                         , keyboardShortcut = Space
                         }
+                    , column
+                        [ testid "instructions-text"
+                        , centerX
+                        , Font.center
+                        , width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                        , spacing 15
+                        ]
+                        [ el
+                            [ testid "divider"
+                            , width fill
+                            , Border.solid
+                            , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
+                            , Border.color (rgb255 0 0 0)
+                            , Font.size 20
+                            ]
+                            none
+                        , paragraph [ Font.size 30, Region.heading 1 ] [ text "Instructions:" ]
+                        , paragraph []
+                            [ text "When you press the start button (or space) you will have a second to get your cube in "
+                            , newTabLink []
+                                { url = "https://www.quora.com/How-should-a-speedcuber-hold-and-grip-the-cube/answer/Sukant-Koul-1"
+                                , label = text "home grip"
+                                }
+                            , text ". Then a PLL case will show up and the timer will start. If you successfully recognize the case apply the moves to your cube that would solve the cube on screen (including pre- and post-AUF), and then press anything to stop the timer. If you don't recognize the case just press anything when you are sure you can't recall it. Things to press include any keyboard key, the screen and your mouse/touchpad."
+                            ]
+                        , paragraph []
+                            [ text "You will then be displayed how the cube should look if you applied the correct moves. Click the button labelled correct or wrong depending on whether your cube matches the one on screen, and if you got it correct, simply continue to the next case without any change to your cube!"
+                            ]
+                        , paragraph []
+                            [ text "If you got it wrong you will have to solve the cube to reset it before being able to continue to the next case. Don't worry, you will be instructed through all this by the application."
+                            ]
+                        ]
                     ]
 
         GetReadyScreen ->

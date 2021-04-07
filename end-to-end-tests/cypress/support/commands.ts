@@ -390,15 +390,63 @@ const assertNoHorizontalScrollbar: Cypress.Chainable<undefined>["assertNoHorizon
       displayName: "ASSERT SCROLLBAR",
       message: `no horizontal allowed`,
     },
-    () => {
+    (consolePropsSetter) => {
       cy.document({ log: false }).then((document) =>
         cy.window({ log: false }).should((window) => {
+          const windowWidth = Cypress.$(window).width();
+          if (windowWidth === undefined)
+            throw new Error("Window width is undefined");
+
           expect(
             Cypress.$(document).width(),
             "document width at most window width"
-          ).to.be.at.most(Cypress.$(window).width() as number);
+          ).to.be.at.most(windowWidth);
         })
       );
+      // The previous check won't necessarily work for elements with position fixed or absolute
+      // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
+      cy.window({ log: false }).then((window) => {
+        const windowWidth = Cypress.$(window).width();
+        if (windowWidth === undefined)
+          throw new Error("Window width is undefined");
+
+        cy.get(":not(style,script)").should((allDomNodes) => {
+          const minMax = { left: 0, right: 0 };
+          const consoleProps = {
+            "Furthest Left": allDomNodes.get(0),
+            "Furthest Right": allDomNodes.get(0),
+          };
+          allDomNodes.each((_, curNode) => {
+            const nodeLeft = Cypress.$(curNode).offset()?.left;
+            if (nodeLeft === undefined) {
+              throw new Error("node had no offset");
+            }
+            const nodeWidth = Cypress.$(curNode).width();
+            if (nodeWidth === undefined) {
+              throw new Error("Node had no width");
+            }
+            const nodeRight = nodeLeft + nodeWidth;
+            if (nodeLeft < minMax.left) {
+              minMax.left = nodeLeft;
+              consoleProps["Furthest Left"] = curNode;
+            }
+            if (nodeRight > minMax.right) {
+              minMax.right = nodeRight;
+              consoleProps["Furthest Right"] = curNode;
+            }
+            minMax.left = Math.min(minMax.left, nodeLeft);
+          });
+          consolePropsSetter(consoleProps);
+          expect(
+            minMax.left,
+            "furthest left element should be within window"
+          ).to.be.at.least(0);
+          expect(
+            minMax.right,
+            "furthest right element should be within window"
+          ).to.be.at.most(windowWidth);
+        });
+      });
     }
   );
 };
@@ -415,15 +463,62 @@ const assertNoVerticalScrollbar: Cypress.Chainable<undefined>["assertNoVerticalS
       displayName: "ASSERT SCROLLBAR",
       message: `no vertical allowed`,
     },
-    () => {
+    (consolePropsSetter) => {
+      // Initial simple check
       cy.document({ log: false }).then((document) =>
         cy.window({ log: false }).should((window) => {
+          const windowHeight = Cypress.$(window).height();
+          if (windowHeight === undefined)
+            throw new Error("Window height is undefined");
           expect(
             Cypress.$(document).height(),
             "document height at most window height"
-          ).to.be.at.most(Cypress.$(window).height() as number);
+          ).to.be.at.most(windowHeight);
         })
       );
+      // The previous check won't necessarily work for elements with position fixed or absolute
+      // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
+      cy.window({ log: false }).then((window) => {
+        const windowHeight = Cypress.$(window).height();
+        if (windowHeight === undefined)
+          throw new Error("Window height is undefined");
+
+        cy.get(":not(style,script)").should((allDomNodes) => {
+          const minMax = { top: 0, bottom: 0 };
+          const consoleProps = {
+            "Furthest Up": allDomNodes.get(0),
+            "Furthest Down": allDomNodes.get(0),
+          };
+          allDomNodes.each((_, curNode) => {
+            const nodeTop = Cypress.$(curNode).offset()?.top;
+            if (nodeTop === undefined) {
+              throw new Error("node had no offset");
+            }
+            const nodeHeight = Cypress.$(curNode).height();
+            if (nodeHeight === undefined) {
+              throw new Error("Node had no height");
+            }
+            const nodeBottom = nodeTop + nodeHeight;
+            if (nodeTop < minMax.top) {
+              minMax.top = nodeTop;
+              consoleProps["Furthest Up"] = curNode;
+            }
+            if (nodeBottom > minMax.bottom) {
+              minMax.bottom = nodeBottom;
+              consoleProps["Furthest Down"] = curNode;
+            }
+          });
+          consolePropsSetter(consoleProps);
+          expect(
+            minMax.top,
+            "furthest up element should be within window"
+          ).to.be.at.least(0);
+          expect(
+            minMax.bottom,
+            "furthest down element should be within window"
+          ).to.be.at.most(windowHeight);
+        });
+      });
     }
   );
 };
