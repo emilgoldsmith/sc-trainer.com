@@ -444,9 +444,15 @@ viewFullScreen model =
                             [ text "Welcome!" ]
                         , paragraph []
                             [ text "This is a "
-                            , newTabLink [] { label = text "PLL", url = "https://www.speedsolving.com/wiki/index.php/PLL" }
-                            , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from home grip, and including recognition and pre- and post-"
-                            , newTabLink [] { label = text "AUF", url = "https://www.speedsolving.com/wiki/index.php/AUF" }
+                            , newTabLink linkStyling { label = text "PLL", url = "https://www.speedsolving.com/wiki/index.php/PLL" }
+                            , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from "
+                            , newTabLink linkStyling
+                                { url = "https://www.quora.com/How-should-a-speedcuber-hold-and-grip-the-cube/answer/Sukant-Koul-1"
+                                , label = text "home grip"
+                                }
+                            , text
+                                ", and including recognition and pre- and post-"
+                            , newTabLink linkStyling { label = text "AUF", url = "https://www.speedsolving.com/wiki/index.php/AUF" }
                             , text
                                 " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
                             ]
@@ -506,11 +512,17 @@ viewFullScreen model =
                         , paragraph [ Font.size 30, Region.heading 1 ] [ text "Instructions:" ]
                         , paragraph []
                             [ text "When you press the start button (or space) you will have a second to get your cube in "
-                            , newTabLink []
+                            , newTabLink linkStyling
                                 { url = "https://www.quora.com/How-should-a-speedcuber-hold-and-grip-the-cube/answer/Sukant-Koul-1"
                                 , label = text "home grip"
                                 }
-                            , text ". Then a PLL case will show up and the timer will start. If you successfully recognize the case apply the moves to your cube that would solve the cube on screen (including pre- and post-AUF), and then press anything to stop the timer. If you don't recognize the case just press anything when you are sure you can't recall it. Things to press include any keyboard key, the screen and your mouse/touchpad."
+                            , text ". Then a "
+                            , newTabLink linkStyling { label = text "PLL", url = "https://www.speedsolving.com/wiki/index.php/PLL" }
+                            , text " case will show up and the timer will start. If you successfully recognize the case apply the moves to your cube that would solve the cube on screen (including pre- and post-"
+                            , newTabLink linkStyling
+                                { label = text "AUF", url = "https://www.speedsolving.com/wiki/index.php/AUF" }
+                            , text
+                                "), and then press anything to stop the timer. If you don't recognize the case just press anything when you are sure you can't recall it. Things to press include any keyboard key, the screen and your mouse/touchpad."
                             ]
                         , paragraph []
                             [ text "You will then be displayed how the cube should look if you applied the correct moves. Click the button labelled correct or wrong depending on whether your cube matches the one on screen, and if you got it correct, simply continue to the next case without any change to your cube!"
@@ -735,6 +747,23 @@ viewFullScreen model =
                         , fontSize = minDimension model.viewportSize // 25
                         }
                     ]
+
+
+linkStyling : List (Attribute msg)
+linkStyling =
+    [ Font.underline
+    , mouseOver
+        [ Font.color (rgb255 125 125 125)
+        ]
+    , focused
+        [ Border.shadow
+            { offset = ( 0, 0 )
+            , blur = 0
+            , size = 3
+            , color = rgb255 155 203 255
+            }
+        ]
+    ]
 
 
 viewState : Model -> Element msg
