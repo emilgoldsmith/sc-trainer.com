@@ -1,16 +1,16 @@
-module Tests.AlgorithmRepository exposing (pllTests)
+module Tests.PLL exposing (suite)
 
-import AlgorithmRepository
 import Expect
 import List.Nonempty
 import Models.Algorithm as Algorithm
 import Models.Cube as Cube exposing (Color(..))
+import PLL
 import Test exposing (..)
 import TestHelpers.Cube exposing (plainCubie, solvedCubeRendering)
 
 
-pllTests : Test
-pllTests =
+suite : Test
+suite =
     describe "PLL"
         [ test "H perm" <|
             \_ ->
@@ -22,7 +22,7 @@ pllTests =
                             |> (\x -> { x | ul = { plainCubie | u = UpColor, l = RightColor } })
                             |> (\x -> { x | ur = { plainCubie | u = UpColor, r = LeftColor } })
                 in
-                AlgorithmRepository.referencePlls.h
+                PLL.referenceAlgs.h
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Ua perm" <|
             \_ ->
@@ -33,7 +33,7 @@ pllTests =
                             |> (\x -> { x | ur = { plainCubie | u = UpColor, r = FrontColor } })
                             |> (\x -> { x | ul = { plainCubie | u = UpColor, l = RightColor } })
                 in
-                AlgorithmRepository.referencePlls.ua
+                PLL.referenceAlgs.ua
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Ub perm" <|
             \_ ->
@@ -44,7 +44,7 @@ pllTests =
                             |> (\x -> { x | ul = { plainCubie | u = UpColor, l = FrontColor } })
                             |> (\x -> { x | ur = { plainCubie | u = UpColor, r = LeftColor } })
                 in
-                AlgorithmRepository.referencePlls.ub
+                PLL.referenceAlgs.ub
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Z perm" <|
             \_ ->
@@ -56,7 +56,7 @@ pllTests =
                             |> (\x -> { x | ul = { plainCubie | u = UpColor, l = BackColor } })
                             |> (\x -> { x | ub = { plainCubie | u = UpColor, b = LeftColor } })
                 in
-                AlgorithmRepository.referencePlls.z
+                PLL.referenceAlgs.z
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Aa perm" <|
             \_ ->
@@ -67,7 +67,7 @@ pllTests =
                             |> (\x -> { x | ubl = { plainCubie | u = UpColor, b = FrontColor, l = RightColor } })
                             |> (\x -> { x | ubr = { plainCubie | u = UpColor, b = LeftColor, r = BackColor } })
                 in
-                AlgorithmRepository.referencePlls.aa
+                PLL.referenceAlgs.aa
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Ab perm" <|
             \_ ->
@@ -78,7 +78,7 @@ pllTests =
                             |> (\x -> { x | ubr = { plainCubie | u = UpColor, b = RightColor, r = FrontColor } })
                             |> (\x -> { x | ubl = { plainCubie | u = UpColor, b = RightColor, l = BackColor } })
                 in
-                AlgorithmRepository.referencePlls.ab
+                PLL.referenceAlgs.ab
                     |> expectEqualDisregardingAUF expectedRendering
         , test "E perm" <|
             \_ ->
@@ -90,7 +90,7 @@ pllTests =
                             |> (\x -> { x | ubl = { plainCubie | u = UpColor, b = LeftColor, l = FrontColor } })
                             |> (\x -> { x | ufl = { plainCubie | u = UpColor, f = LeftColor, l = BackColor } })
                 in
-                AlgorithmRepository.referencePlls.e
+                PLL.referenceAlgs.e
                     |> expectEqualDisregardingAUF expectedRendering
         , test "F perm" <|
             \_ ->
@@ -102,7 +102,7 @@ pllTests =
                             |> (\x -> { x | ub = { plainCubie | u = UpColor, b = FrontColor } })
                             |> (\x -> { x | uf = { plainCubie | u = UpColor, f = BackColor } })
                 in
-                AlgorithmRepository.referencePlls.f
+                PLL.referenceAlgs.f
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Ga perm" <|
             \_ ->
@@ -116,7 +116,7 @@ pllTests =
                             |> (\x -> { x | ur = { plainCubie | u = UpColor, r = FrontColor } })
                             |> (\x -> { x | ub = { plainCubie | u = UpColor, b = RightColor } })
                 in
-                AlgorithmRepository.referencePlls.ga
+                PLL.referenceAlgs.ga
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Gb perm" <|
             \_ ->
@@ -130,7 +130,7 @@ pllTests =
                             |> (\x -> { x | ub = { plainCubie | u = UpColor, b = FrontColor } })
                             |> (\x -> { x | ur = { plainCubie | u = UpColor, r = BackColor } })
                 in
-                AlgorithmRepository.referencePlls.gb
+                PLL.referenceAlgs.gb
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Gc perm" <|
             \_ ->
@@ -144,7 +144,7 @@ pllTests =
                             |> (\x -> { x | ub = { plainCubie | u = UpColor, b = LeftColor } })
                             |> (\x -> { x | ur = { plainCubie | u = UpColor, r = BackColor } })
                 in
-                AlgorithmRepository.referencePlls.gc
+                PLL.referenceAlgs.gc
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Gd perm" <|
             \_ ->
@@ -158,7 +158,7 @@ pllTests =
                             |> (\x -> { x | ur = { plainCubie | u = UpColor, r = LeftColor } })
                             |> (\x -> { x | ub = { plainCubie | u = UpColor, b = RightColor } })
                 in
-                AlgorithmRepository.referencePlls.gd
+                PLL.referenceAlgs.gd
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Ja perm" <|
             \_ ->
@@ -170,7 +170,7 @@ pllTests =
                             |> (\x -> { x | ub = { plainCubie | u = UpColor, b = RightColor } })
                             |> (\x -> { x | ur = { plainCubie | u = UpColor, r = BackColor } })
                 in
-                AlgorithmRepository.referencePlls.ja
+                PLL.referenceAlgs.ja
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Jb perm" <|
             \_ ->
@@ -182,7 +182,7 @@ pllTests =
                             |> (\x -> { x | uf = { plainCubie | u = UpColor, f = RightColor } })
                             |> (\x -> { x | ur = { plainCubie | u = UpColor, r = FrontColor } })
                 in
-                AlgorithmRepository.referencePlls.jb
+                PLL.referenceAlgs.jb
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Na perm" <|
             \_ ->
@@ -194,7 +194,7 @@ pllTests =
                             |> (\x -> { x | uf = { plainCubie | u = UpColor, f = BackColor } })
                             |> (\x -> { x | ub = { plainCubie | u = UpColor, b = FrontColor } })
                 in
-                AlgorithmRepository.referencePlls.na
+                PLL.referenceAlgs.na
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Nb perm" <|
             \_ ->
@@ -206,7 +206,7 @@ pllTests =
                             |> (\x -> { x | ul = { plainCubie | u = UpColor, l = RightColor } })
                             |> (\x -> { x | ur = { plainCubie | u = UpColor, r = LeftColor } })
                 in
-                AlgorithmRepository.referencePlls.nb
+                PLL.referenceAlgs.nb
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Ra perm" <|
             \_ ->
@@ -218,7 +218,7 @@ pllTests =
                             |> (\x -> { x | ub = { plainCubie | u = UpColor, b = LeftColor } })
                             |> (\x -> { x | ul = { plainCubie | u = UpColor, l = BackColor } })
                 in
-                AlgorithmRepository.referencePlls.ra
+                PLL.referenceAlgs.ra
                     |> expectEqualDisregardingAUF expectedRendering
         , test "Rb perm" <|
             \_ ->
@@ -230,7 +230,43 @@ pllTests =
                             |> (\x -> { x | uf = { plainCubie | u = UpColor, f = LeftColor } })
                             |> (\x -> { x | ul = { plainCubie | u = UpColor, l = FrontColor } })
                 in
-                AlgorithmRepository.referencePlls.rb
+                PLL.referenceAlgs.rb
+                    |> expectEqualDisregardingAUF expectedRendering
+        , test "T perm" <|
+            \_ ->
+                let
+                    expectedRendering =
+                        solvedCubeRendering
+                            |> (\x -> { x | ufr = { plainCubie | u = UpColor, f = RightColor, r = BackColor } })
+                            |> (\x -> { x | ubr = { plainCubie | u = UpColor, b = RightColor, r = FrontColor } })
+                            |> (\x -> { x | ur = { plainCubie | u = UpColor, r = LeftColor } })
+                            |> (\x -> { x | ul = { plainCubie | u = UpColor, l = RightColor } })
+                in
+                PLL.referenceAlgs.t
+                    |> expectEqualDisregardingAUF expectedRendering
+        , test "V perm" <|
+            \_ ->
+                let
+                    expectedRendering =
+                        solvedCubeRendering
+                            |> (\x -> { x | ufr = { plainCubie | u = UpColor, f = BackColor, r = LeftColor } })
+                            |> (\x -> { x | ubl = { plainCubie | u = UpColor, b = FrontColor, l = RightColor } })
+                            |> (\x -> { x | uf = { plainCubie | u = UpColor, f = LeftColor } })
+                            |> (\x -> { x | ul = { plainCubie | u = UpColor, l = FrontColor } })
+                in
+                PLL.referenceAlgs.v
+                    |> expectEqualDisregardingAUF expectedRendering
+        , test "Y perm" <|
+            \_ ->
+                let
+                    expectedRendering =
+                        solvedCubeRendering
+                            |> (\x -> { x | ufr = { plainCubie | u = UpColor, f = BackColor, r = LeftColor } })
+                            |> (\x -> { x | ubl = { plainCubie | u = UpColor, b = FrontColor, l = RightColor } })
+                            |> (\x -> { x | uf = { plainCubie | u = UpColor, f = RightColor } })
+                            |> (\x -> { x | ur = { plainCubie | u = UpColor, r = FrontColor } })
+                in
+                PLL.referenceAlgs.y
                     |> expectEqualDisregardingAUF expectedRendering
         ]
 

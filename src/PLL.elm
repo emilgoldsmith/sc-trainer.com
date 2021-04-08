@@ -1,35 +1,8 @@
-module AlgorithmRepository exposing (PLL(..), PllAlgorithms, allPlls, getPllAlg, getPllLetters, referencePlls)
+module PLL exposing (Algorithms, PLL(..), allPlls, getAlg, getLetters, referenceAlgs)
 
 import List.Nonempty
 import Models.Algorithm as Algorithm
 import Utils.Enumerator
-
-
-type alias PllAlgorithms =
-    { -- Edges only
-      h : Algorithm.Algorithm
-    , ua : Algorithm.Algorithm
-    , ub : Algorithm.Algorithm
-    , z : Algorithm.Algorithm
-
-    -- Corners only
-    , aa : Algorithm.Algorithm
-    , ab : Algorithm.Algorithm
-    , e : Algorithm.Algorithm
-
-    -- Edges And Corners
-    , f : Algorithm.Algorithm
-    , ga : Algorithm.Algorithm
-    , gb : Algorithm.Algorithm
-    , gc : Algorithm.Algorithm
-    , gd : Algorithm.Algorithm
-    , ja : Algorithm.Algorithm
-    , jb : Algorithm.Algorithm
-    , na : Algorithm.Algorithm
-    , nb : Algorithm.Algorithm
-    , ra : Algorithm.Algorithm
-    , rb : Algorithm.Algorithm
-    }
 
 
 type PLL
@@ -54,10 +27,43 @@ type PLL
     | Nb
     | Ra
     | Rb
+    | T
+    | V
+    | Y
 
 
-getPllLetters : PLL -> String
-getPllLetters pll =
+type alias Algorithms =
+    { -- Edges only
+      h : Algorithm.Algorithm
+    , ua : Algorithm.Algorithm
+    , ub : Algorithm.Algorithm
+    , z : Algorithm.Algorithm
+
+    -- Corners only
+    , aa : Algorithm.Algorithm
+    , ab : Algorithm.Algorithm
+    , e : Algorithm.Algorithm
+
+    -- Edges And Corners
+    , f : Algorithm.Algorithm
+    , ga : Algorithm.Algorithm
+    , gb : Algorithm.Algorithm
+    , gc : Algorithm.Algorithm
+    , gd : Algorithm.Algorithm
+    , ja : Algorithm.Algorithm
+    , jb : Algorithm.Algorithm
+    , na : Algorithm.Algorithm
+    , nb : Algorithm.Algorithm
+    , ra : Algorithm.Algorithm
+    , rb : Algorithm.Algorithm
+    , t : Algorithm.Algorithm
+    , v : Algorithm.Algorithm
+    , y : Algorithm.Algorithm
+    }
+
+
+getLetters : PLL -> String
+getLetters pll =
     case pll of
         H ->
             "H"
@@ -113,12 +119,21 @@ getPllLetters pll =
         Rb ->
             "Rb"
 
+        T ->
+            "T"
 
-{-| All the PLLs. Should have length 21 when all are added
+        V ->
+            "V"
+
+        Y ->
+            "Y"
+
+
+{-| A list of all the PLLs
 
     import List.Nonempty
 
-    List.Nonempty.length allPlls --> 18
+    List.Nonempty.length allPlls --> 21
 
 -}
 allPlls : List.Nonempty.Nonempty PLL
@@ -178,6 +193,15 @@ allPlls =
                     Just Rb
 
                 Rb ->
+                    Just T
+
+                T ->
+                    Just V
+
+                V ->
+                    Just Y
+
+                Y ->
                     Nothing
     in
     case Utils.Enumerator.from H fromH of
@@ -189,62 +213,71 @@ allPlls =
             List.Nonempty.Nonempty x xs
 
 
-getPllAlg : PLL -> Algorithm.Algorithm
-getPllAlg pll =
+getAlg : PLL -> Algorithm.Algorithm
+getAlg pll =
     case pll of
         H ->
-            referencePlls.h
+            referenceAlgs.h
 
         Ua ->
-            referencePlls.ua
+            referenceAlgs.ua
 
         Ub ->
-            referencePlls.ub
+            referenceAlgs.ub
 
         Z ->
-            referencePlls.z
+            referenceAlgs.z
 
         Aa ->
-            referencePlls.aa
+            referenceAlgs.aa
 
         Ab ->
-            referencePlls.ab
+            referenceAlgs.ab
 
         E ->
-            referencePlls.e
+            referenceAlgs.e
 
         F ->
-            referencePlls.f
+            referenceAlgs.f
 
         Ga ->
-            referencePlls.ga
+            referenceAlgs.ga
 
         Gb ->
-            referencePlls.gb
+            referenceAlgs.gb
 
         Gc ->
-            referencePlls.gc
+            referenceAlgs.gc
 
         Gd ->
-            referencePlls.gd
+            referenceAlgs.gd
 
         Ja ->
-            referencePlls.ja
+            referenceAlgs.ja
 
         Jb ->
-            referencePlls.jb
+            referenceAlgs.jb
 
         Na ->
-            referencePlls.na
+            referenceAlgs.na
 
         Nb ->
-            referencePlls.nb
+            referenceAlgs.nb
 
         Ra ->
-            referencePlls.ra
+            referenceAlgs.ra
 
         Rb ->
-            referencePlls.rb
+            referenceAlgs.rb
+
+        T ->
+            referenceAlgs.t
+
+        V ->
+            referenceAlgs.v
+
+        Y ->
+            referenceAlgs.y
 
 
 {-| Plls verified to be correct so they can be used to verify user selected plls
@@ -258,66 +291,75 @@ to read version of all the algorithms that are verified to be correct
     -- Edges Only
 
     Models.Algorithm.fromString "R2 U2 R U2 R2 U2 R2 U2 R U2 R2"
-    --> Ok referencePlls.h
+    --> Ok referenceAlgs.h
 
     Models.Algorithm.fromString "F2 U' (L R') F2 (L' R) U' F2"
-    --> Ok referencePlls.ua
+    --> Ok referenceAlgs.ua
 
     Models.Algorithm.fromString "F2 U (R' L) F2 (R L') U F2"
-    --> Ok referencePlls.ub
+    --> Ok referenceAlgs.ub
 
     Models.Algorithm.fromString "R B' R' B F R' F B' R' B R F2"
-    --> Ok referencePlls.z
+    --> Ok referenceAlgs.z
 
     -- Corners Only
 
     Models.Algorithm.fromString "R' F R' B2 R F' R' B2 R2"
-    --> Ok referencePlls.aa
+    --> Ok referenceAlgs.aa
 
     Models.Algorithm.fromString "R B' R F2 R' B R F2 R2"
-    --> Ok referencePlls.ab
+    --> Ok referenceAlgs.ab
 
     Models.Algorithm.fromString "D R' D2 F' D L D' F D2 R D' F' L' F"
-    --> Ok referencePlls.e
+    --> Ok referenceAlgs.e
 
     -- Corners And Edges
 
     Models.Algorithm.fromString "L F R' F' L' F' D2 B' L' B D2 F' R F2"
-    --> Ok referencePlls.f
+    --> Ok referenceAlgs.f
 
     Models.Algorithm.fromString "F2' D (R' U R' U' R) D' F2 L' U L"
-    --> Ok referencePlls.ga
+    --> Ok referenceAlgs.ga
 
     Models.Algorithm.fromString "R' U' R B2 D (L' U L U' L) D' B2"
-    --> Ok referencePlls.gb
+    --> Ok referenceAlgs.gb
 
     Models.Algorithm.fromString "R2' D' F U' F U F' D R2 B U' B'"
-    --> Ok referencePlls.gc
+    --> Ok referenceAlgs.gc
 
     Models.Algorithm.fromString "R U R' F2 D' (L U' L' U L') D F2"
-    --> Ok referencePlls.gd
+    --> Ok referenceAlgs.gd
 
     Models.Algorithm.fromString "B2 R' U' R B2 L' D L' D' L2"
-    --> Ok referencePlls.ja
+    --> Ok referenceAlgs.ja
 
     Models.Algorithm.fromString "B2 (L U L') B2 (R D' R D) R2"
-    --> Ok referencePlls.jb
+    --> Ok referenceAlgs.jb
 
     Models.Algorithm.fromString "L U' R U2 L' U R' L U' R U2 L' U R'"
-    --> Ok referencePlls.na
+    --> Ok referenceAlgs.na
 
     Models.Algorithm.fromString "R' U L' U2 R U' L R' U L' U2 R U' L"
-    --> Ok referencePlls.nb
+    --> Ok referenceAlgs.nb
 
     Models.Algorithm.fromString "F2 R' F' U' F' U F R F' U2 F U2 F'"
-    --> Ok referencePlls.ra
+    --> Ok referenceAlgs.ra
 
     Models.Algorithm.fromString "R2 F R U R U' R' F' R U2 R' U2 R"
-    --> Ok referencePlls.rb
+    --> Ok referenceAlgs.rb
+
+    Models.Algorithm.fromString "F2 D R2 U' R2 F2 D' L2 U L2"
+    --> Ok referenceAlgs.t
+
+    Models.Algorithm.fromString "R' U R' U' B' R' B2 U' B' U B' R B R"
+    --> Ok referenceAlgs.v
+
+    Models.Algorithm.fromString "F2 D R2 U R2 D' R' U' R F2 R' U R"
+    --> Ok referenceAlgs.y
 
 -}
-referencePlls : PllAlgorithms
-referencePlls =
+referenceAlgs : Algorithms
+referenceAlgs =
     { h =
         Algorithm.build
             [ Algorithm.Turn Algorithm.R Algorithm.Halfway Algorithm.Clockwise
@@ -579,6 +621,52 @@ referencePlls =
             , Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise
             , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.CounterClockwise
             , Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
+            ]
+    , t =
+        Algorithm.build
+            [ Algorithm.Turn Algorithm.F Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.R Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.F Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.L Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.L Algorithm.Halfway Algorithm.Clockwise
+            ]
+    , v =
+        Algorithm.build
+            [ Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.B Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.B Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.B Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.B Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.B Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
+            ]
+    , y =
+        Algorithm.build
+            [ Algorithm.Turn Algorithm.F Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.D Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.F Algorithm.Halfway Algorithm.Clockwise
+            , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.CounterClockwise
+            , Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise
             , Algorithm.Turn Algorithm.R Algorithm.OneQuarter Algorithm.Clockwise
             ]
     }

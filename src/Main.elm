@@ -1,6 +1,5 @@
 port module Main exposing (main)
 
-import AlgorithmRepository
 import Browser
 import Browser.Events as Events
 import Components.Cube
@@ -15,6 +14,7 @@ import Json.Decode as Decode
 import List.Nonempty
 import Models.Algorithm as Algorithm
 import Models.Cube as Cube
+import PLL
 import Process
 import Random
 import Task
@@ -69,7 +69,7 @@ type alias TestCase =
 toAlg : TestCase -> Algorithm.Algorithm
 toAlg ( preauf, pll, postauf ) =
     preauf
-        |> Algorithm.append (AlgorithmRepository.getPllAlg pll)
+        |> Algorithm.append (PLL.getAlg pll)
         |> Algorithm.append postauf
 
 
@@ -775,7 +775,7 @@ generateTestCase : Random.Generator TestCase
 generateTestCase =
     Random.map3 (\a b c -> ( a, b, c ))
         (List.Nonempty.sample Algorithm.aufs)
-        (List.Nonempty.sample AlgorithmRepository.allPlls)
+        (List.Nonempty.sample PLL.allPlls)
         (List.Nonempty.sample Algorithm.aufs)
 
 
@@ -786,7 +786,7 @@ minDimension { width, height } =
 
 pllToString : AlgorithmRepository.PLL -> String
 pllToString pll =
-    AlgorithmRepository.getPllLetters pll ++ "-perm"
+    PLL.getLetters pll ++ "-perm"
 
 
 buttonWithShortcut : DeviceClass -> List (Attribute msg) -> { a | onPress : Maybe msg, labelText : String, fontSize : Int, keyboardShortcut : Key } -> Element msg

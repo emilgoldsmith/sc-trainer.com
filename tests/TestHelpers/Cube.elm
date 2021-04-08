@@ -14,8 +14,8 @@ compareCubeRenderings a b =
             diffs =
                 List.filterMap identity
                     [ compareCubieRenderings "ufr: " a.ufr b.ufr
-                    , compareCubieRenderings "ufl " a.ufl b.ufl
-                    , compareCubieRenderings "ubl " a.ubl b.ubl
+                    , compareCubieRenderings "ufl: " a.ufl b.ufl
+                    , compareCubieRenderings "ubl: " a.ubl b.ubl
                     , compareCubieRenderings "ubr: " a.ubr b.ubr
                     , compareCubieRenderings "dbr: " a.dbr b.dbr
                     , compareCubieRenderings "dbl: " a.dbl b.dbl
