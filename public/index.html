@@ -62,13 +62,15 @@
        */
       app.ports.logError.subscribe(handleError);
       function handleError(errorString) {
-        if (window.Cypress) {
-          throw new Error(errorString);
-        } else {
-          // TODO: Setup Sentry
-          console.error(errorString);
+        if (false/*IS_CYPRESS_TEST*/) {
+          // This will be replaced in a cypress test where the IS_CYPRESS_TEST
+          // false blocks have been string replaced to be true.
+          // If this has not happened this block will be optimized
+          // away by a minifier
+          (() => {}/*HANDLE_ERROR_CYPRESS*/)(errorString);
         }
-
+        // TODO: Setup Sentry
+        console.error(errorString);
       }
     </script>
   </body>

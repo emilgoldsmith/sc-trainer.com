@@ -7,7 +7,13 @@ export function interceptAddingElmModelObserversAndModifiers(): void {
                   </script>`,
         htmlString: res.body,
       });
-      res.send(withE2eHelpers);
+      const withAllModifiers = withE2eHelpers
+        .replace(/false\/\*IS_CYPRESS_TEST\*\//g, "true")
+        .replace(
+          "() => {}/*HANDLE_ERROR_CYPRESS*/",
+          "x => {throw new Error(x)}"
+        );
+      res.send(withAllModifiers);
     });
   });
   cy.intercept(Cypress.config().baseUrl + "/main.js", (req) => {
