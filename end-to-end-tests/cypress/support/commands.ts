@@ -374,7 +374,7 @@ Cypress.Commands.add("withOverallNameLogged", withOverallNameLogged);
 const waitForDocumentEventListeners: Cypress.Chainable<undefined>["waitForDocumentEventListeners"] = function (
   ...eventNames
 ): void {
-  cy.getCustomWindow().should((window) => {
+  cy.getCustomWindow({ log: false }).should((window) => {
     const actualEventNames = window.END_TO_END_TEST_HELPERS.getDocumentEventListeners();
     eventNames.forEach((name) => {
       expect(actualEventNames.has(name), `has expected event listener ${name}`)
@@ -529,22 +529,45 @@ const assertNoVerticalScrollbar: Cypress.Chainable<undefined>["assertNoVerticalS
 
 Cypress.Commands.add("assertNoVerticalScrollbar", assertNoVerticalScrollbar);
 
-const touch: Cypress.Chainable<undefined>["touch"] = function () {
-  const event = {
-    eventConstructor: "TouchEvent",
-  };
+const touchScreen: Cypress.Chainable<undefined>["touchScreen"] = function (
+  position
+) {
   cy.withOverallNameLogged(
     {
-      name: "touch",
+      name: "touchScreen",
       displayName: "TOUCH",
-      message: `on document element`,
+      message: `on body element`,
       consoleProps: () => ({ event }),
     },
     () => {
-      cy.document({ log: false })
-        .trigger("touchstart", { ...event, log: false })
-        .trigger("touchend", { ...event, log: false });
+      const event: { eventConstructor: "TouchEvent" } & TouchEventInit &
+        Partial<Cypress.TriggerOptions> = {
+        eventConstructor: "TouchEvent",
+      };
+      cy.get("body", { log: false })
+        .trigger("touchstart", position, { ...event })
+        .trigger("touchend", position, { ...event, log: false });
     }
   );
 };
-Cypress.Commands.add("touch", touch);
+Cypress.Commands.add("touchScreen", touchScreen);
+
+const mouseClickScreen: Cypress.Chainable<undefined>["mouseClickScreen"] = function (
+  position
+) {
+  const event = {
+    eventConstructor: "MouseEvent",
+  };
+  cy.withOverallNameLogged(
+    {
+      name: "mouseClickScreen",
+      displayName: "CLICK",
+      message: `on body element`,
+      consoleProps: () => ({ event }),
+    },
+    () => {
+      cy.get("body", { log: false }).click(position);
+    }
+  );
+};
+Cypress.Commands.add("mouseClickScreen", mouseClickScreen);

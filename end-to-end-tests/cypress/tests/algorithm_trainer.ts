@@ -304,33 +304,75 @@ describe("Algorithm Trainer", function () {
 
       describe("ends test correctly", function () {
         it("on clicking anywhere on the screen", function () {
-          // Just proxy "anywhere" as the top left corner
-          cy.get("body", { log: false }).click("topLeft");
-          elements.evaluateResult.container.assertShows();
-        });
-
-        it("on touching the screen from a touch device", function () {
-          cy.touch();
-          elements.evaluateResult.container.assertShows();
-        });
-
-        it.skip("has no delays on touching", function () {
-          /**
-           * These are sadly the best assertion we can think of to check it doesn't have
-           * the annoying delay
-           */
-          elements.testRunning.container
-            .get()
-            .should("have.css", "touch-action", "none");
-          cy.document().should((document) => {
-            const tag = document.head.querySelector(
-              'meta[name="viewport"][content]'
+          ([
+            "topLeft",
+            "top",
+            "topRight",
+            "right",
+            "bottomRight",
+            "bottom",
+            "bottomLeft",
+            "bottom",
+            "left",
+            "center",
+          ] as const).forEach((position) => {
+            cy.withOverallNameLogged(
+              {
+                name: "testingClick",
+                displayName: "TESTING CLICK",
+                message: position,
+              },
+              () => {
+                cy.mouseClickScreen(position);
+                elements.evaluateResult.container.assertShows({ log: false });
+              }
             );
+            cy.withOverallNameLogged(
+              {
+                name: "resetting state",
+                displayName: "RESETTING STATE",
+                message: "to testRunning state",
+              },
+              () => {
+                states.testRunning.restoreState({ log: false });
+              }
+            );
+          });
+        });
 
-            // This should help according to
-            // https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away
-            expect((tag as Element & { content: string }).content).to.equal(
-              "width=device-width"
+        it("on touching anywhere on the screen from a touch device", function () {
+          ([
+            "topLeft",
+            "top",
+            "topRight",
+            "right",
+            "bottomRight",
+            "bottom",
+            "bottomLeft",
+            "bottom",
+            "left",
+            "center",
+          ] as const).forEach((position) => {
+            cy.withOverallNameLogged(
+              {
+                name: "testingTouch",
+                displayName: "TESTING TOUCH",
+                message: position,
+              },
+              () => {
+                cy.touchScreen(position);
+                elements.evaluateResult.container.assertShows({ log: false });
+              }
+            );
+            cy.withOverallNameLogged(
+              {
+                name: "resetting state",
+                displayName: "RESETTING STATE",
+                message: "to testRunning state",
+              },
+              () => {
+                states.testRunning.restoreState({ log: false });
+              }
             );
           });
         });
@@ -348,6 +390,7 @@ describe("Algorithm Trainer", function () {
           ] as const).forEach((key) => {
             cy.withOverallNameLogged(
               {
+                name: "testingKey",
                 displayName: "TESTING KEY",
                 message: getKeyValue(key),
               },

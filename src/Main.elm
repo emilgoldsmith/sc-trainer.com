@@ -2,6 +2,7 @@ port module Main exposing (main)
 
 import Browser
 import Browser.Events as Events
+import Browser.Navigation
 import Components.Cube
 import Element exposing (..)
 import Element.Background as Background
@@ -10,6 +11,7 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Html
+import Html.Events
 import Json.Decode as Decode
 import List.Nonempty
 import Models.Algorithm as Algorithm
@@ -19,28 +21,28 @@ import Process
 import Random
 import Task
 import Time
+import Url
 import Utils.Css exposing (testid)
 import Utils.TimeInterval as TimeInterval
 
 
 main : Program ViewportSize Model Msg
 main =
-    Browser.element
+    Browser.application
         { init = init
         , view = view
         , update = update
         , subscriptions = subscriptions
+        , onUrlRequest = always (GlobalMessage GlobalDoNothing)
+        , onUrlChange = always (GlobalMessage GlobalDoNothing)
         }
 
 
 port logError : String -> Cmd msg
 
 
-port onTouchStart : (Decode.Value -> msg) -> Sub msg
-
-
-init : ViewportSize -> ( Model, Cmd Msg )
-init viewportSize =
+init : ViewportSize -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
+init viewportSize _ _ =
     ( { trainerState = StartPage
       , expectedCube = Cube.solved
       , viewportSize = viewportSize
@@ -98,6 +100,7 @@ type Msg
 
 type GlobalMsg
     = WindowResized Int Int
+    | GlobalDoNothing
 
 
 type BetweenTestsMsg
@@ -220,7 +223,6 @@ subscriptions model =
                             , Events.onMouseDown <|
                                 Decode.succeed <|
                                     EndTest Nothing
-                            , onTouchStart (always (EndTest Nothing))
                             , Events.onAnimationFrameDelta MillisecondsPassed
                             ]
 
@@ -273,6 +275,28 @@ subscriptions model =
             Events.onResize (\a b -> GlobalMessage (WindowResized a b))
     in
     Sub.batch [ trainerSubscriptions, globalSubscriptions ]
+
+
+topLevelEventListeners : Model -> List (Element.Attribute Msg)
+topLevelEventListeners model =
+    case model.trainerState of
+        StartPage ->
+            []
+
+        GetReadyScreen ->
+            []
+
+        TestRunning _ _ _ ->
+            List.map (mapAttribute TestRunningMessage) [ htmlAttribute <| Html.Events.on "touchstart" (Decode.succeed <| EndTest Nothing) ]
+
+        EvaluatingResult _ ->
+            []
+
+        CorrectPage ->
+            []
+
+        WrongPage _ ->
+            []
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -409,9 +433,20 @@ updateBetweenTests model msg =
             ( model, Cmd.none )
 
 
-view : Model -> Html.Html Msg
+view : Model -> Browser.Document Msg
 view model =
-    Html.div [] [ Components.Cube.injectStyles, layout [ padding 10, inFront <| viewFullScreen model ] <| viewState model ]
+    { title = "Speedcubing Trainer"
+    , body =
+        [ Components.Cube.injectStyles
+        , layout
+            (topLevelEventListeners model
+                ++ [ padding 10
+                   , inFront <| viewFullScreen model
+                   ]
+            )
+            (viewState model)
+        ]
+    }
 
 
 viewFullScreen : Model -> Element Msg

@@ -191,6 +191,8 @@ declare namespace Cypress {
 
     assertNoHorizontalScrollbar(): void;
 
-    touch(): void;
+    touchScreen(position: Cypress.PositionType): void;
+
+    mouseClickScreen(position: Cypress.PositionType): void;
   }
 }

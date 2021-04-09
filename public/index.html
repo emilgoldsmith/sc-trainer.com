@@ -31,10 +31,8 @@
   </head>
 
   <body>
-    <div id="elm-root"></div>
     <script>
       var app = Elm.Main.init({
-        node: document.getElementById("elm-root"),
         flags: {
             width: window.innerWidth,
             height: window.innerHeight,
@@ -63,8 +61,6 @@
        * PORTS
        */
       app.ports.logError.subscribe(console.error);
-      document.addEventListener("touchstart", (event) => {document.getElementById("debug").innerText += event.type + "before";app.ports.onTouchStart.send(event); document.getElementById("debug").innerText += event.type + "after";}, passiveSupported ? {passive: true} : false);
     </script>
-    <div id="debug"></div>
   </body>
 </html>
