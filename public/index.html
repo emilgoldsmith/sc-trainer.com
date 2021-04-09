@@ -6,7 +6,26 @@
       This is supposed to help remove touch delays. Taken from
       https://developers.google.com/web/updates/2013/12/300ms-tap-delay-gone-away
     -->
-    <meta name="viewport" content="width=device-width">
+    <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0">
+    <!--
+      Just in case. It is deprecated but was
+      recommended by https://css-tricks.com/snippets/html/responsive-meta-tag/
+
+      Should be ignored by any browsers that don't support it though.
+      also see https://developer.mozilla.org/en-US/docs/Web/CSS/@viewport
+    -->
+    <style>
+      @-ms-viewport {
+        width: device-width;
+        height: device-height;
+        zoom: 1;
+      }
+      @-o-viewport{
+        width: device-width;
+        height: device-height;
+        zoom: 1;
+      }
+    </style>
     <title>Speedcubing Trainer</title>
     <script type="text/javascript" src="/main.js"></script>
   </head>
