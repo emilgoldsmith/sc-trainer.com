@@ -63,7 +63,7 @@ type alias Model =
 
 
 type alias TestCase =
-    ( Algorithm.Algorithm, AlgorithmRepository.PLL, Algorithm.Algorithm )
+    ( Algorithm.Algorithm, PLL.PLL, Algorithm.Algorithm )
 
 
 toAlg : TestCase -> Algorithm.Algorithm
@@ -784,7 +784,7 @@ minDimension { width, height } =
     min width height
 
 
-pllToString : AlgorithmRepository.PLL -> String
+pllToString : PLL.PLL -> String
 pllToString pll =
     PLL.getLetters pll ++ "-perm"
 
