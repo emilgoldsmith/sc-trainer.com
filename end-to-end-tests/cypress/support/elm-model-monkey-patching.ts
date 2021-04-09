@@ -1,5 +1,13 @@
 export function interceptAddingElmModelObserversAndModifiers(): void {
-  cy.intercept(Cypress.config().baseUrl + "{,/,/index.html}", (req) => {
+  const htmlUrlPatterns = Cypress.config().baseUrl + "{,/,/index.html}";
+  expect(Cypress.minimatch(Cypress.config().baseUrl + "", htmlUrlPatterns)).to
+    .be.true;
+  expect(Cypress.minimatch(Cypress.config().baseUrl + "/", htmlUrlPatterns)).to
+    .be.true;
+  expect(
+    Cypress.minimatch(Cypress.config().baseUrl + "/index.html", htmlUrlPatterns)
+  ).to.be.true;
+  cy.intercept(htmlUrlPatterns, (req) => {
     req.reply((res) => {
       const withE2eHelpers = addToDocumentHead({
         toAdd: `<script>
@@ -16,6 +24,9 @@ export function interceptAddingElmModelObserversAndModifiers(): void {
       res.send(withAllModifiers);
     });
   });
+  const jsPattern = Cypress.config().baseUrl + "/main.js";
+  expect(Cypress.minimatch(Cypress.config().baseUrl + "/main.js", jsPattern)).to
+    .be.true;
   cy.intercept(Cypress.config().baseUrl + "/main.js", (req) => {
     req.reply((res) => {
       if (res.statusCode === 304) {
