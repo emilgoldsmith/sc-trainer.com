@@ -63,6 +63,7 @@ function addE2ETestHelpersToWindow() {
         );
       }
       modelUpdater(newModel);
+      clearAllTimers();
       model = newModel;
     },
     getDocumentEventListeners() {
@@ -73,6 +74,7 @@ function addE2ETestHelpersToWindow() {
       registerModelUpdater: (updater) => (modelUpdater = updater),
     },
   };
+
   function trackDocumentEventListeners(): Set<keyof DocumentEventMap> {
     const eventListeners = new Set<keyof DocumentEventMap>();
     const add = document.addEventListener;
@@ -118,6 +120,34 @@ function addE2ETestHelpersToWindow() {
     };
     return eventListeners;
   }
+
+  let timeoutIds: number[] = [];
+  let intervalIds: number[] = [];
+
+  function clearAllTimers(): void {
+    timeoutIds.forEach(clearTimeout);
+    timeoutIds = [];
+    intervalIds.forEach(clearInterval);
+    intervalIds = [];
+  }
+
+  const originalSetTimeout = window.setTimeout;
+  window.setTimeout = function (
+    ...args: Parameters<typeof window.setTimeout>
+  ): ReturnType<typeof window.setTimeout> {
+    const id = originalSetTimeout(...args);
+    timeoutIds.push(id);
+    return id;
+  };
+
+  const originalSetInterval = window.setInterval;
+  window.setInterval = function (
+    ...args: Parameters<typeof window.setInterval>
+  ): ReturnType<typeof window.setInterval> {
+    const id = originalSetInterval(...args);
+    intervalIds.push(id);
+    return id;
+  };
 }
 
 function addObserversAndModifiers(htmlString: string) {
