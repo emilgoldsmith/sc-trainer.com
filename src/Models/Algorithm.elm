@@ -84,16 +84,6 @@ append (Algorithm a) (Algorithm b) =
     Algorithm (b ++ a)
 
 
-withAllPreAufCombinations : Algorithm -> List.Nonempty.Nonempty Algorithm
-withAllPreAufCombinations alg =
-    List.Nonempty.map (append alg) aufs
-
-
-withAllPostAufCombinations : Algorithm -> List.Nonempty.Nonempty Algorithm
-withAllPostAufCombinations alg =
-    List.Nonempty.map (appendTo alg) aufs
-
-
 aufs : List.Nonempty.Nonempty Algorithm
 aufs =
     List.Nonempty.Nonempty

@@ -60,7 +60,16 @@
       /**
        * PORTS
        */
-      app.ports.logError.subscribe(console.error);
+      app.ports.logError.subscribe(handleError);
+      function handleError(errorString) {
+        if (window.Cypress) {
+          throw new Error(errorString);
+        } else {
+          // TODO: Setup Sentry
+          console.error(errorString);
+        }
+
+      }
     </script>
   </body>
 </html>
