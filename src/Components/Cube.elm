@@ -57,32 +57,36 @@ defaultTheme =
     }
 
 
-cubeContainerSize : Float
-cubeContainerSize =
+containerRatio : Float
+containerRatio =
     1
 
 
-wholeCubeSideLength : Float
-wholeCubeSideLength =
-    cubeContainerSize / 1.4
+wholeCubeSideLengthRatio : Float
+wholeCubeSideLengthRatio =
+    containerRatio / 1.4
 
 
-cubieSideLength : Float
-cubieSideLength =
-    wholeCubeSideLength / 3
+cubieSideLengthRatio : Float
+cubieSideLengthRatio =
+    wholeCubeSideLengthRatio / 3
 
 
-cubieBorderWidth : Float
-cubieBorderWidth =
-    cubieSideLength / 10
+cubieBorderWidthRatio : Float
+cubieBorderWidthRatio =
+    cubieSideLengthRatio / 10
 
 
 
 -- HTML
 
 
-getCubeHtml : CubeRotation -> Int -> Cube.Cube -> Element.Element msg
-getCubeHtml rotation cubeSize cube =
+type alias Size =
+    Int
+
+
+getCubeHtml : CubeRotation -> Size -> Cube.Cube -> Element.Element msg
+getCubeHtml rotation size cube =
     Element.html <|
         let
             rendering =
@@ -90,60 +94,59 @@ getCubeHtml rotation cubeSize cube =
         in
         div
             [ htmlTestid "cube"
-            , style "font-size" <| String.fromInt cubeSize ++ "px"
-            , style "width" (String.fromFloat cubeContainerSize ++ "em")
-            , style "height" (String.fromFloat cubeContainerSize ++ "em")
+            , style "width" (getContainerSize identity size)
+            , style "height" (getContainerSize identity size)
             , style "display" "flex"
             , style "justify-content" "center"
             , style "align-items" "center"
             ]
             [ div
-                [ style "width" (String.fromFloat wholeCubeSideLength ++ "em")
-                , style "height" (String.fromFloat wholeCubeSideLength ++ "em")
+                [ style "width" (getWholeCubeSideLength identity size)
+                , style "height" (getWholeCubeSideLength identity size)
                 , style "position" "relative"
-                , style "transform-origin" ("center center -" ++ String.fromFloat (wholeCubeSideLength / 2) ++ "em")
+                , style "transform-origin" ("center center -" ++ getWholeCubeSideLength (\x -> x / 2) size)
                 , style "transform-style" "preserve-3d"
                 , toTransformCSS rotation
                 ]
               <|
-                List.map (\( a, b, c ) -> displayCubie defaultTheme b c a)
+                List.map (\( a, b, c ) -> displayCubie defaultTheme size b c a)
                     (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
             ]
 
 
-displayCubie : CubeTheme -> Coordinates -> TextOnFaces -> Cube.CubieRendering -> Html msg
-displayCubie theme { fromFront, fromLeft, fromTop } textOnFaces rendering =
+displayCubie : CubeTheme -> Size -> Coordinates -> TextOnFaces -> Cube.CubieRendering -> Html msg
+displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
     div
         [ style "position" "absolute"
-        , style "width" (String.fromFloat cubieSideLength ++ "em")
-        , style "height" (String.fromFloat cubieSideLength ++ "em")
-        , style "transform-origin" ("center center -" ++ String.fromFloat (cubieSideLength / 2) ++ "em")
+        , style "width" (getCubieSideLength identity size)
+        , style "height" (getCubieSideLength identity size)
+        , style "transform-origin" ("center center -" ++ getCubieSideLength (\x -> x / 2) size)
         , style "transform-style" "preserve-3d"
         , style "display" "inline-block"
 
         -- Position the cubie correctly
-        , style "top" (String.fromFloat (fromTop * cubieSideLength) ++ "em")
-        , style "left" (String.fromFloat (fromLeft * cubieSideLength) ++ "em")
-        , style "transform" ("translateZ(" ++ String.fromFloat (fromFront * cubieSideLength * -1) ++ "em)")
+        , style "top" (getCubieSideLength ((*) fromTop) size)
+        , style "left" (getCubieSideLength ((*) fromLeft) size)
+        , style "transform" ("translateZ(" ++ getCubieSideLength ((*) (fromFront * -1)) size ++ ")")
         ]
-        (List.map (\face -> displayCubieFace theme face (getTextForFace textOnFaces face) rendering) Cube.faces)
+        (List.map (\face -> displayCubieFace theme size face (getTextForFace textOnFaces face) rendering) Cube.faces)
 
 
-displayCubieFace : CubeTheme -> Cube.Face -> Maybe String -> Cube.CubieRendering -> Html msg
-displayCubieFace theme face textOnFace rendering =
+displayCubieFace : CubeTheme -> Size -> Cube.Face -> Maybe String -> Cube.CubieRendering -> Html msg
+displayCubieFace theme size face textOnFace rendering =
     div
         [ style "transform" <| (face |> getFaceRotation |> toCssRotationString)
         , style "background-color" <| getColorString theme (getFaceColor face rendering)
         , style "position" "absolute"
         , style "top" "0"
         , style "left" "0"
-        , style "width" (String.fromFloat cubieSideLength ++ "em")
-        , style "height" (String.fromFloat cubieSideLength ++ "em")
+        , style "width" (getCubieSideLength identity size)
+        , style "height" (getCubieSideLength identity size)
 
         -- Notice the negative sign here
-        , style "transform-origin" ("center center -" ++ String.fromFloat (cubieSideLength / 2) ++ "em")
+        , style "transform-origin" ("center center -" ++ getCubieSideLength (\x -> x / 2) size)
         , style "transform-style" "preserve-3d"
-        , style "border" (theme.plastic ++ " solid " ++ String.fromFloat cubieBorderWidth ++ "em")
+        , style "border" (theme.plastic ++ " solid " ++ getCubieBorderWidth identity size)
         , style "box-sizing" "border-box"
         ]
     <|
@@ -167,6 +170,35 @@ displayCubieFace theme face textOnFace rendering =
 
 
 -- LOGIC AND MAPPINGS
+
+
+getContainerSize : (Float -> Float) -> Int -> String
+getContainerSize fn =
+    computePixelSize (fn containerRatio)
+
+
+getWholeCubeSideLength : (Float -> Float) -> Int -> String
+getWholeCubeSideLength fn =
+    computePixelSize (fn wholeCubeSideLengthRatio)
+
+
+getCubieSideLength : (Float -> Float) -> Int -> String
+getCubieSideLength fn =
+    computePixelSize (fn cubieSideLengthRatio)
+
+
+getCubieBorderWidth : (Float -> Float) -> Int -> String
+getCubieBorderWidth fn =
+    computePixelSize (fn cubieBorderWidthRatio)
+
+
+computePixelSize : Float -> Int -> String
+computePixelSize ratio size =
+    let
+        pixels =
+            toFloat size * ratio |> round
+    in
+    String.fromInt pixels ++ "px"
 
 
 getTextForFace : TextOnFaces -> Cube.Face -> Maybe String
