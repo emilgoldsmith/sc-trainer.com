@@ -1,4 +1,4 @@
-module Components.Cube exposing (viewUBL, viewUFR)
+module Components.Cube exposing (viewUBLWithLetters, viewUFRNoLetters, viewUFRWithLetters)
 
 import Element
 import Html exposing (..)
@@ -11,14 +11,19 @@ import Utils.Css exposing (htmlTestid)
 -- Exports
 
 
-viewUFR : Int -> Cube.Cube -> Element.Element msg
-viewUFR =
-    getCubeHtml ufrRotation
+viewUFRWithLetters : Int -> Cube.Cube -> Element.Element msg
+viewUFRWithLetters =
+    getCubeHtml ufrRotation identity
 
 
-viewUBL : Int -> Cube.Cube -> Element.Element msg
-viewUBL =
-    getCubeHtml <| ufrRotation ++ [ YDegrees 180 ]
+viewUFRNoLetters : Int -> Cube.Cube -> Element.Element msg
+viewUFRNoLetters =
+    getCubeHtml ufrRotation (always noText)
+
+
+viewUBLWithLetters : Int -> Cube.Cube -> Element.Element msg
+viewUBLWithLetters =
+    getCubeHtml (ufrRotation ++ [ YDegrees 180 ]) identity
 
 
 
@@ -85,8 +90,8 @@ type alias Size =
     Int
 
 
-getCubeHtml : CubeRotation -> Size -> Cube.Cube -> Element.Element msg
-getCubeHtml rotation size cube =
+getCubeHtml : CubeRotation -> (TextOnFaces -> TextOnFaces) -> Size -> Cube.Cube -> Element.Element msg
+getCubeHtml rotation mapText size cube =
     Element.html <|
         let
             rendering =
@@ -109,7 +114,7 @@ getCubeHtml rotation size cube =
                 , toTransformCSS rotation
                 ]
               <|
-                List.map (\( a, b, c ) -> displayCubie defaultTheme size b c a)
+                List.map (\( a, b, c ) -> displayCubie defaultTheme size b (mapText c) a)
                     (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
             ]
 

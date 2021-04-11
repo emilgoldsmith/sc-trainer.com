@@ -528,7 +528,7 @@ viewFullScreen model =
                         , centerX
                         ]
                       <|
-                        Components.Cube.viewUFR 200 model.expectedCube
+                        Components.Cube.viewUFRWithLetters 200 model.expectedCube
                     , buttonWithShortcut
                         device.class
                         [ testid "start-button"
@@ -606,7 +606,7 @@ viewFullScreen model =
                     , spacing (minDimension model.viewportSize // 10)
                     ]
                     [ el [ testid "test-case", centerX ] <|
-                        Components.Cube.viewUFR (minDimension model.viewportSize // 2) <|
+                        Components.Cube.viewUFRNoLetters (minDimension model.viewportSize // 2) <|
                             (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse (toAlg testCase)))
                     , el
                         [ testid "timer"
@@ -666,9 +666,9 @@ viewFullScreen model =
                         , spacing cubeSpacing
                         ]
                         [ el [ testid "expected-cube-front" ] <|
-                            Components.Cube.viewUFR cubeSize model.expectedCube
+                            Components.Cube.viewUFRWithLetters cubeSize model.expectedCube
                         , el [ testid "expected-cube-back" ] <|
-                            Components.Cube.viewUBL cubeSize model.expectedCube
+                            Components.Cube.viewUBLWithLetters cubeSize model.expectedCube
                         ]
                     , row [ centerX, spacing buttonSpacing ]
                         [ buttonWithShortcut
@@ -762,10 +762,10 @@ viewFullScreen model =
                         [ testid "full-test-case"
                         , centerX
                         ]
-                        [ Components.Cube.viewUFR
+                        [ Components.Cube.viewUFRWithLetters
                             (minDimension model.viewportSize // 4)
                             testCaseCube
-                        , Components.Cube.viewUBL
+                        , Components.Cube.viewUBLWithLetters
                             (minDimension model.viewportSize // 4)
                             testCaseCube
                         ]
@@ -781,7 +781,7 @@ viewFullScreen model =
                         , centerX
                         ]
                       <|
-                        Components.Cube.viewUFR (minDimension model.viewportSize // 4) model.expectedCube
+                        Components.Cube.viewUFRWithLetters (minDimension model.viewportSize // 4) model.expectedCube
                     , buttonWithShortcut
                         device.class
                         [ testid "next-button"
