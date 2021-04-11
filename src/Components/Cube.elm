@@ -1,9 +1,9 @@
 module Components.Cube exposing (viewUBLWithLetters, viewUFRNoLetters, viewUFRWithLetters)
 
+import Cube as Cube
 import Element
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Models.Cube as Cube
 import Utils.Css exposing (htmlTestid)
 
 

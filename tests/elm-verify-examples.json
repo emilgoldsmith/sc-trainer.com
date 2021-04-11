@@ -1,4 +1,4 @@
 {
   "root": "../src",
-  "tests": ["Algorithm", "Models.Cube", "PLL"]
+  "tests": ["Algorithm", "Cube", "PLL"]
 }

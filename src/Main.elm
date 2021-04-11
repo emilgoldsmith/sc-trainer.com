@@ -5,6 +5,7 @@ import Browser
 import Browser.Events as Events
 import Browser.Navigation
 import Components.Cube
+import Cube as Cube
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -15,7 +16,6 @@ import Html
 import Html.Events
 import Json.Decode as Decode
 import List.Nonempty
-import Models.Cube as Cube
 import PLL
 import Process
 import Random

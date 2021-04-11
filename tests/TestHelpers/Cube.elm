@@ -1,7 +1,7 @@
 module TestHelpers.Cube exposing (compareCubeRenderings, cubeFuzzer, plainCubie, solvedCubeRendering)
 
+import Cube as Cube exposing (Color(..))
 import Fuzz
-import Models.Cube as Cube exposing (Color(..))
 
 
 compareCubeRenderings : Cube.Rendering -> Cube.Rendering -> String

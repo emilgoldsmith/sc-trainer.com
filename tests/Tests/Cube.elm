@@ -1,10 +1,10 @@
-module Tests.Models.Cube exposing (applyAlgorithmTests, flipTests, testHelperTests)
+module Tests.Cube exposing (applyAlgorithmTests, flipTests, testHelperTests)
 
 import Algorithm
+import Cube as Cube exposing (Color(..))
 import Expect
 import Expect.Extra
 import Fuzz
-import Models.Cube as Cube exposing (Color(..))
 import Monads.ListM as ListM
 import Parser exposing ((|.), (|=))
 import Test exposing (..)

@@ -1,4 +1,4 @@
-module Models.Cube exposing (CenterLocation(..), Color(..), CornerLocation, Cube, CubieRendering, EdgeLocation(..), FOrB(..), Face(..), LOrR(..), Rendering, UOrD(..), applyAlgorithm, centerLocations, cornerLocations, edgeLocations, faces, flip, render, solved)
+module Cube exposing (CenterLocation(..), Color(..), CornerLocation, Cube, CubieRendering, EdgeLocation(..), FOrB(..), Face(..), LOrR(..), Rendering, UOrD(..), applyAlgorithm, centerLocations, cornerLocations, edgeLocations, faces, flip, render, solved)
 
 {-| The Cube Model Module
 -}
