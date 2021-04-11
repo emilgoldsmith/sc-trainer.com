@@ -42,10 +42,11 @@ port logError : String -> Cmd msg
 
 
 init : ViewportSize -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
-init viewportSize _ _ =
+init viewportSize _ navigationKey =
     ( { trainerState = StartPage
       , expectedCube = Cube.solved
       , viewportSize = viewportSize
+      , navigationKey = navigationKey
       }
     , Cmd.none
     )
@@ -61,6 +62,7 @@ type alias Model =
     { trainerState : TrainerState
     , expectedCube : Cube.Cube
     , viewportSize : { width : Int, height : Int }
+    , navigationKey : Browser.Navigation.Key
     }
 
 
@@ -435,11 +437,24 @@ updateBetweenTests model msg =
 
 view : Model -> Browser.Document Msg
 view model =
+    let
+        feedbackButtonIfNeeded =
+            case model.trainerState of
+                CorrectPage ->
+                    [ overlayFeedbackButton ]
+
+                WrongPage _ ->
+                    [ overlayFeedbackButton ]
+
+                _ ->
+                    []
+    in
     { title = "Speedcubing Trainer"
     , body =
         [ Components.Cube.injectStyles
         , layout
             (topLevelEventListeners model
+                ++ feedbackButtonIfNeeded
                 ++ [ padding 10
                    , inFront <| viewFullScreen model
                    ]
@@ -870,3 +885,23 @@ buttonWithShortcut deviceClass attributes { onPress, labelText, keyboardShortcut
 
         BigDesktop ->
             withShortcutLabel
+
+
+overlayFeedbackButton : Attribute msg
+overlayFeedbackButton =
+    inFront <|
+        el
+            [ alignBottom
+            , alignRight
+            , padding 30
+            ]
+        <|
+            Input.button
+                [ testid "feedback-button"
+                , Background.color (rgb255 208 211 207)
+                , padding 10
+                , Border.rounded 40
+                , Border.width 2
+                , Border.color (rgb255 0 0 0)
+                ]
+                { onPress = Nothing, label = text "Give Feedback" }

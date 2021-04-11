@@ -43,6 +43,7 @@ const elements = {
   }),
   globals: buildGlobalsCategory({
     cube: "cube",
+    feedbackButton: "feedback-button",
   }),
 };
 
@@ -707,6 +708,7 @@ describe("Algorithm Trainer", function () {
 
     it("has all the correct elements", function () {
       elements.correctPage.nextButton.assertShows();
+      elements.globals.feedbackButton.assertShows();
     });
 
     it("sizes elements reasonably", function () {
@@ -748,6 +750,7 @@ describe("Algorithm Trainer", function () {
         elements.globals.cube.assertShows();
       });
       elements.wrongPage.nextButton.assertShows();
+      elements.globals.feedbackButton.assertShows();
     });
 
     it("sizes elements reasonably", function () {
