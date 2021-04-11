@@ -896,7 +896,7 @@ overlayFeedbackButton =
             , padding 30
             ]
         <|
-            Input.button
+            newTabLink
                 [ testid "feedback-button"
                 , Background.color (rgb255 208 211 207)
                 , padding 10
@@ -904,4 +904,4 @@ overlayFeedbackButton =
                 , Border.width 2
                 , Border.color (rgb255 0 0 0)
                 ]
-                { onPress = Nothing, label = text "Give Feedback" }
+                { url = "https://forms.gle/ftCX7eoT71g8f5ob6", label = text "Give Feedback" }
