@@ -21,7 +21,15 @@ viewUFR cubeSize cube =
                 Cube.render cube
         in
         div [ class classes.container, htmlTestid "cube", style "font-size" <| String.fromInt cubeSize ++ "px" ]
-            [ div [ class classes.wholeCube ] <|
+            [ div
+                [ style "width" (String.fromFloat wholeCubeSideLength ++ "em")
+                , style "height" (String.fromFloat wholeCubeSideLength ++ "em")
+                , style "position" "relative"
+                , style "transform-origin" ("center center -" ++ String.fromFloat (wholeCubeSideLength / 2) ++ "em")
+                , style "transform-style" "preserve-3d"
+                , style "transform" "rotateY(-20deg) rotateX(-15deg) rotateZ(5deg)"
+                ]
+              <|
                 List.map (\( a, b ) -> displayCubie defaultTheme b a)
                     (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
             ]
@@ -430,22 +438,8 @@ css _ =
     justify-content: center;
     align-items: center;
 }
-.{wholeCubeClass} {
-    width: {wholeCubeSideLength}em;
-    height: {wholeCubeSideLength}em;
-    transform-origin: center center -{halfCubeSideLength}em;
-    transform-style: preserve-3d;
-    transform: rotateY(-20deg) rotateX(-15deg) rotateZ(5deg);
-    position: relative;
-}
 """
         |> String.replace "{containerClass}" classes.container
-        |> String.replace "{wholeCubeClass}" classes.wholeCube
-        |> String.replace "{cubieSideLength}" (String.fromFloat cubieSideLength)
-        |> String.replace "{halfCubieSideLength}" (String.fromFloat (cubieSideLength / 2))
-        |> String.replace "{cubieBorderLength}" (String.fromFloat cubieBorderWidth)
-        |> String.replace "{wholeCubeSideLength}" (String.fromFloat wholeCubeSideLength)
-        |> String.replace "{halfCubeSideLength}" (String.fromFloat (wholeCubeSideLength / 2))
         |> String.replace "{containerWidth}" (String.fromFloat cubeContainerSize)
         |> String.replace "{containerHeight}" (String.fromFloat cubeContainerSize)
 
@@ -472,7 +466,6 @@ cubieBorderWidth =
 
 type alias Classes =
     { container : String
-    , wholeCube : String
     }
 
 
@@ -480,7 +473,6 @@ classes : Classes
 classes =
     { -- Suffix there is for unicity
       container = "cube-container" ++ randomSuffix
-    , wholeCube = "cube" ++ randomSuffix
     }
 
 
