@@ -7,7 +7,7 @@ import Test
 import Expect
 
 import PLL exposing (..)
-import Models.Algorithm
+import Algorithm
 
 
 
@@ -17,11 +17,11 @@ import Models.Algorithm
 
 spec13 : Test.Test
 spec13 =
-    Test.test "#referenceAlgs: \n\n    Models.Algorithm.fromString \"L F R' F' L' F' D2 B' L' B D2 F' R F2\"\n    --> Ok referenceAlgs.f" <|
+    Test.test "#referenceAlgs: \n\n    Algorithm.fromString \"L F R' F' L' F' D2 B' L' B D2 F' R F2\"\n    --> Ok referenceAlgs.f" <|
         \() ->
             Expect.equal
                 (
-                Models.Algorithm.fromString "L F R' F' L' F' D2 B' L' B D2 F' R F2"
+                Algorithm.fromString "L F R' F' L' F' D2 B' L' B D2 F' R F2"
                 )
                 (
                 Ok referenceAlgs.f

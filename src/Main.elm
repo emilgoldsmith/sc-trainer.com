@@ -1,5 +1,6 @@
 port module Main exposing (main)
 
+import Algorithm
 import Browser
 import Browser.Events as Events
 import Browser.Navigation
@@ -14,7 +15,6 @@ import Html
 import Html.Events
 import Json.Decode as Decode
 import List.Nonempty
-import Models.Algorithm as Algorithm
 import Models.Cube as Cube
 import PLL
 import Process

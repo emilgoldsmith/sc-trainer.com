@@ -3,7 +3,7 @@ module Models.Cube exposing (CenterLocation(..), Color(..), CornerLocation, Cube
 {-| The Cube Model Module
 -}
 
-import Models.Algorithm as Algorithm
+import Algorithm
 import Utils.Enumerator
 import Utils.MappedPermutation as MappedPermutation exposing (MappedPermutation)
 

@@ -1,8 +1,8 @@
 module Tests.PLL exposing (suite)
 
+import Algorithm
 import Expect
 import List.Nonempty
-import Models.Algorithm as Algorithm
 import Models.Cube as Cube exposing (Color(..))
 import PLL
 import Test exposing (..)

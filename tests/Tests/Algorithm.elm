@@ -1,12 +1,12 @@
-module Tests.Models.Algorithm exposing (algorithmFuzzer, appendTests, fromStringTests, inverseAlgTests, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
+module Tests.Algorithm exposing (algorithmFuzzer, appendTests, fromStringTests, inverseAlgTests, turnDirectionFuzzer, turnFuzzer, turnableFuzzer)
 
 {-| This represents an Algorithm, which is an ordered sequence of moves to be applied
 to a cube. Enjoy!
 -}
 
+import Algorithm
 import Expect
 import Fuzz
-import Models.Algorithm as Algorithm
 import Test exposing (..)
 
 

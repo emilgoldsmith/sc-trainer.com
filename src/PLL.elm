@@ -1,7 +1,7 @@
 module PLL exposing (Algorithms, PLL(..), allPlls, getAlg, getLetters, referenceAlgs)
 
+import Algorithm
 import List.Nonempty
-import Models.Algorithm as Algorithm
 import Utils.Enumerator
 
 
@@ -286,75 +286,75 @@ They have been chosen to be the optimally lowest move count in HTM just for a
 small performance boost. The example tests below are just meant for an easier
 to read version of all the algorithms that are verified to be correct
 
-    import Models.Algorithm
+    import Algorithm
 
     -- Edges Only
 
-    Models.Algorithm.fromString "R2 U2 R U2 R2 U2 R2 U2 R U2 R2"
+    Algorithm.fromString "R2 U2 R U2 R2 U2 R2 U2 R U2 R2"
     --> Ok referenceAlgs.h
 
-    Models.Algorithm.fromString "F2 U' (L R') F2 (L' R) U' F2"
+    Algorithm.fromString "F2 U' (L R') F2 (L' R) U' F2"
     --> Ok referenceAlgs.ua
 
-    Models.Algorithm.fromString "F2 U (R' L) F2 (R L') U F2"
+    Algorithm.fromString "F2 U (R' L) F2 (R L') U F2"
     --> Ok referenceAlgs.ub
 
-    Models.Algorithm.fromString "R B' R' B F R' F B' R' B R F2"
+    Algorithm.fromString "R B' R' B F R' F B' R' B R F2"
     --> Ok referenceAlgs.z
 
     -- Corners Only
 
-    Models.Algorithm.fromString "R' F R' B2 R F' R' B2 R2"
+    Algorithm.fromString "R' F R' B2 R F' R' B2 R2"
     --> Ok referenceAlgs.aa
 
-    Models.Algorithm.fromString "R B' R F2 R' B R F2 R2"
+    Algorithm.fromString "R B' R F2 R' B R F2 R2"
     --> Ok referenceAlgs.ab
 
-    Models.Algorithm.fromString "D R' D2 F' D L D' F D2 R D' F' L' F"
+    Algorithm.fromString "D R' D2 F' D L D' F D2 R D' F' L' F"
     --> Ok referenceAlgs.e
 
     -- Corners And Edges
 
-    Models.Algorithm.fromString "L F R' F' L' F' D2 B' L' B D2 F' R F2"
+    Algorithm.fromString "L F R' F' L' F' D2 B' L' B D2 F' R F2"
     --> Ok referenceAlgs.f
 
-    Models.Algorithm.fromString "F2' D (R' U R' U' R) D' F2 L' U L"
+    Algorithm.fromString "F2' D (R' U R' U' R) D' F2 L' U L"
     --> Ok referenceAlgs.ga
 
-    Models.Algorithm.fromString "R' U' R B2 D (L' U L U' L) D' B2"
+    Algorithm.fromString "R' U' R B2 D (L' U L U' L) D' B2"
     --> Ok referenceAlgs.gb
 
-    Models.Algorithm.fromString "R2' D' F U' F U F' D R2 B U' B'"
+    Algorithm.fromString "R2' D' F U' F U F' D R2 B U' B'"
     --> Ok referenceAlgs.gc
 
-    Models.Algorithm.fromString "R U R' F2 D' (L U' L' U L') D F2"
+    Algorithm.fromString "R U R' F2 D' (L U' L' U L') D F2"
     --> Ok referenceAlgs.gd
 
-    Models.Algorithm.fromString "B2 R' U' R B2 L' D L' D' L2"
+    Algorithm.fromString "B2 R' U' R B2 L' D L' D' L2"
     --> Ok referenceAlgs.ja
 
-    Models.Algorithm.fromString "B2 (L U L') B2 (R D' R D) R2"
+    Algorithm.fromString "B2 (L U L') B2 (R D' R D) R2"
     --> Ok referenceAlgs.jb
 
-    Models.Algorithm.fromString "L U' R U2 L' U R' L U' R U2 L' U R'"
+    Algorithm.fromString "L U' R U2 L' U R' L U' R U2 L' U R'"
     --> Ok referenceAlgs.na
 
-    Models.Algorithm.fromString "R' U L' U2 R U' L R' U L' U2 R U' L"
+    Algorithm.fromString "R' U L' U2 R U' L R' U L' U2 R U' L"
     --> Ok referenceAlgs.nb
 
-    Models.Algorithm.fromString "F2 R' F' U' F' U F R F' U2 F U2 F'"
+    Algorithm.fromString "F2 R' F' U' F' U F R F' U2 F U2 F'"
     --> Ok referenceAlgs.ra
 
-    Models.Algorithm.fromString "R2 F R U R U' R' F' R U2 R' U2 R"
+    Algorithm.fromString "R2 F R U R U' R' F' R U2 R' U2 R"
     --> Ok referenceAlgs.rb
 
-    Models.Algorithm.fromString "F2 D R2 U' R2 F2 D' L2 U L2"
+    Algorithm.fromString "F2 D R2 U' R2 F2 D' L2 U L2"
     --> Ok referenceAlgs.t
 
-    Models.Algorithm.fromString "R' U R' U' B' R' B2 U' B' U B' R B R"
+    Algorithm.fromString "R' U R' U' B' R' B2 U' B' U B' R B R"
     --> Ok referenceAlgs.v
 
-    Models.Algorithm.fromString "F2 D R2 U R2 D' R' U' R F2 R' U R"
+    Algorithm.fromString "F2 D R2 U R2 D' R' U' R F2 R' U R"
     --> Ok referenceAlgs.y
 
 -}

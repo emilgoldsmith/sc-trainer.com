@@ -1,4 +1,4 @@
-module Models.Algorithm exposing (Algorithm, Turn(..), TurnDirection(..), TurnLength(..), Turnable(..), allTurnDirections, allTurnLengths, allTurnables, allTurns, append, appendTo, aufs, build, empty, extractInternals, fromString, inverse)
+module Algorithm exposing (Algorithm, Turn(..), TurnDirection(..), TurnLength(..), Turnable(..), allTurnDirections, allTurnLengths, allTurnables, allTurns, append, appendTo, aufs, build, empty, extractInternals, fromString, inverse)
 
 -- import Parser.Advanced as Parser exposing ((|.), (|=), Parser)
 
