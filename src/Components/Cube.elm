@@ -22,7 +22,7 @@ viewUFR cubeSize cube =
         in
         div [ class classes.container, htmlTestid "cube", style "font-size" <| String.fromInt cubeSize ++ "px" ]
             [ div [ class classes.wholeCube ] <|
-                List.map (\( a, b ) -> displayCubie b a)
+                List.map (\( a, b ) -> displayCubie defaultTheme b a)
                     (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
             ]
 
@@ -296,46 +296,81 @@ type alias Coordinates =
     }
 
 
-displayCubie : Coordinates -> Cube.CubieRendering -> Html msg
-displayCubie { fromFront, fromLeft, fromTop } rendering =
+displayCubie : CubeTheme -> Coordinates -> Cube.CubieRendering -> Html msg
+displayCubie theme { fromFront, fromLeft, fromTop } rendering =
     div
         [ class classes.cubie
         , style "top" (String.fromFloat (fromTop * cubieSideLength) ++ "em")
         , style "left" (String.fromFloat (fromLeft * cubieSideLength) ++ "em")
         , style "transform" ("translateZ(" ++ String.fromFloat (fromFront * cubieSideLength * -1) ++ "em)")
         ]
-        (List.map (\face -> displayCubieFace face rendering) Cube.faces)
+        (List.map (\face -> displayCubieFace theme face rendering) Cube.faces)
 
 
-displayCubieFace : Cube.Face -> Cube.CubieRendering -> Html msg
-displayCubieFace face rendering =
-    div [ classList (getFaceClasses face ++ [ ( getColorClass face rendering, True ) ]) ] []
-
-
-getFaceClasses : Cube.Face -> List ( String, Bool )
-getFaceClasses cubeFace =
+displayCubieFace : CubeTheme -> Cube.Face -> Cube.CubieRendering -> Html msg
+displayCubieFace theme face rendering =
     let
-        faceSpecifierClass =
-            case cubeFace of
-                Cube.UpOrDown Cube.U ->
-                    classes.upFace
+        ( faceColor, facePositionStyling ) =
+            Tuple.mapSecond (style "transform") <|
+                case face of
+                    Cube.UpOrDown Cube.U ->
+                        ( rendering.u, "rotateX(90deg)" )
 
-                Cube.UpOrDown Cube.D ->
-                    classes.downFace
+                    Cube.UpOrDown Cube.D ->
+                        ( rendering.d, "rotateX(-90deg)" )
 
-                Cube.LeftOrRight Cube.R ->
-                    classes.rightFace
+                    Cube.FrontOrBack Cube.F ->
+                        ( rendering.f, "" )
 
-                Cube.LeftOrRight Cube.L ->
-                    classes.leftFace
+                    Cube.FrontOrBack Cube.B ->
+                        ( rendering.b, "rotateY(180deg)" )
 
-                Cube.FrontOrBack Cube.F ->
-                    classes.frontFace
+                    Cube.LeftOrRight Cube.L ->
+                        ( rendering.l, "rotateY(-90deg)" )
 
-                Cube.FrontOrBack Cube.B ->
-                    classes.backFace
+                    Cube.LeftOrRight Cube.R ->
+                        ( rendering.r, "rotateY(90deg)" )
+
+        colorStyling =
+            style "background-color" <|
+                case faceColor of
+                    Cube.UpColor ->
+                        theme.up
+
+                    Cube.DownColor ->
+                        theme.down
+
+                    Cube.RightColor ->
+                        theme.right
+
+                    Cube.LeftColor ->
+                        theme.left
+
+                    Cube.FrontColor ->
+                        theme.front
+
+                    Cube.BackColor ->
+                        theme.back
+
+                    Cube.PlasticColor ->
+                        theme.plastic
     in
-    [ ( classes.face, True ), ( faceSpecifierClass, True ) ]
+    div
+        [ facePositionStyling
+        , colorStyling
+        , style "position" "absolute"
+        , style "top" "0"
+        , style "left" "0"
+        , style "width" (String.fromFloat cubieSideLength ++ "em")
+        , style "height" (String.fromFloat cubieSideLength ++ "em")
+
+        -- Notice the negative sign here
+        , style "transform-origin" ("center center -" ++ String.fromFloat (cubieSideLength / 2) ++ "em")
+        , style "transform-style" "preserve-3d"
+        , style "border" (theme.plastic ++ " solid " ++ String.fromFloat cubieBorderWidth ++ "em")
+        , style "box-sizing" "border-box"
+        ]
+        []
 
 
 
@@ -396,17 +431,6 @@ css theme =
     transform: rotateY(-20deg) rotateX(-15deg) rotateZ(5deg);
     position: relative;
 }
-.{faceClass} {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: {cubieSideLength}em;
-    height: {cubieSideLength}em;
-    transform-origin: center center -{halfCubieSideLength}em;
-    transform-style: preserve-3d;
-    border: {plasticColor} solid {cubieBorderLength}em;
-    box-sizing: border-box;
-}
 .{cubieClass} {
     position: absolute;
     top: 0;
@@ -417,44 +441,10 @@ css theme =
     transform-origin: center center -{halfCubieSideLength}em;
     display: inline-block;
 }
-.{upFaceClass} { transform: rotateX(90deg); }
-.{downFaceClass} { transform: rotateX(-90deg); }
-.{rightFaceClass} { transform: rotateY(90deg); }
-.{leftFaceClass} { transform: rotateY(-90deg); }
-.{frontFaceClass} { }
-.{backFaceClass} { transform: rotateY(180deg); }
-.{upColorClass} { background-color: {upColor} }
-.{downColorClass} { background-color: {downColor} }
-.{frontColorClass} { background-color: {frontColor} }
-.{backColorClass} { background-color: {backColor} }
-.{leftColorClass} { background-color: {leftColor} }
-.{rightColorClass} { background-color: {rightColor} }
-.{plasticColorClass} { background-color: {plasticColor} }
 """
         |> String.replace "{containerClass}" classes.container
         |> String.replace "{wholeCubeClass}" classes.wholeCube
         |> String.replace "{cubieClass}" classes.cubie
-        |> String.replace "{faceClass}" classes.face
-        |> String.replace "{upFaceClass}" classes.upFace
-        |> String.replace "{downFaceClass}" classes.downFace
-        |> String.replace "{rightFaceClass}" classes.rightFace
-        |> String.replace "{leftFaceClass}" classes.leftFace
-        |> String.replace "{frontFaceClass}" classes.frontFace
-        |> String.replace "{backFaceClass}" classes.backFace
-        |> String.replace "{upColorClass}" classes.upColor
-        |> String.replace "{downColorClass}" classes.downColor
-        |> String.replace "{frontColorClass}" classes.frontColor
-        |> String.replace "{backColorClass}" classes.backColor
-        |> String.replace "{leftColorClass}" classes.leftColor
-        |> String.replace "{rightColorClass}" classes.rightColor
-        |> String.replace "{plasticColorClass}" classes.plasticColor
-        |> String.replace "{upColor}" theme.up
-        |> String.replace "{downColor}" theme.down
-        |> String.replace "{rightColor}" theme.right
-        |> String.replace "{leftColor}" theme.left
-        |> String.replace "{frontColor}" theme.front
-        |> String.replace "{backColor}" theme.back
-        |> String.replace "{plasticColor}" theme.plastic
         |> String.replace "{cubieSideLength}" (String.fromFloat cubieSideLength)
         |> String.replace "{halfCubieSideLength}" (String.fromFloat (cubieSideLength / 2))
         |> String.replace "{cubieBorderLength}" (String.fromFloat cubieBorderWidth)
@@ -541,52 +531,3 @@ randomSuffix =
             Random.initialSeed 1616666856715
     in
     Tuple.first <| Random.step generator seed
-
-
-getColorClass : Cube.Face -> Cube.CubieRendering -> String
-getColorClass face rendering =
-    let
-        color =
-            case face of
-                Cube.UpOrDown Cube.U ->
-                    rendering.u
-
-                Cube.UpOrDown Cube.D ->
-                    rendering.d
-
-                Cube.FrontOrBack Cube.F ->
-                    rendering.f
-
-                Cube.FrontOrBack Cube.B ->
-                    rendering.b
-
-                Cube.LeftOrRight Cube.L ->
-                    rendering.l
-
-                Cube.LeftOrRight Cube.R ->
-                    rendering.r
-
-        class =
-            case color of
-                Cube.UpColor ->
-                    classes.upColor
-
-                Cube.DownColor ->
-                    classes.downColor
-
-                Cube.FrontColor ->
-                    classes.frontColor
-
-                Cube.BackColor ->
-                    classes.backColor
-
-                Cube.LeftColor ->
-                    classes.leftColor
-
-                Cube.RightColor ->
-                    classes.rightColor
-
-                Cube.PlasticColor ->
-                    classes.plasticColor
-    in
-    class
