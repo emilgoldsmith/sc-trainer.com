@@ -1,7 +1,7 @@
 module Tests.PLL exposing (suite)
 
 import Algorithm
-import Cube as Cube exposing (Color(..))
+import Cube exposing (Color(..))
 import Expect
 import List.Nonempty
 import PLL

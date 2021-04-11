@@ -1,9 +1,13 @@
-module Cube exposing (CenterLocation(..), Color(..), CornerLocation, Cube, CubieRendering, EdgeLocation(..), FOrB(..), Face(..), LOrR(..), Rendering, UOrD(..), applyAlgorithm, centerLocations, cornerLocations, edgeLocations, faces, flip, render, solved)
+module Cube exposing (Color(..), Cube, CubieRendering, Rendering, applyAlgorithm, centerLocations, cornerLocations, edgeLocations, faces, flip, render, solved, viewUBLWithLetters, viewUFRNoLetters, viewUFRWithLetters)
 
 {-| The Cube Model Module
 -}
 
 import Algorithm
+import Element
+import Html exposing (..)
+import Html.Attributes exposing (..)
+import Utils.Css exposing (htmlTestid)
 import Utils.Enumerator
 import Utils.MappedPermutation as MappedPermutation exposing (MappedPermutation)
 
@@ -212,10 +216,11 @@ type LOrR
 a specific state you take this as a starting point and apply the algorithm on it to
 get to that state like this:
 
-    import Model.Cube as Cube
-    import Model.Algorithm as Algorithm
+    import Cube
+    import Algorithm
 
     -- This would generate a cube with one of the big fish OLLs
+    -- (though possible parsing errors in fromString would have to be dealt with)
     Cube.solved |> Cube.applyAlgorithm (Algorithm.fromString "RUR'U'R'FRF'")
 
 -}
@@ -1508,3 +1513,592 @@ centerLocations =
                     Nothing
     in
     Utils.Enumerator.from (CenterLocation (UpOrDown U)) fromU
+
+
+
+-- UI STUFF
+-- Exports
+
+
+viewUFRWithLetters : Int -> Cube -> Element.Element msg
+viewUFRWithLetters =
+    getCubeHtml ufrRotation identity
+
+
+viewUFRNoLetters : Int -> Cube -> Element.Element msg
+viewUFRNoLetters =
+    getCubeHtml ufrRotation (always noText)
+
+
+viewUBLWithLetters : Int -> Cube -> Element.Element msg
+viewUBLWithLetters =
+    getCubeHtml (ufrRotation ++ [ YDegrees 180 ]) identity
+
+
+
+-- PARAMETERS
+
+
+ufrRotation : List AxisRotation
+ufrRotation =
+    [ YDegrees -20, XDegrees -15, ZDegrees 5 ]
+
+
+type alias CubeTheme =
+    { up : CssColor
+    , down : CssColor
+    , right : CssColor
+    , left : CssColor
+    , front : CssColor
+    , back : CssColor
+    , plastic : CssColor
+    }
+
+
+type alias CssColor =
+    String
+
+
+defaultTheme : CubeTheme
+defaultTheme =
+    { up = "white"
+    , down = "yellow"
+    , right = "red"
+    , left = "orange"
+    , front = "green"
+    , back = "blue"
+    , plastic = "black"
+    }
+
+
+containerRatio : Float
+containerRatio =
+    1
+
+
+wholeCubeSideLengthRatio : Float
+wholeCubeSideLengthRatio =
+    containerRatio / 1.4
+
+
+cubieSideLengthRatio : Float
+cubieSideLengthRatio =
+    wholeCubeSideLengthRatio / 3
+
+
+cubieBorderWidthRatio : Float
+cubieBorderWidthRatio =
+    cubieSideLengthRatio / 10
+
+
+
+-- HTML
+
+
+type alias Size =
+    Int
+
+
+getCubeHtml : CubeRotation -> (TextOnFaces -> TextOnFaces) -> Size -> Cube -> Element.Element msg
+getCubeHtml rotation mapText size cube =
+    Element.html <|
+        let
+            rendering =
+                render cube
+        in
+        div
+            [ htmlTestid "cube"
+            , style "width" (getContainerSize identity size)
+            , style "height" (getContainerSize identity size)
+            , style "display" "flex"
+            , style "justify-content" "center"
+            , style "align-items" "center"
+            ]
+            [ div
+                [ style "width" (getWholeCubeSideLength identity size)
+                , style "height" (getWholeCubeSideLength identity size)
+                , style "position" "relative"
+                , style "transform-origin" ("center center -" ++ getWholeCubeSideLength ((*) 0.5) size)
+                , style "transform-style" "preserve-3d"
+                , toTransformCSS rotation
+                ]
+              <|
+                List.map (\( a, b, c ) -> displayCubie defaultTheme size b (mapText c) a)
+                    (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
+            ]
+
+
+displayCubie : CubeTheme -> Size -> Coordinates -> TextOnFaces -> CubieRendering -> Html msg
+displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
+    div
+        [ style "position" "absolute"
+        , style "width" (getCubieSideLength identity size)
+        , style "height" (getCubieSideLength identity size)
+        , style "transform-origin" ("center center -" ++ getCubieSideLength ((*) 0.5) size)
+        , style "transform-style" "preserve-3d"
+        , style "display" "inline-block"
+
+        -- Position the cubie correctly
+        , style "top" (getCubieSideLength ((*) fromTop) size)
+        , style "left" (getCubieSideLength ((*) fromLeft) size)
+        , style "transform" ("translateZ(" ++ getCubieSideLength ((*) (fromFront * -1)) size ++ ")")
+        ]
+        (List.map (\face -> displayCubieFace theme size face (getTextForFace textOnFaces face) rendering) faces)
+
+
+displayCubieFace : CubeTheme -> Size -> Face -> Maybe String -> CubieRendering -> Html msg
+displayCubieFace theme size face textOnFace rendering =
+    div
+        [ style "transform" <| (face |> getFaceRotation |> toCssRotationString)
+        , style "background-color" <| getColorString theme (getFaceColor face rendering)
+        , style "position" "absolute"
+        , style "top" "0"
+        , style "left" "0"
+        , style "width" (getCubieSideLength identity size)
+        , style "height" (getCubieSideLength identity size)
+
+        -- Notice the negative sign here
+        , style "transform-origin" ("center center -" ++ getCubieSideLength ((*) 0.5) size)
+        , style "transform-style" "preserve-3d"
+        , style "border" (theme.plastic ++ " solid " ++ getCubieBorderWidth identity size)
+        , style "box-sizing" "border-box"
+        ]
+    <|
+        (textOnFace
+            |> Maybe.map
+                (\actualTextOnFace ->
+                    [ div
+                        [ style "font-size" (getCubieSideLength ((*) 0.8) size)
+                        , style "display" "flex"
+                        , style "justify-content" "center"
+                        , style "align-items" "center"
+                        , style "position" "relative"
+                        , style "top" (getCubieSideLength ((*) 0.1) size)
+                        ]
+                        [ text actualTextOnFace ]
+                    ]
+                )
+            |> Maybe.withDefault []
+        )
+
+
+
+-- LOGIC AND MAPPINGS
+
+
+getContainerSize : (Float -> Float) -> Int -> String
+getContainerSize fn =
+    computePixelSize (fn containerRatio)
+
+
+getWholeCubeSideLength : (Float -> Float) -> Int -> String
+getWholeCubeSideLength fn =
+    computePixelSize (fn wholeCubeSideLengthRatio)
+
+
+getCubieSideLength : (Float -> Float) -> Int -> String
+getCubieSideLength fn =
+    computePixelSize (fn cubieSideLengthRatio)
+
+
+getCubieBorderWidth : (Float -> Float) -> Int -> String
+getCubieBorderWidth fn =
+    computePixelSize (fn cubieBorderWidthRatio)
+
+
+computePixelSize : Float -> Int -> String
+computePixelSize ratio size =
+    let
+        pixels =
+            toFloat size * ratio |> round
+    in
+    String.fromInt pixels ++ "px"
+
+
+getTextForFace : TextOnFaces -> Face -> Maybe String
+getTextForFace textOnFaces face =
+    case face of
+        UpOrDown U ->
+            textOnFaces.u
+
+        UpOrDown D ->
+            textOnFaces.d
+
+        FrontOrBack F ->
+            textOnFaces.f
+
+        FrontOrBack B ->
+            textOnFaces.b
+
+        LeftOrRight L ->
+            textOnFaces.l
+
+        LeftOrRight R ->
+            textOnFaces.r
+
+
+getFaceRotation : Face -> AxisRotation
+getFaceRotation face =
+    case face of
+        UpOrDown U ->
+            XDegrees 90
+
+        UpOrDown D ->
+            XDegrees -90
+
+        FrontOrBack F ->
+            XDegrees 0
+
+        FrontOrBack B ->
+            YDegrees 180
+
+        LeftOrRight L ->
+            YDegrees -90
+
+        LeftOrRight R ->
+            YDegrees 90
+
+
+getFaceColor : Face -> CubieRendering -> Color
+getFaceColor face rendering =
+    case face of
+        UpOrDown U ->
+            rendering.u
+
+        UpOrDown D ->
+            rendering.d
+
+        FrontOrBack F ->
+            rendering.f
+
+        FrontOrBack B ->
+            rendering.b
+
+        LeftOrRight L ->
+            rendering.l
+
+        LeftOrRight R ->
+            rendering.r
+
+
+getColorString : CubeTheme -> Color -> String
+getColorString theme color =
+    case color of
+        UpColor ->
+            theme.up
+
+        DownColor ->
+            theme.down
+
+        RightColor ->
+            theme.right
+
+        LeftColor ->
+            theme.left
+
+        FrontColor ->
+            theme.front
+
+        BackColor ->
+            theme.back
+
+        PlasticColor ->
+            theme.plastic
+
+
+type alias Coordinates =
+    { fromFront : Float
+    , fromLeft : Float
+    , fromTop : Float
+    }
+
+
+type AxisRotation
+    = XDegrees Int
+    | YDegrees Int
+    | ZDegrees Int
+
+
+toTransformCSS : CubeRotation -> Attribute msg
+toTransformCSS rotation =
+    style "transform"
+        (rotation
+            |> List.map toCssRotationString
+            |> String.join " "
+        )
+
+
+toCssRotationString : AxisRotation -> String
+toCssRotationString axisRotation =
+    case axisRotation of
+        XDegrees deg ->
+            "rotateX(" ++ String.fromInt deg ++ "deg)"
+
+        YDegrees deg ->
+            "rotateY(" ++ String.fromInt deg ++ "deg)"
+
+        ZDegrees deg ->
+            "rotateZ(" ++ String.fromInt deg ++ "deg)"
+
+
+tupleToList : ( a, a, a ) -> List a
+tupleToList ( a, b, c ) =
+    [ a, b, c ]
+
+
+{-| 3D rotation, note that order of axes makes a difference
+-}
+type alias CubeRotation =
+    List AxisRotation
+
+
+getRenderedCorners : Rendering -> List ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedCorners rendering =
+    List.map (getRenderedCorner rendering) cornerLocations
+
+
+getRenderedCorner : Rendering -> CornerLocation -> ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedCorner rendering location =
+    let
+        cornerRendering =
+            case location of
+                ( U, F, L ) ->
+                    rendering.ufl
+
+                ( U, F, R ) ->
+                    rendering.ufr
+
+                ( U, B, R ) ->
+                    rendering.ubr
+
+                ( U, B, L ) ->
+                    rendering.ubl
+
+                ( D, B, L ) ->
+                    rendering.dbl
+
+                ( D, B, R ) ->
+                    rendering.dbr
+
+                ( D, F, R ) ->
+                    rendering.dfr
+
+                ( D, F, L ) ->
+                    rendering.dfl
+    in
+    ( cornerRendering, getCornerCoordinates location, noText )
+
+
+getCornerCoordinates : CornerLocation -> Coordinates
+getCornerCoordinates ( uOrD, fOrB, lOrR ) =
+    { fromFront =
+        if fOrB == F then
+            0
+
+        else
+            2
+    , fromLeft =
+        if lOrR == L then
+            0
+
+        else
+            2
+    , fromTop =
+        if uOrD == U then
+            0
+
+        else
+            2
+    }
+
+
+type alias TextOnFaces =
+    { u : Maybe String
+    , d : Maybe String
+    , f : Maybe String
+    , b : Maybe String
+    , l : Maybe String
+    , r : Maybe String
+    }
+
+
+noText =
+    { u = Nothing
+    , d = Nothing
+    , f = Nothing
+    , b = Nothing
+    , l = Nothing
+    , r = Nothing
+    }
+
+
+getRenderedEdges : Rendering -> List ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedEdges rendering =
+    List.map (getRenderedEdge rendering) edgeLocations
+
+
+getRenderedEdge : Rendering -> EdgeLocation -> ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedEdge rendering location =
+    let
+        edgeRendering =
+            case location of
+                M ( U, F ) ->
+                    rendering.uf
+
+                M ( U, B ) ->
+                    rendering.ub
+
+                M ( D, F ) ->
+                    rendering.df
+
+                M ( D, B ) ->
+                    rendering.db
+
+                S ( U, L ) ->
+                    rendering.ul
+
+                S ( U, R ) ->
+                    rendering.ur
+
+                S ( D, L ) ->
+                    rendering.dl
+
+                S ( D, R ) ->
+                    rendering.dr
+
+                E ( F, L ) ->
+                    rendering.fl
+
+                E ( F, R ) ->
+                    rendering.fr
+
+                E ( B, L ) ->
+                    rendering.bl
+
+                E ( B, R ) ->
+                    rendering.br
+    in
+    ( edgeRendering, getEdgeCoordinates location, noText )
+
+
+getEdgeCoordinates : EdgeLocation -> Coordinates
+getEdgeCoordinates location =
+    case location of
+        M ( uOrD, fOrB ) ->
+            { fromFront =
+                if fOrB == F then
+                    0
+
+                else
+                    2
+            , fromLeft = 1
+            , fromTop =
+                if uOrD == U then
+                    0
+
+                else
+                    2
+            }
+
+        S ( uOrD, lOrR ) ->
+            { fromFront = 1
+            , fromLeft =
+                if lOrR == L then
+                    0
+
+                else
+                    2
+            , fromTop =
+                if uOrD == U then
+                    0
+
+                else
+                    2
+            }
+
+        E ( fOrB, lOrR ) ->
+            { fromFront =
+                if fOrB == F then
+                    0
+
+                else
+                    2
+            , fromLeft =
+                if lOrR == L then
+                    0
+
+                else
+                    2
+            , fromTop = 1
+            }
+
+
+getRenderedCenters : Rendering -> List ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedCenters rendering =
+    List.map (getRenderedCenter rendering) centerLocations
+
+
+getRenderedCenter : Rendering -> CenterLocation -> ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedCenter rendering location =
+    let
+        ( centerRendering, textOnFace ) =
+            case location of
+                CenterLocation (UpOrDown U) ->
+                    ( rendering.u, { noText | u = Just "U" } )
+
+                CenterLocation (UpOrDown D) ->
+                    ( rendering.d, { noText | d = Just "D" } )
+
+                CenterLocation (LeftOrRight L) ->
+                    ( rendering.l, { noText | l = Just "L" } )
+
+                CenterLocation (LeftOrRight R) ->
+                    ( rendering.r, { noText | r = Just "R" } )
+
+                CenterLocation (FrontOrBack F) ->
+                    ( rendering.f, { noText | f = Just "F" } )
+
+                CenterLocation (FrontOrBack B) ->
+                    ( rendering.b, { noText | b = Just "B" } )
+    in
+    ( centerRendering, getCenterCoordinates location, textOnFace )
+
+
+getCenterCoordinates : CenterLocation -> Coordinates
+getCenterCoordinates location =
+    case location of
+        CenterLocation (UpOrDown U) ->
+            { fromFront = 1
+            , fromLeft = 1
+            , fromTop = 0
+            }
+
+        CenterLocation (UpOrDown D) ->
+            { fromFront = 1
+            , fromLeft = 1
+            , fromTop = 2
+            }
+
+        CenterLocation (LeftOrRight L) ->
+            { fromFront = 1
+            , fromLeft = 0
+            , fromTop = 1
+            }
+
+        CenterLocation (LeftOrRight R) ->
+            { fromFront = 1
+            , fromLeft = 2
+            , fromTop = 1
+            }
+
+        CenterLocation (FrontOrBack F) ->
+            { fromFront = 0
+            , fromLeft = 1
+            , fromTop = 1
+            }
+
+        CenterLocation (FrontOrBack B) ->
+            { fromFront = 2
+            , fromLeft = 1
+            , fromTop = 1
+            }

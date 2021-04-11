@@ -1,6 +1,6 @@
 module Expect.Extra exposing (equalCubeRenderings, equalListMembers, equalNonEmptyListMembers)
 
-import Cube as Cube
+import Cube
 import Expect
 import List.Nonempty
 import TestHelpers.Cube

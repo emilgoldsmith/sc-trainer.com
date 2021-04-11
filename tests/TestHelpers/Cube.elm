@@ -1,6 +1,6 @@
 module TestHelpers.Cube exposing (compareCubeRenderings, cubeFuzzer, plainCubie, solvedCubeRendering)
 
-import Cube as Cube exposing (Color(..))
+import Cube exposing (Color(..))
 import Fuzz
 
 

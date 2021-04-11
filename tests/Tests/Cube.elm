@@ -1,7 +1,7 @@
 module Tests.Cube exposing (applyAlgorithmTests, flipTests, testHelperTests)
 
 import Algorithm
-import Cube as Cube exposing (Color(..))
+import Cube exposing (Color(..))
 import Expect
 import Expect.Extra
 import Fuzz
