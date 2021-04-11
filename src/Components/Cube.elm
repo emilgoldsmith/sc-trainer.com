@@ -3,7 +3,6 @@ module Components.Cube exposing (viewUBL, viewUFR)
 import Element
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Models.Algorithm as Algorithm
 import Models.Cube as Cube
 import Utils.Css exposing (htmlTestid)
 
@@ -14,21 +13,21 @@ import Utils.Css exposing (htmlTestid)
 
 viewUFR : Int -> Cube.Cube -> Element.Element msg
 viewUFR =
-    getCubeHtml ( YDegrees -20, XDegrees -15, ZDegrees 5 )
+    getCubeHtml ufrRotation
 
 
 viewUBL : Int -> Cube.Cube -> Element.Element msg
-viewUBL cubeSize cube =
-    let
-        rotatedCube =
-            cube
-                |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.Halfway Algorithm.Clockwise ])
-    in
-    viewUFR cubeSize rotatedCube
+viewUBL =
+    getCubeHtml <| ufrRotation ++ [ YDegrees 180 ]
 
 
 
 -- PARAMETERS
+
+
+ufrRotation : List AxisRotation
+ufrRotation =
+    [ YDegrees -20, XDegrees -15, ZDegrees 5 ]
 
 
 type alias CubeTheme =
@@ -107,13 +106,13 @@ getCubeHtml rotation cubeSize cube =
                 , toTransformCSS rotation
                 ]
               <|
-                List.map (\( a, b ) -> displayCubie defaultTheme b a)
+                List.map (\( a, b, c ) -> displayCubie defaultTheme b c a)
                     (getRenderedCorners rendering ++ getRenderedEdges rendering ++ getRenderedCenters rendering)
             ]
 
 
-displayCubie : CubeTheme -> Coordinates -> Cube.CubieRendering -> Html msg
-displayCubie theme { fromFront, fromLeft, fromTop } rendering =
+displayCubie : CubeTheme -> Coordinates -> TextOnFaces -> Cube.CubieRendering -> Html msg
+displayCubie theme { fromFront, fromLeft, fromTop } textOnFaces rendering =
     div
         [ style "position" "absolute"
         , style "width" (String.fromFloat cubieSideLength ++ "em")
@@ -127,11 +126,11 @@ displayCubie theme { fromFront, fromLeft, fromTop } rendering =
         , style "left" (String.fromFloat (fromLeft * cubieSideLength) ++ "em")
         , style "transform" ("translateZ(" ++ String.fromFloat (fromFront * cubieSideLength * -1) ++ "em)")
         ]
-        (List.map (\face -> displayCubieFace theme face rendering) Cube.faces)
+        (List.map (\face -> displayCubieFace theme face (getTextForFace textOnFaces face) rendering) Cube.faces)
 
 
-displayCubieFace : CubeTheme -> Cube.Face -> Cube.CubieRendering -> Html msg
-displayCubieFace theme face rendering =
+displayCubieFace : CubeTheme -> Cube.Face -> Maybe String -> Cube.CubieRendering -> Html msg
+displayCubieFace theme face textOnFace rendering =
     div
         [ style "transform" <| (face |> getFaceRotation |> toCssRotationString)
         , style "background-color" <| getColorString theme (getFaceColor face rendering)
@@ -147,11 +146,49 @@ displayCubieFace theme face rendering =
         , style "border" (theme.plastic ++ " solid " ++ String.fromFloat cubieBorderWidth ++ "em")
         , style "box-sizing" "border-box"
         ]
-        []
+    <|
+        (textOnFace
+            |> Maybe.map
+                (\actualTextOnFace ->
+                    [ div
+                        [ style "font-size" "35px"
+                        , style "display" "flex"
+                        , style "justify-content" "center"
+                        , style "align-items" "center"
+                        , style "width" "100%"
+                        , style "height" "100%"
+                        ]
+                        [ text actualTextOnFace ]
+                    ]
+                )
+            |> Maybe.withDefault []
+        )
 
 
 
 -- LOGIC AND MAPPINGS
+
+
+getTextForFace : TextOnFaces -> Cube.Face -> Maybe String
+getTextForFace textOnFaces face =
+    case face of
+        Cube.UpOrDown Cube.U ->
+            textOnFaces.u
+
+        Cube.UpOrDown Cube.D ->
+            textOnFaces.d
+
+        Cube.FrontOrBack Cube.F ->
+            textOnFaces.f
+
+        Cube.FrontOrBack Cube.B ->
+            textOnFaces.b
+
+        Cube.LeftOrRight Cube.L ->
+            textOnFaces.l
+
+        Cube.LeftOrRight Cube.R ->
+            textOnFaces.r
 
 
 getFaceRotation : Cube.Face -> AxisRotation
@@ -240,7 +277,6 @@ toTransformCSS : CubeRotation -> Attribute msg
 toTransformCSS rotation =
     style "transform"
         (rotation
-            |> tupleToList
             |> List.map toCssRotationString
             |> String.join " "
         )
@@ -267,15 +303,15 @@ tupleToList ( a, b, c ) =
 {-| 3D rotation, note that order of axes makes a difference
 -}
 type alias CubeRotation =
-    ( AxisRotation, AxisRotation, AxisRotation )
+    List AxisRotation
 
 
-getRenderedCorners : Cube.Rendering -> List ( Cube.CubieRendering, Coordinates )
+getRenderedCorners : Cube.Rendering -> List ( Cube.CubieRendering, Coordinates, TextOnFaces )
 getRenderedCorners rendering =
     List.map (getRenderedCorner rendering) Cube.cornerLocations
 
 
-getRenderedCorner : Cube.Rendering -> Cube.CornerLocation -> ( Cube.CubieRendering, Coordinates )
+getRenderedCorner : Cube.Rendering -> Cube.CornerLocation -> ( Cube.CubieRendering, Coordinates, TextOnFaces )
 getRenderedCorner rendering location =
     let
         cornerRendering =
@@ -304,7 +340,7 @@ getRenderedCorner rendering location =
                 ( Cube.D, Cube.F, Cube.L ) ->
                     rendering.dfl
     in
-    ( cornerRendering, getCornerCoordinates location )
+    ( cornerRendering, getCornerCoordinates location, noText )
 
 
 getCornerCoordinates : Cube.CornerLocation -> Coordinates
@@ -330,12 +366,32 @@ getCornerCoordinates ( uOrD, fOrB, lOrR ) =
     }
 
 
-getRenderedEdges : Cube.Rendering -> List ( Cube.CubieRendering, Coordinates )
+type alias TextOnFaces =
+    { u : Maybe String
+    , d : Maybe String
+    , f : Maybe String
+    , b : Maybe String
+    , l : Maybe String
+    , r : Maybe String
+    }
+
+
+noText =
+    { u = Nothing
+    , d = Nothing
+    , f = Nothing
+    , b = Nothing
+    , l = Nothing
+    , r = Nothing
+    }
+
+
+getRenderedEdges : Cube.Rendering -> List ( Cube.CubieRendering, Coordinates, TextOnFaces )
 getRenderedEdges rendering =
     List.map (getRenderedEdge rendering) Cube.edgeLocations
 
 
-getRenderedEdge : Cube.Rendering -> Cube.EdgeLocation -> ( Cube.CubieRendering, Coordinates )
+getRenderedEdge : Cube.Rendering -> Cube.EdgeLocation -> ( Cube.CubieRendering, Coordinates, TextOnFaces )
 getRenderedEdge rendering location =
     let
         edgeRendering =
@@ -376,7 +432,7 @@ getRenderedEdge rendering location =
                 Cube.E ( Cube.B, Cube.R ) ->
                     rendering.br
     in
-    ( edgeRendering, getEdgeCoordinates location )
+    ( edgeRendering, getEdgeCoordinates location, noText )
 
 
 getEdgeCoordinates : Cube.EdgeLocation -> Coordinates
@@ -431,35 +487,35 @@ getEdgeCoordinates location =
             }
 
 
-getRenderedCenters : Cube.Rendering -> List ( Cube.CubieRendering, Coordinates )
+getRenderedCenters : Cube.Rendering -> List ( Cube.CubieRendering, Coordinates, TextOnFaces )
 getRenderedCenters rendering =
     List.map (getRenderedCenter rendering) Cube.centerLocations
 
 
-getRenderedCenter : Cube.Rendering -> Cube.CenterLocation -> ( Cube.CubieRendering, Coordinates )
+getRenderedCenter : Cube.Rendering -> Cube.CenterLocation -> ( Cube.CubieRendering, Coordinates, TextOnFaces )
 getRenderedCenter rendering location =
     let
-        centerRendering =
+        ( centerRendering, textOnFace ) =
             case location of
                 Cube.CenterLocation (Cube.UpOrDown Cube.U) ->
-                    rendering.u
+                    ( rendering.u, { noText | u = Just "U" } )
 
                 Cube.CenterLocation (Cube.UpOrDown Cube.D) ->
-                    rendering.d
+                    ( rendering.d, { noText | d = Just "D" } )
 
                 Cube.CenterLocation (Cube.LeftOrRight Cube.L) ->
-                    rendering.l
+                    ( rendering.l, { noText | l = Just "L" } )
 
                 Cube.CenterLocation (Cube.LeftOrRight Cube.R) ->
-                    rendering.r
+                    ( rendering.r, { noText | r = Just "R" } )
 
                 Cube.CenterLocation (Cube.FrontOrBack Cube.F) ->
-                    rendering.f
+                    ( rendering.f, { noText | f = Just "F" } )
 
                 Cube.CenterLocation (Cube.FrontOrBack Cube.B) ->
-                    rendering.b
+                    ( rendering.b, { noText | b = Just "B" } )
     in
-    ( centerRendering, getCenterCoordinates location )
+    ( centerRendering, getCenterCoordinates location, textOnFace )
 
 
 getCenterCoordinates : Cube.CenterLocation -> Coordinates
