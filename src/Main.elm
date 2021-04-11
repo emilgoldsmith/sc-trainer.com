@@ -451,8 +451,7 @@ view model =
     in
     { title = "Speedcubing Trainer"
     , body =
-        [ Components.Cube.injectStyles
-        , layout
+        [ layout
             (topLevelEventListeners model
                 ++ feedbackButtonIfNeeded
                 ++ [ padding 10

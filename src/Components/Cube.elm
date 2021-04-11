@@ -1,11 +1,10 @@
-module Components.Cube exposing (injectStyles, viewUBL, viewUFR)
+module Components.Cube exposing (viewUBL, viewUFR)
 
 import Element
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Models.Algorithm as Algorithm
 import Models.Cube as Cube
-import Random
 import Utils.Css exposing (htmlTestid)
 
 
@@ -14,20 +13,98 @@ import Utils.Css exposing (htmlTestid)
 
 
 viewUFR : Int -> Cube.Cube -> Element.Element msg
-viewUFR cubeSize cube =
+viewUFR =
+    getCubeHtml ( YDegrees -20, XDegrees -15, ZDegrees 5 )
+
+
+viewUBL : Int -> Cube.Cube -> Element.Element msg
+viewUBL cubeSize cube =
+    let
+        rotatedCube =
+            cube
+                |> Cube.applyAlgorithm (Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.Halfway Algorithm.Clockwise ])
+    in
+    viewUFR cubeSize rotatedCube
+
+
+
+-- PARAMETERS
+
+
+type alias CubeTheme =
+    { up : Color
+    , down : Color
+    , right : Color
+    , left : Color
+    , front : Color
+    , back : Color
+    , plastic : Color
+    }
+
+
+type alias Color =
+    String
+
+
+defaultTheme : CubeTheme
+defaultTheme =
+    { up = "white"
+    , down = "yellow"
+    , right = "red"
+    , left = "orange"
+    , front = "green"
+    , back = "blue"
+    , plastic = "black"
+    }
+
+
+cubeContainerSize : Float
+cubeContainerSize =
+    1
+
+
+wholeCubeSideLength : Float
+wholeCubeSideLength =
+    cubeContainerSize / 1.4
+
+
+cubieSideLength : Float
+cubieSideLength =
+    wholeCubeSideLength / 3
+
+
+cubieBorderWidth : Float
+cubieBorderWidth =
+    cubieSideLength / 10
+
+
+
+-- HTML
+
+
+getCubeHtml : CubeRotation -> Int -> Cube.Cube -> Element.Element msg
+getCubeHtml rotation cubeSize cube =
     Element.html <|
         let
             rendering =
                 Cube.render cube
         in
-        div [ class classes.container, htmlTestid "cube", style "font-size" <| String.fromInt cubeSize ++ "px" ]
+        div
+            [ htmlTestid "cube"
+            , style "font-size" <| String.fromInt cubeSize ++ "px"
+            , style "width" (String.fromFloat cubeContainerSize ++ "em")
+            , style "height" (String.fromFloat cubeContainerSize ++ "em")
+            , style "display" "flex"
+            , style "justify-content" "center"
+            , style "align-items" "center"
+            ]
             [ div
                 [ style "width" (String.fromFloat wholeCubeSideLength ++ "em")
                 , style "height" (String.fromFloat wholeCubeSideLength ++ "em")
                 , style "position" "relative"
                 , style "transform-origin" ("center center -" ++ String.fromFloat (wholeCubeSideLength / 2) ++ "em")
                 , style "transform-style" "preserve-3d"
-                , style "transform" "rotateY(-20deg) rotateX(-15deg) rotateZ(5deg)"
+                , toTransformCSS rotation
                 ]
               <|
                 List.map (\( a, b ) -> displayCubie defaultTheme b a)
@@ -35,34 +112,162 @@ viewUFR cubeSize cube =
             ]
 
 
-viewUBL : Int -> Cube.Cube -> Element.Element msg
-viewUBL cubeSize cube =
-    let
-        rotatedCube =
-            Cube.applyAlgorithm
-                (Algorithm.build [ Algorithm.Turn Algorithm.Y Algorithm.Halfway Algorithm.Clockwise ])
-                cube
-    in
-    viewUFR cubeSize rotatedCube
+displayCubie : CubeTheme -> Coordinates -> Cube.CubieRendering -> Html msg
+displayCubie theme { fromFront, fromLeft, fromTop } rendering =
+    div
+        [ style "position" "absolute"
+        , style "width" (String.fromFloat cubieSideLength ++ "em")
+        , style "height" (String.fromFloat cubieSideLength ++ "em")
+        , style "transform-origin" ("center center -" ++ String.fromFloat (cubieSideLength / 2) ++ "em")
+        , style "transform-style" "preserve-3d"
+        , style "display" "inline-block"
+
+        -- Position the cubie correctly
+        , style "top" (String.fromFloat (fromTop * cubieSideLength) ++ "em")
+        , style "left" (String.fromFloat (fromLeft * cubieSideLength) ++ "em")
+        , style "transform" ("translateZ(" ++ String.fromFloat (fromFront * cubieSideLength * -1) ++ "em)")
+        ]
+        (List.map (\face -> displayCubieFace theme face rendering) Cube.faces)
 
 
-injectStyles : Html msg
-injectStyles =
-    let
-        original =
-            css defaultTheme
+displayCubieFace : CubeTheme -> Cube.Face -> Cube.CubieRendering -> Html msg
+displayCubieFace theme face rendering =
+    div
+        [ style "transform" <| (face |> getFaceRotation |> toCssRotationString)
+        , style "background-color" <| getColorString theme (getFaceColor face rendering)
+        , style "position" "absolute"
+        , style "top" "0"
+        , style "left" "0"
+        , style "width" (String.fromFloat cubieSideLength ++ "em")
+        , style "height" (String.fromFloat cubieSideLength ++ "em")
 
-        compressedCss =
-            original
-                |> String.split "\n"
-                |> List.map String.trim
-                |> String.join ""
-    in
-    styleTag [] [ text compressedCss ]
+        -- Notice the negative sign here
+        , style "transform-origin" ("center center -" ++ String.fromFloat (cubieSideLength / 2) ++ "em")
+        , style "transform-style" "preserve-3d"
+        , style "border" (theme.plastic ++ " solid " ++ String.fromFloat cubieBorderWidth ++ "em")
+        , style "box-sizing" "border-box"
+        ]
+        []
 
 
 
--- HTML
+-- LOGIC AND MAPPINGS
+
+
+getFaceRotation : Cube.Face -> AxisRotation
+getFaceRotation face =
+    case face of
+        Cube.UpOrDown Cube.U ->
+            XDegrees 90
+
+        Cube.UpOrDown Cube.D ->
+            XDegrees -90
+
+        Cube.FrontOrBack Cube.F ->
+            XDegrees 0
+
+        Cube.FrontOrBack Cube.B ->
+            YDegrees 180
+
+        Cube.LeftOrRight Cube.L ->
+            YDegrees -90
+
+        Cube.LeftOrRight Cube.R ->
+            YDegrees 90
+
+
+getFaceColor : Cube.Face -> Cube.CubieRendering -> Cube.Color
+getFaceColor face rendering =
+    case face of
+        Cube.UpOrDown Cube.U ->
+            rendering.u
+
+        Cube.UpOrDown Cube.D ->
+            rendering.d
+
+        Cube.FrontOrBack Cube.F ->
+            rendering.f
+
+        Cube.FrontOrBack Cube.B ->
+            rendering.b
+
+        Cube.LeftOrRight Cube.L ->
+            rendering.l
+
+        Cube.LeftOrRight Cube.R ->
+            rendering.r
+
+
+getColorString : CubeTheme -> Cube.Color -> String
+getColorString theme color =
+    case color of
+        Cube.UpColor ->
+            theme.up
+
+        Cube.DownColor ->
+            theme.down
+
+        Cube.RightColor ->
+            theme.right
+
+        Cube.LeftColor ->
+            theme.left
+
+        Cube.FrontColor ->
+            theme.front
+
+        Cube.BackColor ->
+            theme.back
+
+        Cube.PlasticColor ->
+            theme.plastic
+
+
+type alias Coordinates =
+    { fromFront : Float
+    , fromLeft : Float
+    , fromTop : Float
+    }
+
+
+type AxisRotation
+    = XDegrees Int
+    | YDegrees Int
+    | ZDegrees Int
+
+
+toTransformCSS : CubeRotation -> Attribute msg
+toTransformCSS rotation =
+    style "transform"
+        (rotation
+            |> tupleToList
+            |> List.map toCssRotationString
+            |> String.join " "
+        )
+
+
+toCssRotationString : AxisRotation -> String
+toCssRotationString axisRotation =
+    case axisRotation of
+        XDegrees deg ->
+            "rotateX(" ++ String.fromInt deg ++ "deg)"
+
+        YDegrees deg ->
+            "rotateY(" ++ String.fromInt deg ++ "deg)"
+
+        ZDegrees deg ->
+            "rotateZ(" ++ String.fromInt deg ++ "deg)"
+
+
+tupleToList : ( a, a, a ) -> List a
+tupleToList ( a, b, c ) =
+    [ a, b, c ]
+
+
+{-| 3D rotation, note that order of axes makes a difference
+-}
+type alias CubeRotation =
+    ( AxisRotation, AxisRotation, AxisRotation )
 
 
 getRenderedCorners : Cube.Rendering -> List ( Cube.CubieRendering, Coordinates )
@@ -295,197 +500,3 @@ getCenterCoordinates location =
             , fromLeft = 1
             , fromTop = 1
             }
-
-
-type alias Coordinates =
-    { fromFront : Float
-    , fromLeft : Float
-    , fromTop : Float
-    }
-
-
-displayCubie : CubeTheme -> Coordinates -> Cube.CubieRendering -> Html msg
-displayCubie theme { fromFront, fromLeft, fromTop } rendering =
-    div
-        [ style "position" "absolute"
-        , style "width" (String.fromFloat cubieSideLength ++ "em")
-        , style "height" (String.fromFloat cubieSideLength ++ "em")
-        , style "transform-origin" ("center center -" ++ String.fromFloat (cubieSideLength / 2) ++ "em")
-        , style "transform-style" "preserve-3d"
-        , style "display" "inline-block"
-
-        -- Position the cubie correctly
-        , style "top" (String.fromFloat (fromTop * cubieSideLength) ++ "em")
-        , style "left" (String.fromFloat (fromLeft * cubieSideLength) ++ "em")
-        , style "transform" ("translateZ(" ++ String.fromFloat (fromFront * cubieSideLength * -1) ++ "em)")
-        ]
-        (List.map (\face -> displayCubieFace theme face rendering) Cube.faces)
-
-
-displayCubieFace : CubeTheme -> Cube.Face -> Cube.CubieRendering -> Html msg
-displayCubieFace theme face rendering =
-    let
-        ( faceColor, facePositionStyling ) =
-            Tuple.mapSecond (style "transform") <|
-                case face of
-                    Cube.UpOrDown Cube.U ->
-                        ( rendering.u, "rotateX(90deg)" )
-
-                    Cube.UpOrDown Cube.D ->
-                        ( rendering.d, "rotateX(-90deg)" )
-
-                    Cube.FrontOrBack Cube.F ->
-                        ( rendering.f, "" )
-
-                    Cube.FrontOrBack Cube.B ->
-                        ( rendering.b, "rotateY(180deg)" )
-
-                    Cube.LeftOrRight Cube.L ->
-                        ( rendering.l, "rotateY(-90deg)" )
-
-                    Cube.LeftOrRight Cube.R ->
-                        ( rendering.r, "rotateY(90deg)" )
-
-        colorStyling =
-            style "background-color" <|
-                case faceColor of
-                    Cube.UpColor ->
-                        theme.up
-
-                    Cube.DownColor ->
-                        theme.down
-
-                    Cube.RightColor ->
-                        theme.right
-
-                    Cube.LeftColor ->
-                        theme.left
-
-                    Cube.FrontColor ->
-                        theme.front
-
-                    Cube.BackColor ->
-                        theme.back
-
-                    Cube.PlasticColor ->
-                        theme.plastic
-    in
-    div
-        [ facePositionStyling
-        , colorStyling
-        , style "position" "absolute"
-        , style "top" "0"
-        , style "left" "0"
-        , style "width" (String.fromFloat cubieSideLength ++ "em")
-        , style "height" (String.fromFloat cubieSideLength ++ "em")
-
-        -- Notice the negative sign here
-        , style "transform-origin" ("center center -" ++ String.fromFloat (cubieSideLength / 2) ++ "em")
-        , style "transform-style" "preserve-3d"
-        , style "border" (theme.plastic ++ " solid " ++ String.fromFloat cubieBorderWidth ++ "em")
-        , style "box-sizing" "border-box"
-        ]
-        []
-
-
-
--- Theme
-
-
-type alias CubeTheme =
-    { up : Color
-    , down : Color
-    , right : Color
-    , left : Color
-    , front : Color
-    , back : Color
-    , plastic : Color
-    }
-
-
-type alias Color =
-    String
-
-
-defaultTheme : CubeTheme
-defaultTheme =
-    { up = "white"
-    , down = "yellow"
-    , right = "red"
-    , left = "orange"
-    , front = "green"
-    , back = "blue"
-    , plastic = "black"
-    }
-
-
-
--- CSS
-
-
-styleTag : List (Attribute msg) -> List (Html msg) -> Html msg
-styleTag =
-    node "style"
-
-
-css : CubeTheme -> String
-css _ =
-    """
-.{containerClass} {
-    width: {containerWidth}em;
-    height: {containerHeight}em;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-"""
-        |> String.replace "{containerClass}" classes.container
-        |> String.replace "{containerWidth}" (String.fromFloat cubeContainerSize)
-        |> String.replace "{containerHeight}" (String.fromFloat cubeContainerSize)
-
-
-cubeContainerSize : Float
-cubeContainerSize =
-    1
-
-
-wholeCubeSideLength : Float
-wholeCubeSideLength =
-    cubeContainerSize / 1.4
-
-
-cubieSideLength : Float
-cubieSideLength =
-    wholeCubeSideLength / 3
-
-
-cubieBorderWidth : Float
-cubieBorderWidth =
-    cubieSideLength / 10
-
-
-type alias Classes =
-    { container : String
-    }
-
-
-classes : Classes
-classes =
-    { -- Suffix there is for unicity
-      container = "cube-container" ++ randomSuffix
-    }
-
-
-randomSuffix : String
-randomSuffix =
-    let
-        generator =
-            Random.map (String.join "" << List.map String.fromInt) <|
-                Random.list 5 <|
-                    Random.int 0 9
-
-        seed =
-            -- Just the JS timestamp of when this code was written
-            Random.initialSeed 1616666856715
-    in
-    Tuple.first <| Random.step generator seed
