@@ -104,7 +104,7 @@ getCubeHtml rotation size cube =
                 [ style "width" (getWholeCubeSideLength identity size)
                 , style "height" (getWholeCubeSideLength identity size)
                 , style "position" "relative"
-                , style "transform-origin" ("center center -" ++ getWholeCubeSideLength (\x -> x / 2) size)
+                , style "transform-origin" ("center center -" ++ getWholeCubeSideLength ((*) 0.5) size)
                 , style "transform-style" "preserve-3d"
                 , toTransformCSS rotation
                 ]
@@ -120,7 +120,7 @@ displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
         [ style "position" "absolute"
         , style "width" (getCubieSideLength identity size)
         , style "height" (getCubieSideLength identity size)
-        , style "transform-origin" ("center center -" ++ getCubieSideLength (\x -> x / 2) size)
+        , style "transform-origin" ("center center -" ++ getCubieSideLength ((*) 0.5) size)
         , style "transform-style" "preserve-3d"
         , style "display" "inline-block"
 
@@ -144,7 +144,7 @@ displayCubieFace theme size face textOnFace rendering =
         , style "height" (getCubieSideLength identity size)
 
         -- Notice the negative sign here
-        , style "transform-origin" ("center center -" ++ getCubieSideLength (\x -> x / 2) size)
+        , style "transform-origin" ("center center -" ++ getCubieSideLength ((*) 0.5) size)
         , style "transform-style" "preserve-3d"
         , style "border" (theme.plastic ++ " solid " ++ getCubieBorderWidth identity size)
         , style "box-sizing" "border-box"
@@ -154,12 +154,12 @@ displayCubieFace theme size face textOnFace rendering =
             |> Maybe.map
                 (\actualTextOnFace ->
                     [ div
-                        [ style "font-size" "35px"
+                        [ style "font-size" (getCubieSideLength ((*) 0.8) size)
                         , style "display" "flex"
                         , style "justify-content" "center"
                         , style "align-items" "center"
-                        , style "width" "100%"
-                        , style "height" "100%"
+                        , style "position" "relative"
+                        , style "top" (getCubieSideLength ((*) 0.1) size)
                         ]
                         [ text actualTextOnFace ]
                     ]
