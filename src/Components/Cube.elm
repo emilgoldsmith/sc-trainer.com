@@ -299,7 +299,14 @@ type alias Coordinates =
 displayCubie : CubeTheme -> Coordinates -> Cube.CubieRendering -> Html msg
 displayCubie theme { fromFront, fromLeft, fromTop } rendering =
     div
-        [ class classes.cubie
+        [ style "position" "absolute"
+        , style "width" (String.fromFloat cubieSideLength ++ "em")
+        , style "height" (String.fromFloat cubieSideLength ++ "em")
+        , style "transform-origin" ("center center -" ++ String.fromFloat (cubieSideLength / 2) ++ "em")
+        , style "transform-style" "preserve-3d"
+        , style "display" "inline-block"
+
+        -- Position the cubie correctly
         , style "top" (String.fromFloat (fromTop * cubieSideLength) ++ "em")
         , style "left" (String.fromFloat (fromLeft * cubieSideLength) ++ "em")
         , style "transform" ("translateZ(" ++ String.fromFloat (fromFront * cubieSideLength * -1) ++ "em)")
@@ -414,7 +421,7 @@ styleTag =
 
 
 css : CubeTheme -> String
-css theme =
+css _ =
     """
 .{containerClass} {
     width: {containerWidth}em;
@@ -431,20 +438,9 @@ css theme =
     transform: rotateY(-20deg) rotateX(-15deg) rotateZ(5deg);
     position: relative;
 }
-.{cubieClass} {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: {cubieSideLength}em;
-    height: {cubieSideLength}em;
-    transform-style: preserve-3d;
-    transform-origin: center center -{halfCubieSideLength}em;
-    display: inline-block;
-}
 """
         |> String.replace "{containerClass}" classes.container
         |> String.replace "{wholeCubeClass}" classes.wholeCube
-        |> String.replace "{cubieClass}" classes.cubie
         |> String.replace "{cubieSideLength}" (String.fromFloat cubieSideLength)
         |> String.replace "{halfCubieSideLength}" (String.fromFloat (cubieSideLength / 2))
         |> String.replace "{cubieBorderLength}" (String.fromFloat cubieBorderWidth)
@@ -477,21 +473,6 @@ cubieBorderWidth =
 type alias Classes =
     { container : String
     , wholeCube : String
-    , cubie : String
-    , face : String
-    , upFace : String
-    , downFace : String
-    , rightFace : String
-    , leftFace : String
-    , frontFace : String
-    , backFace : String
-    , upColor : String
-    , downColor : String
-    , frontColor : String
-    , backColor : String
-    , leftColor : String
-    , rightColor : String
-    , plasticColor : String
     }
 
 
@@ -500,21 +481,6 @@ classes =
     { -- Suffix there is for unicity
       container = "cube-container" ++ randomSuffix
     , wholeCube = "cube" ++ randomSuffix
-    , cubie = "cubie" ++ randomSuffix
-    , face = "face" ++ randomSuffix
-    , upFace = "up" ++ randomSuffix
-    , downFace = "down" ++ randomSuffix
-    , rightFace = "right" ++ randomSuffix
-    , leftFace = "left" ++ randomSuffix
-    , frontFace = "front" ++ randomSuffix
-    , backFace = "back" ++ randomSuffix
-    , upColor = "u" ++ randomSuffix
-    , downColor = "d" ++ randomSuffix
-    , frontColor = "f" ++ randomSuffix
-    , backColor = "b" ++ randomSuffix
-    , leftColor = "l" ++ randomSuffix
-    , rightColor = "r" ++ randomSuffix
-    , plasticColor = "p" ++ randomSuffix
     }
 
 
