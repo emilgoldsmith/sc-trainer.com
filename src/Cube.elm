@@ -7,8 +7,8 @@ import Algorithm
 import Element
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Svg exposing (line, svg)
-import Svg.Attributes exposing (stroke, strokeWidth, viewBox, x1, x2, y1, y2)
+import Svg exposing (line, path, svg)
+import Svg.Attributes exposing (d, fill, stroke, strokeWidth, viewBox, x1, x2, y1, y2)
 import Utils.Css exposing (htmlTestid)
 import Utils.Enumerator
 import Utils.MappedPermutation as MappedPermutation exposing (MappedPermutation)
@@ -2074,6 +2074,28 @@ svgF size =
         [ line [ x1 "1", y1 "1", x2 "1", y2 "225", stroke "black", strokeWidth "30" ] []
         , line [ x1 "1", y1 "13.5", x2 "150", y2 "13.5", stroke "black", strokeWidth "25" ] []
         , line [ x1 "1", y1 "112.5", x2 "130", y2 "112.5", stroke "black", strokeWidth "25" ] []
+        ]
+
+
+svgL : String -> Html msg
+svgL size =
+    svg [ viewBox "0 0 150 225", Svg.Attributes.height size ]
+        [ line [ x1 "1", y1 "1", x2 "1", y2 "225", stroke "black", strokeWidth "30" ] []
+        , line [ x1 "1", y1 "212.5", x2 "150", y2 "212.5", stroke "black", strokeWidth "25" ] []
+        ]
+
+
+svgU : String -> Html msg
+svgU size =
+    svg [ viewBox "-17.5 0 235 300", Svg.Attributes.height size ]
+        [ path [ d "M 0,0 l 0,200 a 92.5,82.5 0 0 0 185,0 l 0,-200", fill "transparent", strokeWidth "35", stroke "black" ] []
+        ]
+
+
+svgD : String -> Html msg
+svgD size =
+    svg [ viewBox "-17.5 0 230 290", Svg.Attributes.height size ]
+        [ path [ d "M 0,0 l 0,272.5 l 100,0 a 95,127.5 0 0 0 0,-255 l -100,0", fill "transparent", strokeWidth "35", stroke "black" ] []
         ]
 
 
