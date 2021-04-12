@@ -38,24 +38,6 @@
             height: window.innerHeight,
         }
       });
-      // Taken from https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#safely_detecting_option_support
-      var passiveSupported = false;
-
-      try {
-        var options = {
-          get passive() { // This function will be called when the browser
-                          //   attempts to access the passive property.
-            passiveSupported = true;
-            return false;
-          }
-        };
-
-        window.addEventListener("test", null, options);
-        window.removeEventListener("test", null, options);
-      } catch(err) {
-        passiveSupported = false;
-      }
-
 
       /**
        * PORTS

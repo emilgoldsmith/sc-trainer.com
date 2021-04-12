@@ -7,6 +7,8 @@ import Algorithm
 import Element
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Svg exposing (line, svg)
+import Svg.Attributes exposing (stroke, strokeWidth, viewBox, x1, x2, y1, y2)
 import Utils.Css exposing (htmlTestid)
 import Utils.Enumerator
 import Utils.MappedPermutation as MappedPermutation exposing (MappedPermutation)
@@ -1646,7 +1648,7 @@ displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
         (List.map (\face -> displayCubieFace theme size face (getTextForFace textOnFaces face) rendering) faces)
 
 
-displayCubieFace : CubeTheme -> Size -> Face -> Maybe (Html msg) -> CubieRendering -> Html msg
+displayCubieFace : CubeTheme -> Size -> Face -> Maybe (String -> Html msg) -> CubieRendering -> Html msg
 displayCubieFace theme size face textOnFace rendering =
     div
         [ style "transform" <| (face |> getFaceRotation |> toCssRotationString)
@@ -1673,9 +1675,9 @@ displayCubieFace theme size face textOnFace rendering =
                         , style "justify-content" "center"
                         , style "align-items" "center"
                         , style "position" "relative"
-                        , style "top" (getCubieSideLength ((*) 0.1) size)
+                        , style "top" (getCubieSideLength ((*) 0.08) size)
                         ]
-                        [ actualTextOnFace ]
+                        [ actualTextOnFace (getCubieSideLength ((*) 0.63) size) ]
                     ]
                 )
             |> Maybe.withDefault []
@@ -1715,7 +1717,7 @@ computePixelSize ratio size =
     String.fromInt pixels ++ "px"
 
 
-getTextForFace : TextOnFaces msg -> Face -> Maybe (Html msg)
+getTextForFace : TextOnFaces msg -> Face -> Maybe (String -> Html msg)
 getTextForFace textOnFaces face =
     case face of
         UpOrDown U ->
@@ -1841,11 +1843,6 @@ toCssRotationString axisRotation =
             "rotateZ(" ++ String.fromInt deg ++ "deg)"
 
 
-tupleToList : ( a, a, a ) -> List a
-tupleToList ( a, b, c ) =
-    [ a, b, c ]
-
-
 {-| 3D rotation, note that order of axes makes a difference
 -}
 type alias CubeRotation =
@@ -1913,15 +1910,16 @@ getCornerCoordinates ( uOrD, fOrB, lOrR ) =
 
 
 type alias TextOnFaces msg =
-    { u : Maybe (Html msg)
-    , d : Maybe (Html msg)
-    , f : Maybe (Html msg)
-    , b : Maybe (Html msg)
-    , l : Maybe (Html msg)
-    , r : Maybe (Html msg)
+    { u : Maybe (String -> Html msg)
+    , d : Maybe (String -> Html msg)
+    , f : Maybe (String -> Html msg)
+    , b : Maybe (String -> Html msg)
+    , l : Maybe (String -> Html msg)
+    , r : Maybe (String -> Html msg)
     }
 
 
+noText : TextOnFaces msg
 noText =
     { u = Nothing
     , d = Nothing
@@ -2044,24 +2042,39 @@ getRenderedCenter rendering location =
         ( centerRendering, textOnFace ) =
             case location of
                 CenterLocation (UpOrDown U) ->
-                    ( rendering.u, { noText | u = Just <| text "U" } )
+                    ( rendering.u, { noText | u = Just <| \size -> span [ style "font-size" size ] [ text "U" ] } )
 
                 CenterLocation (UpOrDown D) ->
-                    ( rendering.d, { noText | d = Just <| text "D" } )
+                    ( rendering.d, { noText | d = Just <| \size -> span [ style "font-size" size ] [ text "D" ] } )
 
                 CenterLocation (LeftOrRight L) ->
-                    ( rendering.l, { noText | l = Just <| text "L" } )
+                    ( rendering.l, { noText | l = Just <| \size -> span [ style "font-size" size ] [ text "L" ] } )
 
                 CenterLocation (LeftOrRight R) ->
-                    ( rendering.r, { noText | r = Just <| text "R" } )
+                    ( rendering.r, { noText | r = Just <| \size -> span [ style "font-size" size ] [ text "R" ] } )
 
                 CenterLocation (FrontOrBack F) ->
-                    ( rendering.f, { noText | f = Just <| text "F" } )
+                    ( rendering.f
+                    , { noText
+                        | f =
+                            Just <|
+                                svgF
+                      }
+                    )
 
                 CenterLocation (FrontOrBack B) ->
-                    ( rendering.b, { noText | b = Just <| text "B" } )
+                    ( rendering.b, { noText | b = Just <| \size -> span [ style "font-size" size ] [ text "B" ] } )
     in
     ( centerRendering, getCenterCoordinates location, textOnFace )
+
+
+svgF : String -> Html msg
+svgF size =
+    svg [ viewBox "0 0 150 225", Svg.Attributes.height size ]
+        [ line [ x1 "1", y1 "1", x2 "1", y2 "225", stroke "black", strokeWidth "30" ] []
+        , line [ x1 "1", y1 "13.5", x2 "150", y2 "13.5", stroke "black", strokeWidth "25" ] []
+        , line [ x1 "1", y1 "112.5", x2 "130", y2 "112.5", stroke "black", strokeWidth "25" ] []
+        ]
 
 
 getCenterCoordinates : CenterLocation -> Coordinates
