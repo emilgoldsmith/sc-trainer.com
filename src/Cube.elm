@@ -1599,7 +1599,7 @@ type alias Size =
     Int
 
 
-getCubeHtml : CubeRotation -> (TextOnFaces -> TextOnFaces) -> Size -> Cube -> Element.Element msg
+getCubeHtml : CubeRotation -> (TextOnFaces msg -> TextOnFaces msg) -> Size -> Cube -> Element.Element msg
 getCubeHtml rotation mapText size cube =
     Element.html <|
         let
@@ -1628,7 +1628,7 @@ getCubeHtml rotation mapText size cube =
             ]
 
 
-displayCubie : CubeTheme -> Size -> Coordinates -> TextOnFaces -> CubieRendering -> Html msg
+displayCubie : CubeTheme -> Size -> Coordinates -> TextOnFaces msg -> CubieRendering -> Html msg
 displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
     div
         [ style "position" "absolute"
@@ -1646,7 +1646,7 @@ displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
         (List.map (\face -> displayCubieFace theme size face (getTextForFace textOnFaces face) rendering) faces)
 
 
-displayCubieFace : CubeTheme -> Size -> Face -> Maybe String -> CubieRendering -> Html msg
+displayCubieFace : CubeTheme -> Size -> Face -> Maybe (Html msg) -> CubieRendering -> Html msg
 displayCubieFace theme size face textOnFace rendering =
     div
         [ style "transform" <| (face |> getFaceRotation |> toCssRotationString)
@@ -1675,7 +1675,7 @@ displayCubieFace theme size face textOnFace rendering =
                         , style "position" "relative"
                         , style "top" (getCubieSideLength ((*) 0.1) size)
                         ]
-                        [ text actualTextOnFace ]
+                        [ actualTextOnFace ]
                     ]
                 )
             |> Maybe.withDefault []
@@ -1715,7 +1715,7 @@ computePixelSize ratio size =
     String.fromInt pixels ++ "px"
 
 
-getTextForFace : TextOnFaces -> Face -> Maybe String
+getTextForFace : TextOnFaces msg -> Face -> Maybe (Html msg)
 getTextForFace textOnFaces face =
     case face of
         UpOrDown U ->
@@ -1852,12 +1852,12 @@ type alias CubeRotation =
     List AxisRotation
 
 
-getRenderedCorners : Rendering -> List ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedCorners : Rendering -> List ( CubieRendering, Coordinates, TextOnFaces msg )
 getRenderedCorners rendering =
     List.map (getRenderedCorner rendering) cornerLocations
 
 
-getRenderedCorner : Rendering -> CornerLocation -> ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedCorner : Rendering -> CornerLocation -> ( CubieRendering, Coordinates, TextOnFaces msg )
 getRenderedCorner rendering location =
     let
         cornerRendering =
@@ -1912,13 +1912,13 @@ getCornerCoordinates ( uOrD, fOrB, lOrR ) =
     }
 
 
-type alias TextOnFaces =
-    { u : Maybe String
-    , d : Maybe String
-    , f : Maybe String
-    , b : Maybe String
-    , l : Maybe String
-    , r : Maybe String
+type alias TextOnFaces msg =
+    { u : Maybe (Html msg)
+    , d : Maybe (Html msg)
+    , f : Maybe (Html msg)
+    , b : Maybe (Html msg)
+    , l : Maybe (Html msg)
+    , r : Maybe (Html msg)
     }
 
 
@@ -1932,12 +1932,12 @@ noText =
     }
 
 
-getRenderedEdges : Rendering -> List ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedEdges : Rendering -> List ( CubieRendering, Coordinates, TextOnFaces msg )
 getRenderedEdges rendering =
     List.map (getRenderedEdge rendering) edgeLocations
 
 
-getRenderedEdge : Rendering -> EdgeLocation -> ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedEdge : Rendering -> EdgeLocation -> ( CubieRendering, Coordinates, TextOnFaces msg )
 getRenderedEdge rendering location =
     let
         edgeRendering =
@@ -2033,33 +2033,33 @@ getEdgeCoordinates location =
             }
 
 
-getRenderedCenters : Rendering -> List ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedCenters : Rendering -> List ( CubieRendering, Coordinates, TextOnFaces msg )
 getRenderedCenters rendering =
     List.map (getRenderedCenter rendering) centerLocations
 
 
-getRenderedCenter : Rendering -> CenterLocation -> ( CubieRendering, Coordinates, TextOnFaces )
+getRenderedCenter : Rendering -> CenterLocation -> ( CubieRendering, Coordinates, TextOnFaces msg )
 getRenderedCenter rendering location =
     let
         ( centerRendering, textOnFace ) =
             case location of
                 CenterLocation (UpOrDown U) ->
-                    ( rendering.u, { noText | u = Just "U" } )
+                    ( rendering.u, { noText | u = Just <| text "U" } )
 
                 CenterLocation (UpOrDown D) ->
-                    ( rendering.d, { noText | d = Just "D" } )
+                    ( rendering.d, { noText | d = Just <| text "D" } )
 
                 CenterLocation (LeftOrRight L) ->
-                    ( rendering.l, { noText | l = Just "L" } )
+                    ( rendering.l, { noText | l = Just <| text "L" } )
 
                 CenterLocation (LeftOrRight R) ->
-                    ( rendering.r, { noText | r = Just "R" } )
+                    ( rendering.r, { noText | r = Just <| text "R" } )
 
                 CenterLocation (FrontOrBack F) ->
-                    ( rendering.f, { noText | f = Just "F" } )
+                    ( rendering.f, { noText | f = Just <| text "F" } )
 
                 CenterLocation (FrontOrBack B) ->
-                    ( rendering.b, { noText | b = Just "B" } )
+                    ( rendering.b, { noText | b = Just <| text "B" } )
     in
     ( centerRendering, getCenterCoordinates location, textOnFace )
 
