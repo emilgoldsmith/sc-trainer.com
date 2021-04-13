@@ -1639,7 +1639,6 @@ displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
         , style "height" (getCubieSideLength identity size)
         , style "transform-origin" ("center center -" ++ getCubieSideLength ((*) 0.5) size)
         , style "transform-box" "fill-box"
-        , style "transform-box" "fill-box"
         , style "transform-style" "preserve-3d"
         , style "display" "inline-block"
 
@@ -1667,6 +1666,7 @@ displayCubieFace theme size face textOnFace rendering =
 
         -- Notice the negative sign here
         , style "transform-origin" ("center center -" ++ getCubieSideLength ((*) 0.5) size)
+        , style "transform-box" "fill-box"
         , style "transform-style" "preserve-3d"
         , style "border" (theme.plastic ++ " solid " ++ getCubieBorderWidth identity size)
         , style "box-sizing" "border-box"
