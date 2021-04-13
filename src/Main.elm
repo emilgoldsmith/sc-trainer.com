@@ -439,22 +439,32 @@ view model =
         feedbackButtonIfNeeded =
             case model.trainerState of
                 CorrectPage ->
-                    [ overlayFeedbackButton ]
+                    [ overlayFeedbackButton model.viewportSize ]
 
                 WrongPage _ ->
-                    [ overlayFeedbackButton ]
+                    [ overlayFeedbackButton model.viewportSize ]
 
-                _ ->
+                StartPage ->
+                    []
+
+                GetReadyScreen ->
+                    []
+
+                TestRunning _ _ _ ->
+                    []
+
+                EvaluatingResult _ ->
                     []
     in
     { title = "Speedcubing Trainer"
     , body =
         [ layout
             (topLevelEventListeners model
-                ++ feedbackButtonIfNeeded
                 ++ [ padding 10
                    , inFront <| viewFullScreen model
                    ]
+                -- Order is important as the last one shows on top
+                ++ feedbackButtonIfNeeded
             )
             (viewState model)
         ]
@@ -884,21 +894,22 @@ buttonWithShortcut deviceClass attributes { onPress, labelText, keyboardShortcut
             withShortcutLabel
 
 
-overlayFeedbackButton : Attribute msg
-overlayFeedbackButton =
+overlayFeedbackButton : ViewportSize -> Attribute msg
+overlayFeedbackButton viewportSize =
     inFront <|
         el
             [ alignBottom
             , alignRight
-            , padding 30
+            , padding (minDimension viewportSize // 30)
             ]
         <|
             newTabLink
                 [ testid "feedback-button"
                 , Background.color (rgb255 208 211 207)
-                , padding 10
-                , Border.rounded 40
-                , Border.width 2
+                , padding (minDimension viewportSize // 45)
+                , Border.rounded (minDimension viewportSize // 30)
+                , Border.width (minDimension viewportSize // 250)
                 , Border.color (rgb255 0 0 0)
+                , Font.size (minDimension viewportSize // 25)
                 ]
                 { url = "https://forms.gle/ftCX7eoT71g8f5ob6", label = text "Give Feedback" }
