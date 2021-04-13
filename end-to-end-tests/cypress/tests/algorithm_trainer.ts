@@ -114,7 +114,7 @@ const states = {
   correctPage: new StateCache(
     "correctPage",
     () => {
-      states.evaluateResult.restoreState();
+      states.evaluateResultAfterIgnoringKeyPresses.restoreState();
       elements.evaluateResult.correctButton.get().click();
     },
     () => {
@@ -125,7 +125,7 @@ const states = {
   wrongPage: new StateCache(
     "wrongPage",
     () => {
-      states.evaluateResult.restoreState();
+      states.evaluateResultAfterIgnoringKeyPresses.restoreState();
       elements.evaluateResult.wrongButton.get().click();
     },
     () => {
@@ -488,6 +488,30 @@ describe("Algorithm Trainer", function () {
             Key.capsLock,
             Key.leftCtrl,
           ]);
+          elements.evaluateResult.container.assertShows();
+        });
+
+        it("on touching the screen over the area where the correct button is", function () {
+          // We observed touching on mobile over the place where the button is can trigger the click event
+          // on the next screen about 120ms after. So we just test that clicking 150ms (to be safe) after (with mocked time) doesn't
+          // take us on to the "Correct Page"
+          cy.clock();
+          cy.touchScreen("center");
+          cy.tick(150);
+          // Force stops it from erroring on disabled button
+          elements.evaluateResult.correctButton.get().click({ force: true });
+          elements.evaluateResult.container.assertShows();
+        });
+
+        it("on touching the screen over the area where the wrong button is", function () {
+          // We observed touching on mobile over the place where the button is can trigger the click event
+          // on the next screen about 120ms after. So we just test that clicking 150ms (to be safe) after (with mocked time) doesn't
+          // take us on to the "Wrong Page"
+          cy.clock();
+          cy.touchScreen("center");
+          cy.tick(150);
+          // Force stops it from erroring on disabled button
+          elements.evaluateResult.wrongButton.get().click({ force: true });
           elements.evaluateResult.container.assertShows();
         });
       });

@@ -82,7 +82,7 @@ type TrainerState
     | EvaluatingResult
         { spacePressStarted : Bool
         , wPressStarted : Bool
-        , ignoringKeyPressesAfterTransition : Bool
+        , tooEarlyToTransition : Bool
         , result : TimeInterval.TimeInterval
         , testCase : TestCase
         }
@@ -124,7 +124,7 @@ type TestRunningMsg
 
 
 type EvaluateResultMsg
-    = EndIgnoringKeyPressesAfterTransition
+    = NowLateEnoughToTransition
     | SpaceStarted
     | WStarted
     | EvaluateCorrect
@@ -226,9 +226,9 @@ subscriptions model =
                             , Events.onAnimationFrameDelta MillisecondsPassed
                             ]
 
-                EvaluatingResult { ignoringKeyPressesAfterTransition, spacePressStarted, wPressStarted } ->
+                EvaluatingResult { tooEarlyToTransition, spacePressStarted, wPressStarted } ->
                     Sub.map EvaluateResultMessage <|
-                        if ignoringKeyPressesAfterTransition then
+                        if tooEarlyToTransition then
                             Sub.none
 
                         else
@@ -337,13 +337,13 @@ update messageCategory model =
                             EvaluatingResult
                                 { spacePressStarted = False
                                 , wPressStarted = False
-                                , ignoringKeyPressesAfterTransition = True
+                                , tooEarlyToTransition = True
                                 , result = TimeInterval.betweenTimestamps { start = startTime, end = endTime }
                                 , testCase = testCase
                                 }
                         , expectedCube = model.expectedCube |> Cube.applyAlgorithm (toAlg testCase)
                       }
-                    , Task.perform (always <| EvaluateResultMessage EndIgnoringKeyPressesAfterTransition) (Process.sleep 100)
+                    , Task.perform (always <| EvaluateResultMessage NowLateEnoughToTransition) (Process.sleep 200)
                     )
 
                 MillisecondsPassed timeDelta ->
@@ -352,8 +352,8 @@ update messageCategory model =
         ( EvaluateResultMessage msg, EvaluatingResult keyStates ) ->
             Tuple.mapSecond (Cmd.map EvaluateResultMessage) <|
                 case msg of
-                    EndIgnoringKeyPressesAfterTransition ->
-                        ( { model | trainerState = EvaluatingResult { keyStates | ignoringKeyPressesAfterTransition = False } }, Cmd.none )
+                    NowLateEnoughToTransition ->
+                        ( { model | trainerState = EvaluatingResult { keyStates | tooEarlyToTransition = False } }, Cmd.none )
 
                     SpaceStarted ->
                         ( { model | trainerState = EvaluatingResult { keyStates | spacePressStarted = True } }, Cmd.none )
@@ -387,8 +387,15 @@ update messageCategory model =
                         TestRunningMessage _ ->
                             "TestRunningMessage"
 
-                        EvaluateResultMessage _ ->
-                            "EvaluateResultMessage"
+                        EvaluateResultMessage evalMsg ->
+                            "EvaluateResultMessage: "
+                                ++ (case evalMsg of
+                                        NowLateEnoughToTransition ->
+                                            "NowLateEnoughToTransition"
+
+                                        _ ->
+                                            "A yet unimplemented stringify"
+                                   )
 
                 trainerStateString =
                     case trainerState of
@@ -626,7 +633,7 @@ viewFullScreen model =
                             TimeInterval.displayOneDecimal elapsedTime
                     ]
 
-        EvaluatingResult { result } ->
+        EvaluatingResult { result, tooEarlyToTransition } ->
             Element.map EvaluateResultMessage <|
                 let
                     overallPadding =
@@ -688,7 +695,12 @@ viewFullScreen model =
                             , Font.center
                             , width (px <| minDimension model.viewportSize // 3)
                             ]
-                            { onPress = Just EvaluateCorrect
+                            { onPress =
+                                if tooEarlyToTransition then
+                                    Nothing
+
+                                else
+                                    Just EvaluateCorrect
                             , labelText = "Correct"
                             , keyboardShortcut = Space
                             , fontSize = buttonSize
@@ -702,7 +714,12 @@ viewFullScreen model =
                             , Font.center
                             , width (px <| minDimension model.viewportSize // 3)
                             ]
-                            { onPress = Just EvaluateWrong
+                            { onPress =
+                                if tooEarlyToTransition then
+                                    Nothing
+
+                                else
+                                    Just EvaluateWrong
                             , labelText = "Wrong"
                             , keyboardShortcut = W
                             , fontSize = buttonSize
