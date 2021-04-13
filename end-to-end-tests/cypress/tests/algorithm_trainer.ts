@@ -720,6 +720,8 @@ describe("Algorithm Trainer", function () {
                 (href: string) => href.startsWith("https://forms.gle/"),
                 "starts with https://forms.gle/"
               );
+            // Asserts it opens in new tab
+            expect(linkElement.attr("target"), "target").to.equal("_blank");
           });
         });
     });
@@ -775,6 +777,8 @@ describe("Algorithm Trainer", function () {
                 (href: string) => href.startsWith("https://forms.gle/"),
                 "starts with https://forms.gle/"
               );
+            // Asserts it opens in new tab
+            expect(linkElement.attr("target"), "target").to.equal("_blank");
           });
         });
     });
