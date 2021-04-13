@@ -708,7 +708,20 @@ describe("Algorithm Trainer", function () {
 
     it("has all the correct elements", function () {
       elements.correctPage.nextButton.assertShows();
-      elements.globals.feedbackButton.assertShows();
+      elements.globals.feedbackButton
+        .assertShows()
+        .parent()
+        .within(() => {
+          // It should be a link going to a google form
+          cy.get("a").should((linkElement) => {
+            expect(linkElement.prop("href"), "href")
+              .to.be.a("string")
+              .and.satisfy(
+                (href: string) => href.startsWith("https://forms.gle/"),
+                "starts with https://forms.gle/"
+              );
+          });
+        });
     });
 
     it("sizes elements reasonably", function () {
@@ -750,7 +763,20 @@ describe("Algorithm Trainer", function () {
         elements.globals.cube.assertShows();
       });
       elements.wrongPage.nextButton.assertShows();
-      elements.globals.feedbackButton.assertShows();
+      elements.globals.feedbackButton
+        .assertShows()
+        .parent()
+        .within(() => {
+          // It should be a link going to a google form
+          cy.get("a").should((linkElement) => {
+            expect(linkElement.prop("href"), "href")
+              .to.be.a("string")
+              .and.satisfy(
+                (href: string) => href.startsWith("https://forms.gle/"),
+                "starts with https://forms.gle/"
+              );
+          });
+        });
     });
 
     it("sizes elements reasonably", function () {
