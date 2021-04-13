@@ -1621,6 +1621,7 @@ getCubeHtml rotation mapText size cube =
                 , style "height" (getWholeCubeSideLength identity size)
                 , style "position" "relative"
                 , style "transform-origin" ("center center -" ++ getWholeCubeSideLength ((*) 0.5) size)
+                , style "transform-box" "fill-box"
                 , style "transform-style" "preserve-3d"
                 , toTransformCSS rotation
                 ]
@@ -1637,6 +1638,8 @@ displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
         , style "width" (getCubieSideLength identity size)
         , style "height" (getCubieSideLength identity size)
         , style "transform-origin" ("center center -" ++ getCubieSideLength ((*) 0.5) size)
+        , style "transform-box" "fill-box"
+        , style "transform-box" "fill-box"
         , style "transform-style" "preserve-3d"
         , style "display" "inline-block"
 
