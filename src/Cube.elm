@@ -1658,6 +1658,9 @@ displayCubieFace theme size face textOnFace rendering =
         , style "left" "0"
         , style "width" (getCubieSideLength identity size)
         , style "height" (getCubieSideLength identity size)
+        , style "display" "flex"
+        , style "justify-content" "center"
+        , style "align-items" "center"
 
         -- Notice the negative sign here
         , style "transform-origin" ("center center -" ++ getCubieSideLength ((*) 0.5) size)
@@ -1669,16 +1672,7 @@ displayCubieFace theme size face textOnFace rendering =
         (textOnFace
             |> Maybe.map
                 (\actualTextOnFace ->
-                    [ div
-                        [ style "font-size" (getCubieSideLength ((*) 0.8) size)
-                        , style "display" "flex"
-                        , style "justify-content" "center"
-                        , style "align-items" "center"
-                        , style "position" "relative"
-                        , style "top" (getCubieSideLength ((*) 0.08) size)
-                        ]
-                        [ actualTextOnFace (getCubieSideLength ((*) 0.63) size) ]
-                    ]
+                    [ actualTextOnFace (getCubieSideLength ((*) 0.63) size) ]
                 )
             |> Maybe.withDefault []
         )
