@@ -2042,28 +2042,22 @@ getRenderedCenter rendering location =
         ( centerRendering, textOnFace ) =
             case location of
                 CenterLocation (UpOrDown U) ->
-                    ( rendering.u, { noText | u = Just <| \size -> span [ style "font-size" size ] [ text "U" ] } )
+                    ( rendering.u, { noText | u = Just svgU } )
 
                 CenterLocation (UpOrDown D) ->
-                    ( rendering.d, { noText | d = Just <| \size -> span [ style "font-size" size ] [ text "D" ] } )
+                    ( rendering.d, { noText | d = Just svgD } )
 
                 CenterLocation (LeftOrRight L) ->
-                    ( rendering.l, { noText | l = Just <| \size -> span [ style "font-size" size ] [ text "L" ] } )
+                    ( rendering.l, { noText | l = Just svgL } )
 
                 CenterLocation (LeftOrRight R) ->
-                    ( rendering.r, { noText | r = Just <| \size -> span [ style "font-size" size ] [ text "R" ] } )
+                    ( rendering.r, { noText | r = Just svgR } )
 
                 CenterLocation (FrontOrBack F) ->
-                    ( rendering.f
-                    , { noText
-                        | f =
-                            Just <|
-                                svgF
-                      }
-                    )
+                    ( rendering.f, { noText | f = Just svgF } )
 
                 CenterLocation (FrontOrBack B) ->
-                    ( rendering.b, { noText | b = Just <| \size -> span [ style "font-size" size ] [ text "B" ] } )
+                    ( rendering.b, { noText | b = Just svgB } )
     in
     ( centerRendering, getCenterCoordinates location, textOnFace )
 
@@ -2071,23 +2065,23 @@ getRenderedCenter rendering location =
 svgF : String -> Html msg
 svgF size =
     svg [ viewBox "0 0 150 225", Svg.Attributes.height size ]
-        [ line [ x1 "1", y1 "1", x2 "1", y2 "225", stroke "black", strokeWidth "30" ] []
-        , line [ x1 "1", y1 "13.5", x2 "150", y2 "13.5", stroke "black", strokeWidth "25" ] []
-        , line [ x1 "1", y1 "112.5", x2 "130", y2 "112.5", stroke "black", strokeWidth "25" ] []
+        [ line [ x1 "15", y1 "0", x2 "15", y2 "225", stroke "black", strokeWidth "30" ] []
+        , line [ x1 "0", y1 "12.5", x2 "150", y2 "12.5", stroke "black", strokeWidth "25" ] []
+        , line [ x1 "0", y1 "112.5", x2 "130", y2 "112.5", stroke "black", strokeWidth "25" ] []
         ]
 
 
 svgL : String -> Html msg
 svgL size =
-    svg [ viewBox "0 0 150 225", Svg.Attributes.height size ]
-        [ line [ x1 "1", y1 "1", x2 "1", y2 "225", stroke "black", strokeWidth "30" ] []
-        , line [ x1 "1", y1 "212.5", x2 "150", y2 "212.5", stroke "black", strokeWidth "25" ] []
+    svg [ viewBox "-15 0 150 225", Svg.Attributes.height size ]
+        [ line [ x1 "0", y1 "0", x2 "0", y2 "225", stroke "black", strokeWidth "30" ] []
+        , line [ x1 "0", y1 "212.5", x2 "150", y2 "212.5", stroke "black", strokeWidth "25" ] []
         ]
 
 
 svgU : String -> Html msg
 svgU size =
-    svg [ viewBox "-17.5 0 235 300", Svg.Attributes.height size ]
+    svg [ viewBox "-17.5 0 219 300", Svg.Attributes.height size ]
         [ path [ d "M 0,0 l 0,200 a 92.5,82.5 0 0 0 185,0 l 0,-200", fill "transparent", strokeWidth "35", stroke "black" ] []
         ]
 
@@ -2096,6 +2090,20 @@ svgD : String -> Html msg
 svgD size =
     svg [ viewBox "-17.5 0 230 290", Svg.Attributes.height size ]
         [ path [ d "M 0,0 l 0,272.5 l 100,0 a 95,127.5 0 0 0 0,-255 l -100,0", fill "transparent", strokeWidth "35", stroke "black" ] []
+        ]
+
+
+svgR : String -> Html msg
+svgR size =
+    svg [ viewBox "-17.5 0 255 290", Svg.Attributes.height size ]
+        [ path [ d "M 0,290 l 0,-272.5 l 100,0 a 95,63.75 0 0 1 0,127.5 l -100,0 l 120,0 l 200,300", fill "transparent", strokeWidth "35", stroke "black" ] []
+        ]
+
+
+svgB : String -> Html msg
+svgB size =
+    svg [ viewBox "-17.5 0 230 290", Svg.Attributes.height size ]
+        [ path [ d "M 0,290 l 0,-272.5 l 100,0 a 95,63.75 0 0 1 0,127.5 l -100,0 m 100,0 a 95,63.75 0 0 1 0,127.5 l -100,0", fill "transparent", strokeWidth "35", stroke "black" ] []
         ]
 
 
