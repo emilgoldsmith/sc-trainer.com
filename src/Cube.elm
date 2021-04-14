@@ -1525,17 +1525,36 @@ centerLocations =
 
 viewUFRWithLetters : Int -> Cube -> Element.Element msg
 viewUFRWithLetters =
-    Element.Lazy.lazy2 <| getCubeHtml ufrRotation identity
+    Element.Lazy.lazy2 <| unlazyUFRWithLetters
+
+
+{-| We need the unlazy version separated as opposed to inline.
+If we inline it the javascript reference equality will fail as we're
+technically creating a new function in each invocation
+-}
+unlazyUFRWithLetters : Int -> Cube -> Element.Element msg
+unlazyUFRWithLetters =
+    getCubeHtml ufrRotation identity
 
 
 viewUFRNoLetters : Int -> Cube -> Element.Element msg
 viewUFRNoLetters =
-    Element.Lazy.lazy2 <| getCubeHtml ufrRotation (always noText)
+    Element.Lazy.lazy2 <| unlazyUFRNoLetters
+
+
+unlazyUFRNoLetters : Int -> Cube -> Element.Element msg
+unlazyUFRNoLetters =
+    getCubeHtml ufrRotation (always noText)
 
 
 viewUBLWithLetters : Int -> Cube -> Element.Element msg
 viewUBLWithLetters =
-    Element.Lazy.lazy2 <| getCubeHtml (YRotateDegrees 180 :: ufrRotation) identity
+    Element.Lazy.lazy2 <| unlazyUBLWithLetters
+
+
+unlazyUBLWithLetters : Int -> Cube -> Element.Element msg
+unlazyUBLWithLetters =
+    getCubeHtml (YRotateDegrees 180 :: ufrRotation) identity
 
 
 
