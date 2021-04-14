@@ -1534,16 +1534,16 @@ viewUFRNoLetters =
 
 viewUBLWithLetters : Int -> Cube -> Element.Element msg
 viewUBLWithLetters =
-    getCubeHtml (ufrRotation ++ [ YDegrees 180 ]) identity
+    getCubeHtml (YRotateDegrees 180 :: ufrRotation) identity
 
 
 
 -- PARAMETERS
 
 
-ufrRotation : List AxisRotation
+ufrRotation : Transformation
 ufrRotation =
-    [ YDegrees -20, XDegrees -15, ZDegrees 5 ]
+    [ ZRotateDegrees 5, XRotateDegrees -15, YRotateDegrees -20 ]
 
 
 type alias CubeTheme =
@@ -1601,7 +1601,7 @@ type alias Size =
     Int
 
 
-getCubeHtml : CubeRotation -> (TextOnFaces msg -> TextOnFaces msg) -> Size -> Cube -> Element.Element msg
+getCubeHtml : Transformation -> (TextOnFaces msg -> TextOnFaces msg) -> Size -> Cube -> Element.Element msg
 getCubeHtml rotation mapText size cube =
     Element.html <|
         let
@@ -1615,15 +1615,14 @@ getCubeHtml rotation mapText size cube =
             , style "display" "flex"
             , style "justify-content" "center"
             , style "align-items" "center"
+            , style "perspective" "0"
             ]
             [ div
                 [ style "width" (getWholeCubeSideLength identity size)
                 , style "height" (getWholeCubeSideLength identity size)
                 , style "position" "relative"
-                , style "transform-origin" ("center center -" ++ getWholeCubeSideLength ((*) 0.5) size)
-                , style "transform-box" "fill-box"
                 , style "transform-style" "preserve-3d"
-                , toTransformCSS rotation
+                , cssTransformCube rotation (toFloat size * wholeCubeSideLengthRatio |> round)
                 ]
               <|
                 List.map (\( a, b, c ) -> displayCubie defaultTheme size b (mapText c) a)
@@ -1637,15 +1636,13 @@ displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
         [ style "position" "absolute"
         , style "width" (getCubieSideLength identity size)
         , style "height" (getCubieSideLength identity size)
-        , style "transform-origin" ("center center -" ++ getCubieSideLength ((*) 0.5) size)
-        , style "transform-box" "fill-box"
         , style "transform-style" "preserve-3d"
         , style "display" "inline-block"
 
         -- Position the cubie correctly
         , style "top" (getCubieSideLength ((*) fromTop) size)
         , style "left" (getCubieSideLength ((*) fromLeft) size)
-        , style "transform" ("translateZ(" ++ getCubieSideLength ((*) (fromFront * -1)) size ++ ")")
+        , cssTransformCube [ ZTranslatePixels <| round <| (toFloat size * cubieSideLengthRatio * fromFront * -1) ] (toFloat size * cubieSideLengthRatio |> round)
         ]
         (List.map (\face -> displayCubieFace theme size face (getTextForFace textOnFaces face) rendering) faces)
 
@@ -1653,7 +1650,7 @@ displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
 displayCubieFace : CubeTheme -> Size -> Face -> Maybe (String -> Html msg) -> CubieRendering -> Html msg
 displayCubieFace theme size face textOnFace rendering =
     div
-        [ style "transform" <| (face |> getFaceRotation |> toCssRotationString)
+        [ cssTransformCube [ getFaceRotation face ] (toFloat size * cubieSideLengthRatio |> round)
         , style "background-color" <| getColorString theme (getFaceColor face rendering)
         , style "position" "absolute"
         , style "top" "0"
@@ -1663,11 +1660,6 @@ displayCubieFace theme size face textOnFace rendering =
         , style "display" "flex"
         , style "justify-content" "center"
         , style "align-items" "center"
-
-        -- Notice the negative sign here
-        , style "transform-origin" ("center center -" ++ getCubieSideLength ((*) 0.5) size)
-        , style "transform-box" "fill-box"
-        , style "transform-style" "preserve-3d"
         , style "border" (theme.plastic ++ " solid " ++ getCubieBorderWidth identity size)
         , style "box-sizing" "border-box"
         ]
@@ -1736,26 +1728,26 @@ getTextForFace textOnFaces face =
             textOnFaces.r
 
 
-getFaceRotation : Face -> AxisRotation
+getFaceRotation : Face -> SingleTransformation
 getFaceRotation face =
     case face of
         UpOrDown U ->
-            XDegrees 90
+            XRotateDegrees 90
 
         UpOrDown D ->
-            XDegrees -90
+            XRotateDegrees -90
 
         FrontOrBack F ->
-            XDegrees 0
+            XRotateDegrees 0
 
         FrontOrBack B ->
-            YDegrees 180
+            YRotateDegrees 180
 
         LeftOrRight L ->
-            YDegrees -90
+            YRotateDegrees -90
 
         LeftOrRight R ->
-            YDegrees 90
+            YRotateDegrees 90
 
 
 getFaceColor : Face -> CubieRendering -> Color
@@ -1812,38 +1804,98 @@ type alias Coordinates =
     }
 
 
-type AxisRotation
-    = XDegrees Int
-    | YDegrees Int
-    | ZDegrees Int
+type SingleTransformation
+    = XRotateDegrees Int
+    | YRotateDegrees Int
+    | ZRotateDegrees Int
+    | XTranslatePixels Int
+    | YTranslatePixels Int
+    | ZTranslatePixels Int
 
 
-toTransformCSS : CubeRotation -> Attribute msg
-toTransformCSS rotation =
+isRotation : SingleTransformation -> Bool
+isRotation t =
+    case t of
+        XRotateDegrees _ ->
+            True
+
+        YRotateDegrees _ ->
+            True
+
+        ZRotateDegrees _ ->
+            True
+
+        XTranslatePixels _ ->
+            False
+
+        YTranslatePixels _ ->
+            False
+
+        ZTranslatePixels _ ->
+            False
+
+
+cssTransformCube : Transformation -> Size -> Attribute msg
+cssTransformCube transformation size =
+    let
+        hasRotations =
+            List.filter isRotation transformation
+                |> List.length
+                |> (\x -> x > 0)
+
+        threeDCompatibleTransformation =
+            if hasRotations then
+                -- We need this translate as the default center of rotations is at the
+                -- "front" of the screen and we need it at the center of the cube.
+                -- Note that we can't use transform-origin as it has inconsistent behaviour
+                -- in Safari and other browsers
+                ZTranslatePixels (size // 2)
+                    :: transformation
+                    ++ [ ZTranslatePixels (-1 * size // 2) ]
+
+            else
+                -- If there aren't any rotations we don't need to move for correct origin
+                transformation
+    in
     style "transform"
-        (rotation
+        (threeDCompatibleTransformation
+            -- We reverse it as our type reads left to right but
+            -- css transform reads right to left
+            |> List.reverse
             |> List.map toCssRotationString
             |> String.join " "
         )
 
 
-toCssRotationString : AxisRotation -> String
+toCssRotationString : SingleTransformation -> String
 toCssRotationString axisRotation =
     case axisRotation of
-        XDegrees deg ->
+        XRotateDegrees deg ->
             "rotateX(" ++ String.fromInt deg ++ "deg)"
 
-        YDegrees deg ->
+        YRotateDegrees deg ->
             "rotateY(" ++ String.fromInt deg ++ "deg)"
 
-        ZDegrees deg ->
+        ZRotateDegrees deg ->
             "rotateZ(" ++ String.fromInt deg ++ "deg)"
 
+        XTranslatePixels pixels ->
+            "translateX(" ++ String.fromInt pixels ++ "px)"
 
-{-| 3D rotation, note that order of axes makes a difference
+        YTranslatePixels pixels ->
+            "translateY(" ++ String.fromInt pixels ++ "px)"
+
+        ZTranslatePixels pixels ->
+            "translateZ(" ++ String.fromInt pixels ++ "px)"
+
+
+{-| 3D transformation, note that order a difference when it comes to rotations.
+The transforms are applied from left to right (note this is opposite to the css transform
+property which applies transforms from right to left, but we do left to right for easier
+readability here)
 -}
-type alias CubeRotation =
-    List AxisRotation
+type alias Transformation =
+    List SingleTransformation
 
 
 getRenderedCorners : Rendering -> List ( CubieRendering, Coordinates, TextOnFaces msg )
