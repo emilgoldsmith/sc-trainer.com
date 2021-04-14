@@ -1573,24 +1573,33 @@ defaultTheme =
     }
 
 
-containerRatio : Float
-containerRatio =
-    1
+containerSideLength : Int -> Int
+containerSideLength size =
+    size * 1
 
 
-wholeCubeSideLengthRatio : Float
-wholeCubeSideLengthRatio =
-    containerRatio / 1.4
+wholeCubeSideLength : Int -> Int
+wholeCubeSideLength size =
+    containerSideLength size
+        |> toFloat
+        |> (\x -> x / 1.4)
+        |> round
 
 
-cubieSideLengthRatio : Float
-cubieSideLengthRatio =
-    wholeCubeSideLengthRatio / 3
+cubieSideLength : Int -> Int
+cubieSideLength size =
+    wholeCubeSideLength size
+        |> toFloat
+        |> (\x -> x / 3)
+        |> round
 
 
-cubieBorderWidthRatio : Float
-cubieBorderWidthRatio =
-    cubieSideLengthRatio / 10
+cubieBorderWidth : Int -> Int
+cubieBorderWidth size =
+    cubieSideLength size
+        |> toFloat
+        |> (\x -> x / 10)
+        |> round
 
 
 
@@ -1610,19 +1619,19 @@ getCubeHtml rotation mapText size cube =
         in
         div
             [ htmlTestid "cube"
-            , style "width" (getContainerSize identity size)
-            , style "height" (getContainerSize identity size)
+            , style "width" (px <| containerSideLength size)
+            , style "height" (px <| containerSideLength size)
             , style "display" "flex"
             , style "justify-content" "center"
             , style "align-items" "center"
             , style "perspective" "0"
             ]
             [ div
-                [ style "width" (getWholeCubeSideLength identity size)
-                , style "height" (getWholeCubeSideLength identity size)
+                [ style "width" (px <| wholeCubeSideLength size)
+                , style "height" (px <| wholeCubeSideLength size)
                 , style "position" "relative"
                 , style "transform-style" "preserve-3d"
-                , cssTransformCube rotation (toFloat size * wholeCubeSideLengthRatio |> round)
+                , cssTransformCube rotation (wholeCubeSideLength size)
                 ]
               <|
                 List.map (\( a, b, c ) -> displayCubie defaultTheme size b (mapText c) a)
@@ -1634,15 +1643,15 @@ displayCubie : CubeTheme -> Size -> Coordinates -> TextOnFaces msg -> CubieRende
 displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
     div
         [ style "position" "absolute"
-        , style "width" (getCubieSideLength identity size)
-        , style "height" (getCubieSideLength identity size)
+        , style "width" (px <| cubieSideLength size)
+        , style "height" (px <| cubieSideLength size)
         , style "transform-style" "preserve-3d"
         , style "display" "inline-block"
 
         -- Position the cubie correctly
-        , style "top" (getCubieSideLength ((*) fromTop) size)
-        , style "left" (getCubieSideLength ((*) fromLeft) size)
-        , cssTransformCube [ ZTranslatePixels <| round <| (toFloat size * cubieSideLengthRatio * fromFront * -1) ] (toFloat size * cubieSideLengthRatio |> round)
+        , style "top" (px <| cubieSideLength size * fromTop)
+        , style "left" (px <| cubieSideLength size * fromLeft)
+        , cssTransformCube [ ZTranslatePixels <| cubieSideLength size * fromFront * -1 ] (cubieSideLength size)
         ]
         (List.map (\face -> displayCubieFace theme size face (getTextForFace textOnFaces face) rendering) faces)
 
@@ -1650,24 +1659,24 @@ displayCubie theme size { fromFront, fromLeft, fromTop } textOnFaces rendering =
 displayCubieFace : CubeTheme -> Size -> Face -> Maybe (String -> Html msg) -> CubieRendering -> Html msg
 displayCubieFace theme size face textOnFace rendering =
     div
-        [ cssTransformCube [ getFaceRotation face ] (toFloat size * cubieSideLengthRatio |> round)
+        [ cssTransformCube [ getFaceRotation face ] (cubieSideLength size)
         , style "background-color" <| getColorString theme (getFaceColor face rendering)
         , style "position" "absolute"
         , style "top" "0"
         , style "left" "0"
-        , style "width" (getCubieSideLength identity size)
-        , style "height" (getCubieSideLength identity size)
+        , style "width" (px <| cubieSideLength size)
+        , style "height" (px <| cubieSideLength size)
         , style "display" "flex"
         , style "justify-content" "center"
         , style "align-items" "center"
-        , style "border" (theme.plastic ++ " solid " ++ getCubieBorderWidth identity size)
+        , style "border" (theme.plastic ++ " solid " ++ px (cubieBorderWidth size))
         , style "box-sizing" "border-box"
         ]
     <|
         (textOnFace
             |> Maybe.map
                 (\actualTextOnFace ->
-                    [ actualTextOnFace (getCubieSideLength ((*) 0.63) size) ]
+                    [ actualTextOnFace (px <| cubieSideLength size * 63 // 100) ]
                 )
             |> Maybe.withDefault []
         )
@@ -1677,32 +1686,8 @@ displayCubieFace theme size face textOnFace rendering =
 -- LOGIC AND MAPPINGS
 
 
-getContainerSize : (Float -> Float) -> Int -> String
-getContainerSize fn =
-    computePixelSize (fn containerRatio)
-
-
-getWholeCubeSideLength : (Float -> Float) -> Int -> String
-getWholeCubeSideLength fn =
-    computePixelSize (fn wholeCubeSideLengthRatio)
-
-
-getCubieSideLength : (Float -> Float) -> Int -> String
-getCubieSideLength fn =
-    computePixelSize (fn cubieSideLengthRatio)
-
-
-getCubieBorderWidth : (Float -> Float) -> Int -> String
-getCubieBorderWidth fn =
-    computePixelSize (fn cubieBorderWidthRatio)
-
-
-computePixelSize : Float -> Int -> String
-computePixelSize ratio size =
-    let
-        pixels =
-            toFloat size * ratio |> round
-    in
+px : Int -> String
+px pixels =
     String.fromInt pixels ++ "px"
 
 
@@ -1797,10 +1782,14 @@ getColorString theme color =
             theme.plastic
 
 
+{-| We only use ints for now so it makes some things a bit easier
+but there's no real reason other than simpler code a few places that they
+can't be floats
+-}
 type alias Coordinates =
-    { fromFront : Float
-    , fromLeft : Float
-    , fromTop : Float
+    { fromFront : Int
+    , fromLeft : Int
+    , fromTop : Int
     }
 
 
