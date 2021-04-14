@@ -5,6 +5,7 @@ module Cube exposing (Color(..), Cube, CubieRendering, Rendering, applyAlgorithm
 
 import Algorithm
 import Element
+import Element.Lazy
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Svg exposing (line, path, svg)
@@ -1524,17 +1525,17 @@ centerLocations =
 
 viewUFRWithLetters : Int -> Cube -> Element.Element msg
 viewUFRWithLetters =
-    getCubeHtml ufrRotation identity
+    Element.Lazy.lazy2 <| getCubeHtml ufrRotation identity
 
 
 viewUFRNoLetters : Int -> Cube -> Element.Element msg
 viewUFRNoLetters =
-    getCubeHtml ufrRotation (always noText)
+    Element.Lazy.lazy2 <| getCubeHtml ufrRotation (always noText)
 
 
 viewUBLWithLetters : Int -> Cube -> Element.Element msg
 viewUBLWithLetters =
-    getCubeHtml (YRotateDegrees 180 :: ufrRotation) identity
+    Element.Lazy.lazy2 <| getCubeHtml (YRotateDegrees 180 :: ufrRotation) identity
 
 
 
