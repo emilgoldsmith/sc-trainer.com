@@ -31,6 +31,8 @@ jobs:
           spec: |
             cypress/tests/desktop-only/*
             cypress/tests/*
+          # For debugging purposes log all the installed browsers and OS info
+          build: npx cypress info
         env:
           # This allows the action to determine the unique run id
           # which is necessary to re-run the checks
