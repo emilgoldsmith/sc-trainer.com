@@ -18,7 +18,7 @@ jobs:
         run: docker build -t sc-trainer:$GITHUB_SHA --target production .
 
       - name: Start server
-        run: docker run -e PORT=8080 -d --name="sc-trainer-server" sc-trainer:$GITHUB_SHA
+        run: docker run -e PORT=8080 -p 8080:8080 -d --name="sc-trainer-server" sc-trainer:$GITHUB_SHA
 
       - name: Cypress Run
         uses: cypress-io/github-action@v2.9.11
