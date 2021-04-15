@@ -5,8 +5,6 @@ jobs:
   ui-chrome-desktop:
     name: UI Chrome Desktop Tests
     runs-on: ubuntu-latest
-    container:
-      image: cypress/browsers:node14.16.0-chrome89-ff86
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -16,14 +14,8 @@ jobs:
         # As suggested by the action README
         continue-on-error: true
 
-      - name: Install Docker
-        uses: docker/setup-buildx-action@v1
-
       - name: Build
-        uses: docker/build-push-action@v2
-        with:
-          tags: sc-trainer:${{ github.sha }}
-          target: production
+        run: docker build -t sc-trainer:$GITHUB_SHA --target production .
 
       - name: Start server
         run: docker run -e PORT=8080 -d --name="sc-trainer-server" sc-trainer:$GITHUB_SHA
