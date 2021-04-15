@@ -262,7 +262,7 @@ function parseTheJavascript(htmlString: string) {
     initializeEndIndex,
   ] = getIndiciesForSurroundingFunction({
     curStartIndex: beforeSendToApp.length,
-    curEndIndex: htmlString.length - afterSendToApp.length,
+    curEndIndex: htmlString.length - afterSendToApp.length + 1,
     htmlString,
   });
 
@@ -270,11 +270,11 @@ function parseTheJavascript(htmlString: string) {
   const beforeSendToAppInInitialize = beforeSendToApp.substring(
     initializeStartIndex
   );
-  const afterSendToAppInInitialize = afterSendToApp.substring(
-    0,
+  const afterSendToAppInInitialize = htmlString.substring(
+    htmlString.length - afterSendToApp.length,
     initializeEndIndex
   );
-  const afterInitialize = afterSendToApp.substring(initializeEndIndex);
+  const afterInitialize = htmlString.substring(initializeEndIndex);
   return {
     beforeInitialize,
     beforeSendToAppInInitialize,

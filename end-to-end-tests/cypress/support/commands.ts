@@ -287,6 +287,11 @@ const getApplicationState: Cypress.Chainable<undefined>["getApplicationState"] =
   ): Cypress.Chainable<Cypress.OurApplicationState> =>
     cy.getCustomWindow({ log: false }).then((window) => {
       const state = window.END_TO_END_TEST_HELPERS.getModel();
+      if (state === undefined) {
+        throw new Error(
+          `${name} state which was attempted gotten was found to be undefined`
+        );
+      }
       consolePropsSetter({ name, appState: state });
       return state;
     });
