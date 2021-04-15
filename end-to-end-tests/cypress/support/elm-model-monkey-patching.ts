@@ -322,7 +322,7 @@ function getIndiciesForSurroundingFunction({
     // We use -1 as by convention the endIndex is one after the last element it includes
     if (htmlString[surroundingEnd - 1] === "{") endLevel++;
     if (htmlString[surroundingEnd - 1] === "}") endLevel--;
-    surroundingEnd++;
+    if (endLevel !== -1) surroundingEnd++;
   }
   return [surroundingStart, surroundingEnd];
 }
