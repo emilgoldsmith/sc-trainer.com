@@ -13,9 +13,8 @@ jobs:
 
       # Cache docker layers for faster builds
       - uses: satackey/action-docker-layer-caching@v0.0.11
-        with:
-          # As suggested by the action README
-          continue-on-error: true
+        # As suggested by the action README
+        continue-on-error: true
 
       - name: Build
         run: docker build -t sc-trainer:$GITHUB_SHA --target production .
