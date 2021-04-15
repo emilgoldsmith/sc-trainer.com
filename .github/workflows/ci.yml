@@ -26,7 +26,7 @@ jobs:
           working-directory: end-to-end-tests
           browser: chrome
           # These are the macbook-13 values from https://docs.cypress.io/api/commands/viewport#Arguments
-          config: "viewportWidth=1280,viewportHeight=800"
+          config: "viewportWidth=1280,viewportHeight=800,baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
           spec: |
             cypress/tests/desktop-only/*
