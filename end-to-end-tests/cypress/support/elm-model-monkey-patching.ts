@@ -171,6 +171,7 @@ function addObserversAndModifiers(htmlString: string) {
     beforeSendToAppInInitialize: addListenersToAnyModelAssignments({
       modelVariableName: parsedJs.modelVariableName,
       htmlString: parsedJs.beforeSendToAppInInitialize,
+      onlyReplaceFirst: true,
     }),
     sendToAppDefinition:
       addListenersToAnyModelAssignments({
@@ -449,9 +450,11 @@ function parseSendToAppFunction(htmlString: string) {
 function addListenersToAnyModelAssignments({
   modelVariableName,
   htmlString,
+  onlyReplaceFirst = false,
 }: {
   modelVariableName: string;
   htmlString: string;
+  onlyReplaceFirst?: boolean;
 }): string {
   const regex = buildRegex(
     [
@@ -470,7 +473,7 @@ function addListenersToAnyModelAssignments({
       // as we also want property accesses to be included
       /([\w.]+)/,
     ],
-    "g"
+    onlyReplaceFirst ? "" : "g"
   );
   return htmlString.replace(
     regex,
