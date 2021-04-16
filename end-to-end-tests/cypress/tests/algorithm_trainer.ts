@@ -11,6 +11,7 @@ const elements = {
     cubeStartState: "cube-start-state",
     startButton: "start-button",
     instructionsText: "instructions-text",
+    learningResources: "learning-resources",
   }),
   getReadyScreen: buildElementsCategory({
     container: "get-ready-container",
@@ -167,9 +168,12 @@ describe("Algorithm Trainer", function () {
       });
       elements.startPage.startButton.assertShows();
       elements.startPage.startButton.assertContainedByWindow();
-      // This one we accept possibly having to scroll for so just check it exists
+      // These ones we accept possibly having to scroll for so just check it exists
       // We check it's visibility including scroll in the element sizing
       elements.startPage.instructionsText.get().should("exist");
+      elements.startPage.learningResources
+        .get()
+        .should("exist")
 
       // A smoke test that we have added some links for the cubing terms
       elements.startPage.container.get().within(() => {
@@ -182,6 +186,9 @@ describe("Algorithm Trainer", function () {
       // This one is allowed vertical scrolling, but we want to check
       // that we can actually scroll down to see instructionsText if its missing
       elements.startPage.instructionsText.assertConsumableViaScroll(
+        elements.startPage.container.testId
+      );
+      elements.startPage.learningResources.assertConsumableViaScroll(
         elements.startPage.container.testId
       );
     });

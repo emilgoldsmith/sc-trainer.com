@@ -270,7 +270,7 @@ function buildConsumableViaScrollAsserter(testId: string) {
             ourElementTop >= containerTop &&
             ourElementBottom <= containerBottom
           ) {
-            cy.should(() => {
+            cy.wrap(undefined, { log: false }).should(() => {
               expect(
                 ourElementTop,
                 "element shouldn't overflow over top of container"
@@ -297,13 +297,13 @@ function buildConsumableViaScrollAsserter(testId: string) {
         } else {
           getElement().scrollIntoView().should("be.visible");
           getContainer().scrollTo("top");
-          cy.should(() => {
+          cy.wrap(undefined, { log: false }).should(() => {
             expect(ourElement.offset()?.top as number).to.be.at.least(
               containerTop
             );
           });
           getContainer().scrollTo("bottom");
-          cy.should(() => {
+          cy.wrap(undefined, { log: false }).should(() => {
             expect(
               (ourElement.offset()?.top as number) +
                 (ourElement.outerHeight() as number)

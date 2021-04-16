@@ -661,6 +661,7 @@ viewFullScreen model =
                             [ text "If you got it wrong you will have to solve the cube to reset it before being able to continue to the next case. Don't worry, you will be instructed through all this by the application."
                             ]
                         ]
+                    , column [ testid "learning-resources" ] [ paragraph [ Font.size 30, Region.heading 1 ] [ text "Learning Resources:" ] ]
                     ]
 
         GetReadyScreen ->
