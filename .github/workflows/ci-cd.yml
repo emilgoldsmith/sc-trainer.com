@@ -5,6 +5,9 @@ jobs:
   cypress-end-to-end-tests:
     name: "${{ matrix.platform.browserString }} on ${{ matrix.sizeRelevant.deviceName }} Cypress E2E Tests"
     runs-on: ${{ matrix.platform.os }}
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -34,7 +37,7 @@ jobs:
 
       - name: Switch docker mode to Linux containers for Windows
         if: ${{ startsWith(matrix.platform.os, 'windows') }}
-        run: find . DockerCli.exe
+        run: /c/Program\ Files/Docker/Docker/DockerCli.exe -SwitchLinuxEngine
 
       - name: Build
         run: docker build -t sc-trainer:${{ github.sha }} --target production .
