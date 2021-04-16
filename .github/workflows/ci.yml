@@ -9,6 +9,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: echo "${{ github.ref }}"
+
       # - name: Build
       #   run: docker build -t sc-trainer:$GITHUB_SHA --target production .
 
