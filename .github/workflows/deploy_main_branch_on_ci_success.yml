@@ -4,8 +4,9 @@ on:
 
 jobs:
   deploy_main:
-    if: ${{ github.event.head_branch == 'main' && github.event.status == 'completed' && github.event.conclusion == 'success' }}
+    if: ${{ github.event.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - run: echo "Deploying!"
+      - run: echo "${{ github.event.head_branch }}"
       - run: echo "${{ github.event }}"
