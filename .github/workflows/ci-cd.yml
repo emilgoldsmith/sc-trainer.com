@@ -2,12 +2,6 @@ name: Cypress CI and CD
 on: push
 
 jobs:
-  a-failing-one:
-    runs-on: ubuntu-latest
-    steps:
-      - name: To Fail
-        run: echo "surprise! Didn't fail"
-
   ui-chrome-desktop:
     name: UI Chrome Desktop Tests
     runs-on: ubuntu-latest
@@ -45,8 +39,13 @@ jobs:
       #   run: docker stop sc-trainer-server
 
   deploy:
+    # We only deploy if it's the main branch and they were a success
     if: ${{ success() && github.ref == 'refs/heads/main' }}
-    needs: [a-failing-one, ui-chrome-desktop]
+    # Important to keep this up to date, depending on all jobs
+    needs: [ui-chrome-desktop]
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Deploying"
+      - run: python scripts/trigger-deploy.py
+        env:
+          SECRET: ${{ secrets.GOOGLE_CLOUD_DEPLOY_SECRET }}
+          API_KEY: ${{ secrets.GOOGLE_CLOUD_DEPLOY_API_KEY }}
