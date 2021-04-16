@@ -54,16 +54,16 @@ describe("Algorithm Trainer Dynamic Viewport Tests", function () {
     });
     context("large viewport", largeViewportConfigOverride, function () {
       it("displays shortcuts on large viewport with touch screen", function () {
-        assertShortcutsDisplayUsingButtonsAndTouch();
+        assertShortcutsDisplay("useMouseAndButtons");
       });
     });
     context("small viewport", smallViewportConfigOverride, function () {
       it("doesnt display shortcuts by default on small viewport with touch screen", function () {
-        assertShortcutsDontDisplayUsingButtonsAndTouch();
+        assertShortcutsDontDisplay("useMouseAndButtons");
       });
       it("displays shortcuts on small viewport with touch screen if a keyboard event was fired", function () {
         cy.pressKey(Key.leftCtrl);
-        assertShortcutsDisplayUsingButtonsAndTouch();
+        assertShortcutsDisplay("useMouseAndButtons");
       });
     });
   });
@@ -75,12 +75,12 @@ describe("Algorithm Trainer Dynamic Viewport Tests", function () {
     });
     context("large viewport", largeViewportConfigOverride, function () {
       it("displays shortcuts on a large viewport without touch screen", function () {
-        assertShortcutsDisplayUsingKeyboard();
+        assertShortcutsDisplay("useKeyboard");
       });
     });
     context("small viewport", smallViewportConfigOverride, function () {
       it("displays shortcuts on a small viewport with no touch screen", function () {
-        assertShortcutsDisplayUsingKeyboard();
+        assertShortcutsDisplay("useKeyboard");
       });
     });
   });
@@ -102,81 +102,19 @@ function simulateIsTouchScreen(testWindow: Window) {
   });
 }
 
-function assertShortcutsDisplayUsingKeyboard() {
-  checkShortcutDisplaysUsingKeyboard("match");
+function assertShortcutsDisplay(method: "useKeyboard" | "useMouseAndButtons") {
+  checkWhetherShortcutsDisplay("match", method);
 }
 
-function assertShortcutsDontDisplayUsingKeyboard() {
-  checkShortcutDisplaysUsingKeyboard("not.match");
+function assertShortcutsDontDisplay(
+  method: "useKeyboard" | "useMouseAndButtons"
+) {
+  checkWhetherShortcutsDisplay("not.match", method);
 }
 
-function assertShortcutsDisplayUsingButtonsAndTouch() {
-  checkShortcutDisplaysUsingButtonsAndTouch("match");
-}
-
-function assertShortcutsDontDisplayUsingButtonsAndTouch() {
-  checkShortcutDisplaysUsingButtonsAndTouch("not.match");
-}
-
-function checkShortcutDisplaysUsingKeyboard(matcher: "match" | "not.match") {
-  elements.startPage.container.waitFor();
-  elements.startPage.startButton
-    .get()
-    .invoke("text")
-    .should(matcher, /\(\s*Space\s*\)/);
-
-  // Note this also checks the space shortcut actually works
-  cy.pressKey(Key.space);
-  elements.getReadyScreen.container.waitFor();
-  cy.tick(1000);
-  elements.testRunning.container.waitFor();
-  cy.pressKey(Key.space);
-  elements.evaluateResult.container.waitFor();
-  elements.evaluateResult.correctButton
-    .get()
-    .invoke("text")
-    .should(matcher, /\(\s*Space\s*\)/);
-
-  // Note this also checks the space shortcut actually works
-  cy.tick(300);
-  cy.pressKey(Key.space);
-  elements.correctPage.container.waitFor();
-  elements.correctPage.nextButton
-    .get()
-    .invoke("text")
-    .should(matcher, /\(\s*Space\s*\)/);
-
-  // Note this also checks the space shortcut actually works
-  cy.pressKey(Key.space);
-  elements.getReadyScreen.container.waitFor();
-  cy.tick(1000);
-  elements.testRunning.container.waitFor();
-
-  // And now we go back to evaluateResult so we can do the wrong path
-  cy.pressKey(Key.space);
-  elements.evaluateResult.container.waitFor();
-  elements.evaluateResult.wrongButton
-    .get()
-    .invoke("text")
-    .should(matcher, /\(\s*[wW]\s*\)/);
-
-  // Note this also checks the w shortcut actually works
-  cy.tick(300);
-  cy.pressKey(Key.w);
-  elements.wrongPage.container.waitFor();
-  elements.wrongPage.nextButton
-    .get()
-    .invoke("text")
-    .should(matcher, /\(\s*Space\s*\)/);
-
-  // Check space actually works as a shortcut too, just to make sure we're
-  // asserting the right thing. It's more thoroughly checked in main test
-  cy.pressKey(Key.space);
-  elements.getReadyScreen.container.waitFor();
-}
-
-function checkShortcutDisplaysUsingButtonsAndTouch(
-  matcher: "match" | "not.match"
+function checkWhetherShortcutsDisplay(
+  matcher: "match" | "not.match",
+  method: "useKeyboard" | "useMouseAndButtons"
 ) {
   elements.startPage.container.waitFor();
   elements.startPage.startButton
@@ -184,11 +122,20 @@ function checkShortcutDisplaysUsingButtonsAndTouch(
     .invoke("text")
     .should(matcher, /\(\s*Space\s*\)/);
 
-  elements.startPage.startButton.get().click();
+  if (method === "useKeyboard") {
+    // Note this also checks the space shortcut actually works as the label implies
+    cy.pressKey(Key.space);
+  } else {
+    elements.startPage.startButton.get().click();
+  }
   elements.getReadyScreen.container.waitFor();
   cy.tick(1000);
   elements.testRunning.container.waitFor();
-  cy.touchScreen("topLeft");
+  if (method === "useKeyboard") {
+    cy.pressKey(Key.space);
+  } else {
+    cy.touchScreen("topLeft");
+  }
   elements.evaluateResult.container.waitFor();
   elements.evaluateResult.correctButton
     .get()
@@ -196,20 +143,34 @@ function checkShortcutDisplaysUsingButtonsAndTouch(
     .should(matcher, /\(\s*Space\s*\)/);
 
   cy.tick(300);
-  elements.evaluateResult.correctButton.get().click();
+  if (method === "useKeyboard") {
+    // Note this also checks the space shortcut actually works as the label implies
+    cy.pressKey(Key.space);
+  } else {
+    elements.evaluateResult.correctButton.get().click();
+  }
   elements.correctPage.container.waitFor();
   elements.correctPage.nextButton
     .get()
     .invoke("text")
     .should(matcher, /\(\s*Space\s*\)/);
 
-  elements.correctPage.nextButton.get().click();
+  if (method === "useKeyboard") {
+    // Note this also checks the space shortcut actually works as the label implies
+    cy.pressKey(Key.space);
+  } else {
+    elements.correctPage.nextButton.get().click();
+  }
   elements.getReadyScreen.container.waitFor();
   cy.tick(1000);
   elements.testRunning.container.waitFor();
 
   // And now we go back to evaluateResult so we can do the wrong path
-  cy.touchScreen("topLeft");
+  if (method === "useKeyboard") {
+    cy.pressKey(Key.space);
+  } else {
+    cy.touchScreen("topLeft");
+  }
   elements.evaluateResult.container.waitFor();
   elements.evaluateResult.wrongButton
     .get()
@@ -217,15 +178,25 @@ function checkShortcutDisplaysUsingButtonsAndTouch(
     .should(matcher, /\(\s*[wW]\s*\)/);
 
   cy.tick(300);
-  elements.evaluateResult.wrongButton.get().click();
+  if (method === "useKeyboard") {
+    // Note this also checks the w shortcut actually works as the label implies
+    cy.pressKey(Key.w);
+  } else {
+    elements.evaluateResult.wrongButton.get().click();
+  }
   elements.wrongPage.container.waitFor();
   elements.wrongPage.nextButton
     .get()
     .invoke("text")
     .should(matcher, /\(\s*Space\s*\)/);
 
-  // Check the button actually works too just for good measure.
-  // It's more thoroughly checked in main test
-  elements.wrongPage.nextButton.get().click();
+  if (method === "useKeyboard") {
+    // Check space actually works as a shortcut too as the label implies.
+    // This is just to make sure we're asserting the right thing.
+    // It's more thoroughly checked in main test
+    cy.pressKey(Key.space);
+  } else {
+    elements.wrongPage.nextButton.get().click();
+  }
   elements.getReadyScreen.container.waitFor();
 }
