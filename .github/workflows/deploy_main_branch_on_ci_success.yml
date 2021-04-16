@@ -1,5 +1,5 @@
 on:
-  check_suite:
+  check_run:
     types: [completed]
 
 jobs:
@@ -7,6 +7,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "Deploying!"
-      - run: echo "${{ github.event.head_branch }}"
+      - run: echo "${{ github.event.check_suite.head_branch }}"
+      - run: echo "${{ github.event.check_suite.conclusion }}"
+      - run: echo "${{ github.event.check_suite.status }}"
       - run: echo "${{ github.conclusion }}"
       - run: echo "${{ github.status }}"
+      - run: echo "${{ github.name }}"
