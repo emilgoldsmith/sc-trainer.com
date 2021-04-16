@@ -44,6 +44,19 @@ init viewportSize _ navigationKey =
     ( { trainerState = StartPage
       , expectedCube = Cube.solved
       , viewportSize = viewportSize
+      , userHasKeyboard =
+            case classifyDevice viewportSize |> .class of
+                Phone ->
+                    False
+
+                Tablet ->
+                    False
+
+                Desktop ->
+                    True
+
+                BigDesktop ->
+                    True
       , navigationKey = navigationKey
       }
     , Cmd.none
@@ -60,6 +73,7 @@ type alias Model =
     { trainerState : TrainerState
     , expectedCube : Cube.Cube
     , viewportSize : { width : Int, height : Int }
+    , userHasKeyboard : Bool
     , navigationKey : Browser.Navigation.Key
     }
 
@@ -480,10 +494,6 @@ view model =
 
 viewFullScreen : Model -> Element Msg
 viewFullScreen model =
-    let
-        device =
-            classifyDevice model.viewportSize
-    in
     case model.trainerState of
         StartPage ->
             Element.map BetweenTestsMessage <|
@@ -545,7 +555,7 @@ viewFullScreen model =
                       <|
                         Cube.viewUFRWithLetters 200 model.expectedCube
                     , buttonWithShortcut
-                        device.class
+                        model
                         [ testid "start-button"
                         , centerX
                         , Background.color <| rgb255 0 128 0
@@ -687,7 +697,7 @@ viewFullScreen model =
                         ]
                     , row [ centerX, spacing buttonSpacing ]
                         [ buttonWithShortcut
-                            device.class
+                            model
                             [ testid "correct-button"
                             , Background.color <| rgb255 0 128 0
                             , padding buttonPadding
@@ -706,7 +716,7 @@ viewFullScreen model =
                             , fontSize = buttonSize
                             }
                         , buttonWithShortcut
-                            device.class
+                            model
                             [ testid "wrong-button"
                             , Background.color <| rgb255 255 0 0
                             , padding buttonPadding
@@ -748,7 +758,7 @@ viewFullScreen model =
                       <|
                         text "Continue When Ready"
                     , buttonWithShortcut
-                        device.class
+                        model
                         [ testid "next-button"
                         , centerX
                         , Background.color <| rgb255 0 128 0
@@ -808,7 +818,7 @@ viewFullScreen model =
                       <|
                         Cube.viewUFRWithLetters (minDimension model.viewportSize // 4) model.expectedCube
                     , buttonWithShortcut
-                        device.class
+                        model
                         [ testid "next-button"
                         , centerX
                         , Background.color <| rgb255 0 128 0
@@ -863,8 +873,8 @@ pllToString pll =
     PLL.getLetters pll ++ "-perm"
 
 
-buttonWithShortcut : DeviceClass -> List (Attribute msg) -> { a | onPress : Maybe msg, labelText : String, fontSize : Int, keyboardShortcut : Key } -> Element msg
-buttonWithShortcut deviceClass attributes { onPress, labelText, keyboardShortcut, fontSize } =
+buttonWithShortcut : { a | userHasKeyboard : Bool } -> List (Attribute msg) -> { b | onPress : Maybe msg, labelText : String, fontSize : Int, keyboardShortcut : Key } -> Element msg
+buttonWithShortcut { userHasKeyboard } attributes { onPress, labelText, keyboardShortcut, fontSize } =
     let
         keyString =
             case keyboardShortcut of
@@ -897,18 +907,11 @@ buttonWithShortcut deviceClass attributes { onPress, labelText, keyboardShortcut
                     el [ centerX, Font.size fontSize ] <| text labelText
                 }
     in
-    case deviceClass of
-        Phone ->
-            withoutShortcutLabel
+    if userHasKeyboard then
+        withShortcutLabel
 
-        Tablet ->
-            withoutShortcutLabel
-
-        Desktop ->
-            withShortcutLabel
-
-        BigDesktop ->
-            withShortcutLabel
+    else
+        withoutShortcutLabel
 
 
 overlayFeedbackButton : ViewportSize -> Attribute msg
