@@ -42,23 +42,23 @@
 
       // Taken from https://developer.mozilla.org/en-US/docs/Web/HTTP/Browser_detection_using_the_user_agent#Mobile_Device_Detection
       // Definitely take a read of above link if you're interested in best practice alternatives to user agent sniffing
-      var hasTouchScreen = false;
+      var userHasTouchScreen = false;
       if ("maxTouchPoints" in navigator) {
         // By far most browsers will stop here, as all new browsers support
         // this feature. The rest is just worst case for older browsers
-        hasTouchScreen = navigator.maxTouchPoints > 0;
+        userHasTouchScreen = navigator.maxTouchPoints > 0;
       } else if ("msMaxTouchPoints" in navigator) {
-        hasTouchScreen = navigator.msMaxTouchPoints > 0;
+        userHasTouchScreen = navigator.msMaxTouchPoints > 0;
       } else {
         var mQ = window.matchMedia && matchMedia("(pointer:coarse)");
         if (mQ && mQ.media === "(pointer:coarse)") {
-          hasTouchScreen = !!mQ.matches;
+          userHasTouchScreen = !!mQ.matches;
         } else if ("orientation" in window) {
-          hasTouchScreen = true; // deprecated, but good fallback
+          userHasTouchScreen = true; // deprecated, but good fallback
         } else {
           // Only as a last resort, fall back to user agent sniffing
           var UA = navigator.userAgent;
-          hasTouchScreen =
+          userHasTouchScreen =
             /\b(BlackBerry|webOS|iPhone|IEMobile)\b/i.test(UA) ||
             /\b(Android|Windows Phone|iPad|iPod)\b/i.test(UA);
         }
@@ -70,8 +70,11 @@
 
       var app = Elm.Main.init({
         flags: {
-          width: window.innerWidth,
-          height: window.innerHeight,
+          viewportSize: {
+            width: window.innerWidth,
+            height: window.innerHeight,
+          },
+          userHasTouchScreen,
         },
       });
 

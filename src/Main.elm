@@ -24,7 +24,7 @@ import Utils.Css exposing (testid)
 import Utils.TimeInterval as TimeInterval
 
 
-main : Program ViewportSize Model Msg
+main : Program Flags Model Msg
 main =
     Browser.application
         { init = init
@@ -39,8 +39,8 @@ main =
 port logError : String -> Cmd msg
 
 
-init : ViewportSize -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
-init viewportSize _ navigationKey =
+init : Flags -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
+init { viewportSize } _ navigationKey =
     ( { trainerState = StartPage
       , expectedCube = Cube.solved
       , viewportSize = viewportSize
@@ -61,6 +61,12 @@ init viewportSize _ navigationKey =
       }
     , Cmd.none
     )
+
+
+type alias Flags =
+    { viewportSize : ViewportSize
+    , userHasTouchScreen : Bool
+    }
 
 
 type alias ViewportSize =
