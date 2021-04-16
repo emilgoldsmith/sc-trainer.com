@@ -38,7 +38,7 @@ jobs:
       - name: Switch docker mode to Linux containers for Windows
         if: ${{ startsWith(matrix.platform.os, 'windows') }}
         run: |
-          cd /c/Program\ Files
+          cd /c/Program\ Files/Docker
           ls -l
 
       - name: Build
