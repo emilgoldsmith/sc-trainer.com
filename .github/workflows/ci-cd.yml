@@ -4,11 +4,11 @@ on: push
 jobs:
   cypress-end-to-end-test:
     name: ${{ matrix.browser }} ${{ matrix.sizeRelevant.viewportConfig }} Cypress E2E Browser Tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        browser: [chrome, firefox]
+        browser: [chrome, firefox, edge]
         # These are the macbook-13 and iphone-8 values from https://docs.cypress.io/api/commands/viewport#Arguments
         sizeRelevant:
           - viewportConfig: "viewportWidth=1280,viewportHeight=800"
@@ -17,6 +17,13 @@ jobs:
             extraSpecs: [cypress/tests/uses-dynamic-viewports/*]
           - viewportConfig: "viewportWidth=375,viewportHeight=667"
             extraSpecs: []
+        include:
+          - browser: chrome
+            os: ubuntu-latest
+          - browser: firefox
+            os: ubuntu-latest
+          - browser: edge
+            os: windows-latest
 
     steps:
       - name: Checkout
