@@ -1,4 +1,4 @@
-name: Cypress End To End Tests
+name: Cypress CI and CD
 on: push
 
 jobs:
@@ -46,6 +46,7 @@ jobs:
 
   deploy:
     if: ${{ success() && github.ref == 'refs/heads/main' }}
+    needs: [a-failing-one, ui-chrome-desktop]
     runs-on: ubuntu-latest
     steps:
       - run: echo "Deploying"
