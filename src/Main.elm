@@ -40,27 +40,21 @@ port logError : String -> Cmd msg
 
 
 init : Flags -> Url.Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
-init { viewportSize } _ navigationKey =
+init ({ viewportSize, userHasTouchScreen } as flags) _ navigationKey =
     ( { trainerState = StartPage
       , expectedCube = Cube.solved
       , viewportSize = viewportSize
-      , userHasKeyboard =
-            case classifyDevice viewportSize |> .class of
-                Phone ->
-                    False
-
-                Tablet ->
-                    False
-
-                Desktop ->
-                    True
-
-                BigDesktop ->
-                    True
+      , userHasKeyboard = guessIfUserHasKeyboard flags
+      , userHasTouchScreen = userHasTouchScreen
       , navigationKey = navigationKey
       }
     , Cmd.none
     )
+
+
+guessIfUserHasKeyboard : { a | userHasTouchScreen : Bool, viewportSize : ViewportSize } -> Bool
+guessIfUserHasKeyboard { userHasTouchScreen, viewportSize } =
+    True
 
 
 type alias Flags =
@@ -80,6 +74,7 @@ type alias Model =
     , expectedCube : Cube.Cube
     , viewportSize : { width : Int, height : Int }
     , userHasKeyboard : Bool
+    , userHasTouchScreen : Bool
     , navigationKey : Browser.Navigation.Key
     }
 
@@ -323,22 +318,13 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update messageCategory model =
     case ( messageCategory, model.trainerState ) of
         ( GlobalMessage (WindowResized width height), _ ) ->
-            ( { model
-                | viewportSize = { width = width, height = height }
-                , userHasKeyboard =
-                    case classifyDevice { width = width, height = height } |> .class of
-                        Phone ->
-                            False
-
-                        Tablet ->
-                            False
-
-                        Desktop ->
-                            True
-
-                        BigDesktop ->
-                            True
-              }
+            let
+                modelWithUpdatedViewport =
+                    { model
+                        | viewportSize = { width = width, height = height }
+                    }
+            in
+            ( { modelWithUpdatedViewport | userHasKeyboard = guessIfUserHasKeyboard modelWithUpdatedViewport }
             , Cmd.none
             )
 
