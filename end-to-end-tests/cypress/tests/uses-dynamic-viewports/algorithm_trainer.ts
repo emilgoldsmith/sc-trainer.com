@@ -1,5 +1,3 @@
-// The single case hooks are nice for formatting in this case
-/* eslint-disable mocha/no-hooks-for-single-case */
 import { buildElementsCategory } from "support/elements";
 import { Key } from "support/keys";
 
@@ -29,6 +27,17 @@ const elements = {
   }),
 };
 
+/** iphone-8 dimensions from https://docs.cypress.io/api/commands/viewport#Arguments */
+const smallViewportConfigOverride: Cypress.TestConfigOverrides = {
+  viewportWidth: 375,
+  viewportHeight: 667,
+};
+
+/** macbook-15 dimensions from https://docs.cypress.io/api/commands/viewport#Arguments */
+const largeViewportConfigOverride: Cypress.TestConfigOverrides = {
+  viewportWidth: 1440,
+  viewportHeight: 900,
+};
 /**
  * 1. A large touch screen shows shortcuts
  * 2. A large non touch screen shows shortcuts
@@ -43,46 +52,35 @@ describe("Algorithm Trainer Dynamic Viewport Tests", function () {
       cy.visit("/", { onBeforeLoad: simulateIsTouchScreen });
       cy.clock();
     });
-    context("large viewport", function () {
-      beforeEach(function () {
-        cy.viewport("macbook-15");
-      });
+    context("large viewport", largeViewportConfigOverride, function () {
       it("displays shortcuts on large viewport with touch screen", function () {
-        assertShortcutsDisplay();
+        assertShortcutsDisplayUsingButtonsAndTouch();
       });
     });
-    context("small viewport", function () {
-      beforeEach(function () {
-        cy.viewport("iphone-8");
-      });
+    context("small viewport", smallViewportConfigOverride, function () {
       it("doesnt display shortcuts by default on small viewport with touch screen", function () {
-        assertShortcutsDontDisplay();
+        assertShortcutsDontDisplayUsingButtonsAndTouch();
       });
       it("displays shortcuts on small viewport with touch screen if a keyboard event was fired", function () {
         cy.pressKey(Key.leftCtrl);
-        assertShortcutsDisplay();
+        assertShortcutsDisplayUsingButtonsAndTouch();
       });
     });
   });
   context("non touch screen", function () {
+    /** For a non touch screen we should always show shortcuts as they must have a keyboard */
     beforeEach(function () {
       cy.visit("/");
       cy.clock();
     });
-    context("large viewport", function () {
-      beforeEach(function () {
-        cy.viewport("macbook-15");
-      });
+    context("large viewport", largeViewportConfigOverride, function () {
       it("displays shortcuts on a large viewport without touch screen", function () {
-        assertShortcutsDisplay();
+        assertShortcutsDisplayUsingKeyboard();
       });
     });
-    context("small viewport", function () {
-      beforeEach(function () {
-        cy.viewport("iphone-8");
-      });
+    context("small viewport", smallViewportConfigOverride, function () {
       it("displays shortcuts on a small viewport with no touch screen", function () {
-        assertShortcutsDisplay();
+        assertShortcutsDisplayUsingKeyboard();
       });
     });
   });
@@ -103,15 +101,24 @@ function simulateIsTouchScreen(testWindow: Window) {
     },
   });
 }
-function assertShortcutsDisplay() {
-  checkShortcutDisplays("match");
+
+function assertShortcutsDisplayUsingKeyboard() {
+  checkShortcutDisplaysUsingKeyboard("match");
 }
 
-function assertShortcutsDontDisplay() {
-  checkShortcutDisplays("not.match");
+function assertShortcutsDontDisplayUsingKeyboard() {
+  checkShortcutDisplaysUsingKeyboard("not.match");
 }
 
-function checkShortcutDisplays(matcher: "match" | "not.match") {
+function assertShortcutsDisplayUsingButtonsAndTouch() {
+  checkShortcutDisplaysUsingButtonsAndTouch("match");
+}
+
+function assertShortcutsDontDisplayUsingButtonsAndTouch() {
+  checkShortcutDisplaysUsingButtonsAndTouch("not.match");
+}
+
+function checkShortcutDisplaysUsingKeyboard(matcher: "match" | "not.match") {
   elements.startPage.container.waitFor();
   elements.startPage.startButton
     .get()
@@ -165,5 +172,60 @@ function checkShortcutDisplays(matcher: "match" | "not.match") {
   // Check space actually works as a shortcut too, just to make sure we're
   // asserting the right thing. It's more thoroughly checked in main test
   cy.pressKey(Key.space);
+  elements.getReadyScreen.container.waitFor();
+}
+
+function checkShortcutDisplaysUsingButtonsAndTouch(
+  matcher: "match" | "not.match"
+) {
+  elements.startPage.container.waitFor();
+  elements.startPage.startButton
+    .get()
+    .invoke("text")
+    .should(matcher, /\(\s*Space\s*\)/);
+
+  elements.startPage.startButton.get().click();
+  elements.getReadyScreen.container.waitFor();
+  cy.tick(1000);
+  elements.testRunning.container.waitFor();
+  cy.touchScreen("topLeft");
+  elements.evaluateResult.container.waitFor();
+  elements.evaluateResult.correctButton
+    .get()
+    .invoke("text")
+    .should(matcher, /\(\s*Space\s*\)/);
+
+  cy.tick(300);
+  elements.evaluateResult.correctButton.get().click();
+  elements.correctPage.container.waitFor();
+  elements.correctPage.nextButton
+    .get()
+    .invoke("text")
+    .should(matcher, /\(\s*Space\s*\)/);
+
+  elements.correctPage.nextButton.get().click();
+  elements.getReadyScreen.container.waitFor();
+  cy.tick(1000);
+  elements.testRunning.container.waitFor();
+
+  // And now we go back to evaluateResult so we can do the wrong path
+  cy.touchScreen("topLeft");
+  elements.evaluateResult.container.waitFor();
+  elements.evaluateResult.wrongButton
+    .get()
+    .invoke("text")
+    .should(matcher, /\(\s*[wW]\s*\)/);
+
+  cy.tick(300);
+  elements.evaluateResult.wrongButton.get().click();
+  elements.wrongPage.container.waitFor();
+  elements.wrongPage.nextButton
+    .get()
+    .invoke("text")
+    .should(matcher, /\(\s*Space\s*\)/);
+
+  // Check the button actually works too just for good measure.
+  // It's more thoroughly checked in main test
+  elements.wrongPage.nextButton.get().click();
   elements.getReadyScreen.container.waitFor();
 }

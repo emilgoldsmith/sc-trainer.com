@@ -132,6 +132,7 @@ type Msg
 
 type GlobalMsg
     = WindowResized Int Int
+    | KeyboardWasUsed
     | GlobalDoNothing
 
 
@@ -304,7 +305,18 @@ subscriptions model =
                                 ]
 
         globalSubscriptions =
-            Events.onResize (\a b -> GlobalMessage (WindowResized a b))
+            Sub.batch
+                [ Events.onResize (\a b -> GlobalMessage (WindowResized a b))
+                , if model.userHasKeyboard then
+                    Sub.none
+
+                  else
+                    Sub.batch
+                        [ Events.onKeyDown (Decode.succeed (GlobalMessage KeyboardWasUsed))
+                        , Events.onKeyPress (Decode.succeed (GlobalMessage KeyboardWasUsed))
+                        , Events.onKeyUp (Decode.succeed (GlobalMessage KeyboardWasUsed))
+                        ]
+                ]
     in
     Sub.batch [ trainerSubscriptions, globalSubscriptions ]
 
@@ -334,16 +346,24 @@ topLevelEventListeners model =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update messageCategory model =
     case ( messageCategory, model.trainerState ) of
-        ( GlobalMessage (WindowResized width height), _ ) ->
-            let
-                modelWithUpdatedViewport =
-                    { model
-                        | viewportSize = { width = width, height = height }
-                    }
-            in
-            ( { modelWithUpdatedViewport | userHasKeyboard = guessIfUserHasKeyboard modelWithUpdatedViewport }
-            , Cmd.none
-            )
+        ( GlobalMessage msg, _ ) ->
+            case msg of
+                WindowResized width height ->
+                    let
+                        modelWithUpdatedViewport =
+                            { model
+                                | viewportSize = { width = width, height = height }
+                            }
+                    in
+                    ( { modelWithUpdatedViewport | userHasKeyboard = guessIfUserHasKeyboard modelWithUpdatedViewport }
+                    , Cmd.none
+                    )
+
+                KeyboardWasUsed ->
+                    ( { model | userHasKeyboard = True }, Cmd.none )
+
+                GlobalDoNothing ->
+                    ( model, Cmd.none )
 
         ( BetweenTestsMessage msg, StartPage ) ->
             updateBetweenTests model msg
@@ -415,8 +435,18 @@ update messageCategory model =
             , let
                 msgString =
                     case msg of
-                        GlobalMessage _ ->
-                            "GlobalMessage"
+                        GlobalMessage globalMsg ->
+                            "GlobalMessage: "
+                                ++ (case globalMsg of
+                                        WindowResized _ _ ->
+                                            "WindowResized"
+
+                                        KeyboardWasUsed ->
+                                            "KeyboardWasUsed"
+
+                                        GlobalDoNothing ->
+                                            "GlobalDoNothing"
+                                   )
 
                         BetweenTestsMessage _ ->
                             "BetweenTestsMessage"
