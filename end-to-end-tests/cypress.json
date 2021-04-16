@@ -2,5 +2,6 @@
   "baseUrl": "http://localhost:4000",
   "integrationFolder": "cypress/tests",
   "viewportWidth": 1400,
-  "viewportHeight": 800
+  "viewportHeight": 800,
+  "videoUploadOnPasses": false
 }
