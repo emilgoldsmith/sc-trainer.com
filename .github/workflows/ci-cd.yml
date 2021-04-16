@@ -2,32 +2,39 @@ name: CI and CD
 on: push
 
 jobs:
-  cypress-end-to-end-test:
-    name: ${{ matrix.browser }} ${{ matrix.sizeRelevant.viewportConfig }} Cypress E2E Browser Tests
-    runs-on: ${{ matrix.os }}
+  cypress-end-to-end-tests:
+    name: "${{ matrix.platform.browserString }} on ${{ matrix.sizeRelevant.deviceName }} Cypress E2E Tests"
+    runs-on: ${{ matrix.platform.os }}
     strategy:
       fail-fast: false
       matrix:
-        browser: [chrome, firefox, edge]
-        # These are the macbook-13 and iphone-8 values from https://docs.cypress.io/api/commands/viewport#Arguments
+        platform:
+          - browser: chrome
+            os: ubuntu-latest
+            browserString: Chrome
+          - browser: firefox
+            os: ubuntu-latest
+            browserString: Firefox
+          - browser: edge
+            os: windows-latest
+            browserString: Microsoft Edge
+        # Values for devices taken from https://docs.cypress.io/api/commands/viewport#Arguments
         sizeRelevant:
           - viewportConfig: "viewportWidth=1280,viewportHeight=800"
             # We include the dynamic viewports just one place as it doesn't matter what initial
             # viewport size it is so no need to include it several times
             extraSpecs: [cypress/tests/uses-dynamic-viewports/*]
+            deviceName: macbook-13
           - viewportConfig: "viewportWidth=375,viewportHeight=667"
             extraSpecs: []
-        include:
-          - browser: chrome
-            os: ubuntu-latest
-          - browser: firefox
-            os: ubuntu-latest
-          - browser: edge
-            os: windows-latest
-
+            deviceName: iphone-8
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
+      - name: Switch docker mode to Linux containers for Windows
+        if: ${{ startsWith(matrix.platform.os, 'windows') }}
+        runs: C:\Program Files\Docker\Docker\DockerCli.exe -SwitchLinuxEngine
 
       - name: Build
         run: docker build -t sc-trainer:${{ github.sha }} --target production .
@@ -39,7 +46,7 @@ jobs:
         uses: cypress-io/github-action@v2.9.11
         with:
           working-directory: end-to-end-tests
-          browser: ${{ matrix.browser }}
+          browser: ${{ matrix.platform.browser }}
           config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
           spec: |
@@ -61,7 +68,7 @@ jobs:
     # We only deploy if it's the main branch and they were a success
     if: ${{ success() && github.ref == 'refs/heads/main' }}
     # Important to keep this up to date, depending on all jobs
-    needs: [cypress-end-to-end-test]
+    needs: [cypress-end-to-end-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
