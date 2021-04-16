@@ -34,7 +34,7 @@ jobs:
 
       - name: Switch docker mode to Linux containers for Windows
         if: ${{ startsWith(matrix.platform.os, 'windows') }}
-        runs: C:\Program Files\Docker\Docker\DockerCli.exe -SwitchLinuxEngine
+        run: C:\Program Files\Docker\Docker\DockerCli.exe -SwitchLinuxEngine
 
       - name: Build
         run: docker build -t sc-trainer:${{ github.sha }} --target production .
