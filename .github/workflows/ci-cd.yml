@@ -46,7 +46,7 @@ jobs:
 
   deploy:
     if: ${{ success() && github.ref == 'refs/heads/main' }}
-    needs: [a-failing-one, ui-chrome-desktop]
+    needs: [a-failing-one, ui-chrome-desktop, doesnt-exist]
     runs-on: ubuntu-latest
     steps:
       - run: echo "Deploying"
