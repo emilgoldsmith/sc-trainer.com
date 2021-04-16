@@ -555,114 +555,168 @@ viewFullScreen model =
             Element.map BetweenTestsMessage <|
                 column
                     [ testid "start-page-container"
-                    , centerX
                     , centerY
-                    , spacing (minDimension model.viewportSize // 20)
-                    , padding 15
-                    , width fill
+                    , spacing 30
                     , scrollbarY
+
+                    -- We do it like this because for some reason with scroll the bottom
+                    -- padding doesn't show, so we add it manually with an empty element at
+                    -- the bottom of the list
+                    , paddingEach { top = 30, bottom = 0, right = 0, left = 0 }
+                    , width fill
                     ]
-                    [ column
-                        [ testid "welcome-text"
-                        , centerX
-                        , Font.center
-                        , width (fill |> maximum (model.viewportSize.width * 3 // 4))
-                        , spacing 15
-                        , Font.size 20
-                        ]
-                        [ paragraph [ Font.size 30, Region.heading 1 ]
-                            [ text "Welcome!" ]
-                        , paragraph []
-                            [ text "This is a "
-                            , newTabLink linkStyling { label = text "PLL", url = "https://www.speedsolving.com/wiki/index.php/PLL" }
-                            , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from "
-                            , newTabLink linkStyling
-                                { url = "https://www.quora.com/How-should-a-speedcuber-hold-and-grip-the-cube/answer/Sukant-Koul-1"
-                                , label = text "home grip"
-                                }
-                            , text
-                                ", and including recognition and pre- and post-"
-                            , newTabLink linkStyling { label = text "AUF", url = "https://www.speedsolving.com/wiki/index.php/AUF" }
-                            , text
-                                " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
+                <|
+                    -- Add the last element here at the start for easy reading with the padding of the container.
+                    -- The main part of the padding comes from the spacing seen above.
+                    -- It could seem a bit more confusing out of context at the bottom
+                    (\x -> x ++ [ el [ testid "padding", height (px 1), width fill ] none ])
+                    <|
+                        [ column
+                            [ testid "welcome-text"
+                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                            , Font.center
+                            , centerX
+                            , spacing 15
+                            , Font.size 20
+                            ]
+                            [ paragraph [ Font.size 30, Region.heading 1 ]
+                                [ text "Welcome!" ]
+                            , paragraph []
+                                [ text "This is a "
+                                , newTabLink linkStyling { label = text "PLL", url = "https://www.speedsolving.com/wiki/index.php/PLL" }
+                                , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from "
+                                , newTabLink linkStyling
+                                    { url = "https://www.quora.com/How-should-a-speedcuber-hold-and-grip-the-cube/answer/Sukant-Koul-1"
+                                    , label = text "home grip"
+                                    }
+                                , text
+                                    ", and including recognition and pre- and post-"
+                                , newTabLink linkStyling { label = text "AUF", url = "https://www.speedsolving.com/wiki/index.php/AUF" }
+                                , text
+                                    " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
+                                ]
                             ]
                         , el
                             [ testid "divider"
-                            , width fill
                             , Border.solid
+                            , centerX
+                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
                             , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
                             , Border.color (rgb255 0 0 0)
                             ]
                             none
-                        ]
-                    , paragraph
-                        [ centerX
-                        , Font.size 30
-                        , Font.center
-                        , testid "cube-start-explanation"
-                        , Region.heading 1
-                        ]
-                      <|
-                        [ text "Orient Solved Cube Like This:" ]
-                    , el
-                        [ testid "cube-start-state"
-                        , centerX
-                        ]
-                      <|
-                        Cube.viewUFRWithLetters 200 model.expectedCube
-                    , buttonWithShortcut
-                        model
-                        [ testid "start-button"
-                        , centerX
-                        , Background.color <| rgb255 0 128 0
-                        , padding 20
-                        , Border.rounded 15
-                        ]
-                        { onPress = Just StartTestGetReady
-                        , labelText = "Start"
-                        , fontSize = 25
-                        , keyboardShortcut = Space
-                        }
-                    , column
-                        [ testid "instructions-text"
-                        , centerX
-                        , Font.center
-                        , width (fill |> maximum (model.viewportSize.width * 3 // 4))
-                        , spacing 15
-                        ]
-                        [ el
+                        , paragraph
+                            [ width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                            , Font.size 30
+                            , centerX
+                            , Font.center
+                            , testid "cube-start-explanation"
+                            , Region.heading 1
+                            ]
+                          <|
+                            [ text "Orient Solved Cube Like This:" ]
+                        , el
+                            [ testid "cube-start-state"
+                            , centerX
+                            ]
+                          <|
+                            Cube.viewUFRWithLetters 200 model.expectedCube
+                        , buttonWithShortcut
+                            model
+                            [ testid "start-button"
+                            , centerX
+                            , Background.color <| rgb255 0 128 0
+                            , padding 20
+                            , Border.rounded 15
+                            ]
+                            { onPress = Just StartTestGetReady
+                            , labelText = "Start"
+                            , fontSize = 25
+                            , keyboardShortcut = Space
+                            }
+                        , el
                             [ testid "divider"
-                            , width fill
+                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                            , centerX
                             , Border.solid
                             , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
                             , Border.color (rgb255 0 0 0)
                             , Font.size 20
                             ]
                             none
-                        , paragraph [ Font.size 30, Region.heading 1 ] [ text "Instructions:" ]
-                        , paragraph []
-                            [ text "When you press the start button (or space) you will have a second to get your cube in "
-                            , newTabLink linkStyling
-                                { url = "https://www.quora.com/How-should-a-speedcuber-hold-and-grip-the-cube/answer/Sukant-Koul-1"
-                                , label = text "home grip"
-                                }
-                            , text ". Then a "
-                            , newTabLink linkStyling { label = text "PLL", url = "https://www.speedsolving.com/wiki/index.php/PLL" }
-                            , text " case will show up and the timer will start. If you successfully recognize the case apply the moves to your cube that would solve the cube on screen (including pre- and post-"
-                            , newTabLink linkStyling
-                                { label = text "AUF", url = "https://www.speedsolving.com/wiki/index.php/AUF" }
-                            , text
-                                "), and then press anything to stop the timer. If you don't recognize the case just press anything when you are sure you can't recall it. Things to press include any keyboard key, the screen and your mouse/touchpad."
+                        , column
+                            [ testid "instructions-text"
+                            , Font.center
+                            , centerX
+                            , spacing 15
+                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
                             ]
-                        , paragraph []
-                            [ text "You will then be displayed how the cube should look if you applied the correct moves. Click the button labelled correct or wrong depending on whether your cube matches the one on screen, and if you got it correct, simply continue to the next case without any change to your cube!"
+                            [ paragraph [ Font.size 30, Region.heading 1 ] [ text "Instructions:" ]
+                            , paragraph []
+                                [ text "When you press the start button (or space) you will have a second to get your cube in "
+                                , newTabLink linkStyling
+                                    { url = "https://www.quora.com/How-should-a-speedcuber-hold-and-grip-the-cube/answer/Sukant-Koul-1"
+                                    , label = text "home grip"
+                                    }
+                                , text ". Then a "
+                                , newTabLink linkStyling { label = text "PLL", url = "https://www.speedsolving.com/wiki/index.php/PLL" }
+                                , text " case will show up and the timer will start. If you successfully recognize the case apply the moves to your cube that would solve the cube on screen (including pre- and post-"
+                                , newTabLink linkStyling
+                                    { label = text "AUF", url = "https://www.speedsolving.com/wiki/index.php/AUF" }
+                                , text
+                                    "), and then press anything to stop the timer. If you don't recognize the case just press anything when you are sure you can't recall it. Things to press include any keyboard key, the screen and your mouse/touchpad."
+                                ]
+                            , paragraph []
+                                [ text "You will then be displayed how the cube should look if you applied the correct moves. Click the button labelled correct or wrong depending on whether your cube matches the one on screen, and if you got it correct, simply continue to the next case without any change to your cube!"
+                                ]
+                            , paragraph []
+                                [ text "If you got it wrong you will have to solve the cube to reset it before being able to continue to the next case. Don't worry, you will be instructed through all this by the application."
+                                ]
                             ]
-                        , paragraph []
-                            [ text "If you got it wrong you will have to solve the cube to reset it before being able to continue to the next case. Don't worry, you will be instructed through all this by the application."
+                        , el
+                            [ testid "divider"
+                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                            , centerX
+                            , Border.solid
+                            , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
+                            , Border.color (rgb255 0 0 0)
+                            , Font.size 20
+                            ]
+                            none
+                        , column
+                            [ testid "learning-resources"
+                            , centerX
+                            , spacing 15
+                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                            ]
+                            [ paragraph [ Font.size 30, Region.heading 1, Font.center ] [ text "Learning Resources:" ]
+                            , column [ spacing 15, centerX ]
+                                [ row [ spacing 10 ]
+                                    [ text "-"
+                                    , paragraph []
+                                        [ newTabLink linkStyling
+                                            { url = "http://cubing.pt/wp-content/uploads/2017/03/pll2side-20140531.pdf"
+                                            , label = text "Two Sided PLL Recognition Guide"
+                                            }
+                                        ]
+                                    ]
+                                , row [ spacing 10 ]
+                                    [ text "-"
+                                    , paragraph []
+                                        [ newTabLink linkStyling
+                                            { url = "https://www.youtube.com/watch?v=JvqGU0UZPcE"
+                                            , label = text "Fast PLL Algorithms And Finger Tricks"
+                                            }
+                                        ]
+                                    ]
+                                , row [ spacing 10 ]
+                                    [ text "-"
+                                    , paragraph []
+                                        [ text "And just generally make sure you drill you algorithms until you can do them without looking!" ]
+                                    ]
+                                ]
                             ]
                         ]
-                    , column [ testid "learning-resources" ] [ paragraph [ Font.size 30, Region.heading 1 ] [ text "Learning Resources:" ] ]
-                    ]
 
         GetReadyScreen ->
             el
