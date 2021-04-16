@@ -45,8 +45,8 @@ jobs:
       #   run: docker stop sc-trainer-server
 
   deploy:
-    if: ${{ success() && github.ref == 'refs/heads/main' }}
-    needs: [a-failing-one, ui-chrome-desktop, doesnt-exist]
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [a-failing-one, ui-chrome-desktop]
     runs-on: ubuntu-latest
     steps:
       - run: echo "Deploying"
