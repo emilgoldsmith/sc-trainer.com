@@ -28,8 +28,10 @@ jobs:
           # These are the macbook-13 values from https://docs.cypress.io/api/commands/viewport#Arguments
           config: "viewportWidth=1280,viewportHeight=800,baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
+          # We include the dynamic viewports just one place as it doesn't matter what initial
+          # viewport size it is so no need to include it several times
           spec: |
-            cypress/tests/desktop-only/*
+            cypress/tests/uses-dynamic-viewports/*
             cypress/tests/*
           # For debugging purposes log all the installed browsers and OS info
           build: npx cypress info
