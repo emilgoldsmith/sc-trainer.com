@@ -9,34 +9,34 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # - name: Build
-      #   run: docker build -t sc-trainer:$GITHUB_SHA --target production .
+      - name: Build
+        run: docker build -t sc-trainer:$GITHUB_SHA --target production .
 
-      # - name: Start server
-      #   run: docker run -e PORT=8080 -p 8080:8080 -d --name="sc-trainer-server" sc-trainer:$GITHUB_SHA
+      - name: Start server
+        run: docker run -e PORT=8080 -p 8080:8080 -d --name="sc-trainer-server" sc-trainer:$GITHUB_SHA
 
-      # - name: Cypress Run
-      #   uses: cypress-io/github-action@v2.9.11
-      #   with:
-      #     working-directory: end-to-end-tests
-      #     browser: chrome
-      #     # These are the macbook-13 values from https://docs.cypress.io/api/commands/viewport#Arguments
-      #     config: "viewportWidth=1280,viewportHeight=800,baseUrl=http://localhost:8080"
-      #     wait-on: "http://localhost:8080"
-      #     # We include the dynamic viewports just one place as it doesn't matter what initial
-      #     # viewport size it is so no need to include it several times
-      #     spec: |
-      #       cypress/tests/uses-dynamic-viewports/*
-      #       cypress/tests/*
-      #     # For debugging purposes log all the installed browsers and OS info
-      #     build: npx cypress info
-      #   env:
-      #     # This allows the action to determine the unique run id
-      #     # which is necessary to re-run the checks
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cypress Run
+        uses: cypress-io/github-action@v2.9.11
+        with:
+          working-directory: end-to-end-tests
+          browser: chrome
+          # These are the macbook-13 values from https://docs.cypress.io/api/commands/viewport#Arguments
+          config: "viewportWidth=1280,viewportHeight=800,baseUrl=http://localhost:8080"
+          wait-on: "http://localhost:8080"
+          # We include the dynamic viewports just one place as it doesn't matter what initial
+          # viewport size it is so no need to include it several times
+          spec: |
+            cypress/tests/uses-dynamic-viewports/*
+            cypress/tests/*
+          # For debugging purposes log all the installed browsers and OS info
+          build: npx cypress info
+        env:
+          # This allows the action to determine the unique run id
+          # which is necessary to re-run the checks
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # - name: Stop server
-      #   run: docker stop sc-trainer-server
+      - name: Stop server
+        run: docker stop sc-trainer-server
 
   deploy:
     # We only deploy if it's the main branch and they were a success
