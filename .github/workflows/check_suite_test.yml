@@ -4,6 +4,7 @@ on:
 
 jobs:
   test:
+    runs-on: ubuntu-latest
     steps:
       - run: echo "Success"
         if: ${{ github.event.check_suite.conclusion == 'success' }}
