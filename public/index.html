@@ -1,8 +1,11 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html>
   <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,height=device-height,initial-scale=1.0"
+    />
     <title>Speedcubing Trainer</title>
     <script type="text/javascript" src="/main.js"></script>
     <script type="text/javascript" src="/sentry.js"></script>
@@ -10,9 +13,17 @@
 
   <body>
     <script>
-      if (window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      /**
+       * INITIALIZE SENTRY
+       */
+
+      if (
+        window.location.hostname !== "localhost" &&
+        window.location.hostname !== "127.0.0.1"
+      ) {
         Sentry.init({
-          dsn: "https://3a5ba681f98246afaec422b5bd499b55@o571645.ingest.sentry.io/5720122",
+          dsn:
+            "https://3a5ba681f98246afaec422b5bd499b55@o571645.ingest.sentry.io/5720122",
           integrations: [new Sentry.Integrations.BrowserTracing()],
 
           // Set tracesSampleRate to 1.0 to capture 100%
@@ -21,31 +32,65 @@
           tracesSampleRate: 1.0,
         });
         function handleErrorBySentry(errorString) {
-          Sentry.captureMessage(errorString, 'error');
+          Sentry.captureMessage(errorString, "error");
         }
       }
+
+      /**
+       * TOUCH SCREEN FEATURE DETECTION
+       */
+
+      // Taken from https://developer.mozilla.org/en-US/docs/Web/HTTP/Browser_detection_using_the_user_agent#Mobile_Device_Detection
+      // Definitely take a read of above link if you're interested in best practice alternatives to user agent sniffing
+      var hasTouchScreen = false;
+      if ("maxTouchPoints" in navigator) {
+        // By far most browsers will stop here, as all new browsers support
+        // this feature. The rest is just worst case for older browsers
+        hasTouchScreen = navigator.maxTouchPoints > 0;
+      } else if ("msMaxTouchPoints" in navigator) {
+        hasTouchScreen = navigator.msMaxTouchPoints > 0;
+      } else {
+        var mQ = window.matchMedia && matchMedia("(pointer:coarse)");
+        if (mQ && mQ.media === "(pointer:coarse)") {
+          hasTouchScreen = !!mQ.matches;
+        } else if ("orientation" in window) {
+          hasTouchScreen = true; // deprecated, but good fallback
+        } else {
+          // Only as a last resort, fall back to user agent sniffing
+          var UA = navigator.userAgent;
+          hasTouchScreen =
+            /\b(BlackBerry|webOS|iPhone|IEMobile)\b/i.test(UA) ||
+            /\b(Android|Windows Phone|iPad|iPod)\b/i.test(UA);
+        }
+      }
+
+      /**
+       * RENDER ELM APP
+       */
+
       var app = Elm.Main.init({
         flags: {
-            width: window.innerWidth,
-            height: window.innerHeight,
-        }
+          width: window.innerWidth,
+          height: window.innerHeight,
+        },
       });
 
       /**
-       * PORTS
+       * DEFINE ELM PORTS
        */
       app.ports.logError.subscribe(handleError);
       function handleError(errorString) {
-        if (false/*IS_CYPRESS_TEST*/) {
+        if (false /*IS_CYPRESS_TEST*/) {
           // This will be replaced in a cypress test where the IS_CYPRESS_TEST
           // false blocks have been string replaced to be true.
           // If this has not happened this block will be optimized
           // away by a minifier
-          (() => {}/*HANDLE_ERROR_CYPRESS*/)(errorString);
+          (() => {})(/*HANDLE_ERROR_CYPRESS*/ errorString);
         }
         // TODO: Setup Sentry
-        if (typeof handleErrorBySentry === 'function') handleErrorBySentry(errorString);
-        else  console.error(errorString);
+        if (typeof handleErrorBySentry === "function")
+          handleErrorBySentry(errorString);
+        else console.error(errorString);
       }
     </script>
   </body>
