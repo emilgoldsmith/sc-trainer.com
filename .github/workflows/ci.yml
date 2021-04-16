@@ -44,7 +44,7 @@ jobs:
       # - name: Stop server
       #   run: docker stop sc-trainer-server
 
-    deploy:
-      if: ${{ success() && github.ref == 'refs/heads/main' }}
-      steps:
-        - run: echo "Deploying"
+  deploy:
+    if: ${{ success() && github.ref == 'refs/heads/main' }}
+    steps:
+      - run: echo "Deploying"
