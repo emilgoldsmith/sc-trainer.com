@@ -3,7 +3,7 @@ on: push
 
 jobs:
   cypress-end-to-end-test:
-    name: UI Chrome Desktop Tests
+    name: ${{ matrix.browser }} ${{ matrix.sizeRelevant.viewportConfig }} Cypress E2E Browser Tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -11,9 +11,11 @@ jobs:
         # These are the macbook-13 and iphone-8 values from https://docs.cypress.io/api/commands/viewport#Arguments
         sizeRelevant:
           - viewportConfig: "viewportWidth=1280,viewportHeight=800"
-            extraSpecs: cypress/tests/uses-dynamic-viewports/*
+            # We include the dynamic viewports just one place as it doesn't matter what initial
+            # viewport size it is so no need to include it several times
+            extraSpecs: [cypress/tests/uses-dynamic-viewports/*]
           - viewportConfig: "viewportWidth=375,viewportHeight=667"
-            extraSpecs: ""
+            extraSpecs: []
 
     steps:
       - name: Checkout
@@ -32,11 +34,11 @@ jobs:
           browser: ${{ matrix.browser }}
           config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
-          # We include the dynamic viewports just one place as it doesn't matter what initial
-          # viewport size it is so no need to include it several times
           spec: |
-            ${{ matrix.sizeRelevant.extraSpecs }}
             cypress/tests/*
+            ${{ matrix.sizeRelevant.extraSpecs[0] }}
+            ${{ matrix.sizeRelevant.extraSpecs[1] }}
+            ${{ matrix.sizeRelevant.extraSpecs[2] }}
           # For debugging purposes log all the installed browsers and OS info
           build: npx cypress info
         env:
