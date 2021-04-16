@@ -317,7 +317,24 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update messageCategory model =
     case ( messageCategory, model.trainerState ) of
         ( GlobalMessage (WindowResized width height), _ ) ->
-            ( { model | viewportSize = { width = width, height = height } }, Cmd.none )
+            ( { model
+                | viewportSize = { width = width, height = height }
+                , userHasKeyboard =
+                    case classifyDevice { width = width, height = height } |> .class of
+                        Phone ->
+                            False
+
+                        Tablet ->
+                            False
+
+                        Desktop ->
+                            True
+
+                        BigDesktop ->
+                            True
+              }
+            , Cmd.none
+            )
 
         ( BetweenTestsMessage msg, StartPage ) ->
             updateBetweenTests model msg
