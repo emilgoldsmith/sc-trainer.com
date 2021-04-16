@@ -6,7 +6,7 @@ jobs:
   test:
     steps:
       - run: echo "Success"
-        if: ${{ github.event.check_suite.conclusion == "success" }}
+        if: ${{ github.event.check_suite.conclusion == 'success' }}
 
       - run: echo "${{ github.event.check_suite.conclusion }}"
-        if: ${{ github.event.check_suite.conclusion != "success" }}
+        if: ${{ github.event.check_suite.conclusion != 'success' }}
