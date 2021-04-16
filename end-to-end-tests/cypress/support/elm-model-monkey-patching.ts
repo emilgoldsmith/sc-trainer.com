@@ -10,9 +10,7 @@ export function interceptAddingElmModelObserversAndModifiers(): void {
   cy.intercept(htmlUrlPatterns, (req) => {
     req.reply((res) => {
       const withE2eHelpers = addToDocumentHead({
-        toAdd: `<script>
-                    (${addE2ETestHelpersToWindow.toString()}())
-                  </script>`,
+        toAdd: addE2ETestHelpersToWindow,
         htmlString: res.body,
       });
       const withAllModifiers = withE2eHelpers
@@ -44,10 +42,13 @@ function addToDocumentHead({
   toAdd,
   htmlString,
 }: {
-  toAdd: string;
+  toAdd: () => void;
   htmlString: string;
-}) {
-  return htmlString.replace("<head>", "<head>" + toAdd);
+}): string {
+  return htmlString.replace(
+    "<head>",
+    `<head><script>(${toAdd.toString()}())</script>`
+  );
 }
 
 function addE2ETestHelpersToWindow() {

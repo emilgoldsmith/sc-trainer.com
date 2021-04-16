@@ -54,7 +54,24 @@ init ({ viewportSize, userHasTouchScreen } as flags) _ navigationKey =
 
 guessIfUserHasKeyboard : { a | userHasTouchScreen : Bool, viewportSize : ViewportSize } -> Bool
 guessIfUserHasKeyboard { userHasTouchScreen, viewportSize } =
-    True
+    let
+        isLargeScreen =
+            case classifyDevice viewportSize |> .class of
+                Phone ->
+                    False
+
+                Tablet ->
+                    False
+
+                Desktop ->
+                    True
+
+                BigDesktop ->
+                    True
+    in
+    -- Basically if there's no touch screen we assume they must have a keyboard.
+    -- If they do have a touch screen the best we can do is guess based on screen size
+    not userHasTouchScreen || isLargeScreen
 
 
 type alias Flags =
