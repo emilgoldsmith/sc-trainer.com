@@ -45,6 +45,9 @@ jobs:
     needs: [ui-chrome-desktop]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
       - run: python scripts/trigger-deploy.py
         env:
           SECRET: ${{ secrets.GOOGLE_CLOUD_DEPLOY_SECRET }}
