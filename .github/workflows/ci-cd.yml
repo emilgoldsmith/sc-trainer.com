@@ -24,17 +24,17 @@ jobs:
             # We include the dynamic viewports just one place as it doesn't matter what initial
             # viewport size it is so no need to include it several times
             extraSpecs: [cypress/tests/uses-dynamic-viewports/*]
-            deviceName: macbook-13
+            deviceName: Macbook 13
           - viewportConfig: "viewportWidth=375,viewportHeight=667"
             extraSpecs: []
-            deviceName: iphone-8
+            deviceName: iPhone 8
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Switch docker mode to Linux containers for Windows
         if: ${{ startsWith(matrix.platform.os, 'windows') }}
-        run: C:\Program Files\Docker\Docker\DockerCli.exe -SwitchLinuxEngine
+        run: find . DockerCli.exe
 
       - name: Build
         run: docker build -t sc-trainer:${{ github.sha }} --target production .
