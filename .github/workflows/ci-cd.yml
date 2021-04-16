@@ -6,6 +6,7 @@ jobs:
     name: ${{ matrix.browser }} ${{ matrix.sizeRelevant.viewportConfig }} Cypress E2E Browser Tests
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         browser: [chrome, firefox]
         # These are the macbook-13 and iphone-8 values from https://docs.cypress.io/api/commands/viewport#Arguments
