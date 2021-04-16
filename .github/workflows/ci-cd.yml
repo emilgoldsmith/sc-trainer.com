@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: To Fail
-        run: exit 1
+        run: echo "surprise! Didn't fail"
 
   ui-chrome-desktop:
     name: UI Chrome Desktop Tests
@@ -45,7 +45,7 @@ jobs:
       #   run: docker stop sc-trainer-server
 
   deploy:
-    if: ${{ github.ref == 'refs/heads/main' }}
+    if: ${{ success() && github.ref == 'refs/heads/main' }}
     needs: [a-failing-one, ui-chrome-desktop]
     runs-on: ubuntu-latest
     steps:
