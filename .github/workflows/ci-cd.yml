@@ -84,6 +84,8 @@ jobs:
         run: npx cypress info
 
       - uses: mxschmitt/action-tmate@v3
+        with:
+          sudo: false
 
       - name: Run Cypress Tests
         run: |
