@@ -75,6 +75,11 @@ jobs:
             extraSpecs: []
             deviceName: iPhone 8
     steps:
+      - uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+          sudo: false
+
       - name: Install Dependencies
         run: yarn --frozen-lockfile
 
