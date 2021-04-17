@@ -52,30 +52,6 @@ jobs:
           # which is necessary to re-run the checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  build-dependencies-windows:
-    name: Build dependencies for Windows
-    runs-on: windows-2019
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Cache node modules and Cypress install
-        uses: actions/cache@v2
-        id: yarn-and-build-cache-win
-        with:
-          path: |
-            ~/.cache/Cypress
-            node_modules
-          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-node_modules-
-
-      - name: Cypress install
-        uses: cypress-io/github-action@v2
-        with:
-          working-directory: end-to-end-tests
-          runTests: false
-
   build-javascript:
     name: Build Javascript
     runs-on: ubuntu-20.04
@@ -100,7 +76,7 @@ jobs:
   cypress-end-to-end-windows-tests:
     name: "Microsoft Edge on screen size of ${{ matrix.sizeRelevant.deviceName }} Windows Cypress E2E Tests"
     runs-on: windows-2019
-    needs: [build-dependencies-windows, build-javascript]
+    needs: [build-javascript]
     strategy:
       fail-fast: false
       matrix:
@@ -124,20 +100,6 @@ jobs:
           name: built-javascript-${{ github.sha }}
           path: public/main.js
 
-      - name: Restore Node Modules from previous step
-        uses: actions/cache@v2
-        id: yarn-and-build-cache-win
-        with:
-          path: |
-            ~/.cache/Cypress
-            node_modules
-          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-node_modules-
-
-      - name: Install web server
-        run: yarn add serve
-
       - name: Cypress Run
         uses: cypress-io/github-action@v2.9.11
         with:
@@ -145,7 +107,6 @@ jobs:
           browser: edge
           config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
-          install: false
           spec: |
             cypress/tests/*
             ${{ matrix.sizeRelevant.extraSpecs[0] }}
@@ -153,7 +114,7 @@ jobs:
             ${{ matrix.sizeRelevant.extraSpecs[2] }}
           # For debugging purposes log all the installed browsers and OS info
           build: npx cypress info
-          start: yarn run serve --single --listen 8080 public
+          start: yarn add serve && yarn run serve --single --listen 8080 public
         env:
           # This allows the action to determine the unique run id
           # which is necessary to re-run the checks
