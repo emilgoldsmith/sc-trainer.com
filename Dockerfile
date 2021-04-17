@@ -68,7 +68,7 @@ ENTRYPOINT ["/bin/sh", "/app/run-production.sh"]
 # CI STAGE
 ############################
 
-from cypress/browsers:node12.18.3-chrome87-ff82 as ci
+FROM cypress/browsers:node12.18.3-chrome87-ff82 AS ci
 
 WORKDIR /app
 
