@@ -55,7 +55,8 @@ jobs:
         image: sctrainer/main:production-${{ github.sha }}
         env:
           PORT: ${{ env.PORT }}
-        ports: 8080:8080
+        ports:
+          - ${{ env.PORT }}:${{ env.PORT }}
     strategy:
       fail-fast: false
       matrix:
