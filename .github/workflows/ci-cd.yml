@@ -68,7 +68,7 @@ jobs:
 
       - name: Run web server
         if: ${{ runner.os == 'Windows' }}
-        run: start /b yarn run serve --single --listen 8080 public
+        run: yarn run serve --single --listen 8080 public &
       # Windows building and starting server ends here
 
       # Ubuntu building and starting server starts here
