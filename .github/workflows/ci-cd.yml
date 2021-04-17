@@ -114,7 +114,7 @@ jobs:
             ${{ matrix.sizeRelevant.extraSpecs[2] }}
           # For debugging purposes log all the installed browsers and OS info
           build: npx cypress info
-          start: yarn add serve && yarn run serve --single --listen 8080 public
+          start: yarn add serve && yarn run serve --single --listen 8080 ../public
         env:
           # This allows the action to determine the unique run id
           # which is necessary to re-run the checks
