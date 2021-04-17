@@ -72,11 +72,6 @@ FROM cypress/browsers:node12.18.3-chrome87-ff82 AS ci
 
 WORKDIR /app
 
-RUN groupadd --gid 1001 github \
-  && useradd --uid 1001 --gid github --shell /bin/bash --create-home github
-
-USER github
-
 COPY --from=prod-builder /workdir/main.min.js public/main.js
 COPY public/index.html public/index.html
 COPY public/sentry.js public/sentry.js
