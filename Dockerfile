@@ -59,8 +59,15 @@ RUN yarn add serve
 COPY --from=prod-builder /workdir/main.min.js public/main.js
 COPY public/index.html public/index.html
 COPY public/sentry.js public/sentry.js
+COPY scripts/run-production.sh run-production.sh
 
-CMD yarn run serve --single --listen tcp://0.0.0.0:$PORT public
+CMD ./run-production.sh
+
+
+############################
+# CI STAGE
+############################
+
 
 
 ############################
