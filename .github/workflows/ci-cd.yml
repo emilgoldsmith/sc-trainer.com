@@ -47,6 +47,15 @@ jobs:
     defaults:
       run:
         working-directory: /app
+    env:
+      PORT: 8080
+    services:
+      server:
+        image: sctrainer/main:production-${{ github.sha }}
+        env:
+          PORT: ${{ env.PORT }}
+        ports:
+          - ${{ env.PORT }}:${{ env.PORT }}
     strategy:
       fail-fast: false
       matrix:
@@ -65,15 +74,12 @@ jobs:
           - viewportConfig: "viewportWidth=375,viewportHeight=667"
             extraSpecs: []
             deviceName: iPhone 8
-    env:
-      PORT: 8080
     steps:
       - run: ls
       - run: pwd
       - name: Run Cypress Tests
         uses: cypress-io/github-action@v2.9.11
         with:
-          working-directory: end-to-end-tests
           browser: ${{ matrix.platform.browser }}
           config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:${{ env.PORT }}"
           wait-on: "http://localhost:${{ env.PORT }}"
@@ -84,7 +90,6 @@ jobs:
             ${{ matrix.sizeRelevant.extraSpecs[2] }}
           # For debugging purposes log all the installed browsers and OS info
           build: npx cypress info
-          start: ./run-production.sh
         env:
           # This allows the action to determine the unique run id
           # which is necessary to re-run the checks. It's recommended for some reason
@@ -97,6 +102,7 @@ jobs:
         with:
           name: VIDEOS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
           path: end-to-end-tests/cypress/videos
+
       - name: Upload recorded Screenshots
         uses: actions/upload-artifact@v1
         if: always()
