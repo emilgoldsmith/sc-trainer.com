@@ -100,6 +100,11 @@ jobs:
           name: built-javascript-${{ github.sha }}
           path: public/main.js
 
+      - name: Start Web Server
+        run: python -m http.server --directory public 8080 &
+
+      - run: wget localhost:8080/main.js
+
       - name: Cypress Run
         uses: cypress-io/github-action@v2.9.11
         with:
@@ -114,7 +119,6 @@ jobs:
             ${{ matrix.sizeRelevant.extraSpecs[2] }}
           # For debugging purposes log all the installed browsers and OS info
           build: npx cypress info
-          start: python -m http.server --directory ../public 8080
         env:
           # This allows the action to determine the unique run id
           # which is necessary to re-run the checks
