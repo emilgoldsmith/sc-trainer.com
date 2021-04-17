@@ -68,6 +68,8 @@ jobs:
     env:
       PORT: 8080
     steps:
+      - run: ls
+      - run: pwd
       - name: Run Cypress Tests
         uses: cypress-io/github-action@v2.9.11
         with:
