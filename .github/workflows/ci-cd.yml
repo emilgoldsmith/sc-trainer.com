@@ -44,7 +44,6 @@ jobs:
     runs-on: ubuntu-20.04
     container:
       image: sctrainer/main:ci-${{ github.sha }}
-      options: --user 1001
     needs: build-docker-containers
     defaults:
       run:
@@ -75,12 +74,10 @@ jobs:
             extraSpecs: []
             deviceName: iPhone 8
     steps:
-      # - uses: mxschmitt/action-tmate@v3
-      #   with:
-      #     limit-access-to-actor: true
-      #     sudo: false
-
-      - run: chown -R $USER:$USER .
+      - uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+          sudo: false
 
       - name: Install Dependencies
         run: yarn --frozen-lockfile
