@@ -40,7 +40,6 @@ jobs:
           browser: ${{ matrix.platform.browser }}
           config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
-          group: "UI - ${{ matrix.platform.browserString }} - ${{ matrix.sizeRelevant.deviceName }}"
           spec: |
             cypress/tests/*
             ${{ matrix.sizeRelevant.extraSpecs[0] }}
@@ -123,7 +122,6 @@ jobs:
           browser: edge
           config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
-          group: "UI - Microsoft Edge - ${{ matrix.sizeRelevant.deviceName }}"
           spec: |
             cypress/tests/*
             ${{ matrix.sizeRelevant.extraSpecs[0] }}
