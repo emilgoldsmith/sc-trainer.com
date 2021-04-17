@@ -55,6 +55,7 @@ jobs:
         image: sctrainer/main:production-${{ github.sha }}
         env:
           PORT: ${{ env.PORT }}
+        ports: 8080:8080
     strategy:
       fail-fast: false
       matrix:
@@ -86,6 +87,7 @@ jobs:
       - uses: mxschmitt/action-tmate@v3
         with:
           sudo: false
+          limit-access-to-actor: true
 
       - name: Run Cypress Tests
         run: |
