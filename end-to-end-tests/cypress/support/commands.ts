@@ -545,9 +545,12 @@ const touchScreen: Cypress.Chainable<undefined>["touchScreen"] = function (
       consoleProps: () => ({ event }),
     },
     () => {
-      const event: { eventConstructor: "TouchEvent" } & TouchEventInit &
+      /** Firefox doesn't support TouchEvent, so we have to fall back to MouseEvent in this case */
+      const event: {
+        eventConstructor: "TouchEvent" | "MouseEvent";
+      } & TouchEventInit &
         Partial<Cypress.TriggerOptions> = {
-        eventConstructor: "TouchEvent",
+        eventConstructor: "TouchEvent" in window ? "TouchEvent" : "MouseEvent",
       };
       cy.get("body", { log: false })
         .trigger("touchstart", position, { ...event })
