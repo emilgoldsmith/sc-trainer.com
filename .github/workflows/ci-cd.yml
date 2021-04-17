@@ -56,19 +56,19 @@ jobs:
 
       # Windows building and starting server starts here
       - name: Get built javascript from other job
-        if: ${{ startsWith(runner.os, 'windows') }}
+        if: ${{ runner.os == 'Windows' }}
         uses: actions/download-artifact@v2
         with:
           name: built-javascript-${{ github.sha }}
           path: public/main.js
 
       - name: Install web server
-        if: ${{ startsWith(runner.os, 'windows') }}
+        if: ${{ runner.os == 'Windows' }}
         run: yarn add serve
 
       - name: Run web server
-        if: ${{ startsWith(runner.os, 'windows') }}
-        run: yarn run serve --single --listen 8080 public
+        if: ${{ runner.os == 'Windows' }}
+        run: setsid yarn run serve --single --listen 8080 public
       # Windows building and starting server ends here
 
       # Ubuntu building and starting server starts here
@@ -76,11 +76,11 @@ jobs:
       # tests as possible as close to production environment as possible, even if
       # it's a bit slower
       - name: Build with Docker
-        if: ${{ startsWith(runner.os, 'ubuntu') }}
+        if: ${{ runner.os == 'Linux' }}
         run: docker build -t sc-trainer:${{ github.sha }} --target production .
 
       - name: Start server
-        if: ${{ startsWith(runner.os, 'ubuntu') }}
+        if: ${{ runner.os == 'Linux' }}
         run: docker run -e PORT=8080 -p 8080:8080 -d --name="sc-trainer-server" sc-trainer:${{ github.sha}}
       # Ubuntu ends here
 
@@ -102,9 +102,6 @@ jobs:
           # This allows the action to determine the unique run id
           # which is necessary to re-run the checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Stop server
-        run: docker stop sc-trainer-server
 
   deploy:
     # We only deploy if it's the main branch and they were a success
