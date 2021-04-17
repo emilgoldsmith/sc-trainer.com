@@ -7,6 +7,7 @@ elm.js
 elm.min.js
 main.js
 main.min.js
+*.mp4
 
 # Created by https://www.toptal.com/developers/gitignore/api/vscode,elm
 # Edit at https://www.toptal.com/developers/gitignore?templates=vscode,elm

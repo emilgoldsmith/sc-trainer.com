@@ -430,7 +430,9 @@ function parseSendToAppFunction(htmlString: string) {
     e.message =
       "Our regular expression for patching elm to be able to programatically modify state found a wrong amount of candidates it seems. " +
       "This should not happen, maybe the elm version or our minifying setup changed?\n" +
-      e.message;
+      e.message +
+      "\n\nFor debugging purposes here is the whole htmlString:\n\n" +
+      htmlString;
     throw e;
   }
 
