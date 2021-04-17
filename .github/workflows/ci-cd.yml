@@ -44,6 +44,7 @@ jobs:
     runs-on: ubuntu-20.04
     container:
       image: sctrainer/main:ci-${{ github.sha }}
+      options: --user 1001
     needs: build-docker-containers
     defaults:
       run:
