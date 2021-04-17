@@ -46,7 +46,7 @@ jobs:
     needs: build-docker-containers
     defaults:
       run:
-        working-directory: /app
+        working-directory: /app/end-to-end-tests
     env:
       PORT: 8080
     services:
@@ -75,25 +75,24 @@ jobs:
             extraSpecs: []
             deviceName: iPhone 8
     steps:
-      - run: ls
-      - run: pwd
+      - name: Install Dependencies
+        run: yarn --frozen-lockfile
+
+      - name: Install Cypress
+        run: yarn run cypress install
+
+      - name: Log Cypress Info
+        run: npx cypress info
+
       - name: Run Cypress Tests
-        uses: cypress-io/github-action@v2.9.11
-        with:
-          browser: ${{ matrix.platform.browser }}
-          config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:${{ env.PORT }}"
-          wait-on: "http://localhost:${{ env.PORT }}"
-          spec: |
-            cypress/tests/*
-            ${{ matrix.sizeRelevant.extraSpecs[0] }}
-            ${{ matrix.sizeRelevant.extraSpecs[1] }}
-            ${{ matrix.sizeRelevant.extraSpecs[2] }}
-          # For debugging purposes log all the installed browsers and OS info
-          build: npx cypress info
-        env:
-          # This allows the action to determine the unique run id
-          # which is necessary to re-run the checks. It's recommended for some reason
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          yarn run cypress run \
+          --browser ${{ matrix.platform.browser }} \
+          --config "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:${{ env.PORT }}" \
+          --spec cypress/tests/* \
+          --spec ${{ matrix.sizeRelevant.extraSpecs[0] }} \
+          --spec ${{ matrix.sizeRelevant.extraSpecs[1] }} \
+          --spec ${{ matrix.sizeRelevant.extraSpecs[2] }}
 
       - name: Upload recorded videos
         uses: actions/upload-artifact@v1
@@ -101,7 +100,7 @@ jobs:
         continue-on-error: true
         with:
           name: VIDEOS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
-          path: end-to-end-tests/cypress/videos
+          path: cypress/videos
 
       - name: Upload recorded Screenshots
         uses: actions/upload-artifact@v1
@@ -109,7 +108,7 @@ jobs:
         continue-on-error: true
         with:
           name: SCREENSHOTS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
-          path: end-to-end-tests/cypress/screenshots
+          path: cypress/screenshots
 
   deploy:
     # We only deploy if it's the main branch and they were a success
