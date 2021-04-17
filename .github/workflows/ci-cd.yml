@@ -41,7 +41,7 @@ jobs:
           config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
           record: true
-          group: "UI - Microsoft Edge - ${{ matrix.sizeRelevant.deviceName }}"
+          group: "UI - ${{ matrix.platform.browserString }} - ${{ matrix.sizeRelevant.deviceName }}"
           spec: |
             cypress/tests/*
             ${{ matrix.sizeRelevant.extraSpecs[0] }}
