@@ -3,5 +3,6 @@
   "integrationFolder": "cypress/tests",
   "viewportWidth": 1400,
   "viewportHeight": 800,
-  "videoUploadOnPasses": false
+  "videoUploadOnPasses": false,
+  "projectId": "4qsrcc"
 }
