@@ -40,7 +40,6 @@ jobs:
           browser: ${{ matrix.platform.browser }}
           config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
-          record: true
           group: "UI - ${{ matrix.platform.browserString }} - ${{ matrix.sizeRelevant.deviceName }}"
           spec: |
             cypress/tests/*
@@ -50,10 +49,22 @@ jobs:
           # For debugging purposes log all the installed browsers and OS info
           build: npx cypress info
         env:
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           # This allows the action to determine the unique run id
           # which is necessary to re-run the checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload recorded videos
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: cypress-videos-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
+          path: cypress/videos
+      - name: Upload recorded Screenshots
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: cypress-screenshots-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
+          path: cypress/screenshots
 
   build-javascript:
     name: Build Javascript
@@ -113,7 +124,6 @@ jobs:
           browser: edge
           config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
-          record: true
           group: "UI - Microsoft Edge - ${{ matrix.sizeRelevant.deviceName }}"
           spec: |
             cypress/tests/*
@@ -124,10 +134,22 @@ jobs:
           build: npx cypress info
           start: python -m http.server --directory ../public 8080
         env:
-          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           # This allows the action to determine the unique run id
           # which is necessary to re-run the checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload recorded videos
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: cypress-videos-edge-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
+          path: cypress/videos
+      - name: Upload recorded Screenshots
+        uses: actions/upload-artifact@v1
+        if: always()
+        with:
+          name: cypress-screenshots-edge-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
+          path: cypress/screenshots
 
   deploy:
     # We only deploy if it's the main branch and they were a success
