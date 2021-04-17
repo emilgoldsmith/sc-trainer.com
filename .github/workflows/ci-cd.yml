@@ -1,10 +1,48 @@
 name: CI and CD
-on: push
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
 jobs:
-  cypress-end-to-end-linux-tests:
+  build-docker-containers:
+    name: Build And Push Docker Containers
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push CI image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          target: ci
+          tags: sctrainer/main:ci-${{ github.sha }}
+
+      - name: Build and Push Production image
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          context: .
+          target: production
+          tags: sctrainer/main:production-${{ github.sha }}
+
+
+  cypress-end-to-end-tests:
     name: "${{ matrix.platform.browserString }} on screen size of ${{ matrix.sizeRelevant.deviceName }} Linux Cypress E2E Tests"
     runs-on: ubuntu-20.04
+    container: sctrainer/main:ci-${{ github.sha }}
     strategy:
       fail-fast: false
       matrix:
@@ -23,23 +61,16 @@ jobs:
           - viewportConfig: "viewportWidth=375,viewportHeight=667"
             extraSpecs: []
             deviceName: iPhone 8
+    env:
+      PORT: 8080
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Build with Docker
-        run: docker build -t sc-trainer:${{ github.sha }} --target production .
-
-      - name: Start server
-        run: docker run -e PORT=8080 -p 8080:8080 -d --name="sc-trainer-server" sc-trainer:${{ github.sha}}
-
-      - name: Cypress Run
+      - name: Run Cypress Tests
         uses: cypress-io/github-action@v2.9.11
         with:
           working-directory: end-to-end-tests
           browser: ${{ matrix.platform.browser }}
-          config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
-          wait-on: "http://localhost:8080"
+          config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:${{ env.PORT }}"
+          wait-on: "http://localhost:${{ env.PORT }}"
           spec: |
             cypress/tests/*
             ${{ matrix.sizeRelevant.extraSpecs[0] }}
@@ -47,9 +78,10 @@ jobs:
             ${{ matrix.sizeRelevant.extraSpecs[2] }}
           # For debugging purposes log all the installed browsers and OS info
           build: npx cypress info
+          start: ./run-production.sh
         env:
           # This allows the action to determine the unique run id
-          # which is necessary to re-run the checks
+          # which is necessary to re-run the checks. It's recommended for some reason
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload recorded videos
@@ -57,104 +89,21 @@ jobs:
         if: always()
         continue-on-error: true
         with:
-          name: cypress-videos-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
+          name: VIDEOS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
           path: end-to-end-tests/cypress/videos
       - name: Upload recorded Screenshots
         uses: actions/upload-artifact@v1
         if: always()
         continue-on-error: true
         with:
-          name: cypress-screenshots-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
-          path: end-to-end-tests/cypress/screenshots
-
-  build-javascript:
-    name: Build Javascript
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Build Javascript
-        run: docker build -t sc-trainer:${{ github.sha }} --target production .
-
-      - name: Copy Built Javascript Out Of Docker Image
-        run: |
-          id=$(docker create sc-trainer:${{ github.sha }})
-          docker cp $id:/app/public/main.js public/main.js
-
-      - name: Persist for other jobs
-        uses: actions/upload-artifact@v2
-        with:
-          name: built-javascript-${{ github.sha }}
-          path: public/main.js
-
-  cypress-end-to-end-windows-tests:
-    name: "Microsoft Edge on screen size of ${{ matrix.sizeRelevant.deviceName }} Windows Cypress E2E Tests"
-    runs-on: windows-2019
-    needs: [build-javascript]
-    strategy:
-      fail-fast: false
-      matrix:
-        # Values for devices taken from https://docs.cypress.io/api/commands/viewport#Arguments
-        sizeRelevant:
-          - viewportConfig: "viewportWidth=1280,viewportHeight=800"
-            # We include the dynamic viewports just one place as it doesn't matter what initial
-            # viewport size it is so no need to include it several times
-            extraSpecs: [cypress/tests/uses-dynamic-viewports/*]
-            deviceName: Macbook 13
-          - viewportConfig: "viewportWidth=375,viewportHeight=667"
-            extraSpecs: []
-            deviceName: iPhone 8
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Get built javascript from other job
-        uses: actions/download-artifact@v2
-        with:
-          name: built-javascript-${{ github.sha }}
-          path: public/main.js
-
-      - name: Cypress Run
-        uses: cypress-io/github-action@v2.9.11
-        with:
-          working-directory: end-to-end-tests
-          browser: edge
-          config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
-          wait-on: "http://localhost:8080"
-          spec: |
-            cypress/tests/*
-            ${{ matrix.sizeRelevant.extraSpecs[0] }}
-            ${{ matrix.sizeRelevant.extraSpecs[1] }}
-            ${{ matrix.sizeRelevant.extraSpecs[2] }}
-          # For debugging purposes log all the installed browsers and OS info
-          build: npx cypress info
-          start: python -m http.server --directory ../public 8080
-        env:
-          # This allows the action to determine the unique run id
-          # which is necessary to re-run the checks
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload recorded videos
-        uses: actions/upload-artifact@v1
-        if: always()
-        continue-on-error: true
-        with:
-          name: cypress-videos-edge-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
-          path: end-to-end-tests/cypress/videos
-      - name: Upload recorded Screenshots
-        uses: actions/upload-artifact@v1
-        continue-on-error: true
-        if: always()
-        with:
-          name: cypress-screenshots-edge-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
+          name: SCREENSHOTS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
           path: end-to-end-tests/cypress/screenshots
 
   deploy:
     # We only deploy if it's the main branch and they were a success
     if: ${{ success() && github.ref == 'refs/heads/main' }}
     # Important to keep this up to date, depending on all jobs
-    needs: [cypress-end-to-end-linux-tests, cypress-end-to-end-windows-tests]
+    needs: [cypress-end-to-end-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

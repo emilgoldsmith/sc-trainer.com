@@ -6,5 +6,3 @@ elm-stuff
 .vscode
 main.js
 main.min.js
-tests
-end-to-end-tests
