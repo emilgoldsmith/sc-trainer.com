@@ -89,10 +89,7 @@ jobs:
           yarn run cypress run \
           --browser ${{ matrix.platform.browser }} \
           --config "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:${{ env.PORT }}" \
-          --spec cypress/tests/* \
-          --spec ${{ matrix.sizeRelevant.extraSpecs[0] }} \
-          --spec ${{ matrix.sizeRelevant.extraSpecs[1] }} \
-          --spec ${{ matrix.sizeRelevant.extraSpecs[2] }}
+          --spec cypress/tests/*,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}
 
       - name: Upload recorded videos
         uses: actions/upload-artifact@v1
