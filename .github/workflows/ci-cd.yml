@@ -105,6 +105,7 @@ jobs:
     needs: [build-dependencies-windows, build-javascript]
     strategy:
       fail-fast: false
+      matrix:
         # Values for devices taken from https://docs.cypress.io/api/commands/viewport#Arguments
         sizeRelevant:
           - viewportConfig: "viewportWidth=1280,viewportHeight=800"
