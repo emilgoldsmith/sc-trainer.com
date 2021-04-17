@@ -44,13 +44,13 @@ jobs:
     runs-on: ubuntu-20.04
     container:
       image: sctrainer/main:ci-${{ github.sha }}
-      options: --user 1001
     needs: build-docker-containers
     defaults:
       run:
         working-directory: /app/end-to-end-tests
     env:
       PORT: 8080
+      HOME: ""
     services:
       sctrainer-server:
         image: sctrainer/main:production-${{ github.sha }}
