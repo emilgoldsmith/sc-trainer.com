@@ -43,6 +43,7 @@ jobs:
     name: "${{ matrix.platform.browserString }} on screen size of ${{ matrix.sizeRelevant.deviceName }} Linux Cypress E2E Tests"
     runs-on: ubuntu-20.04
     container: sctrainer/main:ci-${{ github.sha }}
+    needs: build-docker-containers
     strategy:
       fail-fast: false
       matrix:
