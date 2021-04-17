@@ -171,9 +171,7 @@ describe("Algorithm Trainer", function () {
       // These ones we accept possibly having to scroll for so just check it exists
       // We check it's visibility including scroll in the element sizing
       elements.startPage.instructionsText.get().should("exist");
-      elements.startPage.learningResources
-        .get()
-        .should("exist")
+      elements.startPage.learningResources.get().should("exist");
 
       // A smoke test that we have added some links for the cubing terms
       elements.startPage.container.get().within(() => {
@@ -261,11 +259,11 @@ describe("Algorithm Trainer", function () {
             expect(
               cubeElement.width(),
               "cube width to fill at least half of screen"
-            ).to.be.at.least(minDimension * 0.5);
+            ).to.be.at.least(minDimension * 0.5 - 1);
             expect(
               cubeElement.height(),
               "cube height to fill at least half of screen"
-            ).to.be.at.least(minDimension * 0.5);
+            ).to.be.at.least(minDimension * 0.5 - 1);
           });
         });
       });
