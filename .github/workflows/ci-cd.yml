@@ -27,6 +27,9 @@ jobs:
     name: "${{ matrix.platform.browserString }} on screen size of ${{ matrix.sizeRelevant.deviceName }} Cypress E2E Tests"
     runs-on: ${{ matrix.platform.os }}
     needs: build-javascript
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
