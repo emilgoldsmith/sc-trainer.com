@@ -72,6 +72,8 @@ FROM cypress/browsers:node12.18.3-chrome87-ff82 AS ci
 
 WORKDIR /app
 
+RUN apt-get update -y && apt-get install -y sudo
+
 COPY --from=prod-builder /workdir/main.min.js public/main.js
 COPY public/index.html public/index.html
 COPY public/sentry.js public/sentry.js
