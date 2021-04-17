@@ -61,10 +61,6 @@ COPY public/index.html public/index.html
 COPY public/sentry.js public/sentry.js
 COPY scripts/run-production.sh run-production.sh
 
-EXPOSE 8080
-
-ENV PORT=8080
-
 ENTRYPOINT ["/bin/sh", "/app/run-production.sh"]
 
 
