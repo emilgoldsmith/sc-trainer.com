@@ -42,7 +42,8 @@ jobs:
   cypress-end-to-end-tests:
     name: "${{ matrix.platform.browserString }} on screen size of ${{ matrix.sizeRelevant.deviceName }} Linux Cypress E2E Tests"
     runs-on: ubuntu-20.04
-    container: sctrainer/main:ci-${{ github.sha }}
+    container:
+      image: sctrainer/main:ci-${{ github.sha }}
     needs: build-docker-containers
     defaults:
       run:
@@ -50,12 +51,10 @@ jobs:
     env:
       PORT: 8080
     services:
-      server:
+      sctrainer-server:
         image: sctrainer/main:production-${{ github.sha }}
         env:
           PORT: ${{ env.PORT }}
-        ports:
-          - 8080:8080
     strategy:
       fail-fast: false
       matrix:
@@ -88,7 +87,7 @@ jobs:
         run: |
           yarn run cypress run \
           --browser ${{ matrix.platform.browser }} \
-          --config "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:${{ env.PORT }}" \
+          --config "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://sctrainer-server:${{ env.PORT }}" \
           --spec cypress/tests/*,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}
 
       - name: Upload recorded videos
