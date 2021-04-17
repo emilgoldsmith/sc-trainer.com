@@ -40,6 +40,8 @@ jobs:
           browser: ${{ matrix.platform.browser }}
           config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
+          record: true
+          group: "UI - Microsoft Edge - ${{ matrix.sizeRelevant.deviceName }}"
           spec: |
             cypress/tests/*
             ${{ matrix.sizeRelevant.extraSpecs[0] }}
@@ -48,6 +50,7 @@ jobs:
           # For debugging purposes log all the installed browsers and OS info
           build: npx cypress info
         env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           # This allows the action to determine the unique run id
           # which is necessary to re-run the checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -112,6 +115,8 @@ jobs:
           browser: edge
           config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
           wait-on: "http://localhost:8080"
+          record: true
+          group: "UI - Microsoft Edge - ${{ matrix.sizeRelevant.deviceName }}"
           spec: |
             cypress/tests/*
             ${{ matrix.sizeRelevant.extraSpecs[0] }}
@@ -120,6 +125,7 @@ jobs:
           # For debugging purposes log all the installed browsers and OS info
           build: npx cypress info
         env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
           # This allows the action to determine the unique run id
           # which is necessary to re-run the checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
