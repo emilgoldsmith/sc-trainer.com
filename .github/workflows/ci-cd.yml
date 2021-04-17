@@ -2,43 +2,18 @@ name: CI and CD
 on: push
 
 jobs:
-  build-javascript:
-    name: Build Javascript
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Build
-        run: docker build -t sc-trainer:${{ github.sha }} --target production .
-
-      - name: Copy Built Javascript Out Of Docker Image
-        run: |
-          id=$(docker create sc-trainer:${{ github.sha }})
-          docker cp $id:/app/public/main.js public/main.js
-
-      - name: Persist for other jobs
-        uses: actions/upload-artifact@v2
-        with:
-          name: built-javascript-${{ github.sha }}
-          path: public/main.js
-
-  cypress-end-to-end-tests:
-    name: "${{ matrix.platform.browserString }} on screen size of ${{ matrix.sizeRelevant.deviceName }} Cypress E2E Tests"
-    runs-on: ${{ matrix.platform.os }}
-    needs: build-javascript
+  cypress-end-to-end-linux-tests:
+    name: "${{ matrix.platform.browserString }} on screen size of ${{ matrix.sizeRelevant.deviceName }} Linux Cypress E2E Tests"
+    runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
         platform:
           - browser: chrome
-            os: ubuntu-latest
             browserString: Chrome
           - browser: firefox
-            os: ubuntu-latest
             browserString: Firefox
           - browser: edge
-            os: windows-latest
             browserString: Microsoft Edge
         # Values for devices taken from https://docs.cypress.io/api/commands/viewport#Arguments
         sizeRelevant:
@@ -54,35 +29,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Windows building and starting server starts here
-      - name: Get built javascript from other job
-        if: ${{ runner.os == 'Windows' }}
-        uses: actions/download-artifact@v2
-        with:
-          name: built-javascript-${{ github.sha }}
-          path: public/main.js
-
-      - name: Install web server
-        if: ${{ runner.os == 'Windows' }}
-        run: yarn add serve
-
-      - name: Run web server
-        if: ${{ runner.os == 'Windows' }}
-        run: yarn run serve --single --listen 8080 public &
-      # Windows building and starting server ends here
-
-      # Ubuntu building and starting server starts here
-      # We could do the same as on Windows, but find it important to do as many
-      # tests as possible as close to production environment as possible, even if
-      # it's a bit slower
       - name: Build with Docker
-        if: ${{ runner.os == 'Linux' }}
         run: docker build -t sc-trainer:${{ github.sha }} --target production .
 
       - name: Start server
-        if: ${{ runner.os == 'Linux' }}
         run: docker run -e PORT=8080 -p 8080:8080 -d --name="sc-trainer-server" sc-trainer:${{ github.sha}}
-      # Ubuntu ends here
 
       - name: Cypress Run
         uses: cypress-io/github-action@v2.9.11
@@ -103,11 +54,116 @@ jobs:
           # which is necessary to re-run the checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  build-dependencies-windows:
+    name: Build dependencies for Windows
+    runs-on: windows-2019
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache node modules and Cypress install
+        uses: actions/cache@v2
+        id: yarn-and-build-cache-win
+        with:
+          path: |
+            ~/.cache/Cypress
+            node_modules
+          key: ${{ runner.os }}-node_modules-build-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node_modules-build-
+
+      - name: Cypress install
+        uses: cypress-io/github-action@v2
+        with:
+          working-directory: end-to-end-tests
+          runTests: false
+
+  build-javascript:
+    name: Build Javascript
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Build Javascript
+        run: docker build -t sc-trainer:${{ github.sha }} --target production .
+
+      - name: Copy Built Javascript Out Of Docker Image
+        run: |
+          id=$(docker create sc-trainer:${{ github.sha }})
+          docker cp $id:/app/public/main.js public/main.js
+
+      - name: Persist for other jobs
+        uses: actions/upload-artifact@v2
+        with:
+          name: built-javascript-${{ github.sha }}
+          path: public/main.js
+
+  cypress-end-to-end-windows-tests:
+    name: "Microsoft Edge on screen size of ${{ matrix.sizeRelevant.deviceName }} Windows Cypress E2E Tests"
+    runs-on: windows-2019
+    needs: [build-dependencies-windows, build-javascript]
+    strategy:
+      fail-fast: false
+        # Values for devices taken from https://docs.cypress.io/api/commands/viewport#Arguments
+        sizeRelevant:
+          - viewportConfig: "viewportWidth=1280,viewportHeight=800"
+            # We include the dynamic viewports just one place as it doesn't matter what initial
+            # viewport size it is so no need to include it several times
+            extraSpecs: [cypress/tests/uses-dynamic-viewports/*]
+            deviceName: Macbook 13
+          - viewportConfig: "viewportWidth=375,viewportHeight=667"
+            extraSpecs: []
+            deviceName: iPhone 8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get built javascript from other job
+        uses: actions/download-artifact@v2
+        with:
+          name: built-javascript-${{ github.sha }}
+          path: public/main.js
+
+      - name: Restore Node Modules from previous step
+        uses: actions/cache@v2
+        id: yarn-and-build-cache-win
+        with:
+          path: |
+            ~/.cache/Cypress
+            node_modules
+          key: ${{ runner.os }}-node_modules-build-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-node_modules-build-
+
+      - name: Install web server
+        run: yarn add serve
+
+      - name: Cypress Run
+        uses: cypress-io/github-action@v2.9.11
+        with:
+          working-directory: end-to-end-tests
+          browser: edge
+          config: "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://localhost:8080"
+          wait-on: "http://localhost:8080"
+          spec: |
+            cypress/tests/*
+            ${{ matrix.sizeRelevant.extraSpecs[0] }}
+            ${{ matrix.sizeRelevant.extraSpecs[1] }}
+            ${{ matrix.sizeRelevant.extraSpecs[2] }}
+          # For debugging purposes log all the installed browsers and OS info
+          build: npx cypress info
+          start: yarn run serve --single --listen 8080 public
+        env:
+          # This allows the action to determine the unique run id
+          # which is necessary to re-run the checks
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   deploy:
     # We only deploy if it's the main branch and they were a success
     if: ${{ success() && github.ref == 'refs/heads/main' }}
     # Important to keep this up to date, depending on all jobs
-    needs: [cypress-end-to-end-tests]
+    needs: [cypress-end-to-end-linux-tests, cypress-end-to-end-windows-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
