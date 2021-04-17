@@ -83,11 +83,6 @@ jobs:
       - name: Log Cypress Info
         run: npx cypress info
 
-      - uses: mxschmitt/action-tmate@v3
-        with:
-          sudo: false
-          limit-access-to-actor: true
-
       - name: Run Cypress Tests
         run: |
           yarn run cypress run \
