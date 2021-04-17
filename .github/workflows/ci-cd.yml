@@ -18,9 +18,6 @@ jobs:
           - browser: firefox
             os: ubuntu-latest
             browserString: Firefox
-          - browser: edge
-            os: windows-latest
-            browserString: Microsoft Edge
         # Values for devices taken from https://docs.cypress.io/api/commands/viewport#Arguments
         sizeRelevant:
           - viewportConfig: "viewportWidth=1280,viewportHeight=800"
@@ -34,12 +31,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-
-      - name: Switch docker mode to Linux containers for Windows
-        if: ${{ startsWith(matrix.platform.os, 'windows') }}
-        run: |
-          cd /c/Program\ Files/Docker
-          ls -l
 
       - name: Build
         run: docker build -t sc-trainer:${{ github.sha }} --target production .
