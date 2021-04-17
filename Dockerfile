@@ -61,9 +61,11 @@ COPY public/index.html public/index.html
 COPY public/sentry.js public/sentry.js
 COPY scripts/run-production.sh run-production.sh
 
-HEALTHCHECK CMD curl --fail http://localhost:$PORT || exit 1
+EXPOSE 8080
 
-CMD ./run-production.sh
+ENV PORT=8080
+
+ENTRYPOINT ["/bin/sh", "/app/run-production.sh"]
 
 
 ############################
