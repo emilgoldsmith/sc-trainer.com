@@ -83,6 +83,8 @@ jobs:
       - name: Log Cypress Info
         run: npx cypress info
 
+      - uses: mxschmitt/action-tmate@v3
+
       - name: Run Cypress Tests
         run: |
           yarn run cypress run \
