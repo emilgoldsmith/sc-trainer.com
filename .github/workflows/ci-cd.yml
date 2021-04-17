@@ -27,9 +27,6 @@ jobs:
     name: "${{ matrix.platform.browserString }} on screen size of ${{ matrix.sizeRelevant.deviceName }} Cypress E2E Tests"
     runs-on: ${{ matrix.platform.os }}
     needs: build-javascript
-    defaults:
-      run:
-        shell: bash
     strategy:
       fail-fast: false
       matrix:
@@ -71,7 +68,7 @@ jobs:
 
       - name: Run web server
         if: ${{ runner.os == 'Windows' }}
-        run: setsid yarn run serve --single --listen 8080 public
+        run: start /b yarn run serve --single --listen 8080 public
       # Windows building and starting server ends here
 
       # Ubuntu building and starting server starts here
