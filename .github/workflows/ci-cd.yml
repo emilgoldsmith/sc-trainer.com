@@ -58,13 +58,13 @@ jobs:
         if: always()
         with:
           name: cypress-videos-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
-          path: cypress/videos
+          path: end-to-end-tests/cypress/videos
       - name: Upload recorded Screenshots
         uses: actions/upload-artifact@v1
         if: always()
         with:
           name: cypress-screenshots-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
-          path: cypress/screenshots
+          path: end-to-end-tests/cypress/screenshots
 
   build-javascript:
     name: Build Javascript
@@ -114,9 +114,6 @@ jobs:
           name: built-javascript-${{ github.sha }}
           path: public/main.js
 
-      - run: ls public
-        shell: bash
-
       - name: Cypress Run
         uses: cypress-io/github-action@v2.9.11
         with:
@@ -143,13 +140,13 @@ jobs:
         if: always()
         with:
           name: cypress-videos-edge-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
-          path: cypress/videos
+          path: end-to-end-tests/cypress/videos
       - name: Upload recorded Screenshots
         uses: actions/upload-artifact@v1
         if: always()
         with:
           name: cypress-screenshots-edge-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
-          path: cypress/screenshots
+          path: end-to-end-tests/cypress/screenshots
 
   deploy:
     # We only deploy if it's the main branch and they were a success
