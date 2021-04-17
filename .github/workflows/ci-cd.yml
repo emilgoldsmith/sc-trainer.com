@@ -101,9 +101,9 @@ jobs:
           path: public/main.js
 
       - name: Start Web Server
-        run: python -m http.server --directory public 8080 &
-
-      - run: wget localhost:8080/main.js
+        run: |
+          cd public
+          python -m http.server 8080 &
 
       - name: Cypress Run
         uses: cypress-io/github-action@v2.9.11
