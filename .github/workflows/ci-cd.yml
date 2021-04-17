@@ -56,12 +56,14 @@ jobs:
       - name: Upload recorded videos
         uses: actions/upload-artifact@v1
         if: always()
+        continue-on-error: true
         with:
           name: cypress-videos-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
           path: end-to-end-tests/cypress/videos
       - name: Upload recorded Screenshots
         uses: actions/upload-artifact@v1
         if: always()
+        continue-on-error: true
         with:
           name: cypress-screenshots-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
           path: end-to-end-tests/cypress/screenshots
@@ -138,11 +140,13 @@ jobs:
       - name: Upload recorded videos
         uses: actions/upload-artifact@v1
         if: always()
+        continue-on-error: true
         with:
           name: cypress-videos-edge-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
           path: end-to-end-tests/cypress/videos
       - name: Upload recorded Screenshots
         uses: actions/upload-artifact@v1
+        continue-on-error: true
         if: always()
         with:
           name: cypress-screenshots-edge-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
