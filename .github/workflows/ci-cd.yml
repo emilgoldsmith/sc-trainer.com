@@ -77,6 +77,9 @@ jobs:
     name: "Microsoft Edge on screen size of ${{ matrix.sizeRelevant.deviceName }} Windows Cypress E2E Tests"
     runs-on: windows-2019
     needs: [build-javascript]
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
