@@ -67,11 +67,8 @@ ENTRYPOINT ["/app/run-production.sh"]
 # CI STAGE
 ############################
 
-FROM node:15.7.0-alpine as ci
-
-RUN apk --update add git bash && \
-    rm -rf /var/lib/apt/lists/* && \
-    rm /var/cache/apk/*
+# We need buster for high enough glibc version for elm-format
+FROM node:15.7.0-buster as ci
 
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 
