@@ -49,8 +49,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - run: ls
+      - run: ls -la scripts
+      - run: ls -la scripts/checks
+      - run: ls -la scripts/helpers
       - run: pwd
+      - uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+          sudo: false
       - name: Assert elm-verify-examples is up to date
         run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommited-changes.sh
 
@@ -151,3 +157,10 @@ jobs:
         env:
           SECRET: ${{ secrets.GOOGLE_CLOUD_DEPLOY_SECRET }}
           API_KEY: ${{ secrets.GOOGLE_CLOUD_DEPLOY_API_KEY }}
+#
+#
+# Useful for debugging:
+# - uses: mxschmitt/action-tmate@v3
+#   with:
+#     limit-access-to-actor: true
+#     sudo: false
