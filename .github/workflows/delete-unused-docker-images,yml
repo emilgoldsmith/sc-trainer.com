@@ -1,0 +1,46 @@
+name: Delete Unused Docker Images
+on:
+  schedule:
+    cron:
+      # Once a week
+      - 0 0 * * 0
+
+jobs:
+  main:
+    name: Main
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Delete unused ci-browser images
+        uses: m3ntorship/action-dockerhub-cleanup@1.2
+        with:
+          # Just a buffer for the moment we change from one version
+          # to the other
+          keep-last: 2
+          repos: sctrainer/main
+          substrings:
+            - ci-browsers-
+          user: ${{ secrets.DOCKERHUB_USERNAME }}
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Delete unused ci-container images
+        uses: m3ntorship/action-dockerhub-cleanup@1.2
+        with:
+          # Just a buffer for the moment we change from one version
+          # to the other
+          keep-last: 2
+          repos: sctrainer/main
+          substrings:
+            - ci-container-
+          user: ${{ secrets.DOCKERHUB_USERNAME }}
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Delete unused production images
+        uses: m3ntorship/action-dockerhub-cleanup@1.2
+        with:
+          # Keep a lot of production images as we may need to restore back in time
+          keep-last: 50
+          repos: sctrainer/main
+          substrings:
+            - production-
+          user: ${{ secrets.DOCKERHUB_USERNAME }}
+          token: ${{ secrets.DOCKERHUB_TOKEN }}
