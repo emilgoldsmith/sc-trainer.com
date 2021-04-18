@@ -118,7 +118,7 @@ jobs:
 
       - name: Upload recorded videos
         uses: actions/upload-artifact@v1
-        if: always()
+        if: failure()
         continue-on-error: true
         with:
           name: VIDEOS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
@@ -126,7 +126,7 @@ jobs:
 
       - name: Upload recorded Screenshots
         uses: actions/upload-artifact@v1
-        if: always()
+        if: failure()
         continue-on-error: true
         with:
           name: SCREENSHOTS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
