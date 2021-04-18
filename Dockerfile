@@ -61,6 +61,8 @@ COPY public/index.html public/index.html
 COPY public/sentry.js public/sentry.js
 COPY scripts/run-production.sh run-production.sh
 
+EXPOSE $PORT
+
 ENTRYPOINT ["/app/run-production.sh"]
 
 ############################
