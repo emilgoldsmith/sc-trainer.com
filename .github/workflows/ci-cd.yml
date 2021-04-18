@@ -66,6 +66,20 @@ jobs:
       - name: Run unit tests
         run: ./scripts/checks/elm-test.sh
 
+  check-javascript-asset-size:
+    name: Check Javascript Asset Size
+    runs-on: ubuntu-20.04
+    container: sctrainer/main:production-${{ github.sha }}
+    needs: build-docker-containers
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Check Javascript Asset Filesize Less Than 200Kb
+        run: |
+          num_bytes = $(gzip /app/public/main.js -c | wc -c)
+          (( num_bytes < (200 * 1000) ))
+
   cypress-end-to-end-tests:
     name: "${{ matrix.platform.browserString }} on screen size of ${{ matrix.sizeRelevant.deviceName }} Linux Cypress E2E Tests"
     runs-on: ubuntu-20.04
@@ -144,7 +158,12 @@ jobs:
     # We only deploy if it's the main branch and they were a success
     if: ${{ success() && github.ref == 'refs/heads/main' }}
     # Important to keep this up to date, depending on all jobs
-    needs: [cypress-end-to-end-tests, lint-and-unit-tests]
+    needs:
+      [
+        cypress-end-to-end-tests,
+        lint-and-unit-tests,
+        check-javascript-asset-size,
+      ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
