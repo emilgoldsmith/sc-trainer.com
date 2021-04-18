@@ -3,7 +3,7 @@
 # SHARED DEPENDENCIES STAGE
 ############################
 
-FROM node:15.7.0 as dependency-builder
+FROM node:12 as dependency-builder
 
 ENV ELM_VERSION=0.19.1
 ENV UGLIFY_JS_VERSION=3.12.4
@@ -29,7 +29,7 @@ RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/$ELM_VER
 ############################
 
 
-FROM node:15.7.0 AS prod-builder
+FROM node:12 AS prod-builder
 
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 COPY --from=dependency-builder /dependencies/node_modules /node_modules
@@ -50,7 +50,7 @@ RUN ./optimize.sh src/Main.elm
 ############################
 
 
-FROM node:15.7.0-alpine as production
+FROM node:12-alpine as production
 
 WORKDIR /app
 
@@ -68,7 +68,7 @@ ENTRYPOINT ["/app/run-production.sh"]
 ############################
 
 # We need buster for high enough glibc version for elm-format
-FROM node:15.7.0-buster as ci
+FROM node:12-buster as ci
 
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 
@@ -103,7 +103,7 @@ FROM cypress/browsers:node12.18.3-chrome87-ff82 AS ci-browsers
 # The `unsafe-html-cube-devcontainer` is built in the
 # initializeCommand for the devcontainer from base.dockerfile
 # which is located in the .devcontainer directory
-FROM unsafe-html-cube-devcontainer:15.7.0 AS local-development
+FROM unsafe-html-cube-devcontainer:12 AS local-development
 
 # Add in the dependencies shared between stages
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
