@@ -70,7 +70,6 @@ ENTRYPOINT ["/app/run-production.sh"]
 # We need buster for high enough glibc version for elm-format
 FROM node:12-buster as ci
 
-COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 
 ENV ELM_TEST_VERSION 0.19.1
 ENV ELM_FORMAT_VERSION 0.8.4
@@ -88,6 +87,7 @@ ENV PATH "$PATH:/dependencies/node_modules/.bin"
 
 WORKDIR /ci-home
 
+COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 
 ############################
 # CI WITH BROWSERS STAGE
@@ -105,17 +105,6 @@ FROM cypress/browsers:node12.18.3-chrome87-ff82 AS ci-browsers
 # which is located in the .devcontainer directory
 FROM unsafe-html-cube-devcontainer:12 AS local-development
 
-# Add in the dependencies shared between stages
-COPY --from=dependency-builder /dependencies/elm /usr/local/bin
-COPY --from=dependency-builder /dependencies/node_modules /uglifyjs/node_modules
-COPY --from=ci /dependencies/node_modules /test-and-linters/node_modules
-
-RUN ln -s /uglifyjs/node_modules/.bin/uglifyjs /usr/local/bin/uglifyjs
-RUN ln -s /test-and-linters/node_modules/.bin/elm-test /usr/local/bin/elm-test
-RUN ln -s /test-and-linters/node_modules/.bin/elm-format /usr/local/bin/elm-format
-RUN ln -s /test-and-linters/node_modules/.bin/elm-verify-examples /usr/local/bin/elm-verify-examples
-RUN ln -s /test-and-linters/node_modules/.bin/elm-analyse /usr/local/bin/elm-analyse
-
 ENV ELM_LIVE_VERSION 4.0.2
 
 USER $USERNAME
@@ -123,7 +112,6 @@ USER $USERNAME
 WORKDIR /home/$USERNAME
 
 ENV HISTFILE /home/$USERNAME/bash_history/bash_history.txt
-
 
 # Install the development specific ones
 RUN yarn global add \
@@ -137,3 +125,18 @@ RUN yarn global add \
 ENV PATH "$PATH:/home/$USERNAME/.yarn/bin"
 
 RUN echo 'PATH="$PATH:/home/$USERNAME/.yarn/bin"' >> .bashrc
+
+# Add in the dependencies shared between stages
+COPY --from=dependency-builder /dependencies/elm /usr/local/bin
+COPY --from=dependency-builder /dependencies/node_modules /uglifyjs/node_modules
+COPY --from=ci /dependencies/node_modules /test-and-linters/node_modules
+
+USER root
+
+RUN ln -s /uglifyjs/node_modules/.bin/uglifyjs /usr/local/bin/uglifyjs
+RUN ln -s /test-and-linters/node_modules/.bin/elm-test /usr/local/bin/elm-test
+RUN ln -s /test-and-linters/node_modules/.bin/elm-format /usr/local/bin/elm-format
+RUN ln -s /test-and-linters/node_modules/.bin/elm-verify-examples /usr/local/bin/elm-verify-examples
+RUN ln -s /test-and-linters/node_modules/.bin/elm-analyse /usr/local/bin/elm-analyse
+
+USER $USERNAME
