@@ -69,12 +69,15 @@ ENTRYPOINT ["/bin/sh", "/app/run-production.sh"]
 
 FROM node:15.7.0-alpine as ci
 
+RUN apk --update add git && \
+    rm -rf /var/lib/apt/lists/* && \
+    rm /var/cache/apk/*
+
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 
 ENV ELM_TEST_VERSION 0.19.1
 ENV ELM_FORMAT_VERSION 0.8.4
 ENV ELM_VERIFY_EXAMPLES_VERSION 5.0.0
-
 
 RUN cd / && mkdir dependencies && cd dependencies && \
     yarn add \
