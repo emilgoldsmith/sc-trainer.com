@@ -41,7 +41,7 @@ jobs:
           tags: sctrainer/main:production-${{ github.sha }}
 
   lint-and-unit-tests:
-    name: "Linting And Unit Tests"
+    name: Linting And Unit Tests
     runs-on: ubuntu-20.04
     container: sctrainer/main:ci-${{ github.sha }}
     needs: build-docker-containers
@@ -53,12 +53,9 @@ jobs:
       - run: ls -la scripts/checks
       - run: ls -la scripts/helpers
       - run: pwd
-      - uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
-          sudo: false
+
       - name: Assert elm-verify-examples is up to date
-        run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommited-changes.sh
+        run: /bin/sh ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommited-changes.sh
 
       - name: Run elm-format
         run: ./scripts/checks/elm-format.sh
