@@ -1,4 +1,4 @@
-![CI/CD badge](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/ci-cd.yml/badge.svg)
+[![CI and CD](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/ci-cd.yml)
 
 # www.sc-trainer.com
 
