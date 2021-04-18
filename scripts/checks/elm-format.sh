@@ -6,4 +6,6 @@ ROOT_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/../..
 
 cd $ROOT_DIRECTORY
 
+pwd
+
 elm-format src --validate
