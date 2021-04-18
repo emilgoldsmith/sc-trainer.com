@@ -70,6 +70,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Install Bash (as production image doesn't include it)
+        run: apk add bash
+
       - name: Check Javascript Asset Filesize Less Than 200Kb
         run: |
           num_bytes=$(gzip /app/public/main.js -c | wc -c)
