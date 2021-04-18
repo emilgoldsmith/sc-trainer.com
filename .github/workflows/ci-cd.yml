@@ -55,16 +55,16 @@ jobs:
       - run: pwd
 
       - name: Assert elm-verify-examples is up to date
-        run: /bin/sh ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommited-changes.sh
+        run: /bin/bash scripts/checks/elm-verify-examples.sh && /bin/bash scripts/helpers/check-for-uncommited-changes.sh
 
       - name: Run elm-format
-        run: ./scripts/checks/elm-format.sh
+        run: /bin/bash scripts/checks/elm-format.sh
 
       - name: Run elm-analyse
-        run: ./scripts/checks/elm-analyse.sh
+        run: /bin/bash scripts/checks/elm-analyse.sh
 
       - name: Run unit tests
-        run: ./scripts/checks/elm-test.sh
+        run: /bin/bash scripts/checks/elm-test.sh
 
   check-javascript-asset-size:
     name: Check Javascript Asset Size
