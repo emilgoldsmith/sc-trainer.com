@@ -1,6 +1,7 @@
 {
-    "checks": {
-        "FunctionInLet": false,
-        "ImportAll": false
-    }
+  "checks": {
+    "FunctionInLet": false,
+    "ImportAll": false,
+    "MultiLineRecordFormatting": false
+  }
 }

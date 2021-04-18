@@ -55,6 +55,9 @@ jobs:
       - name: Run elm-format
         run: ./scripts/checks/elm-format.sh
 
+      - name: Run elm-analyse
+        run: ./scripts/checks/elm-analyse.sh
+
       - name: Run unit tests
         run: ./scripts/checks/elm-test.sh
 

@@ -1817,8 +1817,6 @@ type SingleTransformation
     = XRotateDegrees Int
     | YRotateDegrees Int
     | ZRotateDegrees Int
-    | XTranslatePixels Int
-    | YTranslatePixels Int
     | ZTranslatePixels Int
 
 
@@ -1833,12 +1831,6 @@ isRotation t =
 
         ZRotateDegrees _ ->
             True
-
-        XTranslatePixels _ ->
-            False
-
-        YTranslatePixels _ ->
-            False
 
         ZTranslatePixels _ ->
             False

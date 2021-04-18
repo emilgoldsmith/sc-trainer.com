@@ -78,12 +78,14 @@ COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 ENV ELM_TEST_VERSION 0.19.1
 ENV ELM_FORMAT_VERSION 0.8.4
 ENV ELM_VERIFY_EXAMPLES_VERSION 5.0.0
+ENV ELM_ANALYSE_VERSION 0.16.5
 
 RUN cd / && mkdir dependencies && cd dependencies && \
     yarn add \
         elm-test@$ELM_TEST_VERSION \
         elm-format@$ELM_FORMAT_VERSION \
-        elm-verify-examples@$ELM_VERIFY_EXAMPLES_VERSION
+        elm-verify-examples@$ELM_VERIFY_EXAMPLES_VERSION \
+        elm-analyse@$ELM_ANALYSE_VERSION
 
 ENV PATH "$PATH:/dependencies/node_modules/.bin"
 
@@ -115,6 +117,7 @@ RUN ln -s /uglifyjs/node_modules/.bin/uglifyjs /usr/local/bin/uglifyjs
 RUN ln -s /test-and-linters/node_modules/.bin/elm-test /usr/local/bin/elm-test
 RUN ln -s /test-and-linters/node_modules/.bin/elm-format /usr/local/bin/elm-format
 RUN ln -s /test-and-linters/node_modules/.bin/elm-verify-examples /usr/local/bin/elm-verify-examples
+RUN ln -s /test-and-linters/node_modules/.bin/elm-analyse /usr/local/bin/elm-analyse
 
 ENV ELM_LIVE_VERSION 4.0.2
 
