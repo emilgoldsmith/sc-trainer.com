@@ -74,6 +74,7 @@ jobs:
         run: apk add bash
 
       - name: Check Javascript Asset Filesize Less Than 200Kb
+        shell: bash
         run: |
           num_bytes=$(gzip /app/public/main.js -c | wc -c)
           (( num_bytes < (200 * 1000) ))
