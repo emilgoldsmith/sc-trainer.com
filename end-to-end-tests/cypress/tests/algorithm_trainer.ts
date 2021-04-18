@@ -160,16 +160,13 @@ describe("Algorithm Trainer", function () {
       // These elements should all display without scrolling
       elements.startPage.welcomeText.assertShows();
       elements.startPage.welcomeText.assertContainedByWindow();
-      elements.startPage.cubeStartExplanation.assertShows();
-      elements.startPage.cubeStartExplanation.assertContainedByWindow();
-      elements.startPage.cubeStartState.get().within(() => {
-        elements.globals.cube.assertShows();
-        elements.globals.cube.assertContainedByWindow();
-      });
-      elements.startPage.startButton.assertShows();
-      elements.startPage.startButton.assertContainedByWindow();
       // These ones we accept possibly having to scroll for so just check it exists
       // We check it's visibility including scroll in the element sizing
+      elements.startPage.cubeStartExplanation.get().should("exist");
+      elements.startPage.cubeStartState.get().within(() => {
+        elements.globals.cube.get().should("exist");
+      });
+      elements.startPage.startButton.get().should("exist");
       elements.startPage.instructionsText.get().should("exist");
       elements.startPage.learningResources.get().should("exist");
 
@@ -181,14 +178,22 @@ describe("Algorithm Trainer", function () {
 
     it("sizes elements reasonably", function () {
       cy.assertNoHorizontalScrollbar();
+      const containerId = elements.startPage.container.testId;
       // This one is allowed vertical scrolling, but we want to check
       // that we can actually scroll down to see instructionsText if its missing
       elements.startPage.instructionsText.assertConsumableViaScroll(
         elements.startPage.container.testId
       );
       elements.startPage.learningResources.assertConsumableViaScroll(
-        elements.startPage.container.testId
+        containerId
       );
+      elements.startPage.cubeStartExplanation.assertConsumableViaScroll(
+        containerId
+      );
+      elements.startPage.cubeStartState.get().within(() => {
+        elements.globals.cube.assertConsumableViaScroll(containerId);
+      });
+      elements.startPage.startButton.assertConsumableViaScroll(containerId);
     });
 
     it("starts test when pressing space", function () {
