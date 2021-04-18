@@ -40,5 +40,5 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/cube-community/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/home/cube-community/workspace",
   "initializeCommand": "docker build -f .devcontainer/unsafe-html-cube-devcontainer.dockerfile -t unsafe-html-cube-devcontainer:15.7.0 --build-arg NODE_VERSION=15.7.0 --build-arg YARN_VERSION=1.22.5 .devcontainer",
-  "postCreateCommand": "cd end-to-end-tests && yarn && (yarn run cypress verify || yarn run cypress install)"
+  "postCreateCommand": "git config core.hooksPath scripts/git-hooks && cd end-to-end-tests && yarn && (yarn run cypress verify || yarn run cypress install)"
 }
