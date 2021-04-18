@@ -2,4 +2,4 @@
 
 set -euo pipefail
 
-elm-test --watch
+$(dirname "${BASH_SOURCE[0]}")/checks/elm-test.sh --watch

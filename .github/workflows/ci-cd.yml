@@ -50,13 +50,13 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Assert elm-verify-examples is up to date
-        run: elm-verify-examples && git diff --quiet --exit-code
+        run: ./scripts/checks/elm-verify-examples.sh && git diff --quiet --exit-code
 
       - name: Run elm-format
-        run: elm-format src --validate
+        run: ./scripts/checks/elm-format.sh
 
       - name: Run unit tests
-        run: elm-test
+        run: ./scripts/checks/elm-test.sh
 
   cypress-end-to-end-tests:
     name: "${{ matrix.platform.browserString }} on screen size of ${{ matrix.sizeRelevant.deviceName }} Linux Cypress E2E Tests"
