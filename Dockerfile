@@ -63,6 +63,29 @@ COPY scripts/run-production.sh run-production.sh
 
 ENTRYPOINT ["/bin/sh", "/app/run-production.sh"]
 
+############################
+# CI STAGE
+############################
+
+FROM node:15.7.0-alpine as ci
+
+COPY --from=dependency-builder /dependencies/elm /usr/local/bin
+
+ENV ELM_TEST_VERSION 0.19.1
+ENV ELM_FORMAT_VERSION 0.8.4
+ENV ELM_VERIFY_EXAMPLES_VERSION 5.0.0
+
+
+RUN cd / && mkdir dependencies && cd dependencies && \
+    yarn add \
+        elm-test@$ELM_TEST_VERSION \
+        elm-format@$ELM_FORMAT_VERSION \
+        elm-verify-examples@$ELM_VERIFY_EXAMPLES_VERSION \
+
+ENV "$PATH:/dependencies/node_modules/.bin"
+
+WORKDIR /ci-home
+
 
 ############################
 # CI WITH BROWSERS STAGE
@@ -82,14 +105,15 @@ FROM unsafe-html-cube-devcontainer:15.7.0 AS local-development
 
 # Add in the dependencies shared between stages
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
-COPY --from=dependency-builder /dependencies/node_modules /node_modules
+COPY --from=dependency-builder /dependencies/node_modules /uglifyjs/node_modules
+COPY --from=ci /dependencies/node_modules /test-and-linters/node_modules
 
-RUN ln -s /node_modules/.bin/uglifyjs /usr/local/bin/uglifyjs
+RUN ln -s /uglifyjs/node_modules/.bin/uglifyjs /usr/local/bin/uglifyjs
+RUN ln -s /test-and-linters/node_modules/.bin/elm-test /usr/local/bin/elm-test
+RUN ln -s /test-and-linters/node_modules/.bin/elm-format /usr/local/bin/elm-format
+RUN ln -s /test-and-linters/node_modules/.bin/elm-verify-examples /usr/local/bin/elm-verify-examples
 
-ENV ELM_TEST_VERSION 0.19.1
-ENV ELM_FORMAT_VERSION 0.8.4
 ENV ELM_LIVE_VERSION 4.0.2
-ENV ELM_VERIFY_EXAMPLES_VERSION 5.0.0
 
 USER $USERNAME
 
@@ -97,12 +121,10 @@ WORKDIR /home/$USERNAME
 
 ENV HISTFILE /home/$USERNAME/bash_history/bash_history.txt
 
+
 # Install the development specific ones
 RUN yarn global add \
-        elm-test@$ELM_TEST_VERSION \
-        elm-format@$ELM_FORMAT_VERSION \
         elm-live@$ELM_LIVE_VERSION \
-        elm-verify-examples@$ELM_VERIFY_EXAMPLES_VERSION \
     # Create the elm cache directory where we can mount a volume. If we don't create it like this
     # it is auto created by docker on volume creation but with root as owner which makes it unusable.
     && mkdir .elm \
