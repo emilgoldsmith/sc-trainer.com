@@ -40,7 +40,7 @@ jobs:
           target: production
           tags: sctrainer/main:production-${{ github.sha }}
 
-  lint-and-unit-test:
+  lint-and-unit-tests:
     name: "Linting And Unit Tests"
     runs-on: ubuntu-20.04
     container: sctrainer/main:ci-${{ github.sha }}
