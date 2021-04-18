@@ -65,23 +65,10 @@ ENTRYPOINT ["/bin/sh", "/app/run-production.sh"]
 
 
 ############################
-# CI STAGE
+# CI WITH BROWSERS STAGE
 ############################
 
-FROM cypress/browsers:node12.18.3-chrome87-ff82 AS ci
-
-WORKDIR /app
-
-COPY --from=prod-builder /workdir/main.min.js public/main.js
-COPY public/index.html public/index.html
-COPY public/sentry.js public/sentry.js
-COPY scripts/run-production.sh run-production.sh
-
-COPY src src
-COPY tests tests
-COPY end-to-end-tests end-to-end-tests
-COPY elm.json elm.json
-COPY elm-analyse.json elm-analyse.json
+FROM cypress/browsers:node12.18.3-chrome87-ff82 AS ci-browsers
 
 ############################
 # LOCAL DEVELOPMENT STAGE
