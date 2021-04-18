@@ -49,22 +49,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - run: ls -la scripts
-      - run: ls -la scripts/checks
-      - run: ls -la scripts/helpers
-      - run: pwd
-
       - name: Assert elm-verify-examples is up to date
-        run: /bin/bash scripts/checks/elm-verify-examples.sh && /bin/bash scripts/helpers/check-for-uncommited-changes.sh
+        run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommited-changes.sh
 
       - name: Run elm-format
-        run: /bin/bash scripts/checks/elm-format.sh
+        run: ./scripts/checks/elm-format.sh
 
       - name: Run elm-analyse
-        run: /bin/bash scripts/checks/elm-analyse.sh
+        run: ./scripts/checks/elm-analyse.sh
 
       - name: Run unit tests
-        run: /bin/bash scripts/checks/elm-test.sh
+        run: ./scripts/checks/elm-test.sh
 
   check-javascript-asset-size:
     name: Check Javascript Asset Size

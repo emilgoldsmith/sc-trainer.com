@@ -61,7 +61,7 @@ COPY public/index.html public/index.html
 COPY public/sentry.js public/sentry.js
 COPY scripts/run-production.sh run-production.sh
 
-ENTRYPOINT ["/bin/sh", "/app/run-production.sh"]
+ENTRYPOINT ["/app/run-production.sh"]
 
 ############################
 # CI STAGE
@@ -69,7 +69,7 @@ ENTRYPOINT ["/bin/sh", "/app/run-production.sh"]
 
 FROM node:15.7.0-alpine as ci
 
-RUN apk --update add git && \
+RUN apk --update add git bash && \
     rm -rf /var/lib/apt/lists/* && \
     rm /var/cache/apk/*
 
