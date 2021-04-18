@@ -79,7 +79,7 @@ jobs:
           num_bytes=$(gzip /app/public/main.js -c | wc -c)
           (( num_bytes < 200 )) || \
             (\
-              echo "$(tput setaf 1)Javascript Asset Size Has Grown Unexpectedly. Gzipped Size Is Now $num_bytes bytes" \
+              echo -e "\033[0;31mERROR: Javascript Asset Size Has Grown Unexpectedly. Gzipped Size Is Now $num_bytes bytes" \
               && exit 1 \
             )
 
