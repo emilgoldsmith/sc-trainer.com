@@ -14,10 +14,20 @@ YELLOW=$(tput setaf 3)
 function run_check() {
     local -a all_arguments=( "${@}" )
 
-    echo -n "$YELLOW$1$RESET_COLOUR...  "
+    echo -n "$YELLOW$1$RESET_COLOUR... "
 
-
-    ("${all_arguments[@]:2}" > .temp_command_output 2>&1 && echo "${GREEN}SUCCESS$RESET_COLOUR" && rm .temp_command_output) || (echo -e "${RED}FAILED\n\n$RESET_COLOUR$2\n\nCommand Output Was As Follows:\n\n$(cat .temp_command_output)" && rm .temp_command_output && exit 1)
+    # Shell builtin that auto counts seconds, so we reset it to 0
+    SECONDS=0
+    (\
+        "${all_arguments[@]:2}" > .temp_command_output 2>&1 \
+        && echo "${GREEN}SUCCESS${YELLOW} ${SECONDS}s$RESET_COLOUR" \
+        && rm .temp_command_output\
+    ) || \
+    (\
+        echo -e "${RED}FAILED\n\n$RESET_COLOUR$2\n\nCommand Output Was As Follows:\n\n$(cat .temp_command_output)" \
+        && rm .temp_command_output \
+        && exit 1\
+    )
 }
 
 function check_for_uncommitted_changes() {
