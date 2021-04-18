@@ -1880,12 +1880,6 @@ toCssRotationString axisRotation =
         ZRotateDegrees deg ->
             "rotateZ(" ++ String.fromInt deg ++ "deg)"
 
-        XTranslatePixels pixels ->
-            "translateX(" ++ String.fromInt pixels ++ "px)"
-
-        YTranslatePixels pixels ->
-            "translateY(" ++ String.fromInt pixels ++ "px)"
-
         ZTranslatePixels pixels ->
             "translateZ(" ++ String.fromInt pixels ++ "px)"
 
