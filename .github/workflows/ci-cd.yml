@@ -50,6 +50,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Assert elm-verify-examples is up to date
+        shell: bash
         run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommited-changes.sh
 
       - name: Run elm-format
