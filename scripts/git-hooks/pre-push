@@ -47,14 +47,11 @@ function run_check() {
     )
 }
 
-function check_for_uncommitted_changes() {
-    output=$(git status --porcelain) && [ -z "$output" ]
-}
 
 run_check \
     "Checking For Uncommitted Changes" \
-    "You have uncommitted changes. Commit or 'git stash' them and try pushing again" \
-    check_for_uncommitted_changes
+    "You have uncommitted changes. Commit (probably with '--amend') or 'git stash' them and try pushing again" \
+    ../helpers/check-for-uncommitted-changes.sh
 
 run_check "Checking Compilation" "Compilation Failed" elm make ../../src/Main.elm --output=../../main.js
 rm ../../main.js
@@ -67,6 +64,6 @@ run_check "Checking Code Formatting" "Formatting issues found" ./elm-format.sh
 run_check \
     "Checking Elm Verify Examples is up to date" \
     "You seem to have forgotten to update the elm-verify-examples. They are now up to date. Check them in, commit and try pushing again" \
-    check_for_uncommitted_changes
+    ../helpers/check-for-uncommitted-changes.sh
 
 run_check "Checking Unit Tests" "Unit Tests Failed" ./elm-test.sh

@@ -49,8 +49,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - run: ls
+      - run: pwd
       - name: Assert elm-verify-examples is up to date
-        run: ./scripts/checks/elm-verify-examples.sh && git diff --quiet --exit-code
+        run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommited-changes.sh
 
       - name: Run elm-format
         run: ./scripts/checks/elm-format.sh
