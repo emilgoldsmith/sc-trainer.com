@@ -126,7 +126,7 @@ jobs:
     # We only deploy if it's the main branch and they were a success
     if: ${{ success() && github.ref == 'refs/heads/main' }}
     # Important to keep this up to date, depending on all jobs
-    needs: [cypress-end-to-end-tests]
+    needs: [cypress-end-to-end-tests, lint-and-unit-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

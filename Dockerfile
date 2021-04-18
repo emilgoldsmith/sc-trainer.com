@@ -80,9 +80,9 @@ RUN cd / && mkdir dependencies && cd dependencies && \
     yarn add \
         elm-test@$ELM_TEST_VERSION \
         elm-format@$ELM_FORMAT_VERSION \
-        elm-verify-examples@$ELM_VERIFY_EXAMPLES_VERSION \
+        elm-verify-examples@$ELM_VERIFY_EXAMPLES_VERSION
 
-ENV "$PATH:/dependencies/node_modules/.bin"
+ENV PATH "$PATH:/dependencies/node_modules/.bin"
 
 WORKDIR /ci-home
 
