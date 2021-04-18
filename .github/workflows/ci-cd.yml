@@ -122,7 +122,7 @@ jobs:
         continue-on-error: true
         with:
           name: VIDEOS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
-          path: cypress/videos
+          path: end-to-end-tests/cypress/videos
 
       - name: Upload recorded Screenshots
         uses: actions/upload-artifact@v1
@@ -130,7 +130,7 @@ jobs:
         continue-on-error: true
         with:
           name: SCREENSHOTS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
-          path: cypress/screenshots
+          path: end-to-end-tests/cypress/screenshots
 
   deploy:
     # We only deploy if it's the main branch and they were a success
