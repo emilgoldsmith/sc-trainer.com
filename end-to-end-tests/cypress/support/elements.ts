@@ -8,12 +8,12 @@ type Element = {
     typeof buildConsumableViaScrollAsserter
   >;
   isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
-  testId: string;
+  testId: string | string[];
 };
 
 export function buildElementsCategory<keys extends string>(
-  testIds: { container: string } & {
-    [key in keys]: string;
+  testIds: { container: string | string[] } & {
+    [key in keys]: string | string[];
   }
 ): {
   container: Element;
@@ -23,12 +23,12 @@ export function buildElementsCategory<keys extends string>(
   const getContainer = buildGetter(testIds.container);
   function buildWithinContainer<T>(
     builder: (
-      testId: string
+      testId: string | string[]
     ) => (options?: {
       log?: boolean;
       withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
     }) => Cypress.Chainable<T>,
-    testId: string
+    testId: string | string[]
   ): (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
@@ -48,17 +48,17 @@ export function buildElementsCategory<keys extends string>(
   }
   function buildWithinContainer2<T>(
     builder: (
-      testId: string
+      testId: string | string[]
     ) => (
-      scrollableContainerTestId: string,
+      scrollableContainerTestId: string | string[],
       options?: {
         log?: boolean;
         withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
       }
     ) => Cypress.Chainable<T>,
-    testId: string
+    testId: string | string[]
   ): (
-    scrollableContainerTestId: string,
+    scrollableContainerTestId: string | string[],
     options?: {
       log?: boolean;
       withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
@@ -80,27 +80,33 @@ export function buildElementsCategory<keys extends string>(
     };
   }
 
-  return Cypress._.mapValues(testIds, (testId: string, key: string) => {
-    if (key === "container") {
-      return buildElement(testId);
+  return Cypress._.mapValues(
+    testIds,
+    (testId: string | string[], key: string) => {
+      if (key === "container") {
+        return buildElement(testId);
+      }
+      return {
+        get: buildWithinContainer(buildGetter, testId),
+        waitFor: buildWithinContainer(buildWaiter, testId),
+        assertShows: buildWithinContainer(buildAsserter, testId),
+        assertDoesntExist: buildWithinContainer(buildNotExistAsserter, testId),
+        assertContainedByWindow: buildWithinContainer(
+          buildContainedByWindowAsserter,
+          testId
+        ),
+        assertConsumableViaScroll: buildWithinContainer2(
+          buildConsumableViaScrollAsserter,
+          testId
+        ),
+        isContainedByWindow: buildWithinContainer(
+          buildContainedByWindow,
+          testId
+        ),
+        testId,
+      };
     }
-    return {
-      get: buildWithinContainer(buildGetter, testId),
-      waitFor: buildWithinContainer(buildWaiter, testId),
-      assertShows: buildWithinContainer(buildAsserter, testId),
-      assertDoesntExist: buildWithinContainer(buildNotExistAsserter, testId),
-      assertContainedByWindow: buildWithinContainer(
-        buildContainedByWindowAsserter,
-        testId
-      ),
-      assertConsumableViaScroll: buildWithinContainer2(
-        buildConsumableViaScrollAsserter,
-        testId
-      ),
-      isContainedByWindow: buildWithinContainer(buildContainedByWindow, testId),
-      testId,
-    };
-  });
+  );
 }
 
 export function buildGlobalsCategory<keys extends string>(
@@ -113,7 +119,7 @@ export function buildGlobalsCategory<keys extends string>(
   return Cypress._.mapValues(testIds, buildElement);
 }
 
-function buildElement(testId: string) {
+function buildElement(testId: string | string[]): Element {
   return {
     get: buildGetter(testId),
     waitFor: buildWaiter(testId),
@@ -126,7 +132,7 @@ function buildElement(testId: string) {
   };
 }
 
-function buildAsserter(testId: string) {
+function buildAsserter(testId: string | string[]) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
@@ -135,7 +141,7 @@ function buildAsserter(testId: string) {
   };
 }
 
-function buildNotExistAsserter(testId: string) {
+function buildNotExistAsserter(testId: string | string[]) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
@@ -144,7 +150,7 @@ function buildNotExistAsserter(testId: string) {
   };
 }
 
-function buildWaiter(testId: string) {
+function buildWaiter(testId: string | string[]) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
@@ -153,7 +159,7 @@ function buildWaiter(testId: string) {
   };
 }
 
-function buildGetter(testId: string) {
+function buildGetter(testId: string | string[]) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
@@ -162,7 +168,7 @@ function buildGetter(testId: string) {
   };
 }
 
-function buildContainedByWindow(testId: string) {
+function buildContainedByWindow(testId: string | string[]) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
@@ -192,7 +198,7 @@ function buildContainedByWindow(testId: string) {
   };
 }
 
-function buildContainedByWindowAsserter(testId: string) {
+function buildContainedByWindowAsserter(testId: string | string[]) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
@@ -226,9 +232,9 @@ function buildContainedByWindowAsserter(testId: string) {
   };
 }
 
-function buildConsumableViaScrollAsserter(testId: string) {
+function buildConsumableViaScrollAsserter(testId: string | string[]) {
   return function (
-    scrollableContainerTestId: string,
+    scrollableContainerTestId: string | string[],
     options?: {
       log?: boolean;
       withinSubject?: HTMLElement | JQuery<HTMLElement> | null;

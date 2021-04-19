@@ -29,7 +29,16 @@ import { getCode, getKeyCode, getKeyValue, Key } from "./keys";
 const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
   testId,
   ...args
-) => cy.get(`[data-testid=${testId}]`, ...args);
+) => {
+  let selector: string;
+  if (typeof testId === "string") {
+    selector = `[data-testid=${testId}]`;
+  } else {
+    selector = testId.map((id) => `[data-testid=${id}]`).join(" ");
+  }
+  return cy.get(selector, ...args);
+};
+
 Cypress.Commands.add("getByTestId", getByTestId);
 
 const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (

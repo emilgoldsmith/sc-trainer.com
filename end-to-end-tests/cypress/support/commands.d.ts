@@ -67,9 +67,12 @@ declare namespace Cypress {
      * <div data-testid="some-test-id"></div>
      * // The test code
      * cy.getByTestid("some-test-id");
+     * // Specify ancestor parent ids (in order from highest ancestor to lowest) to look within
+     * cy.getByTestId(["grandparent-test-id", "parent-test-id", "some-test-id"]);
      */
     getByTestId(
-      ...args: Parameters<Cypress.Chainable<Subject>["get"]>
+      testId: string | string[],
+      options?: Parameters<Cypress.Chainable<undefined>["get"]>[1]
     ): Chainable<JQuery<HTMLElement>>;
 
     /**

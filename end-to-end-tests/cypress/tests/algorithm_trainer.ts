@@ -8,7 +8,7 @@ const elements = {
     container: "start-page-container",
     welcomeText: "welcome-text",
     cubeStartExplanation: "cube-start-explanation",
-    cubeStartState: "cube-start-state",
+    cubeStartState: ["cube-start-state", "cube"],
     startButton: "start-button",
     instructionsText: "instructions-text",
     learningResources: "learning-resources",
@@ -39,7 +39,7 @@ const elements = {
     testCaseName: "test-case-name",
     fullTestCase: "full-test-case",
     cubeStartExplanation: "cube-start-explanation",
-    cubeStartState: "cube-start-state",
+    cubeStartState: ["cube-start-state", "cube"],
     nextButton: "next-button",
   }),
   globals: buildGlobalsCategory({
@@ -163,9 +163,7 @@ describe("Algorithm Trainer", function () {
       // These ones we accept possibly having to scroll for so just check it exists
       // We check it's visibility including scroll in the element sizing
       elements.startPage.cubeStartExplanation.get().should("exist");
-      elements.startPage.cubeStartState.get().within(() => {
-        elements.globals.cube.get().should("exist");
-      });
+      elements.startPage.cubeStartState.get().should("exist");
       elements.startPage.startButton.get().should("exist");
       elements.startPage.instructionsText.get().should("exist");
       elements.startPage.learningResources.get().should("exist");
@@ -793,9 +791,7 @@ describe("Algorithm Trainer", function () {
         elements.globals.cube.get().should("have.length", 2).and("be.visible");
       });
       elements.wrongPage.cubeStartExplanation.assertShows();
-      elements.wrongPage.cubeStartState.get().within(() => {
-        elements.globals.cube.assertShows();
-      });
+      elements.wrongPage.cubeStartState.assertShows();
       elements.wrongPage.nextButton.assertShows();
       elements.globals.feedbackButton
         .assertShows()
