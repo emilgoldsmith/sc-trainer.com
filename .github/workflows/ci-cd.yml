@@ -54,7 +54,7 @@ jobs:
         with:
           push: true
           target: ci-browsers
-          tags: env.repository }}:${{ env.ci-browsers-tag }}
+          tags: ${{ env.repository }}:${{ env.ci-browsers-tag }}
 
       - name: Build and Push Production image
         uses: docker/build-push-action@v2
