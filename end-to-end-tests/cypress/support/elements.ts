@@ -246,71 +246,65 @@ function buildConsumableViaScrollAsserter(testId: string) {
     }
 
     return cy.getByTestId(testId, options).then((ourElement) => {
-      const ourElementTop = ourElement.offset()?.top;
-      if (ourElementTop === undefined) {
-        throw new Error("Element has no offset");
-      }
-      const ourElementHeight = ourElement.outerHeight() as number;
-      if (ourElementHeight === undefined) {
-        throw new Error("Element has no height");
-      }
-      const ourElementBottom = ourElementTop + ourElementHeight;
       getContainer().then((container) => {
-        const containerTop = container.offset()?.top;
-        if (containerTop === undefined) {
-          throw new Error("Couldn't get offset for container");
-        }
-        const containerHeight = container.outerHeight();
-        if (containerHeight === undefined) {
-          throw new Error("Window has no height");
-        }
-        const containerBottom = containerTop + containerHeight;
-        if (ourElementHeight <= containerHeight) {
+        if (getHeight(ourElement) <= getHeight(container)) {
           if (
-            ourElementTop >= containerTop &&
-            ourElementBottom <= containerBottom
+            getTop(ourElement) >= getTop(container) &&
+            getBottom(ourElement) <= getBottom(container)
           ) {
             cy.wrap(undefined, { log: false }).should(() => {
               expect(
-                ourElementTop,
+                getTop(ourElement),
                 "element shouldn't overflow over top of container"
-              ).to.be.at.least(containerTop);
+              ).to.be.at.least(getTop(container));
               expect(
-                ourElementHeight,
+                getBottom(ourElement),
                 "element shouldn't overflow under bottom of container"
-              ).to.be.at.most(containerBottom);
+              ).to.be.at.most(getBottom(container));
             });
           } else {
             getElement()
               .scrollIntoView()
               .should(() => {
                 expect(
-                  ourElementTop,
+                  getTop(ourElement),
                   "element shouldn't overflow over top of container"
-                ).to.be.at.least(containerTop);
+                ).to.be.at.least(getTop(container));
                 expect(
-                  ourElementHeight,
+                  getBottom(ourElement),
                   "element shouldn't overflow under bottom of container"
-                ).to.be.at.most(containerBottom);
+                ).to.be.at.most(getBottom(container));
               });
           }
         } else {
           getElement().scrollIntoView().should("be.visible");
           getContainer().scrollTo("top");
           cy.wrap(undefined, { log: false }).should(() => {
-            expect(ourElement.offset()?.top as number).to.be.at.least(
-              containerTop
-            );
+            expect(getTop(ourElement)).to.be.at.least(getTop(container));
           });
           getContainer().scrollTo("bottom");
           cy.wrap(undefined, { log: false }).should(() => {
-            expect(
-              (ourElement.offset()?.top as number) +
-                (ourElement.outerHeight() as number)
-            ).to.be.at.most(containerBottom);
+            expect(getBottom(ourElement)).to.be.at.most(getBottom(container));
           });
         }
       });
     });
   };
+}
+function getTop(elem: JQuery<HTMLElement>) {
+  const top = elem.offset()?.top;
+  if (top === undefined) {
+    throw new Error("Element has no offset");
+  }
+  return top;
+}
+function getHeight(elem: JQuery<HTMLElement>) {
+  const height = elem.outerHeight();
+  if (height === undefined) {
+    throw new Error("Element has no height");
+  }
+  return height;
+}
+function getBottom(elem: JQuery<HTMLElement>) {
+  return getTop(elem) + getHeight(elem);
 }
