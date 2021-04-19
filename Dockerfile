@@ -97,7 +97,7 @@ COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 # CI WITH BROWSERS STAGE
 ############################
 
-FROM cypress/browsers:node12.18.3-chrome87-ff82 AS ci-browsers
+FROM cypress/browsers:node12.18.3-chrome89-ff86 AS ci-browsers
 
 #### IMPORTANT: To have this actually take effect in CI, you have
 #### to go change the version number in the yaml file too
