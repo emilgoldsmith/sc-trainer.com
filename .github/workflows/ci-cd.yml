@@ -9,6 +9,11 @@ jobs:
   build-docker-containers:
     name: Build And Push Docker Containers
     runs-on: ubuntu-20.04
+    env: &container-variables
+      repository: sctrainer/main
+      ci-container-tag: ci-container-v1
+      ci-browsers-tag: ci-browsers-v1
+      production-tag: production-${{ github.sha }}
     steps:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -19,32 +24,45 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Check if CI Container image already up to date
+        id: ci-container-up-to-date
+        run: curl --silent -f -lSL https://index.docker.io/v1/repositories/${{ env.repository }}/tags/${{ env.ci-container-tag }}
+        continue-on-error: true
+
       - name: Build and Push CI Container image
         uses: docker/build-push-action@v2
+        if: ${{ steps.ci-container-up-to-date.outcome == "failure" }}
         with:
           push: true
           target: ci
-          tags: sctrainer/main:ci-container-${{ github.sha }}
+          tags: &ci-container ${{ env.repository }}:${{ env.ci-container-tag }}
+
+      - name: Check if CI Browsers image already up to date
+        id: ci-browsers-up-to-date
+        run: curl --silent -f -lSL https://index.docker.io/v1/repositories/${{ env.repository }}/tags/${{ env.ci-browsers-tag }}
+        continue-on-error: true
 
       - name: Build and Push CI Browsers image
         uses: docker/build-push-action@v2
+        if: ${{ steps.ci-container-up-to-date.outcome == "failure" }}
         with:
           push: true
           target: ci-browsers
-          tags: sctrainer/main:ci-browsers-${{ github.sha }}
+          tags: &ci-browsers-container ${{ env.repository }}:${{ env.ci-browsers-tag }}
 
       - name: Build and Push Production image
         uses: docker/build-push-action@v2
         with:
           push: true
           target: production
-          tags: sctrainer/main:production-${{ github.sha }}
+          tags: &production-container ${{ env.repository }}:${{ env.production-tag }}
 
   lint-and-unit-tests:
     name: Linting And Unit Tests
     runs-on: ubuntu-20.04
-    container: sctrainer/main:ci-container-${{ github.sha }}
+    container: *ci-container
     needs: build-docker-containers
+    env: *container-variables
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -64,8 +82,9 @@ jobs:
   check-javascript-asset-size:
     name: Check Javascript Asset Size
     runs-on: ubuntu-20.04
-    container: sctrainer/main:production-${{ github.sha }}
+    container: *production-container
     needs: build-docker-containers
+    env: *container-variables
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -88,16 +107,17 @@ jobs:
     name: "${{ matrix.platform.browserString }} on screen size of ${{ matrix.sizeRelevant.deviceName }} Linux Cypress E2E Tests"
     runs-on: ubuntu-20.04
     container:
-      image: sctrainer/main:ci-browsers-${{ github.sha }}
+      image: *ci-browsers-container
       # This is needed for Firefox running as described here
       # https://github.com/cypress-io/github-action/issues/104
       options: --user 1001
     needs: build-docker-containers
+    env: *container-variables
     env:
       PORT: 8080
     services:
       sctrainer-server:
-        image: sctrainer/main:production-${{ github.sha }}
+        image: *production-container
         env:
           PORT: ${{ env.PORT }}
     strategy:
@@ -168,7 +188,7 @@ jobs:
         lint-and-unit-tests,
         check-javascript-asset-size,
       ]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
