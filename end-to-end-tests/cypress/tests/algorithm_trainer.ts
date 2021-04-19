@@ -190,9 +190,7 @@ describe("Algorithm Trainer", function () {
       elements.startPage.cubeStartExplanation.assertConsumableViaScroll(
         containerId
       );
-      elements.startPage.cubeStartState.get().within(() => {
-        elements.globals.cube.assertConsumableViaScroll(containerId);
-      });
+      elements.globals.cube.assertConsumableViaScroll(containerId);
       elements.startPage.startButton.assertConsumableViaScroll(containerId);
     });
 
