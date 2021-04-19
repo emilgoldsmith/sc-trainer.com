@@ -1,8 +1,11 @@
 {
   "baseUrl": "http://localhost:4000",
   "integrationFolder": "cypress/tests",
-  "viewportWidth": 1400,
-  "viewportHeight": 800,
+  "//": "This is the phone size we use in CI, so worth using it in local too",
+  "//": "especially as we probably default to debugging in desktop mode when manually",
+  "//": "testing",
+  "viewportWidth": 375,
+  "viewportHeight": 667,
   "videoUploadOnPasses": false,
   "retries": {
     "runMode": 2,
