@@ -302,14 +302,14 @@ function getTop(elem: JQuery<HTMLElement>) {
   if (top === undefined) {
     throw new Error("Element has no offset");
   }
-  return top;
+  return Math.round(top);
 }
 function getHeight(elem: JQuery<HTMLElement>) {
   const height = elem.outerHeight();
   if (height === undefined) {
     throw new Error("Element has no height");
   }
-  return height;
+  return Math.round(height);
 }
 function getBottom(elem: JQuery<HTMLElement>) {
   return getTop(elem) + getHeight(elem);
