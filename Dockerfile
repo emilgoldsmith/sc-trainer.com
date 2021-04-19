@@ -72,6 +72,8 @@ ENTRYPOINT ["/app/run-production.sh"]
 # We need buster for high enough glibc version for elm-format
 FROM node:12-buster as ci
 
+#### IMPORTANT: To have this actually take effect in CI, you have
+#### to go change the version number in the yaml file too
 
 ENV ELM_TEST_VERSION 0.19.1
 ENV ELM_FORMAT_VERSION 0.8.4
@@ -96,6 +98,9 @@ COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 ############################
 
 FROM cypress/browsers:node12.18.3-chrome87-ff82 AS ci-browsers
+
+#### IMPORTANT: To have this actually take effect in CI, you have
+#### to go change the version number in the yaml file too
 
 ############################
 # LOCAL DEVELOPMENT STAGE
