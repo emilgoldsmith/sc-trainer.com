@@ -72,7 +72,7 @@ ENTRYPOINT ["/app/run-production.sh"]
 # We need buster for high enough glibc version for elm-format
 FROM node:12-buster as ci
 
-#### IMPORTANT: To have this actually take effect in CI, you have
+#### IMPORTANT: To have any changes actually take effect in CI, you have
 #### to go change the version number in the yaml file too
 
 ENV ELM_TEST_VERSION 0.19.1
@@ -97,10 +97,67 @@ COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 # CI WITH BROWSERS STAGE
 ############################
 
-FROM cypress/browsers:node12.18.3-chrome89-ff86 AS ci-browsers
+FROM node:12 AS ci-browsers
 
-#### IMPORTANT: To have this actually take effect in CI, you have
+#### IMPORTANT: To have any changes actually take effect in CI, you have
 #### to go change the version number in the yaml file too
+
+# All the Cypress dependencies
+# Taken from https://github.com/cypress-io/cypress-docker-images/blob/master/base/12.8.1/Dockerfile
+# and also https://github.com/cypress-io/cypress-docker-images/blob/master/browsers/node12.18.3-chrome87-ff82/Dockerfile
+RUN apt-get update && \
+  apt-get install --no-install-recommends -y \
+  libgtk2.0-0 \
+  libgtk-3-0 \
+  libnotify-dev \
+  libgconf-2-4 \
+  libnss3 \
+  libxss1 \
+  libasound2 \
+  libxtst6 \
+  xauth \
+  xvfb \
+  # install Chinese fonts
+  # this list was copied from https://github.com/jim3ma/docker-leanote
+  fonts-arphic-bkai00mp \
+  fonts-arphic-bsmi00lp \
+  fonts-arphic-gbsn00lp \
+  fonts-arphic-gkai00mp \
+  fonts-arphic-ukai \
+  fonts-arphic-uming \
+  ttf-wqy-zenhei \
+  ttf-wqy-microhei \
+  xfonts-wqy \
+  # Chrome specific dependencies
+  fonts-liberation  \
+  libappindicator3-1 \
+  xdg-utils \
+  # add codecs needed for video playback in firefox
+  # https://github.com/cypress-io/cypress-docker-images/issues/150
+  mplayer \
+  # clean up
+  && rm -rf /var/lib/apt/lists/*
+
+# check https://chromium.cypress.io/
+# and https://caniuse.com/usage-table for lowest versions that are widely used
+ENV CHROME_VERSION 88.0.4324.96
+ENV FIREFOX_VERSION 87.0
+# "fake" dbus address to prevent errors
+# https://github.com/SeleniumHQ/docker-selenium/issues/87
+ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
+
+# install Chrome browser
+RUN wget -O /usr/src/google-chrome-stable_current_amd64.deb "http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}-1_amd64.deb" && \
+  dpkg -i /usr/src/google-chrome-stable_current_amd64.deb ; \
+  apt-get install -f -y && \
+  rm -f /usr/src/google-chrome-stable_current_amd64.deb
+
+# install Firefox browser
+RUN wget --no-verbose -O /tmp/firefox.tar.bz2 https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION/linux-x86_64/en-US/firefox-$FIREFOX_VERSION.tar.bz2 \
+  && tar -C /opt -xjf /tmp/firefox.tar.bz2 \
+  && rm /tmp/firefox.tar.bz2 \
+  && ln -fs /opt/firefox/firefox /usr/bin/firefox
+
 
 ############################
 # LOCAL DEVELOPMENT STAGE
