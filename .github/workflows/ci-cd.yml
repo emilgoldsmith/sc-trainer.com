@@ -151,10 +151,9 @@ jobs:
           path: |
             ~/.cache/yarn
             ~/.cache/Cypress
-          key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock')}}
+          key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('end-to-end-tests/**/yarn.lock')}}
           # Note we purposefully don't specify fallback restore keys.
           # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
-        working-directory: end-to-end-tests
 
       - name: Install Dependencies
         run: yarn --frozen-lockfile
