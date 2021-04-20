@@ -143,6 +143,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Handle Yarn and Cypress caching
+        uses: actions/cache@v2
+        env:
+          cache-name: yarn-cypress-cache-v1
+        with:
+          path: |
+            ~/.cache/yarn
+            ~/.cache/Cypress
+          key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock')}}
+          # Note we purposefully don't specify fallback restore keys.
+          # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
+        working-directory: end-to-end-tests
+
       - name: Install Dependencies
         run: yarn --frozen-lockfile
         working-directory: end-to-end-tests
