@@ -40,6 +40,8 @@ RUN groupadd --gid 1000 $USERNAME \
     && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key --keyring /usr/share/keyrings/cloud.google.gpg add - \
     && apt-get update -y \
     && apt-get install google-cloud-sdk -y \
+    # And some browsers in case we would like that for testing
+    && apt-get install -y firefox \
 
 # NODE INSTALL STARTS HERE
     && ARCH= && dpkgArch="$(dpkg --print-architecture)" \
