@@ -16,8 +16,8 @@ jobs:
           # Just a buffer for the moment we change from one version
           # to the other
           keep-last: 2
-          repos: sctrainer/main
-          substrings: "['ci-chrome-']"
+          repos: '["sctrainer/main"]'
+          substrings: '["ci-chrome-"]'
           user: ${{ secrets.DOCKERHUB_USERNAME }}
           token: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -27,8 +27,8 @@ jobs:
           # Just a buffer for the moment we change from one version
           # to the other
           keep-last: 2
-          repos: sctrainer/main
-          substrings: "['ci-container-']"
+          repos: '["sctrainer/main"]'
+          substrings: '["ci-container-"]'
           user: ${{ secrets.DOCKERHUB_USERNAME }}
           token: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -37,7 +37,7 @@ jobs:
         with:
           # Keep a lot of production images as we may need to restore back in time
           keep-last: 50
-          repos: sctrainer/main
-          substrings: "['production-']"
+          repos: '["sctrainer/main"]'
+          substrings: '["production-"]'
           user: ${{ secrets.DOCKERHUB_USERNAME }}
           token: ${{ secrets.DOCKERHUB_TOKEN }}
