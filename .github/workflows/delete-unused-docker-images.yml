@@ -17,8 +17,7 @@ jobs:
           # to the other
           keep-last: 2
           repos: sctrainer/main
-          substrings:
-            - ci-browsers-
+          substrings: "['ci-chrome-']"
           user: ${{ secrets.DOCKERHUB_USERNAME }}
           token: ${{ secrets.DOCKERHUB_TOKEN }}
 
@@ -39,7 +38,6 @@ jobs:
           # Keep a lot of production images as we may need to restore back in time
           keep-last: 50
           repos: sctrainer/main
-          substrings:
-            - production-
+          substrings: "['production-']"
           user: ${{ secrets.DOCKERHUB_USERNAME }}
           token: ${{ secrets.DOCKERHUB_TOKEN }}
