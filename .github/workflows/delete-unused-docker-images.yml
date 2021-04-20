@@ -29,7 +29,7 @@ jobs:
           # to the other
           keep-last: 2
           repos: sctrainer/main
-          substrings: "[ci-container-]"
+          substrings: "['ci-container-']"
           user: ${{ secrets.DOCKERHUB_USERNAME }}
           token: ${{ secrets.DOCKERHUB_TOKEN }}
 
