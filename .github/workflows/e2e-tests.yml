@@ -18,7 +18,8 @@ jobs:
     steps:
       - name: Perform Check
         uses: ./.github/actions/can-be-trusted-with-secrets
-        mode: fail-if-unauthorized
+        with:
+          mode: fail-if-unauthorized
 
   build-docker-containers:
     name: Build And Push Docker Containers
@@ -38,7 +39,8 @@ jobs:
     steps:
       - name: Checkout
         uses: ./.github/actions/can-be-trusted-with-secrets
-        mode: checkout-if-authorized
+        with:
+          mode: checkout-if-authorized
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -137,7 +139,8 @@ jobs:
     steps:
       - name: Checkout
         uses: ./.github/actions/can-be-trusted-with-secrets
-        mode: checkout-if-authorized
+        with:
+          mode: checkout-if-authorized
 
       - name: Handle Yarn and Cypress caching
         uses: actions/cache@v2
@@ -200,7 +203,8 @@ jobs:
   #   steps:
   #     - name: Checkout
   #       uses: ./.github/actions/can-be-trusted-with-secrets
-  #       mode: checkout-if-authorized
+  #       with:
+  #         mode: checkout-if-authorized
   #
   #     - name: Deploy newest version
   #       run: python scripts/trigger-deploy.py
