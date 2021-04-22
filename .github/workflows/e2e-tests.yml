@@ -1,13 +1,57 @@
-name: CI and CD
+name: End To End Tests
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+  push: { branches: [main] }
+  pull_request_target: {}
+  pull_request_review_comment: { types: [created] }
 
 jobs:
+  # This job checks whether we trust this event and therefore dare executing the code change.
+  # Since we use the pull_request_target trigger, this workflow has access to all our secrets.
+  # Even if it is submitted from a fork with this trigger it still has access to our secrets,
+  # including for example a read/write Github token, which is very powerful and could change
+  # our code!
+  # It is a security risk if we don't have all jobs depending on this succeeding, or if
+  # this condition isn't correct.
+  is-trusted:
+    name: Determine If We Trust This Code Diff
+    runs-on: ubuntu-20.04
+    steps:
+      name: Log all the parts of the check for debugging purposes, and verifying we are only letting trusted code run with our secrets
+      run: |
+        echo "Event name: ${{ github.event_name }}"
+        echo "Event Action : ${{ github.event.action }}"
+        echo "Github Ref: ${{ github.ref }}"
+        echo "PR Author Association: ${{ github.event.pull_request.author_association }}"
+        echo "Review Comment Author Association: ${{ github.event.comment.author_association }}"
+        echo "Review Comment Body: ${{ github.event.comment.body }}"
+        echo "Whole event: ${{ github.event }}"
+
+      name: Return Non-Zero Exit Code If Untrusted
+      # Note the negative at the start. Inside the condition we specify who is allowed
+      # and then negate it to be able to throw on unauthorized`
+      if: |
+        !(
+          (
+            github.event_name == "push" && github.ref == 'refs/heads/main'
+          ) ||
+          (
+            github.event_name == "pull_request_target" &&
+            github.event.pull_request.author_association == 'OWNER'
+          ) ||
+          (
+            github.event_name == "pull_request_review_comment" &&
+            github.event.comment.author_association == 'OWNER' &&
+            github.event.comment.body == '&RUN_TESTS_WITH_SECRETS'
+          )
+        )
+      shell: bash
+      run: |
+        RED='\033[0;31m'
+        echo -e "${RED}This code change is not authorized to be run with our secrets such as logins and API keys. In order to get this code run get an owner to verify that your code change has no malicious parts in it and use the comment command to run these tests"
+
   build-docker-containers:
     name: Build And Push Docker Containers
+    needs: is_trusted
     runs-on: ubuntu-20.04
     env:
       # Github Actions doesn't support yaml anchors yet apparently
@@ -21,6 +65,33 @@ jobs:
       ci-chrome-tag: ci-chrome-v1
       production-tag: production-${{ github.sha }}
     steps:
+      - name: Checkout from Push event
+        if: ${{ github.event_name == 'push' }}
+        uses: actions/checkout@v2
+
+      - name: Checkout from pull_request_target event
+        # We just add in the authorization condition here again to be double safe that we
+        # are not checking out anything dangerous as we are about to give privileged access
+        # to the code checked out
+        if: |
+          github.event_name == 'pull_request_target' &&
+          github.event.pull_request.author_association == 'OWNER'
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Checkout from pull_request_review_comment event
+        # We just add in the authorization condition here again to be double safe that we
+        # are not checking out anything dangerous as we are about to give privileged access
+        # to the code checked out
+        if: |
+          github.event_name == "pull_request_review_comment" &&
+          github.event.comment.author_association == 'OWNER' &&
+          github.event.comment.body == '&RUN_TESTS_WITH_SECRETS'
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v1
 
@@ -63,26 +134,6 @@ jobs:
           target: production
           tags: ${{ env.repository }}:${{ env.production-tag }}
 
-  lint-and-unit-tests:
-    name: Linting And Unit Tests
-    runs-on: ubuntu-20.04
-    container: sctrainer/main:ci-container-v1
-    needs: build-docker-containers
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Assert elm-verify-examples is up to date
-        run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommitted-changes.sh
-
-      - name: Run elm-format
-        run: ./scripts/checks/elm-format.sh
-
-      - name: Run elm-analyse
-        run: ./scripts/checks/elm-analyse.sh
-
-      - name: Run unit tests
-        run: ./scripts/checks/elm-test.sh
 
   check-javascript-asset-size:
     name: Check Javascript Asset Size
@@ -90,9 +141,6 @@ jobs:
     container: sctrainer/main:production-${{ github.sha }}
     needs: build-docker-containers
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
       - name: Install Bash (as production image doesn't include it)
         run: apk add bash
 
@@ -191,25 +239,25 @@ jobs:
           name: SCREENSHOTS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
           path: end-to-end-tests/cypress/screenshots
 
-  deploy:
-    # We only deploy if it's the main branch and they were a success
-    if: ${{ success() && github.ref == 'refs/heads/main' }}
-    # Important to keep this up to date, depending on all jobs
-    needs:
-      [
-        cypress-end-to-end-tests,
-        lint-and-unit-tests,
-        check-javascript-asset-size,
-      ]
-    runs-on: ubuntu-20.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+  # deploy:
+  #   # We only deploy if it's the main branch and they were a success
+  #   if: ${{ success() && github.ref == 'refs/heads/main' }}
+  #   # Important to keep this up to date, depending on all jobs
+  #   needs:
+  #     [
+  #       cypress-end-to-end-tests,
+  #       check-javascript-asset-size,
+  #     ]
+  #   runs-on: ubuntu-20.04
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v2
 
-      - run: python scripts/trigger-deploy.py
-        env:
-          SECRET: ${{ secrets.GOOGLE_CLOUD_DEPLOY_SECRET }}
-          API_KEY: ${{ secrets.GOOGLE_CLOUD_DEPLOY_API_KEY }}
+  #     - name: Deploy newest version
+  #       run: python scripts/trigger-deploy.py
+  #       env:
+  #         SECRET: ${{ secrets.GOOGLE_CLOUD_DEPLOY_SECRET }}
+  #         API_KEY: ${{ secrets.GOOGLE_CLOUD_DEPLOY_API_KEY }}
 #
 #
 # Useful for debugging:

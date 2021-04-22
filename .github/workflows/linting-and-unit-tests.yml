@@ -1,0 +1,37 @@
+### Note that this workflow doesn't have access to any secrets
+### if it is running a Dependabot or PR from a fork code change.
+### So we are limited here, but do as much as we can here, and leave
+### the rest for the E2E tests.
+name: Linting And Unit Tests
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  lint-and-unit-tests:
+    name: Linting And Unit Tests
+    runs-on: ubuntu-20.04
+    # Note that if you update this version here in the same push that
+    # updates the dockerfile and the build ci step, this won't be available
+    # yet when it runs, so it will fail. The easiest is to just re-run the step
+    # in this rare case after the new version is published to Docker Hub by the
+    # privileged CI step.
+    container: sctrainer/main:ci-container-v1
+    needs: build-docker-containers
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Assert elm-verify-examples is up to date
+        run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommitted-changes.sh
+
+      - name: Run elm-format
+        run: ./scripts/checks/elm-format.sh
+
+      - name: Run elm-analyse
+        run: ./scripts/checks/elm-analyse.sh
+
+      - name: Run unit tests
+        run: ./scripts/checks/elm-test.sh
