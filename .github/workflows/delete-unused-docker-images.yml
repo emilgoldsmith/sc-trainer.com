@@ -10,6 +10,7 @@ jobs:
     name: Main
     runs-on: ubuntu-20.04
     steps:
+      - run: echo "TODO"
       # TODO: Implement this with our own action
 
       # - name: Delete unused ci-browser images
