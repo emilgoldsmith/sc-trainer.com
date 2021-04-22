@@ -40,7 +40,7 @@ runs:
             '${{ github.event.comment.author_association }}' == 'OWNER' &&
             '${{ github.event.comment.body }}' == '&RUN_TESTS_WITH_SECRETS'
           )
-        ]]
+        ]] &&
         echo -e "${RED}This code change is not authorized to be run with our secrets such
         as logins and API keys. In order to get this code run, you must get an owner to
         verify that your code change has no malicious parts in it and use the comment
