@@ -41,10 +41,7 @@ runs:
           )
         ]] ||
         (
-          echo -e "${RED}This code change is not authorized to be run with our secrets such
-          as logins and API keys. In order to get this code run, you must get an owner to
-          verify that your code change has no malicious parts in it and use the comment
-          command to execute a run of these tests" &&
+          echo -e "${RED}This code change is not authorized to be run with our secrets such as logins and API keys. In order to get this code run, you must get an owner to verify that your code change has no malicious parts in it and use the comment command to execute a run of these tests" &&
           exit 1
         )
 
