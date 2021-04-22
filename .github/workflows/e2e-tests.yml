@@ -22,9 +22,7 @@ jobs:
           ref: refs/heads/main
 
       - name: Perform Check
-        uses: ./.github/actions/can-be-trusted-with-secrets
-        with:
-          mode: fail-if-unauthorized
+        uses: ./.github/actions/fail-if-not-authorized-for-using-secrets
 
   build-docker-containers:
     name: Build And Push Docker Containers
@@ -47,10 +45,14 @@ jobs:
         with:
           ref: refs/heads/main
 
-      - name: Checkout
-        uses: ./.github/actions/can-be-trusted-with-secrets
+      - name: Get Checkout Ref
+        id: authorizer
+        uses: ./.github/actions/fail-if-not-authorized-for-using-secrets
+
+      - name: Checkout possibly unsafe code
+        uses: actions/checkout@v2
         with:
-          mode: checkout-if-authorized
+          ref: ${{ steps.authorizer.outputs.unsafe-ref-to-checkout }}
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -152,10 +154,14 @@ jobs:
         with:
           ref: refs/heads/main
 
-      - name: Checkout
-        uses: ./.github/actions/can-be-trusted-with-secrets
+      - name: Get Checkout Ref
+        id: authorizer
+        uses: ./.github/actions/fail-if-not-authorized-for-using-secrets
+
+      - name: Checkout possibly unsafe code
+        uses: actions/checkout@v2
         with:
-          mode: checkout-if-authorized
+          ref: ${{ steps.authorizer.outputs.unsafe-ref-to-checkout }}
 
       - name: Handle Yarn and Cypress caching
         uses: actions/cache@v2
@@ -222,7 +228,7 @@ jobs:
   #         ref: refs/heads/main
   #
   #     - name: Checkout
-  #       uses: ./.github/actions/can-be-trusted-with-secrets
+  #       uses: ./.github/actions/fail-if-not-authorized-for-using-secrets
   #       with:
   #         mode: checkout-if-authorized
   #
