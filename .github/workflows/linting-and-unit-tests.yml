@@ -19,7 +19,6 @@ jobs:
     # in this rare case after the new version is published to Docker Hub by the
     # privileged CI step.
     container: sctrainer/main:ci-container-v1
-    needs: build-docker-containers
     steps:
       - name: Checkout
         uses: actions/checkout@v2
