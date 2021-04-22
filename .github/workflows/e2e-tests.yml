@@ -16,6 +16,11 @@ jobs:
     name: Determine If We Trust This Code Diff
     runs-on: ubuntu-20.04
     steps:
+      - name: Safe checkout to get action
+        uses: actions/checkout@v2
+        with:
+          ref: refs/heads/main
+
       - name: Perform Check
         uses: ./.github/actions/can-be-trusted-with-secrets
         with:
@@ -37,6 +42,11 @@ jobs:
       ci-chrome-tag: ci-chrome-v1
       production-tag: production-${{ github.sha }}
     steps:
+      - name: Safe checkout to get action
+        uses: actions/checkout@v2
+        with:
+          ref: refs/heads/main
+
       - name: Checkout
         uses: ./.github/actions/can-be-trusted-with-secrets
         with:
@@ -137,6 +147,11 @@ jobs:
             extraSpecs: []
             deviceName: iPhone 8
     steps:
+      - name: Safe checkout to get action
+        uses: actions/checkout@v2
+        with:
+          ref: refs/heads/main
+
       - name: Checkout
         uses: ./.github/actions/can-be-trusted-with-secrets
         with:
@@ -201,6 +216,11 @@ jobs:
   #     ]
   #   runs-on: ubuntu-20.04
   #   steps:
+  #     - name: Safe checkout to get action
+  #       uses: actions/checkout@v2
+  #       with:
+  #         ref: refs/heads/main
+  #
   #     - name: Checkout
   #       uses: ./.github/actions/can-be-trusted-with-secrets
   #       with:
