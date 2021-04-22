@@ -51,7 +51,7 @@ jobs:
 
   build-docker-containers:
     name: Build And Push Docker Containers
-    needs: is_trusted
+    needs: is-trusted
     runs-on: ubuntu-20.04
     env:
       # Github Actions doesn't support yaml anchors yet apparently
@@ -187,8 +187,32 @@ jobs:
             extraSpecs: []
             deviceName: iPhone 8
     steps:
-      - name: Checkout
+      - name: Checkout from Push event
+        if: ${{ github.event_name == 'push' }}
         uses: actions/checkout@v2
+
+      - name: Checkout from pull_request_target event
+        # We just add in the authorization condition here again to be double safe that we
+        # are not checking out anything dangerous as we are about to give privileged access
+        # to the code checked out
+        if: |
+          github.event_name == 'pull_request_target' &&
+          github.event.pull_request.author_association == 'OWNER'
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Checkout from pull_request_review_comment event
+        # We just add in the authorization condition here again to be double safe that we
+        # are not checking out anything dangerous as we are about to give privileged access
+        # to the code checked out
+        if: |
+          github.event_name == 'pull_request_review_comment' &&
+          github.event.comment.author_association == 'OWNER' &&
+          github.event.comment.body == '&RUN_TESTS_WITH_SECRETS'
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Handle Yarn and Cypress caching
         uses: actions/cache@v2
@@ -216,10 +240,10 @@ jobs:
 
       - name: Run Cypress Tests
         working-directory: end-to-end-tests
-        run: |
-          yarn run cypress run \
-          --browser ${{ matrix.platform.browser }} \
-          --config "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://sctrainer-server:${{ env.PORT }}" \
+        run: >
+          yarn run cypress run
+          --browser ${{ matrix.platform.browser }}
+          --config "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://sctrainer-server:${{ env.PORT }}"
           --spec cypress/tests/*,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}
 
       - name: Upload recorded videos
