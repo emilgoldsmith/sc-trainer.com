@@ -19,7 +19,7 @@ runs:
         echo
         echo
         echo
-        echo "Whole event: ${{ toJSON(github.event) }}"
+        echo 'Whole event: ${{ toJSON(github.event) }}'
         echo
         echo
         echo
