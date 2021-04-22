@@ -1,0 +1,25 @@
+name: Continuous Deployment
+on:
+  push:
+    branches: main
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Wait for CI to pass
+        uses: ./.github/actions/wait-for-workflows-to-succeed
+        with:
+          workflows: |
+            ci.yml
+            build-and-push-docker-containers.yml
+
+      - name: Deploy newest version
+        run: python scripts/trigger-deploy.py
+        env:
+          SECRET: ${{ secrets.GOOGLE_CLOUD_DEPLOY_SECRET }}
+          API_KEY: ${{ secrets.GOOGLE_CLOUD_DEPLOY_API_KEY }}

@@ -1,0 +1,175 @@
+name: CI
+on:
+  push: { branches: [main] }
+  pull_request: {}
+
+jobs:
+  wait-for-docker-containers:
+    name: Wait For Docker Containers To Be Built And Pushed
+    runs-on: ubuntu-20.04
+    env:
+      repository: sctrainer/main
+      ci-container-tag: ci-container-v1
+      ci-chrome-tag: ci-chrome-v1
+      production-tag: production-${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Wait For Docker Containers To Be Built And Pushed
+        uses: ./.github/actions/wait-for-workflows-to-succeed
+        with:
+          workflows: build-and-push-docker-containers.yml
+
+      - name: Output the container names
+        run: |
+          echo "::set-output name=ci-container::sctrainer/main:ci-container-v1"
+          echo "::set-output name=ci-chrome::sctrainer/main:ci-chrome-v1"
+          echo "::set-output name=production::sctrainer/main:production-${{ github.sha }}
+
+  lint-and-unit-tests:
+    name: Linting And Unit Tests
+    runs-on: ubuntu-20.04
+    needs: wait-for-docker-containers
+    container: ${{ needs.wait-for-docker-containers.outputs.ci-container }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Assert elm-verify-examples is up to date
+        run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommitted-changes.sh
+
+      - name: Run elm-format
+        run: ./scripts/checks/elm-format.sh
+
+      - name: Run elm-analyse
+        run: ./scripts/checks/elm-analyse.sh
+
+      - name: Run unit tests
+        run: ./scripts/checks/elm-test.sh
+
+  check-javascript-asset-size:
+    name: Javascript Asset Size Not Too Big
+    runs-on: ubuntu-20.04
+    needs: wait-for-docker-containers
+    container: ${{ needs.wait-for-docker-containers.outputs.production }}
+    steps:
+      - name: Install Bash (as production image doesn't include it)
+        run: apk add bash
+
+      - name: Check Javascript Asset Filesize Less Than 200Kb
+        shell: bash
+        run: >
+          num_bytes=$(gzip /app/public/main.js -c | wc -c)
+
+          RED='\033[0;31m'
+
+          (( num_bytes < (200 * 1000) )) ||
+            (
+              echo -e "${RED}ERROR: Javascript Asset Size Has Grown Unexpectedly. Gzipped Size Is Now $num_bytes bytes" &&
+              exit 1
+            )
+
+  cypress-end-to-end-tests:
+    name: >
+      Cypress E2E tests for ${{ matrix.platform.browserString }}
+      on screen size of ${{ matrix.sizeRelevant.deviceName }}
+    runs-on: ubuntu-20.04
+    needs: wait-for-docker-containers
+    container:
+      image: ${{ needs.wait-for-docker-containers.outputs.ci-chrome }}
+      # This is needed for Firefox running as described here
+      # https://github.com/cypress-io/github-action/issues/104
+      options: --user 1001
+    env:
+      PORT: 8080
+    services:
+      sctrainer-server:
+        image: ${{ needs.wait-for-docker-containers.outputs.production }}
+        env:
+          PORT: ${{ env.PORT }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - browser: chrome
+            browserString: Chrome
+        # Values for devices taken from https://docs.cypress.io/api/commands/viewport#Arguments
+        sizeRelevant:
+          - viewportConfig: "viewportWidth=1280,viewportHeight=800"
+            # We include the dynamic viewports just one place as it doesn't matter what initial
+            # viewport size it is so no need to include it several times
+            extraSpecs: [cypress/tests/uses-dynamic-viewports/*]
+            deviceName: Macbook 13
+          - viewportConfig: "viewportWidth=375,viewportHeight=667"
+            extraSpecs: []
+            deviceName: iPhone 8
+    steps:
+      - name: Safe checkout to get action
+        uses: actions/checkout@v2
+        with:
+          ref: refs/heads/main
+
+      - name: Get Checkout Ref
+        id: authorizer
+        uses: ./.github/actions/fail-if-not-authorized-for-using-secrets
+
+      - name: Checkout possibly unsafe code
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ steps.authorizer.outputs.unsafe-ref-to-checkout }}
+
+      - name: Handle Yarn and Cypress caching
+        uses: actions/cache@v2
+        env:
+          cache-name: yarn-cypress-cache-v1
+        with:
+          path: |
+            ~/.cache/yarn
+            ~/.cache/Cypress
+          key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('end-to-end-tests/**/yarn.lock')}}
+          # Note we purposefully don't specify fallback restore keys.
+          # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
+
+      - name: Install Dependencies
+        run: yarn --frozen-lockfile
+        working-directory: end-to-end-tests
+
+      - name: Install Cypress
+        run: yarn run cypress install
+        working-directory: end-to-end-tests
+
+      - name: Log Cypress Info
+        run: npx cypress info
+        working-directory: end-to-end-tests
+
+      - name: Run Cypress Tests
+        working-directory: end-to-end-tests
+        run: >
+          yarn run cypress run
+          --browser ${{ matrix.platform.browser }}
+          --config "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://sctrainer-server:${{ env.PORT }}"
+          --spec cypress/tests/*,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}
+
+      - name: Upload recorded videos
+        uses: actions/upload-artifact@v1
+        if: failure()
+        continue-on-error: true
+        with:
+          name: VIDEOS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
+          path: end-to-end-tests/cypress/videos
+
+      - name: Upload recorded Screenshots
+        uses: actions/upload-artifact@v1
+        if: failure()
+        continue-on-error: true
+        with:
+          name: SCREENSHOTS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
+          path: end-to-end-tests/cypress/screenshots
+#
+#
+# Useful for debugging:
+# - uses: mxschmitt/action-tmate@v3
+#   with:
+#     limit-access-to-actor: true
+#     sudo: false
