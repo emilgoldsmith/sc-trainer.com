@@ -14,13 +14,20 @@ runs:
         only letting trusted code run with our secrets
       shell: bash
       run: |
+        echo "Whole event: ${{ toJSON(github.event) }}"
+        echo
+        echo
+        echo
+        echo "ABOVE THIS WAS THE SPAM OF THE WHOLE EVENT, UNDER HERE IS MORE CURATED DEBUG INFO"
+        echo
+        echo
+        echo
         echo "Event name: ${{ github.event_name }}"
         echo "Event Action : ${{ github.event.action }}"
         echo "Github Ref: ${{ github.ref }}"
         echo "PR Author Association: ${{ github.event.pull_request.author_association }}"
         echo "Review Comment Author Association: ${{ github.event.comment.author_association }}"
         echo "Review Comment Body: ${{ github.event.comment.body }}"
-        echo "Whole event: ${{ toJSON(github.event) }}"
 
     - name: Return Non-Zero Exit Code If Untrusted
       shell: bash
@@ -40,12 +47,14 @@ runs:
             '${{ github.event.comment.author_association }}' == 'OWNER' &&
             '${{ github.event.comment.body }}' == '&RUN_TESTS_WITH_SECRETS'
           )
-        ]] &&
-        echo -e "${RED}This code change is not authorized to be run with our secrets such
-        as logins and API keys. In order to get this code run, you must get an owner to
-        verify that your code change has no malicious parts in it and use the comment
-        command to execute a run of these tests" &&
-        exit 1
+        ]] ||
+        (
+          echo -e "${RED}This code change is not authorized to be run with our secrets such
+          as logins and API keys. In order to get this code run, you must get an owner to
+          verify that your code change has no malicious parts in it and use the comment
+          command to execute a run of these tests" &&
+          exit 1
+        )
 
     - name: Get ref to checkout
       id: ref-getter
