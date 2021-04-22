@@ -16,38 +16,9 @@ jobs:
     name: Determine If We Trust This Code Diff
     runs-on: ubuntu-20.04
     steps:
-      - name: Log all the parts of the check for debugging purposes, and verifying we are only letting trusted code run with our secrets
-        run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "Event Action : ${{ github.event.action }}"
-          echo "Github Ref: ${{ github.ref }}"
-          echo "PR Author Association: ${{ github.event.pull_request.author_association }}"
-          echo "Review Comment Author Association: ${{ github.event.comment.author_association }}"
-          echo "Review Comment Body: ${{ github.event.comment.body }}"
-          echo "Whole event: ${{ github.event }}"
-
-      - name: Return Non-Zero Exit Code If Untrusted
-        # Note the negative at the start. Inside the condition we specify who is allowed
-        # and then negate it to be able to throw on unauthorized`
-        if: |
-          !(
-            (
-              github.event_name == 'push' && github.ref == 'refs/heads/main'
-            ) ||
-            (
-              github.event_name == 'pull_request_target' &&
-              github.event.pull_request.author_association == 'OWNER'
-            ) ||
-            (
-              github.event_name == 'pull_request_review_comment' &&
-              github.event.comment.author_association == 'OWNER' &&
-              github.event.comment.body == '&RUN_TESTS_WITH_SECRETS'
-            )
-          )
-        shell: bash
-        run: |
-          RED='\033[0;31m'
-          echo -e "${RED}This code change is not authorized to be run with our secrets such as logins and API keys. In order to get this code run get an owner to verify that your code change has no malicious parts in it and use the comment command to run these tests"
+      - name: Perform Check
+        uses: ./.github/actions/can-be-trusted-with-secrets
+        mode: fail-if-unauthorized
 
   build-docker-containers:
     name: Build And Push Docker Containers
@@ -65,32 +36,9 @@ jobs:
       ci-chrome-tag: ci-chrome-v1
       production-tag: production-${{ github.sha }}
     steps:
-      - name: Checkout from Push event
-        if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v2
-
-      - name: Checkout from pull_request_target event
-        # We just add in the authorization condition here again to be double safe that we
-        # are not checking out anything dangerous as we are about to give privileged access
-        # to the code checked out
-        if: |
-          github.event_name == 'pull_request_target' &&
-          github.event.pull_request.author_association == 'OWNER'
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Checkout from pull_request_review_comment event
-        # We just add in the authorization condition here again to be double safe that we
-        # are not checking out anything dangerous as we are about to give privileged access
-        # to the code checked out
-        if: |
-          github.event_name == 'pull_request_review_comment' &&
-          github.event.comment.author_association == 'OWNER' &&
-          github.event.comment.body == '&RUN_TESTS_WITH_SECRETS'
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout
+        uses: ./.github/actions/can-be-trusted-with-secrets
+        mode: checkout-if-authorized
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -187,32 +135,9 @@ jobs:
             extraSpecs: []
             deviceName: iPhone 8
     steps:
-      - name: Checkout from Push event
-        if: ${{ github.event_name == 'push' }}
-        uses: actions/checkout@v2
-
-      - name: Checkout from pull_request_target event
-        # We just add in the authorization condition here again to be double safe that we
-        # are not checking out anything dangerous as we are about to give privileged access
-        # to the code checked out
-        if: |
-          github.event_name == 'pull_request_target' &&
-          github.event.pull_request.author_association == 'OWNER'
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-
-      - name: Checkout from pull_request_review_comment event
-        # We just add in the authorization condition here again to be double safe that we
-        # are not checking out anything dangerous as we are about to give privileged access
-        # to the code checked out
-        if: |
-          github.event_name == 'pull_request_review_comment' &&
-          github.event.comment.author_association == 'OWNER' &&
-          github.event.comment.body == '&RUN_TESTS_WITH_SECRETS'
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Checkout
+        uses: ./.github/actions/can-be-trusted-with-secrets
+        mode: checkout-if-authorized
 
       - name: Handle Yarn and Cypress caching
         uses: actions/cache@v2
@@ -274,8 +199,9 @@ jobs:
   #   runs-on: ubuntu-20.04
   #   steps:
   #     - name: Checkout
-  #       uses: actions/checkout@v2
-
+  #       uses: ./.github/actions/can-be-trusted-with-secrets
+  #       mode: checkout-if-authorized
+  #
   #     - name: Deploy newest version
   #       run: python scripts/trigger-deploy.py
   #       env:

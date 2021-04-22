@@ -1,0 +1,75 @@
+name: Can Be Trusted With Secrets
+description: Checks whether an event can be trusted with secrets, and can also check out the code if this is true
+inputs:
+  mode:
+    description: 'Whether to just check authorization or also checkout code. Possible values are "fail-if-unauthorized", or "checkout-if-authorized"'
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: >
+        Log all the parts of the check for debugging purposes, and verifying we are
+        only letting trusted code run with our secrets
+      shell: bash
+      run: |
+        echo "Event name: ${{ github.event_name }}"
+        echo "Event Action : ${{ github.event.action }}"
+        echo "Github Ref: ${{ github.ref }}"
+        echo "PR Author Association: ${{ github.event.pull_request.author_association }}"
+        echo "Review Comment Author Association: ${{ github.event.comment.author_association }}"
+        echo "Review Comment Body: ${{ github.event.comment.body }}"
+        echo "Whole event: ${{ toJSON(github.event) }}"
+
+    - name: Validate Arguments
+      if: inputs.mode != 'fail-if-unauthorized' && inputs.mode != 'checkout-if-authorized'
+      shell: bash
+      run: |
+        RED='\033[0;31m'
+        echo -e "${RED}Invalid mode argument '${{ inputs.mode }}'. Should be 'fail-if-unauthorized' or 'checkout-if-authorized'
+        exit 1
+
+    # It makes sense to run this no matter the mode, as if it's checkout if authorized
+    # we still want a good error message if it's not authorized and for it to crash
+    - name: Return Non-Zero Exit Code If Untrusted
+      # Note the negative at the start. Inside the condition we specify who is allowed
+      # and then negate it to be able to throw on unauthorized`
+      if: |
+        !(
+          (
+            github.event_name == 'push' && github.ref == 'refs/heads/main'
+          ) ||
+          (
+            github.event_name == 'pull_request_target' &&
+            github.event.pull_request.author_association == 'OWNER'
+          ) ||
+          (
+            github.event_name == 'pull_request_review_comment' &&
+            github.event.comment.author_association == 'OWNER' &&
+            github.event.comment.body == '&RUN_TESTS_WITH_SECRETS'
+          )
+        )
+      shell: bash
+      run: |
+        RED='\033[0;31m'
+        echo -e "${RED}This code change is not authorized to be run with our secrets such as logins and API keys. In order to get this code run get an owner to verify that your code change has no malicious parts in it and use the comment command to run these tests"
+        exit 1
+
+    - name: Checkout from Push event
+      if: ${{ inputs.mode == 'checkout-if-authorized' && github.event_name == 'push' }}
+      uses: actions/checkout@v2
+
+    - name: Checkout from pull_request_target event
+      if: |
+        inputs.mode == 'checkout-if-authorized' &&
+        github.event_name == 'pull_request_target' &&
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
+
+    - name: Checkout from pull_request_review_comment event
+      if: |
+        inputs.mode == 'checkout-if-authorized' &&
+        github.event_name == 'pull_request_review_comment' &&
+      uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.pull_request.head.sha }}
