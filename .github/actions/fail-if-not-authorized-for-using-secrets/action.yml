@@ -14,25 +14,12 @@ runs:
         only letting trusted code run with our secrets
       shell: bash
       run: |
-        echo "HERE AT THE START IS THE WHOLE EVENT THAT IS A BIT SPAMMY. LOOK AT BOTTOM
-        FOR MORE CURATED DEBUG INFO"
-        echo
-        echo
-        echo
-        echo 'Whole event: ${{ toJSON(github.event) }}'
-        echo
-        echo
-        echo
-        echo "ABOVE THIS WAS THE SPAM OF THE WHOLE EVENT, UNDER HERE IS MORE CURATED DEBUG INFO"
-        echo
-        echo
-        echo
-        echo "Event name: ${{ github.event_name }}"
-        echo "Event Action : ${{ github.event.action }}"
-        echo "Github Ref: ${{ github.ref }}"
-        echo "PR Author Association: ${{ github.event.pull_request.author_association }}"
-        echo "Review Comment Author Association: ${{ github.event.comment.author_association }}"
-        echo "Review Comment Body: ${{ github.event.comment.body }}"
+        echo 'Event name: ${{ github.event_name }}'
+        echo 'Event Action : ${{ github.event.action }}'
+        echo 'Github Ref: ${{ github.ref }}'
+        echo 'PR Author Association: ${{ github.event.pull_request.author_association }}'
+        echo 'Review Comment Author Association: ${{ github.event.comment.author_association }}'
+        echo 'Review Comment Body: ${{ github.event.comment.body }}'
 
     - name: Return Non-Zero Exit Code If Untrusted
       shell: bash
