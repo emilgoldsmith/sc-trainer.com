@@ -16,38 +16,38 @@ jobs:
     name: Determine If We Trust This Code Diff
     runs-on: ubuntu-20.04
     steps:
-      name: Log all the parts of the check for debugging purposes, and verifying we are only letting trusted code run with our secrets
-      run: |
-        echo "Event name: ${{ github.event_name }}"
-        echo "Event Action : ${{ github.event.action }}"
-        echo "Github Ref: ${{ github.ref }}"
-        echo "PR Author Association: ${{ github.event.pull_request.author_association }}"
-        echo "Review Comment Author Association: ${{ github.event.comment.author_association }}"
-        echo "Review Comment Body: ${{ github.event.comment.body }}"
-        echo "Whole event: ${{ github.event }}"
+      - name: Log all the parts of the check for debugging purposes, and verifying we are only letting trusted code run with our secrets
+        run: |
+          echo "Event name: ${{ github.event_name }}"
+          echo "Event Action : ${{ github.event.action }}"
+          echo "Github Ref: ${{ github.ref }}"
+          echo "PR Author Association: ${{ github.event.pull_request.author_association }}"
+          echo "Review Comment Author Association: ${{ github.event.comment.author_association }}"
+          echo "Review Comment Body: ${{ github.event.comment.body }}"
+          echo "Whole event: ${{ github.event }}"
 
-      name: Return Non-Zero Exit Code If Untrusted
-      # Note the negative at the start. Inside the condition we specify who is allowed
-      # and then negate it to be able to throw on unauthorized`
-      if: |
-        !(
-          (
-            github.event_name == "push" && github.ref == 'refs/heads/main'
-          ) ||
-          (
-            github.event_name == "pull_request_target" &&
-            github.event.pull_request.author_association == 'OWNER'
-          ) ||
-          (
-            github.event_name == "pull_request_review_comment" &&
-            github.event.comment.author_association == 'OWNER' &&
-            github.event.comment.body == '&RUN_TESTS_WITH_SECRETS'
+      - name: Return Non-Zero Exit Code If Untrusted
+        # Note the negative at the start. Inside the condition we specify who is allowed
+        # and then negate it to be able to throw on unauthorized`
+        if: |
+          !(
+            (
+              github.event_name == "push" && github.ref == 'refs/heads/main'
+            ) ||
+            (
+              github.event_name == "pull_request_target" &&
+              github.event.pull_request.author_association == 'OWNER'
+            ) ||
+            (
+              github.event_name == "pull_request_review_comment" &&
+              github.event.comment.author_association == 'OWNER' &&
+              github.event.comment.body == '&RUN_TESTS_WITH_SECRETS'
+            )
           )
-        )
-      shell: bash
-      run: |
-        RED='\033[0;31m'
-        echo -e "${RED}This code change is not authorized to be run with our secrets such as logins and API keys. In order to get this code run get an owner to verify that your code change has no malicious parts in it and use the comment command to run these tests"
+        shell: bash
+        run: |
+          RED='\033[0;31m'
+          echo -e "${RED}This code change is not authorized to be run with our secrets such as logins and API keys. In order to get this code run get an owner to verify that your code change has no malicious parts in it and use the comment command to run these tests"
 
   build-docker-containers:
     name: Build And Push Docker Containers
@@ -133,7 +133,6 @@ jobs:
           push: true
           target: production
           tags: ${{ env.repository }}:${{ env.production-tag }}
-
 
   check-javascript-asset-size:
     name: Check Javascript Asset Size
