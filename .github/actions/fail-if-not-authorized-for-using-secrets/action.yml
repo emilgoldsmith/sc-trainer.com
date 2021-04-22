@@ -14,6 +14,11 @@ runs:
         only letting trusted code run with our secrets
       shell: bash
       run: |
+        echo "HERE AT THE START IS THE WHOLE EVENT THAT IS A BIT SPAMMY. LOOK AT BOTTOM
+        FOR MORE CURATED DEBUG INFO"
+        echo
+        echo
+        echo
         echo "Whole event: ${{ toJSON(github.event) }}"
         echo
         echo
