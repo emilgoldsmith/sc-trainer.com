@@ -116,19 +116,8 @@ jobs:
             extraSpecs: []
             deviceName: iPhone 8
     steps:
-      - name: Safe checkout to get action
+      - name: Checkout
         uses: actions/checkout@v2
-        with:
-          ref: refs/heads/main
-
-      - name: Get Checkout Ref
-        id: authorizer
-        uses: ./.github/actions/fail-if-not-authorized-for-using-secrets
-
-      - name: Checkout possibly unsafe code
-        uses: actions/checkout@v2
-        with:
-          ref: ${{ steps.authorizer.outputs.unsafe-ref-to-checkout }}
 
       - name: Handle Yarn and Cypress caching
         uses: actions/cache@v2

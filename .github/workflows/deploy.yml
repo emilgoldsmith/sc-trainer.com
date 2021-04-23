@@ -7,10 +7,13 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-20.04
+    env:
+      PROJECT_ID: carbide-ether-306312
+      SERVICE: speedcubing-trainer
+      REGION: us-east4
+      DOCKER_HUB_TAG: sc-trainer/main:production-${{ github.sha }}
+      GOOGLE_TAG: us-east4-docker.pkg.dev/$PROJECT_ID/speedcubing-trainer/main:${{ github.sha }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
       - name: Wait for CI to pass
         uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.1
         with:
@@ -21,8 +24,34 @@ jobs:
             build-and-push-docker-containers.yml
           repo-token: ${{ github.token }}
 
-      - name: Deploy newest version
-        run: python scripts/trigger-deploy.py
-        env:
-          SECRET: ${{ secrets.GOOGLE_CLOUD_DEPLOY_SECRET }}
-          API_KEY: ${{ secrets.GOOGLE_CLOUD_DEPLOY_API_KEY }}
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0.2.0
+      with:
+        project_id: ${{ env.PROJECT_ID }}
+        service_account_key: ${{ secrets.GOOGLE_CLOUD_DEPLOY_SA_KEY }}
+        export_default_credentials: true  # Set to true to authenticate the Cloud Run action
+
+    - name: Authorize Docker push
+      run: gcloud auth configure-docker
+
+    - name: Pull, re-tag and Push Container
+      run: >
+        docker pull ${{ env.DOCKER_HUB_TAG }}
+
+        docker image tag ${{ env.DOCKER_HUB_TAG }} ${{ env.GOOGLE_TAG }}
+
+        docker push ${{ env.GOOGLE_TAG }}
+
+    - name: Deploy to Cloud Run
+      id: deploy
+      uses: google-github-actions/deploy-cloudrun@v0.4.0
+      with:
+        service: ${{ env.SERVICE }}
+        image: ${{ env.GOOGLE_TAG }}
+        region: ${{ env.REGION }}
+
+    - name: Show Output
+      run: echo ${{ steps.deploy.outputs.url }}
