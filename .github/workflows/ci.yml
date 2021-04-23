@@ -30,14 +30,6 @@ jobs:
           echo "::set-output name=ci-chrome::sctrainer/main:ci-chrome-v1"
           echo "::set-output name=production::sctrainer/main:production-${{ github.sha }}"
 
-  debug:
-    runs-on: ubuntu-20.04
-    needs: wait-for-docker-containers
-    steps:
-      - env:
-          NEEDS_CONTEXT: ${{ toJSON(needs) }}
-        run: echo "$NEEDS_CONTEXT"
-
   lint-and-unit-tests:
     name: Linting And Unit Tests
     runs-on: ubuntu-20.04
