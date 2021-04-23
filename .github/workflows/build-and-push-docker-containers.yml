@@ -21,7 +21,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           GITHUB_CONTEXT: ${{ toJSON(github) }}
         run: >
-          echo "GITHUB_CONTEXT";
+          echo "$GITHUB_CONTEXT";
           (
             [[ "$EVENT_NAME" == 'push' ]] &&
             (
