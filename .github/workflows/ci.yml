@@ -16,7 +16,7 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Wait For Docker Containers To Be Built And Pushed
-        uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.2
+        uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.3
         with:
           wait-interval-seconds: 15
           wait-max-seconds: 120

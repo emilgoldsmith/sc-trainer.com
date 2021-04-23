@@ -17,7 +17,7 @@ jobs:
     steps:
       - name: Wait for CI to pass
         if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.2
+        uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.3
         with:
           wait-interval-seconds: 30
           wait-max-seconds: 500
