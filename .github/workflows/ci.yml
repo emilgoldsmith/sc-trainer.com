@@ -31,8 +31,8 @@ jobs:
         id: output
         env:
           EVENT_NAME: ${{ github.event_name }}
-          MAIN_SHA: ${{ github.ref }}
-          PR_SHA: ${{ github.event.pull_request.head.ref }}
+          MAIN_SHA: ${{ github.sha }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           SHA=$(\
             (
