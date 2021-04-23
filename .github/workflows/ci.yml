@@ -28,7 +28,7 @@ jobs:
         run: |
           echo "::set-output name=ci-container::sctrainer/main:ci-container-v1"
           echo "::set-output name=ci-chrome::sctrainer/main:ci-chrome-v1"
-          echo "::set-output name=production::sctrainer/main:production-${{ github.sha }}
+          echo "::set-output name=production::sctrainer/main:production-${{ github.sha }}"
 
   lint-and-unit-tests:
     name: Linting And Unit Tests
