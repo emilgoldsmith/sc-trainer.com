@@ -48,6 +48,24 @@ jobs:
       - name: Run elm-analyse
         run: ./scripts/checks/elm-analyse.sh
 
+      - name: Run unit tests
+        run: ./scripts/checks/elm-test.sh
+
+      - name: Handle Yarn caching
+        uses: actions/cache@v2
+        env:
+          cache-name: yarn-cache-v1
+        with:
+          path: |
+            ~/.cache/yarn
+          key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('end-to-end-tests/**/yarn.lock')}}
+          # Note we purposefully don't specify fallback restore keys.
+          # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
+
+      - name: Install Cypress Dependencies
+        working-directory: end-to-end-tests
+        run: yarn
+
       - name: Run Prettier on Cypress Code
         run: ./scripts/checks/prettier.sh
 
@@ -56,9 +74,6 @@ jobs:
 
       - name: Run Typescript Type Checking on Cypress Code
         run: ./scripts/checks/typescript.sh
-
-      - name: Run unit tests
-        run: ./scripts/checks/elm-test.sh
 
   check-javascript-asset-size:
     name: Javascript Asset Size Not Too Big
@@ -120,13 +135,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Handle Yarn and Cypress caching
+      - name: Handle Yarn caching
         uses: actions/cache@v2
         env:
-          cache-name: yarn-cypress-cache-v1
+          cache-name: yarn-cache-v1
         with:
           path: |
             ~/.cache/yarn
+          key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('end-to-end-tests/**/yarn.lock')}}
+          # Note we purposefully don't specify fallback restore keys.
+          # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
+
+      - name: Handle Cypress caching
+        uses: actions/cache@v2
+        env:
+          cache-name: cypress-cache-v1
+        with:
+          path: |
             ~/.cache/Cypress
           key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('end-to-end-tests/**/yarn.lock')}}
           # Note we purposefully don't specify fallback restore keys.
