@@ -21,7 +21,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
         run: >
           (
-            [[ "$EVENT_NAME" == 'pull' ]] &&
+            [[ "$EVENT_NAME" == 'push' ]] &&
             (
               echo "::set-output name=sha::${{ github.sha }}" &&
               echo "::set-output name=ref::${{ github.ref }}"
