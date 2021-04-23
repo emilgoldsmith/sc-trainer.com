@@ -12,7 +12,7 @@ jobs:
       PROJECT_ID: carbide-ether-306312
       SERVICE: speedcubing-trainer
       REGION: us-east4
-      DOCKER_HUB_TAG: sc-trainer/main:production-${{ github.sha }}
+      DOCKER_HUB_TAG: sctrainer/main:production-${{ github.sha }}
       GOOGLE_TAG: us-east4-docker.pkg.dev/$PROJECT_ID/speedcubing-trainer/main:${{ github.sha }}
     steps:
       - name: Wait for CI to pass
