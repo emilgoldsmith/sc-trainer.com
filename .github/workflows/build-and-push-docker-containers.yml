@@ -11,18 +11,33 @@ jobs:
   get-ref-and-sha:
     name: Get Ref And SHA
     runs-on: ubuntu-20.04
+    outputs:
+      sha: ${{ steps.output.outputs.sha }}
+      ref: ${{ steps.output.outputs.ref }}
     steps:
-      - name: If it's a push event
-        if: ${{ github.event_name == 'push' }}
-        run: |
-          echo "::set-output name=sha::${{ github.sha }}"
-          echo "::set-output name=ref::${{ github.ref }}"
-
-      - name: If it's a pull_request_target event
-        if: ${{ github.event_name == 'pull_request_target' }}
-        run: |
-          echo "::set-output name=sha::${{ github.event.pull_request.head.sha }}"
-          echo "::set-output name=ref::${{ github.event.pull_request.head.ref }}"
+      - name: Output the ref and sha depending on event type
+        id: output
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: >
+          (
+            [[ "$EVENT_NAME" == 'pull' ]] &&
+            (
+              echo "::set-output name=sha::${{ github.sha }}" &&
+              echo "::set-output name=ref::${{ github.ref }}"
+            )
+          ) ||
+          (
+            [[ "$EVENT_NAME" == 'pull_request_target' ]] &&
+            (
+              echo "::set-output name=sha::${{ github.event.pull_request.head.sha }}" &&
+              echo "::set-output name=ref::${{ github.event.pull_request.head.ref }}"
+            )
+          ) ||
+          (
+            echo "ERROR: Unexpected event name $EVENT_NAME" &&
+            exit 1
+          )
 
   main:
     name: main
