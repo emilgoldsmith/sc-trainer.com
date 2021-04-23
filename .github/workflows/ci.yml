@@ -7,6 +7,10 @@ jobs:
   wait-for-docker-containers:
     name: Wait For Docker Containers To Be Built And Pushed
     runs-on: ubuntu-20.04
+    outputs:
+      ci-container: ${{ steps.output.outputs.ci-container }}
+      ci-chrome: ${{ steps.output.outputs.ci-chrome }}
+      production: ${{ steps.output.outputs.production }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -20,6 +24,7 @@ jobs:
           repo-token: ${{ github.token }}
 
       - name: Output the container names
+        id: output
         run: |
           echo "::set-output name=ci-container::sctrainer/main:ci-container-v1"
           echo "::set-output name=ci-chrome::sctrainer/main:ci-chrome-v1"
