@@ -13,7 +13,7 @@ jobs:
       production: ${{ steps.output.outputs.production }}
     steps:
       - env:
-          GITHUB_CONTEXT: ${{ fromJSON(github) }}
+          GITHUB_CONTEXT: ${{ toJSON(github) }}
         run: echo "$GITHUB_CONTEXT"
 
       - name: Checkout
