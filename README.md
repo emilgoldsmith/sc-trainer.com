@@ -1,4 +1,5 @@
-[![CI and CD](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/ci-cd.yml)
+[![CI](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/ci.yml/badge.svg)](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/ci.yml)
+[![CD](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/deploy.yml/badge.svg)](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/deploy.yml)
 
 # www.sc-trainer.com
 
