@@ -6,7 +6,7 @@ updates:
   - package-ecosystem: elm
     directory: /
     schedule:
-      interval: "weekly"
+      interval: "daily"
     assignees:
       - emilgoldsmith
     reviewers:
@@ -15,7 +15,7 @@ updates:
   - package-ecosystem: npm
     directory: /end-to-end-tests/
     schedule:
-      interval: "weekly"
+      interval: "dao;y"
     assignees:
       - emilgoldsmith
     reviewers:
@@ -25,7 +25,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: "weekly"
+      interval: "daily"
     assignees:
       - emilgoldsmith
     reviewers:
