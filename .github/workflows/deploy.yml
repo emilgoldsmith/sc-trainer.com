@@ -1,5 +1,6 @@
 name: Continuous Deployment
 on:
+  workflow_dispatch: {}
   push:
     branches: main
 
@@ -15,6 +16,7 @@ jobs:
       GOOGLE_TAG: us-east4-docker.pkg.dev/$PROJECT_ID/speedcubing-trainer/main:${{ github.sha }}
     steps:
       - name: Wait for CI to pass
+        if: ${{ github.event_name != 'workflow_dispatch' }}
         uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.1
         with:
           wait-interval-seconds: 30
@@ -24,8 +26,11 @@ jobs:
             build-and-push-docker-containers.yml
           repo-token: ${{ github.token }}
 
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Pull our production image
+        run: docker pull ${{ env.DOCKER_HUB_TAG }}
+
+      - name: Retag our production image to Google format
+        run: docker image tag ${{ env.DOCKER_HUB_TAG }} ${{ env.GOOGLE_TAG }}
 
       - name: Setup Cloud SDK
         uses: google-github-actions/setup-gcloud@v0.2.0
@@ -34,16 +39,11 @@ jobs:
           service_account_key: ${{ secrets.GOOGLE_CLOUD_DEPLOY_SA_KEY }}
           export_default_credentials: true # Set to true to authenticate the Cloud Run action
 
-      - name: Authorize Docker push
+      - name: Configure and Authorize Docker For Pushing to Google
         run: gcloud auth configure-docker
 
-      - name: Pull, re-tag and Push Container
-        run: >
-          docker pull ${{ env.DOCKER_HUB_TAG }}
-
-          docker image tag ${{ env.DOCKER_HUB_TAG }} ${{ env.GOOGLE_TAG }}
-
-          docker push ${{ env.GOOGLE_TAG }}
+      - name: Push Image to the Artifacts Registry
+        run: docker push ${{ env.GOOGLE_TAG }}
 
       - name: Deploy to Cloud Run
         id: deploy
