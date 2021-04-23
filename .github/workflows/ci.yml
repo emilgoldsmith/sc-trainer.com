@@ -7,11 +7,6 @@ jobs:
   wait-for-docker-containers:
     name: Wait For Docker Containers To Be Built And Pushed
     runs-on: ubuntu-20.04
-    env:
-      repository: sctrainer/main
-      ci-container-tag: ci-container-v1
-      ci-chrome-tag: ci-chrome-v1
-      production-tag: production-${{ github.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -29,6 +24,14 @@ jobs:
           echo "::set-output name=ci-container::sctrainer/main:ci-container-v1"
           echo "::set-output name=ci-chrome::sctrainer/main:ci-chrome-v1"
           echo "::set-output name=production::sctrainer/main:production-${{ github.sha }}"
+
+  debug:
+    runs-on: ubuntu-20.04
+    needs: wait-for-docker-containers
+    steps:
+      - env:
+          NEEDS_CONTEXT: ${{ toJSON(needs) }}
+        run: echo "$NEEDS_CONTEXT"
 
   lint-and-unit-tests:
     name: Linting And Unit Tests
