@@ -15,7 +15,7 @@ updates:
   - package-ecosystem: npm
     directory: /end-to-end-tests/
     schedule:
-      interval: "dao;y"
+      interval: "daily"
     assignees:
       - emilgoldsmith
     reviewers:
