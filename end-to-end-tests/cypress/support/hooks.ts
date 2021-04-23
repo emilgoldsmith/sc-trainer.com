@@ -8,7 +8,7 @@ beforeEach(function () {
 });
 
 function ensureServerNotReloading() {
-  cy.intercept(Cypress.config().baseUrl + "/reload/reload.js", (_) => {
+  cy.intercept(Cypress.config().baseUrl + "/reload/reload.js", () => {
     throw new Error(
       `Reloading server most likely from ./scripts/run-hot.sh detected. \
 This has been known to cause flaky tests in development, so we enforce \

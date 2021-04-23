@@ -110,7 +110,9 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
         .trigger("keypress", { ...repeatedEvent, log: false });
     }
     const remainingTime = LONG_TIME_MS - previous;
-    remainingTime > 0 && cy.tick(remainingTime, { log: false });
+    if (remainingTime > 0) {
+      cy.tick(remainingTime, { log: false });
+    }
     if (options?.log !== false) cy.log(`${LONG_TIME_MS}ms passed`);
     cy.document({ log: false }).trigger("keyup", {
       ...nonRepeatedEvent,
@@ -232,7 +234,9 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
       });
     }
     const remainingTime = LONG_TIME_MS - previous;
-    remainingTime > 0 && cy.tick(remainingTime, { log: false });
+    if (remainingTime > 0) {
+      cy.tick(remainingTime, { log: false });
+    }
     cy.tick(LONG_TIME_MS, { log: false });
     if (options?.log !== false) cy.log(`${LONG_TIME_MS}ms passed`);
     keys.forEach((key) => {
@@ -378,10 +382,9 @@ const withOverallNameLogged: Cypress.Chainable<undefined>["withOverallNameLogged
       handleEndOfCommand();
       return returnValue;
     }) as typeof callbackReturnValue;
-  } else {
-    cy.wrap(undefined, { log: false }).then(handleEndOfCommand);
-    return callbackReturnValue;
   }
+  cy.wrap(undefined, { log: false }).then(handleEndOfCommand);
+  return callbackReturnValue;
 };
 Cypress.Commands.add("withOverallNameLogged", withOverallNameLogged);
 

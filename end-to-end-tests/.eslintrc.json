@@ -11,7 +11,8 @@
   ],
   "parser": "@typescript-eslint/parser",
   "rules": {
-    "cypress/no-force": "error",
+    // TODO: Turn this back on when https://github.com/cypress-io/eslint-plugin-cypress/pull/79 is released
+    "cypress/no-force": "off",
     // Can't get the configuration to work it seems and don't really care much, typescript checks it for us
     "import/no-unresolved": "off",
     // Use the typescript one

@@ -48,6 +48,15 @@ jobs:
       - name: Run elm-analyse
         run: ./scripts/checks/elm-analyse.sh
 
+      - name: Run Prettier on Cypress Code
+        run: ./scripts/checks/prettier.sh
+
+      - name: Run Eslint on Cypress Code
+        run: ./scripts/checks/eslint.sh
+
+      - name: Run Typescript Type Checking on Cypress Code
+        run: ./scripts/checks/typescript.sh
+
       - name: Run unit tests
         run: ./scripts/checks/elm-test.sh
 
