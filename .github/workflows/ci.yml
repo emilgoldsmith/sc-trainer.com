@@ -29,10 +29,29 @@ jobs:
 
       - name: Output the container names
         id: output
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MAIN_SHA: ${{ github.ref }}
+          PR_SHA: ${{ github.event.pull_request.head.ref }}
         run: |
+          SHA=$(\
+            (
+              [[ "$EVENT_NAME" == 'push' ]] && \
+              echo "$MAIN_SHA" \
+            ) || \
+            ( \
+              [[ "$EVENT_NAME" == 'pull_request' ]] && \
+              echo "$PR_SHA" \
+            ) || \
+            ( \
+              echo "ERROR: Unexpected event name $EVENT_NAME" && \
+              exit 1
+            ) \
+          )
+
           echo "::set-output name=ci-container::sctrainer/main:ci-container-v1"
           echo "::set-output name=ci-chrome::sctrainer/main:ci-chrome-v1"
-          echo "::set-output name=production::sctrainer/main:production-${{ github.sha }}"
+          echo "::set-output name=production::sctrainer/main:production-$SHA"
 
   lint-and-unit-tests:
     name: Linting And Unit Tests

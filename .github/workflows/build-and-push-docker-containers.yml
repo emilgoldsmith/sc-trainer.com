@@ -19,21 +19,21 @@ jobs:
         id: output
         env:
           EVENT_NAME: ${{ github.event_name }}
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
+          MAIN_REF: ${{ github.ref }}
+          PR_REF: ${{ github.event.pull_request.head.ref }}
         run: >
-          echo "$GITHUB_CONTEXT";
           (
             [[ "$EVENT_NAME" == 'push' ]] &&
             (
               echo "::set-output name=sha::${{ github.sha }}" &&
-              echo "::set-output name=ref::${{ github.ref }}"
+              echo "::set-output name=ref::$MAIN_REF"
             )
           ) ||
           (
             [[ "$EVENT_NAME" == 'pull_request_target' ]] &&
             (
               echo "::set-output name=sha::${{ github.event.pull_request.head.sha }}" &&
-              echo "::set-output name=ref::${{ github.event.pull_request.head.ref }}"
+              echo "::set-output name=ref::$PR_REF"
             )
           ) ||
           (
@@ -81,7 +81,7 @@ jobs:
 
       - name: Build and Push CI Container image
         uses: docker/build-push-action@v2
-        if: ${{ needs.ci-container-up-to-date.outcome == 'failure' }}
+        if: ${{ steps.ci-container-up-to-date.outcome == 'failure' }}
         with:
           push: true
           target: ci
@@ -94,7 +94,7 @@ jobs:
 
       - name: Build and Push CI Chrome image
         uses: docker/build-push-action@v2
-        if: ${{ needs.ci-chrome-up-to-date.outcome == 'failure' }}
+        if: ${{ steps.ci-chrome-up-to-date.outcome == 'failure' }}
         with:
           push: true
           target: ci-chrome
