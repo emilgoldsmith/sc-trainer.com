@@ -19,7 +19,9 @@ jobs:
         id: output
         env:
           EVENT_NAME: ${{ github.event_name }}
+          GITHUB_CONTEXT: ${{ fromJSON(github) }}
         run: >
+          echo "GITHUB_CONTEXT";
           (
             [[ "$EVENT_NAME" == 'push' ]] &&
             (
