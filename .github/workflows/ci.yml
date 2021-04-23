@@ -16,12 +16,13 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Wait For Docker Containers To Be Built And Pushed
-        uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.1
+        uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.2
         with:
           wait-interval-seconds: 15
           wait-max-seconds: 120
           workflows: build-and-push-docker-containers.yml
           repo-token: ${{ github.token }}
+          debug: "on"
 
       - name: Output the container names
         id: output
