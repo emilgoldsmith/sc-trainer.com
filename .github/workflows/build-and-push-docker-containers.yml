@@ -21,7 +21,10 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           MAIN_REF: ${{ github.ref }}
           PR_REF: ${{ github.event.pull_request.head.ref }}
+          EVENT_JSON: ${{ toJSON(github.event) }}
         run: >
+          echo "$EVENT_JSON"
+
           (
             [[ "$EVENT_NAME" == 'push' ]] &&
             (
