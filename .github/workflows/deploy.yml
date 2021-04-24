@@ -13,7 +13,7 @@ jobs:
       SERVICE: speedcubing-trainer
       REGION: us-east4
       DOCKER_HUB_TAG: sctrainer/main:production-${{ github.sha }}
-      GOOGLE_TAG: us-east4-docker.pkg.dev/$PROJECT_ID/speedcubing-trainer/main:${{ github.sha }}
+      GOOGLE_TAG: us-east4-docker.pkg.dev/${{ env.PROJECT_ID }}/speedcubing-trainer/main:${{ github.sha }}
     steps:
       - name: Wait for CI to pass
         if: ${{ github.event_name != 'workflow_dispatch' }}
