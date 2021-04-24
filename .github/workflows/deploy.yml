@@ -8,12 +8,17 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-20.04
+    # Skip if this was a dependabot push, as we don't want to spam deploys
+    # for small dependency upgrades. If we need a dependency upgrade in production
+    # just use the workflow dispatch manual trigger after CI passed
+    if: ${{ github.event.sender.login != 'dependabot[bot]' }}
     env:
-      PROJECT_ID: carbide-ether-306312
       SERVICE: speedcubing-trainer
       REGION: us-east4
       DOCKER_HUB_TAG: sctrainer/main:production-${{ github.sha }}
-      GOOGLE_TAG: us-east4-docker.pkg.dev/${{ env.PROJECT_ID }}/speedcubing-trainer/main:${{ github.sha }}
+      PROJECT_ID: carbide-ether-306312
+      # Remember to update project id here if you update the variable above
+      GOOGLE_TAG: us-east4-docker.pkg.dev/carbide-ether-306312/speedcubing-trainer/main:${{ github.sha }}
     steps:
       - name: Wait for CI to pass
         if: ${{ github.event_name != 'workflow_dispatch' }}
