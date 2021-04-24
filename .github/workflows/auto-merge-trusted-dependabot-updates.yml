@@ -1,0 +1,57 @@
+name: Auto Merge Trusted Dependabot Updates
+on:
+  pull_request_target:
+    types: [review_requested]
+
+jobs:
+  automerge:
+    name: Auto Merge Trusted Dependabot Updates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Automerge
+        uses: actions/github-script@v4
+        # If the dependabot change is wrong it is a bit dangerous as we approve the
+        # PR. Not as bad as automerging it but still, be careful with those checks.
+        # It is a bit safer as we are just commenting to tell dependabot to merge for us
+        # as opposed to automerging.
+        #
+        # We are deciding to trust all github actions developed by github (actions/) and google (google-github-actions/) to not ever be dangerous to merge
+        # We also trust eslint, cypress and Typescript
+        if: |
+          (
+            github.event.sender.login == 'dependabot[bot]' &&
+            github.event.pull_request.user.login == 'dependabot[bot]' &&
+            (
+              startsWith(github.event.pull_request.head.ref, 'dependabot/github_actions/actions/') ||
+              startsWith(github.event.pull_request.head.ref, 'dependabot/github_actions/google-github-actions/') ||
+              startsWith(github.event.pull_request.head.ref, 'dependabot/github_actions/google-github-actions/') ||
+              (
+                startsWith(github.event.pull_request.head.ref, 'dependabot/npm_and_yarn/end-to-end-tests/') &&
+                startsWith(github.event.pull_request.title, 'Bump cypress from')
+              ) ||
+              (
+                startsWith(github.event.pull_request.head.ref, 'dependabot/npm_and_yarn/end-to-end-tests/') &&
+                startsWith(github.event.pull_request.title, 'Bump eslint from')
+              ) ||
+              (
+                startsWith(github.event.pull_request.head.ref, 'dependabot/npm_and_yarn/end-to-end-tests/') &&
+                startsWith(github.event.pull_request.title, 'Bump typescript from')
+              ) ||
+            )
+          )
+        with:
+          github-token: ${{ secrets.DEPENDABOT_AUTOMERGE_TOKEN }}
+          script: |
+            await github.pulls.createReview({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.number,
+              event: "APPROVE"
+            });
+
+            await github.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.number,
+              body: "@dependabot merge"
+            });

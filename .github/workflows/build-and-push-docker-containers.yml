@@ -14,6 +14,11 @@ jobs:
     outputs:
       sha: ${{ steps.output.outputs.sha }}
       ref: ${{ steps.output.outputs.ref }}
+    # Dependabot doesn't receive secrets on a push event
+    # so can't run our CI, so we just skip CI for it.
+    # We have settings set up that ensure it can't be merged without
+    # being up to date with main, so it shouldn't be an issue
+    if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
       - name: Output the ref and sha depending on event type
         id: output
@@ -50,6 +55,11 @@ jobs:
       ci-container-tag: ci-container-v1
       ci-chrome-tag: ci-chrome-v1
       production-tag: production-${{ needs.get-ref-and-sha.outputs.sha }}
+    # Dependabot doesn't receive secrets on a push event
+    # so can't run our CI, so we just skip CI for it.
+    # We have settings set up that ensure it can't be merged without
+    # being up to date with main, so it shouldn't be an issue
+    if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
       # The only reason we checkout this unsafe code is because we are
       # certain that docker builds run in a fully secure contained environment

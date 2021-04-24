@@ -11,6 +11,11 @@ jobs:
       ci-container: ${{ steps.output.outputs.ci-container }}
       ci-chrome: ${{ steps.output.outputs.ci-chrome }}
       production: ${{ steps.output.outputs.production }}
+    # Dependabot doesn't receive secrets on a push event
+    # so can't run our CI, so we just skip CI for it.
+    # We have settings set up that ensure it can't be merged without
+    # being up to date with main, so it shouldn't be an issue
+    if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
       - env:
           GITHUB_CONTEXT: ${{ toJSON(github) }}
@@ -58,6 +63,11 @@ jobs:
     runs-on: ubuntu-20.04
     needs: wait-for-docker-containers
     container: ${{ needs.wait-for-docker-containers.outputs.ci-container }}
+    # Dependabot doesn't receive secrets on a push event
+    # so can't run our CI, so we just skip CI for it.
+    # We have settings set up that ensure it can't be merged without
+    # being up to date with main, so it shouldn't be an issue
+    if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -103,6 +113,11 @@ jobs:
     runs-on: ubuntu-20.04
     needs: wait-for-docker-containers
     container: ${{ needs.wait-for-docker-containers.outputs.production }}
+    # Dependabot doesn't receive secrets on a push event
+    # so can't run our CI, so we just skip CI for it.
+    # We have settings set up that ensure it can't be merged without
+    # being up to date with main, so it shouldn't be an issue
+    if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
       - name: Install Bash (as production image doesn't include it)
         run: apk add bash
@@ -154,6 +169,11 @@ jobs:
           - viewportConfig: "viewportWidth=375,viewportHeight=667"
             extraSpecs: []
             deviceName: iPhone 8
+    # Dependabot doesn't receive secrets on a push event
+    # so can't run our CI, so we just skip CI for it.
+    # We have settings set up that ensure it can't be merged without
+    # being up to date with main, so it shouldn't be an issue
+    if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
