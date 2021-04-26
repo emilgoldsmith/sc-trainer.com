@@ -21,6 +21,7 @@ updates:
     reviewers:
       - emilgoldsmith
     versioning-strategy: increase
+    ignore: eslint-*
       
   - package-ecosystem: github-actions
     directory: /
