@@ -21,7 +21,8 @@ updates:
     reviewers:
       - emilgoldsmith
     versioning-strategy: increase
-    ignore: eslint-*
+    ignore: 
+      - dependency-name: "eslint-*"
       
   - package-ecosystem: github-actions
     directory: /
