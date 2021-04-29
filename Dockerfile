@@ -168,6 +168,7 @@ ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 FROM unsafe-html-cube-devcontainer:12 AS local-development
 
 ENV ELM_LIVE_VERSION 4.0.2
+ENV ELM_JSON_VERSION 0.2.10
 
 USER $USERNAME
 
@@ -178,6 +179,7 @@ ENV HISTFILE /home/$USERNAME/bash_history/bash_history.txt
 # Install the development specific ones
 RUN yarn global add \
         elm-live@$ELM_LIVE_VERSION \
+        elm-json@$ELM_JSON_VERSION \
     # Create the elm cache directory where we can mount a volume. If we don't create it like this
     # it is auto created by docker on volume creation but with root as owner which makes it unusable.
     && mkdir .elm \

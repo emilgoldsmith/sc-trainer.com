@@ -22,6 +22,7 @@ import Time
 import Url
 import Utils.Css exposing (testid)
 import Utils.TimeInterval as TimeInterval
+import ViewCube
 
 
 main : Program Flags Model Msg
@@ -620,7 +621,7 @@ viewFullScreen model =
                             , centerX
                             ]
                           <|
-                            Cube.viewUFRWithLetters 200 model.expectedCube
+                            ViewCube.uFRWithLetters 200 model.expectedCube
                         , buttonWithShortcut
                             model
                             [ testid "start-button"
@@ -742,7 +743,7 @@ viewFullScreen model =
                     , spacing (minDimension model.viewportSize // 10)
                     ]
                     [ el [ testid "test-case", centerX ] <|
-                        Cube.viewUFRNoLetters (minDimension model.viewportSize // 2) <|
+                        ViewCube.uFRNoLetters (minDimension model.viewportSize // 2) <|
                             (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse (toAlg testCase)))
                     , el
                         [ testid "timer"
@@ -802,9 +803,9 @@ viewFullScreen model =
                         , spacing cubeSpacing
                         ]
                         [ el [ testid "expected-cube-front" ] <|
-                            Cube.viewUFRWithLetters cubeSize model.expectedCube
+                            ViewCube.uFRWithLetters cubeSize model.expectedCube
                         , el [ testid "expected-cube-back" ] <|
-                            Cube.viewUBLWithLetters cubeSize model.expectedCube
+                            ViewCube.uBLWithLetters cubeSize model.expectedCube
                         ]
                     , row [ centerX, spacing buttonSpacing ]
                         [ buttonWithShortcut
@@ -908,10 +909,10 @@ viewFullScreen model =
                         [ testid "full-test-case"
                         , centerX
                         ]
-                        [ Cube.viewUFRWithLetters
+                        [ ViewCube.uFRWithLetters
                             (minDimension model.viewportSize // 4)
                             testCaseCube
-                        , Cube.viewUBLWithLetters
+                        , ViewCube.uBLWithLetters
                             (minDimension model.viewportSize // 4)
                             testCaseCube
                         ]
@@ -927,7 +928,7 @@ viewFullScreen model =
                         , centerX
                         ]
                       <|
-                        Cube.viewUFRWithLetters (minDimension model.viewportSize // 4) model.expectedCube
+                        ViewCube.uFRWithLetters (minDimension model.viewportSize // 4) model.expectedCube
                     , buttonWithShortcut
                         model
                         [ testid "next-button"

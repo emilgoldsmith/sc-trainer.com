@@ -1,4 +1,4 @@
 {
   "root": "../src",
-  "tests": ["Algorithm", "Cube", "PLL"]
+  "tests": []
 }
