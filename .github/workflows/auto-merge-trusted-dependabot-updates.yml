@@ -16,7 +16,7 @@ jobs:
         # as opposed to automerging.
         #
         # We are deciding to trust all github actions developed by github (actions/) and google (google-github-actions/) to not ever be dangerous to merge
-        # We also trust eslint, cypress and Typescript
+        # We also trust eslint, cypress and Typescript, and of course dependencies developed by ourselves
         if: |
           (
             github.event.sender.login == 'dependabot[bot]' &&
@@ -36,6 +36,9 @@ jobs:
               (
                 startsWith(github.event.pull_request.head.ref, 'dependabot/npm_and_yarn/end-to-end-tests/') &&
                 startsWith(github.event.pull_request.title, 'Bump typescript from')
+              ) ||
+              (
+                startsWith(github.event.pull_request.head.ref, 'dependabot/elm/emilgoldsmith/')
               )
             )
           )
