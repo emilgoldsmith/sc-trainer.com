@@ -11,8 +11,8 @@
   ],
   "parser": "@typescript-eslint/parser",
   "rules": {
-    // TODO: Turn this back on when https://github.com/cypress-io/eslint-plugin-cypress/pull/79 is released
-    "cypress/no-force": "off",
+    "cypress/no-force": "error",
+    "cypress/assertion-before-screenshot": "error",
     // Can't get the configuration to work it seems and don't really care much, typescript checks it for us
     "import/no-unresolved": "off",
     // Use the typescript one
@@ -28,5 +28,6 @@
     "mocha/prefer-arrow-callback": "error"
   },
   "globals": { "Parameters": false, "ReturnType": false },
-  "ignorePatterns": "*.d.ts"
+  "ignorePatterns": "*.d.ts",
+  "parserOptions": { "ecmaVersion": 2021 }
 }
