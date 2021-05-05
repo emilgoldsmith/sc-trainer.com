@@ -214,6 +214,7 @@ jobs:
       - name: Dump strategy context
         env:
           STRATEGY_CONTEXT: ${{ toJSON(strategy) }}
+        run: echo "$STRATEGY_CONTEXT"
       - name: Run Cypress Tests
         working-directory: end-to-end-tests
         env:
