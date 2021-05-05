@@ -225,10 +225,10 @@ jobs:
           PERCY_PARALLEL_TOTAL: ${{ strategy.job-total }}
         run: >
           ./node_modules/.bin/percy exec --parallel --
-            ./node_modules/.bin/cypress run
-              --browser ${{ matrix.platform.browser }}
-              --config "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://sctrainer-server:${{ env.PORT }}"
-              --spec cypress/tests/*,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}
+          ./node_modules/.bin/cypress run
+          --browser ${{ matrix.platform.browser }}
+          --config "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://sctrainer-server:${{ env.PORT }}"
+          --spec cypress/tests/*,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}
 
       - name: Upload recorded videos
         uses: actions/upload-artifact@v2.2.3
