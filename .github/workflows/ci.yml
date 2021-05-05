@@ -214,6 +214,8 @@ jobs:
 
       - name: Run Cypress Tests
         working-directory: end-to-end-tests
+        env:
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
         run: >
           ./node_modules/.bin/percy exec -- ./node_modules/.bin/cypress run
           --browser ${{ matrix.platform.browser }}
