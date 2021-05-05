@@ -192,6 +192,10 @@ describe("Algorithm Trainer", function () {
       elements.startPage.startButton.assertConsumableViaScroll(containerId);
     });
 
+    it("looks right", function () {
+      cy.percySnapshot("Start Page");
+    });
+
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
       elements.testRunning.container.assertShows();
@@ -227,6 +231,10 @@ describe("Algorithm Trainer", function () {
       it("sizes elements reasonably", function () {
         cy.assertNoHorizontalScrollbar();
         cy.assertNoVerticalScrollbar();
+      });
+
+      it("looks right", function () {
+        cy.percySnapshot("Get Ready Screen");
       });
     });
     describe("During Test", function () {
@@ -267,6 +275,11 @@ describe("Algorithm Trainer", function () {
             ).to.be.at.least(minDimension * 0.5 - 1);
           });
         });
+      });
+
+      it("looks right", function () {
+        getTestRunningWithMockedTime();
+        cy.percySnapshot("Test Running");
       });
 
       it("tracks time correctly", function () {
@@ -602,6 +615,10 @@ describe("Algorithm Trainer", function () {
         });
       });
 
+      it("looks right", function () {
+        cy.percySnapshot("Evaluate Result");
+      });
+
       describe("displays the correct time", function () {
         function getEvaluateAfterTestRanFor({
           milliseconds,
@@ -761,6 +778,10 @@ describe("Algorithm Trainer", function () {
       cy.assertNoVerticalScrollbar();
     });
 
+    it("looks right", function () {
+      cy.percySnapshot("Correct Page");
+    });
+
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
       elements.testRunning.container.assertShows();
@@ -814,6 +835,10 @@ describe("Algorithm Trainer", function () {
     it("sizes elements reasonably", function () {
       cy.assertNoHorizontalScrollbar();
       cy.assertNoVerticalScrollbar();
+    });
+
+    it("looks right", function () {
+      cy.percySnapshot("Wrong Page");
     });
 
     it("starts test when pressing space", function () {

@@ -55,6 +55,7 @@
     // "typeRoots": ["./node_modules/@types/cypress", "./cypress/support"],                       /* List of folders to include type definitions from. */
     "types": [
       "cypress",
+      "@percy/cypress",
       "./cypress/support/commands"
     ] /* Type declaration files to be included in compilation. */,
     // "allowSyntheticDefaultImports": true,  /* Allow default imports from modules with no default export. This does not affect code emit, just typechecking. */

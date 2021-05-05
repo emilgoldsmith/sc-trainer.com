@@ -215,7 +215,7 @@ jobs:
       - name: Run Cypress Tests
         working-directory: end-to-end-tests
         run: >
-          yarn run cypress run
+          ./node_modules/.bin/percy exec -- ./node_modules/.bin/cypress run
           --browser ${{ matrix.platform.browser }}
           --config "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://sctrainer-server:${{ env.PORT }}"
           --spec cypress/tests/*,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}

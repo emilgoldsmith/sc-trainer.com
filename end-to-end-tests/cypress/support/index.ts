@@ -17,3 +17,5 @@
 import "./commands";
 // Import our hooks that run for all tests
 import "./hooks";
+// Import Percy for visual screenshot testing
+import "@percy/cypress";
