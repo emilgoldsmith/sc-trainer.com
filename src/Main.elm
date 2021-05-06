@@ -78,6 +78,9 @@ guessIfUserHasKeyboard { userHasTouchScreen, viewportSize } =
 type alias Flags =
     { viewportSize : ViewportSize
     , userHasTouchScreen : Bool
+    , featureFlags :
+        { moreFlowWhenWrong : Bool
+        }
     }
 
 
