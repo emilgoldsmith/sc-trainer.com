@@ -7,11 +7,14 @@ elm.js
 elm.min.js
 main.js
 main.min.js
+# Cypress video files
 *.mp4
 # Used in our pre push hook, and we shouldn't care if its cleanup is somehow messed up
 .temp_command_output
 # Cypress screenshots
 end-to-end-tests/cypress/screenshots
+# Our built code
+build
 
 # Created by https://www.toptal.com/developers/gitignore/api/vscode,elm
 # Edit at https://www.toptal.com/developers/gitignore?templates=vscode,elm

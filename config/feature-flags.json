@@ -1,0 +1,8 @@
+{
+  "staging": {
+    "moreFlowWhenWrong": true
+  },
+  "production": {
+    "moreFlowWhenWrong": false
+  }
+}
