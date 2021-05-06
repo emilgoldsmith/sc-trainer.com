@@ -591,3 +591,16 @@ const mouseClickScreen: Cypress.Chainable<undefined>["mouseClickScreen"] = funct
   );
 };
 Cypress.Commands.add("mouseClickScreen", mouseClickScreen);
+
+const percySnapshotWithProperName: Cypress.Chainable<undefined>["percySnapshotWithProperName"] = function (
+  name,
+  options
+) {
+  const width = Cypress.config().viewportWidth;
+  const properName = `${name}-${width}`;
+  cy.percySnapshot(properName, options);
+};
+Cypress.Commands.add(
+  "percySnapshotWithProperName",
+  percySnapshotWithProperName
+);

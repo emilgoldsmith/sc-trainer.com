@@ -193,7 +193,7 @@ describe("Algorithm Trainer", function () {
     });
 
     it("looks right", function () {
-      cy.percySnapshot("Start Page");
+      cy.percySnapshotWithProperName("Start Page");
     });
 
     it("starts test when pressing space", function () {
@@ -234,7 +234,7 @@ describe("Algorithm Trainer", function () {
       });
 
       it("looks right", function () {
-        cy.percySnapshot("Get Ready Screen");
+        cy.percySnapshotWithProperName("Get Ready Screen");
       });
     });
     describe("During Test", function () {
@@ -279,7 +279,7 @@ describe("Algorithm Trainer", function () {
 
       it("looks right", function () {
         getTestRunningWithMockedTime();
-        cy.percySnapshot("Test Running");
+        cy.percySnapshotWithProperName("Test Running");
       });
 
       it("tracks time correctly", function () {
@@ -616,7 +616,7 @@ describe("Algorithm Trainer", function () {
       });
 
       it("looks right", function () {
-        cy.percySnapshot("Evaluate Result");
+        cy.percySnapshotWithProperName("Evaluate Result");
       });
 
       describe("displays the correct time", function () {
@@ -779,7 +779,7 @@ describe("Algorithm Trainer", function () {
     });
 
     it("looks right", function () {
-      cy.percySnapshot("Correct Page");
+      cy.percySnapshotWithProperName("Correct Page");
     });
 
     it("starts test when pressing space", function () {
@@ -838,7 +838,7 @@ describe("Algorithm Trainer", function () {
     });
 
     it("looks right", function () {
-      cy.percySnapshot("Wrong Page");
+      cy.percySnapshotWithProperName("Wrong Page");
     });
 
     it("starts test when pressing space", function () {

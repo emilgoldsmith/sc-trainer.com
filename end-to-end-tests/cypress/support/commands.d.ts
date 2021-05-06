@@ -2,6 +2,7 @@
 
 declare namespace Cypress {
   import { Key } from "./keys";
+  import { SnapshotOptions } from "@percy/core";
 
   type CustomWindow = Window &
     typeof globalThis & {
@@ -197,5 +198,7 @@ declare namespace Cypress {
     touchScreen(position: Cypress.PositionType): void;
 
     mouseClickScreen(position: Cypress.PositionType): void;
+
+    percySnapshotWithProperName(name: string, options?: SnapshotOptions): void;
   }
 }
