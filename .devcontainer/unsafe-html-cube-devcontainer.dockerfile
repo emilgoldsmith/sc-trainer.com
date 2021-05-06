@@ -102,3 +102,8 @@ RUN groupadd --gid 1000 $USERNAME \
     && rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz \
     # smoke test
     && yarn --version
+
+# Install thefuck shell utility
+RUN apt update -y \
+    && apt install -y python3-dev python3-pip python3-setuptools \
+    && pip3 install thefuck
