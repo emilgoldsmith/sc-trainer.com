@@ -25,7 +25,8 @@
 
       if (
         window.location.hostname !== "localhost" &&
-        window.location.hostname !== "127.0.0.1"
+        window.location.hostname !== "127.0.0.1" &&
+        /** REPLACED_WITH_SENTRY_ENABLE_START **/ true /** REPLACED_WITH_SENTRY_ENABLE_END **/
       ) {
         Sentry.init({
           dsn:
@@ -36,6 +37,7 @@
           // of transactions for performance monitoring.
           // We recommend adjusting this value in production
           tracesSampleRate: 1.0,
+          environment: /** REPLACED_WITH_SENTRY_ENVIRONMENT_START **/ undefined /** REPLACED_WITH_SENTRY_ENVIRONMENT_END **/,
         });
         /**
          * @arg {string} errorString
@@ -86,7 +88,7 @@
           userHasTouchScreen,
           featureFlags:
             /** REPLACED_WITH_FEATURE_FLAGS_START **/
-            {},
+            { placeholder: false },
           /** REPLACED_WITH_FEATURE_FLAGS_END **/
         },
       });

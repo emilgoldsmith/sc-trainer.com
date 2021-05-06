@@ -79,7 +79,12 @@ type alias Flags =
     { viewportSize : ViewportSize
     , userHasTouchScreen : Bool
     , featureFlags :
-        { moreFlowWhenWrong : Bool
+        { -- Placeholder is just here to silence linting errors for one field in a record
+          -- as it makes sense here as feature flags will grow and shrink often.
+          -- When we make the flag a Value input though we can maybe consider when there's one
+          -- value just keeping it as a single one though
+          placeholder : Bool
+        , moreFlowWhenWrong : Bool
         }
     }
 
