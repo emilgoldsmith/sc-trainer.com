@@ -1,5 +1,6 @@
 [![CI](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/ci.yml/badge.svg)](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/ci.yml)
 [![CD](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/deploy.yml/badge.svg)](https://github.com/emilgoldsmith/sc-trainer.com/actions/workflows/deploy.yml)
+[![This project is using Percy.io for visual regression testing.](https://percy.io/static/images/percy-badge.svg)](https://percy.io/efdf5e9e/sc-trainer.com)
 
 # www.sc-trainer.com
 
