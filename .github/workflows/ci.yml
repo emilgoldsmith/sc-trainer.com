@@ -161,12 +161,15 @@ jobs:
             browserString: Chrome
         # Values for devices taken from https://docs.cypress.io/api/commands/viewport#Arguments
         sizeRelevant:
-          - viewportConfig: "viewportWidth=1280,viewportHeight=800"
-            # We include the dynamic viewports just one place as it doesn't matter what initial
-            # viewport size it is so no need to include it several times
+          - viewportWidth: 1280
+            viewportHeight: 800
+            # We include the dynamic viewport tests just one place as it doesn't matter what initial
+            # viewport size it is as it's dynamically changed, so no need to include it in several
+            # viewport sizes
             extraSpecs: [cypress/tests/uses-dynamic-viewports/*]
             deviceName: Macbook 13
-          - viewportConfig: "viewportWidth=375,viewportHeight=667"
+          - viewportWidth: 375
+            viewportHeight: 667
             extraSpecs: []
             deviceName: iPhone 8
     # Dependabot doesn't receive secrets on a push event
@@ -217,6 +220,10 @@ jobs:
         with:
           passthrough: true
 
+      - name: Setup Percy Configuration
+        working-directory: end-to-end-tests
+        run: 'echo ''{ "version": 2, "snapshot": { "widths": [${{ matrix.sizeRelevant.viewportWidth }}], "min-height": ${{ matrix.sizeRelevant.viewportHeight }} } }'' > percy-config.json'
+
       - name: Run Cypress Tests
         working-directory: end-to-end-tests
         env:
@@ -224,10 +231,10 @@ jobs:
           PERCY_PARALLEL_NONCE: ${{ github.run_id }}
           PERCY_PARALLEL_TOTAL: ${{ strategy.job-total }}
         run: >
-          ./node_modules/.bin/percy exec --parallel --
+          ./node_modules/.bin/percy exec --parallel --config percy-config.json --
           ./node_modules/.bin/cypress run
           --browser ${{ matrix.platform.browser }}
-          --config "${{ matrix.sizeRelevant.viewportConfig }},baseUrl=http://sctrainer-server:${{ env.PORT }}"
+          --config "viewportWidth=${{ matrix.sizeRelevant.viewportWidth}},viewportHeight=${{ matrix.sizeRelevant.viewportHeight }},baseUrl=http://sctrainer-server:${{ env.PORT }}"
           --spec cypress/tests/*,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}
 
       - name: Upload recorded videos
