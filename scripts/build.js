@@ -2,9 +2,12 @@
 
 const options = process.argv.slice(2);
 
-if (options.length > 1) {
+if (options.length !== 1 || typeof options[0] !== "string") {
   console.error(
-    "Too many options provided, only accepted options are nothing, --staging, or --development"
+    `\
+Exactly one option that takes exactly one of the following three values was expected. ${options.length} options were found.
+
+Accepted options are: --target=development, --target=staging or --target=production`
   );
   process.exit(1);
 }
@@ -13,21 +16,21 @@ const PRODUCTION = 0;
 const STAGING = 1;
 const DEVELOPMENT = 2;
 let environment;
-switch (options[0] || "") {
-  case "--staging":
-    environment = STAGING;
-    break;
-  case "--development":
+switch (options[0].split("--target=")[1]) {
+  case "development":
     environment = DEVELOPMENT;
     break;
-  case "":
+  case "staging":
+    environment = STAGING;
+    break;
+  case "production":
     environment = PRODUCTION;
     break;
   default:
     console.error(
       "Invalid option: " +
         options[0] +
-        "\nOnly allowed options are --staging and --development"
+        "\n\nOnly allowed options are --target=development, --target=staging or --target=production"
     );
     process.exit(1);
 }
@@ -73,26 +76,76 @@ const indexHtmlTemplate = fs.readFileSync(
   "utf-8"
 );
 
-const stagingAndProductionFeatureFlags = JSON.parse(
-  fs.readFileSync(FEATURE_FLAGS_PATH)
-);
+/**
+ * @arg {any[]} a1
+ * @arg {any[]} a2
+ * @returns {boolean}
+ */
+function sameElements(a1, a2) {
+  if (a1.length !== a2.length) return false;
+  for (x of a1) {
+    if (!a2.includes(x)) return false;
+  }
+  return true;
+}
+
+/**
+ * @constant
+ * @type {{staging: {[key: string]: boolean}; production: {[key: string]: boolean}}}
+ */
+const deploymentFlags = JSON.parse(fs.readFileSync(FEATURE_FLAGS_PATH));
+if (
+  !sameElements(
+    Object.keys(deploymentFlags.production),
+    Object.keys(deploymentFlags.staging)
+  )
+) {
+  console.error(
+    `Invalid feature flags. Staging and Production don't have same keys. Staging had keys ${JSON.stringify(
+      Object.keys(deploymentFlags.staging)
+    )} and production had ${JSON.stringify(
+      Object.keys(deploymentFlags.production)
+    )}`
+  );
+  process.exit(1);
+}
+
+/**
+ * @constant
+ * @type {{[key: string]: boolean} | null}
+ */
 let localDevelopmentOverrides = null;
 if (fs.existsSync(LOCAL_FLAG_OVERRIDE_PATH)) {
   localDevelopmentOverrides = JSON.parse(
     fs.readFileSync(LOCAL_FLAG_OVERRIDE_PATH)
   );
+  if (
+    !sameElements(
+      Object.keys(deploymentFlags.staging),
+      Object.keys(localDevelopmentOverrides)
+    )
+  ) {
+    console.error(
+      `Invalid feature flags. Local development overrides didn't have same flags as deployment ones. Staging had keys ${JSON.stringify(
+        Object.keys(deploymentFlags.staging)
+      )} and local overrides had ${JSON.stringify(
+        Object.keys(localDevelopmentOverrides)
+      )}`
+    );
+    process.exit(1);
+  }
 }
+
 let featureFlagsToUse = null;
 switch (environment) {
   case PRODUCTION:
-    featureFlagsToUse = stagingAndProductionFeatureFlags.production;
+    featureFlagsToUse = deploymentFlags.production;
     break;
   case STAGING:
-    featureFlagsToUse = stagingAndProductionFeatureFlags.staging;
+    featureFlagsToUse = deploymentFlags.staging;
     break;
   case DEVELOPMENT:
-    featureFlagsToUse =
-      localDevelopmentOverrides || stagingAndProductionFeatureFlags.staging;
+    featureFlagsToUse = localDevelopmentOverrides || deploymentFlags.staging;
     break;
   default:
     throw new Error(`Unexpected environment: ${environment}`);
@@ -135,7 +188,10 @@ const builtIndexHtml = replaceMany(
   indexHtmlTemplate,
 
   [
-    { key: "FEATURE_FLAGS", value: featureFlagsToUse },
+    {
+      key: "FEATURE_FLAGS",
+      value: { placeholder: false, ...featureFlagsToUse },
+    },
     {
       key: "SENTRY_ENABLE",
       value: environment === PRODUCTION || environment === STAGING,
