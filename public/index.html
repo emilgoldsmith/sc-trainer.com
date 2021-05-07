@@ -37,6 +37,9 @@
           // We recommend adjusting this value in production
           tracesSampleRate: 1.0,
         });
+        /**
+         * @arg {string} errorString
+         */
         function handleErrorBySentry(errorString) {
           Sentry.captureMessage(errorString, "error");
         }
@@ -85,16 +88,19 @@
       });
 
       /**
+       * @arg {string} errorString
+       */
+      const handleError =
+        /** CYPRESS_REPLACE_HANDLE_ERROR_START **/
+        function (errorString) {
+          if (typeof handleErrorBySentry === "function")
+            handleErrorBySentry(errorString);
+          else console.error(errorString);
+        }; /** CYPRESS_REPLACE_HANDLE_ERROR_END **/
+      /**
        * DEFINE ELM PORTS
        */
       app.ports.logError.subscribe(handleError);
-      /** CYPRESS_REPLACE_HANDLE_ERROR_START **/
-      function handleError(errorString) {
-        if (typeof handleErrorBySentry === "function")
-          handleErrorBySentry(errorString);
-        else console.error(errorString);
-      }
-      /** CYPRESS_REPLACE_HANDLE_ERROR_END **/
     </script>
   </body>
 </html>
