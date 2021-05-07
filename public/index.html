@@ -88,19 +88,13 @@
        * DEFINE ELM PORTS
        */
       app.ports.logError.subscribe(handleError);
+      /** CYPRESS_REPLACE_HANDLE_ERROR_START **/
       function handleError(errorString) {
-        if (false /*IS_CYPRESS_TEST*/) {
-          // This will be replaced in a cypress test where the IS_CYPRESS_TEST
-          // false blocks have been string replaced to be true.
-          // If this has not happened this block will be optimized
-          // away by a minifier
-          (() => {})(/*HANDLE_ERROR_CYPRESS*/ errorString);
-        }
-        // TODO: Setup Sentry
         if (typeof handleErrorBySentry === "function")
           handleErrorBySentry(errorString);
         else console.error(errorString);
       }
+      /** CYPRESS_REPLACE_HANDLE_ERROR_END **/
     </script>
   </body>
 </html>
