@@ -57,13 +57,15 @@ WORKDIR /app
 RUN yarn add serve
 
 COPY --from=prod-builder /workdir/main.min.js public/main.js
-COPY public/index.html public/index.html
+COPY public/index.template.html public/index.template.html
 COPY public/sentry.js public/sentry.js
-COPY scripts/run-production.sh run-production.sh
+COPY scripts/run-production.sh scripts/run-production.sh
+COPY scripts/build.js scripts/build.js
+COPY config/feature-flags.json config/feature-flags.json
 
 EXPOSE $PORT
 
-ENTRYPOINT ["/app/run-production.sh"]
+ENTRYPOINT ["./scripts/run-production.sh"]
 
 ############################
 # CI STAGE
