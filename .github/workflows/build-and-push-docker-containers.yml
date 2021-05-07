@@ -72,7 +72,7 @@ jobs:
 
       # Being extra sure that people can't tamper with anything related to these secrets
       - name: Ensure Dockerfile Wasn't Changed If Untrusted Source
-        if: ${{ github.event_name == 'pull_request_target' && github.event.pull_quest.author_association != 'OWNER' }}
+        if: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.author_association != 'OWNER' }}
         run: git fetch origin main && git diff --exit-code origin/main Dockerfile
 
       - name: Setup Docker Buildx
