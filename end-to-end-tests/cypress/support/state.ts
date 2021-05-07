@@ -1,4 +1,4 @@
-import { interceptAddingElmModelObserversAndModifiers } from "./elm-model-monkey-patching";
+import { performStandardIntercepts } from "./interceptors";
 
 export class StateCache {
   private elmModel: Cypress.OurApplicationState | null = null;
@@ -9,7 +9,7 @@ export class StateCache {
   ) {}
 
   populateCache(): void {
-    interceptAddingElmModelObserversAndModifiers();
+    performStandardIntercepts();
     cy.withOverallNameLogged(
       {
         displayName: "POPULATING CACHE FOR STATE",

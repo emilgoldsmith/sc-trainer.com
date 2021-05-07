@@ -1,41 +1,16 @@
-export function interceptAddingElmModelObserversAndModifiers(): void {
-  const htmlUrlPatterns = Cypress.config().baseUrl + "{,/,/index.html}";
-  expect(Cypress.minimatch(Cypress.config().baseUrl + "", htmlUrlPatterns)).to
-    .be.true;
-  expect(Cypress.minimatch(Cypress.config().baseUrl + "/", htmlUrlPatterns)).to
-    .be.true;
-  expect(
-    Cypress.minimatch(Cypress.config().baseUrl + "/index.html", htmlUrlPatterns)
-  ).to.be.true;
-  cy.intercept(htmlUrlPatterns, (req) => {
-    req.reply((res) => {
-      const withE2eHelpers = addToDocumentHead({
-        toAdd: addE2ETestHelpersToWindow,
-        htmlString: res.body,
-      });
-      const withAllModifiers = withE2eHelpers
-        .replace(/false\/\*IS_CYPRESS_TEST\*\//g, "true")
-        .replace(
-          "() => {}/*HANDLE_ERROR_CYPRESS*/",
-          "x => {throw new Error(x)}"
-        );
-      res.send(withAllModifiers);
-    });
+export function addElmModelObserversAndModifiersToHtml(
+  previousHtml: string
+): string {
+  return addToDocumentHead({
+    toAdd: addE2ETestHelpersToWindow,
+    htmlString: previousHtml,
   });
-  const jsPattern = Cypress.config().baseUrl + "/main.js";
-  expect(Cypress.minimatch(Cypress.config().baseUrl + "/main.js", jsPattern)).to
-    .be.true;
-  cy.intercept(Cypress.config().baseUrl + "/main.js", (req) => {
-    req.reply((res) => {
-      if (res.statusCode === 304) {
-        // The server is saying main.js isn't modified so we don't need to
-        // modify either as the browser will know how to retrieve the previous version
-        return;
-      }
-      const withObserversAndModifiers = addObserversAndModifiers(res.body);
-      res.send(withObserversAndModifiers);
-    });
-  });
+}
+
+export function addElmModelObserversAndModifiersToJavascript(
+  previousJavascript: string
+): string {
+  return addObserversAndModifiers(previousJavascript);
 }
 
 function addToDocumentHead({
