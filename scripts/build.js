@@ -86,6 +86,9 @@ function sameElements(a1, a2) {
   for (x of a1) {
     if (!a2.includes(x)) return false;
   }
+  for (x of a2) {
+    if (!a1.includes(x)) return false;
+  }
   return true;
 }
 
