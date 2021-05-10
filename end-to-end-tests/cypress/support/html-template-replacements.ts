@@ -1,5 +1,8 @@
-export function handleHtmlCypressModifications(html: string): string {
-  return replaceMany(html, [
+export function handleHtmlCypressModifications(html: {
+  type: "html";
+  value: string;
+}): string {
+  return replaceMany(html.value, [
     {
       key: "HANDLE_ERROR",
       value: handleError.toString(),

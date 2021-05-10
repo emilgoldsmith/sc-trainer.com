@@ -1,11 +1,12 @@
 import {
   addElmModelObserversAndModifiersToHtml,
   addElmModelObserversAndModifiersToJavascript,
+  fixRandomnessSeedInJavascript,
 } from "./elm-monkey-patching";
 import { handleHtmlCypressModifications } from "./html-template-replacements";
 
 export function interceptHtml(
-  ...modifiers: ((previousHtml: string) => string)[]
+  ...modifiers: ((previousHtml: { type: "html"; value: string }) => string)[]
 ): void {
   cy.intercept("*", (req) => {
     const expectsHtml =
@@ -14,13 +15,18 @@ export function interceptHtml(
 
     req.reply((res) => {
       if (res.statusCode === 304) {
-        // The server is saying the resource wasn't modified so we don't need to
-        // modify either as the browser will know how to retrieve the previous version that we already will have modified
-        return;
+        throw new Error(
+          "Got 304, which means we need to remove more headers from the request to force a fresh asset on every test"
+        );
+      }
+      const body = res.body;
+      if (typeof body !== "string") {
+        throw new Error("Body response wasn't a string");
       }
       const modifiedHtml = modifiers.reduce(
-        (curHtml, nextModifier) => nextModifier(curHtml),
-        res.body
+        (curHtml, nextModifier) =>
+          nextModifier({ type: "html", value: curHtml }),
+        body
       );
       res.send(modifiedHtml);
     });
@@ -28,21 +34,32 @@ export function interceptHtml(
 }
 
 export function interceptJavascript(
-  ...modifiers: ((previousJavascript: string) => string)[]
+  ...modifiers: ((previousJavascript: {
+    type: "js";
+    value: string;
+  }) => string)[]
 ): void {
   const jsPattern = Cypress.config().baseUrl + "/main.js";
   expect(Cypress.minimatch(Cypress.config().baseUrl + "/main.js", jsPattern)).to
     .be.true;
   cy.intercept(jsPattern, (req) => {
+    delete req.headers["if-modified-since"];
+    delete req.headers["if-none-match"];
+    console.log(req.headers);
     req.reply((res) => {
       if (res.statusCode === 304) {
-        // The server is saying main.js isn't modified so we don't need to
-        // modify either as the browser will know how to retrieve the previous version
-        return;
+        throw new Error(
+          "Got 304, which means we need to remove more headers from the request to force a fresh asset on every test"
+        );
+      }
+      const body = res.body;
+      if (typeof body !== "string") {
+        throw new Error("Body response wasn't a string");
       }
       const modifiedJavascript = modifiers.reduce(
-        (curJavascript, nextModifier) => nextModifier(curJavascript),
-        res.body
+        (curJavascript, nextModifier) =>
+          nextModifier({ type: "js", value: curJavascript }),
+        body
       );
       res.send(modifiedJavascript);
     });
@@ -54,7 +71,10 @@ export function performStandardIntercepts(): void {
     addElmModelObserversAndModifiersToHtml,
     handleHtmlCypressModifications
   );
-  interceptJavascript(addElmModelObserversAndModifiersToJavascript);
+  interceptJavascript(
+    addElmModelObserversAndModifiersToJavascript,
+    fixRandomnessSeedInJavascript
+  );
   ensureServerNotReloading();
 }
 
