@@ -1,6 +1,9 @@
 import { getKeyValue, Key } from "support/keys";
 import { installClock, setTimeTo, tick } from "support/clock";
-import { pllTrainerStates, pllTrainerElements } from "./state-and-elements";
+import {
+  pllTrainerStates,
+  pllTrainerElements,
+} from "./state-and-elements.helper";
 import { paths } from "support/paths";
 
 describe("Algorithm Trainer", function () {
