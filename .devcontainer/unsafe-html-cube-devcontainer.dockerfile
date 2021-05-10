@@ -107,3 +107,6 @@ RUN groupadd --gid 1000 $USERNAME \
 RUN apt update -y \
     && apt install -y python3-dev python3-pip python3-setuptools \
     && pip3 install thefuck
+
+# Install bash completion
+RUN apt install -y bash-completion
