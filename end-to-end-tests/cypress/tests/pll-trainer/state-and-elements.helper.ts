@@ -48,88 +48,92 @@ export const pllTrainerElements = {
   }),
 };
 
-export const pllTrainerStates = buildStates(paths.pllTrainer, {
+export const pllTrainerStates = buildStates<
+  | "startPage"
+  | "getReadyScreen"
+  | "testRunning"
+  | "evaluateResult"
+  | "evaluateResultAfterIgnoringKeyPresses"
+  | "correctPage"
+  | "wrongPage"
+>(paths.pllTrainer, {
   startPage: {
     name: "startPage",
     getToThatState: () => {},
-    waitForStateToAppear: (options?: StateOptions) => {
+    waitForStateToAppear: (options) => {
       pllTrainerElements.startPage.container.waitFor(options);
       cy.waitForDocumentEventListeners("keyup");
     },
   },
   getReadyScreen: {
     name: "getReadyScreen",
-    getToThatState: (options?: StateOptions) => {
-      pllTrainerStates.startPage.restoreState(options);
+    getToThatState: (getState, options) => {
+      getState("startPage");
       pllTrainerElements.startPage.startButton.get().click(options);
     },
-    waitForStateToAppear: (options?: StateOptions) => {
+    waitForStateToAppear: (options) => {
       pllTrainerElements.getReadyScreen.container.waitFor(options);
     },
   },
   testRunning: {
     name: "testRunning",
-    getToThatState: (options?: StateOptions) => {
+    getToThatState: (getState, options) => {
       // We need to have time mocked from start page
       // to programatically pass through the get ready page
-      pllTrainerStates.startPage.restoreState(options);
+      getState("startPage");
       cy.clock();
       pllTrainerElements.startPage.startButton.get().click(options);
       pllTrainerElements.getReadyScreen.container.waitFor(options);
       cy.tick(1000, options);
       cy.clock().then((clock) => clock.restore());
     },
-    waitForStateToAppear: (options?: StateOptions) => {
+    waitForStateToAppear: (options) => {
       pllTrainerElements.testRunning.container.waitFor(options);
       cy.waitForDocumentEventListeners("mousedown", "keydown");
     },
   },
   evaluateResult: {
     name: "evaluateResult",
-    getToThatState: (options?: StateOptions) => {
-      pllTrainerStates.testRunning.restoreState(options);
-      cy.pressKey(Key.space);
+    getToThatState: (getState, options) => {
+      getState("testRunning");
+      cy.pressKey(Key.space, options);
     },
-    waitForStateToAppear: (options?: StateOptions) => {
+    waitForStateToAppear: (options) => {
       pllTrainerElements.evaluateResult.container.waitFor(options);
     },
   },
   evaluateResultAfterIgnoringKeyPresses: {
     name: "evaluateResultAfterIgnoringKeyPresses",
-    getToThatState: (options?: StateOptions) => {
+    getToThatState: (getState, options) => {
       // We need to have time mocked from test running
       // to programatically pass through the ignoring key presses phase
-      pllTrainerStates.testRunning.restoreState(options);
+      getState("testRunning");
       cy.clock();
       cy.pressKey(Key.space, options);
       pllTrainerElements.evaluateResult.container.waitFor(options);
       cy.tick(300, options);
       cy.clock().then((clock) => clock.restore());
     },
-    waitForStateToAppear: (options?: StateOptions) => {
+    waitForStateToAppear: (options) => {
       pllTrainerElements.evaluateResult.container.waitFor(options);
       cy.waitForDocumentEventListeners("keydown", "keyup");
     },
   },
   correctPage: {
     name: "correctPage",
-    getToThatState: (options?: StateOptions) => {
-      pllTrainerStates.evaluateResultAfterIgnoringKeyPresses.restoreState(
-        options
-      );
+    getToThatState: (getState, options) => {
+      getState("evaluateResultAfterIgnoringKeyPresses");
       pllTrainerElements.evaluateResult.correctButton.get().click(options);
     },
-    waitForStateToAppear: (options?: StateOptions) => {
+    waitForStateToAppear: (options) => {
       pllTrainerElements.correctPage.container.waitFor(options);
       cy.waitForDocumentEventListeners("keyup");
     },
   },
   wrongPage: {
     name: "wrongPage",
-    getToThatState: (options?: StateOptions) => {
-      pllTrainerStates.evaluateResultAfterIgnoringKeyPresses.restoreState(
-        options
-      );
+    getToThatState: (getState, options) => {
+      getState("evaluateResultAfterIgnoringKeyPresses");
       pllTrainerElements.evaluateResult.wrongButton.get().click(options);
     },
     waitForStateToAppear: (options?: StateOptions) => {

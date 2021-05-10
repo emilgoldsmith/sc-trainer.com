@@ -4,15 +4,20 @@ export type StateOptions = { log?: boolean };
 export interface StateCache {
   populateCache(): void;
   restoreState(options?: StateOptions): void;
-  navigateToState(): void;
+  navigateTo(options?: StateOptions): void;
 }
 
-class StateCacheImplementation implements StateCache {
+class StateCacheImplementation<Keys extends string> implements StateCache {
   private elmModel: Cypress.OurApplicationState | null = null;
+  private otherCaches?: { [key in Keys]: StateCache };
+
   constructor(
     private name: string,
     private startPath: string,
-    private getToThatState: (options?: StateOptions) => void,
+    private getToThatState: (
+      getState: (key: Keys) => void,
+      options?: StateOptions
+    ) => void,
     private waitForStateToAppear: (options?: StateOptions) => void
   ) {}
 
@@ -24,8 +29,8 @@ class StateCacheImplementation implements StateCache {
         message: this.name,
       },
       (consolePropsSetter) => {
-        cy.visit(this.startPath);
-        this.getToThatState({ log: false });
+        cy.visit(this.startPath, { log: false });
+        this.getToThatState(this.getStateByRestore.bind(this), { log: false });
         this.waitForStateToAppear({ log: false });
         cy.getApplicationState(this.name, { log: false }).then((elmModel) => {
           this.elmModel = elmModel;
@@ -33,6 +38,12 @@ class StateCacheImplementation implements StateCache {
         });
       }
     );
+  }
+  private getStateByRestore(key: Keys): void {
+    if (this.otherCaches === undefined) {
+      throw new Error("otherCaches not defined when it should be");
+    }
+    this.otherCaches[key].restoreState();
   }
 
   restoreState(options?: StateOptions): void {
@@ -44,18 +55,29 @@ class StateCacheImplementation implements StateCache {
     this.waitForStateToAppear(options);
   }
 
-  navigateToState() {
+  navigateTo(): void {
     cy.withOverallNameLogged(
       {
-        displayName: "NAVIGATE TO",
+        displayName: "NAVIGATING TO",
         message: this.name,
       },
       () => {
-        cy.visit(this.startPath);
-        this.getToThatState({ log: false });
-        this.waitForStateToAppear({ log: false });
+        cy.visit(this.startPath, { log: false });
+        this.getToThatState(this.getStateByNavigate.bind(this), { log: false });
+        this.waitForStateToAppear();
       }
     );
+  }
+
+  private getStateByNavigate(key: Keys): void {
+    if (this.otherCaches === undefined) {
+      throw new Error("otherCaches not defined when it should be");
+    }
+    this.otherCaches[key].navigateTo();
+  }
+
+  setOtherCaches(caches: { [key in Keys]: StateCache }) {
+    this.otherCaches = caches;
   }
 }
 
@@ -64,7 +86,10 @@ export function buildStates<Keys extends string>(
   states: {
     [key in Keys]: {
       name: string;
-      getToThatState: (options?: StateOptions) => void;
+      getToThatState: (
+        getState: (key: Keys) => void,
+        options?: StateOptions
+      ) => void;
       waitForStateToAppear: (options?: StateOptions) => void;
     };
   }
@@ -84,6 +109,11 @@ export function buildStates<Keys extends string>(
         args.waitForStateToAppear
       )
   );
+
+  Cypress._.forEach(pureStates, (cache) => {
+    cache.setOtherCaches(pureStates);
+  });
+
   return {
     ...pureStates,
     populateAll: () => {
