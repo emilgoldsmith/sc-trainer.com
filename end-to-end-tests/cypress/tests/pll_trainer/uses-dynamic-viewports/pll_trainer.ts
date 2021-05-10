@@ -1,6 +1,6 @@
 import { Key } from "support/keys";
 import { paths } from "support/paths";
-import { pllTrainerElements } from "../state-and-elements";
+import { pllTrainerElements } from "../state-and-elements.helper";
 
 /** iphone-8 dimensions from https://docs.cypress.io/api/commands/viewport#Arguments */
 const smallViewportConfigOverride: Cypress.TestConfigOverrides = {
