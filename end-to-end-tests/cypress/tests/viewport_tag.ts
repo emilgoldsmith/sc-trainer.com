@@ -1,5 +1,8 @@
+import { paths } from "support/paths";
+
 describe("has correct viewport properties on url:", function () {
-  const pathsToTest = ["", "/", "/index.html"];
+  // eslint-disable-next-line mocha/no-setup-in-describe
+  const pathsToTest = Cypress._.values(paths);
   // eslint-disable-next-line mocha/no-setup-in-describe
   pathsToTest.forEach((path) =>
     it("'" + path + "'", function () {
