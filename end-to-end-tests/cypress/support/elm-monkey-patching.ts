@@ -1,16 +1,18 @@
-export function addElmModelObserversAndModifiersToHtml(
-  previousHtml: string
-): string {
+export function addElmModelObserversAndModifiersToHtml(previousHtml: {
+  type: "html";
+  value: string;
+}): string {
   return addToDocumentHead({
     toAdd: addE2ETestHelpersToWindow,
-    htmlString: previousHtml,
+    htmlString: previousHtml.value,
   });
 }
 
-export function addElmModelObserversAndModifiersToJavascript(
-  previousJavascript: string
-): string {
-  return addObserversAndModifiers(previousJavascript);
+export function addElmModelObserversAndModifiersToJavascript(previousJavascript: {
+  type: "js";
+  value: string;
+}): string {
+  return addObserversAndModifiers(previousJavascript.value);
 }
 
 function addToDocumentHead({
@@ -24,6 +26,58 @@ function addToDocumentHead({
     "<head>",
     `<head><script>(${toAdd.toString()}())</script>`
   );
+}
+
+export function fixRandomnessSeedInJavascript(
+  previousJavascript: { type: "js"; value: string },
+  seed = 0
+): string {
+  const initExtractorRegex = buildRegex(
+    [
+      // The identifier
+      String.raw`\['Random'\]`,
+      // Assignment and function name
+      String.raw`\s*=\s*\w+\s*\(`,
+      // Get the first argument which is random init
+      `(.+?),`,
+    ],
+    "g"
+  );
+  const matches = applyGlobalRegex(
+    initExtractorRegex,
+    previousJavascript.value
+  );
+  const initFunctionName = getOrThrow(
+    1,
+    ensureSingletonListAndExtract(matches)
+  );
+  console.log(initFunctionName);
+  const regex = buildRegex(
+    [
+      "(",
+      initFunctionName.replace(/\$/g, "\\$"),
+      String.raw`\b\s*=.*\(`,
+      String.raw`[\s\S]+?\(`,
+      String.raw`[\s\S]+?\(`,
+      String.raw`[\s\S]+?\(`,
+      ")",
+      String.raw`[\s\S]+?\)`,
+    ],
+    "g"
+  );
+  // Ensure there's only a single match with a capture group
+  getOrThrow(
+    0,
+    ensureSingletonListAndExtract(
+      applyGlobalRegex(regex, previousJavascript.value)
+    )
+  );
+  console.log(applyGlobalRegex(regex, previousJavascript.value));
+  const ret = previousJavascript.value.replace(regex, "$10");
+  console.log(
+    ret.substr(applyGlobalRegex(regex, previousJavascript.value)[0].index, 400)
+  );
+  return ret;
 }
 
 function addE2ETestHelpersToWindow() {
@@ -529,15 +583,12 @@ function ensureSingletonListAndExtract<T>(list: T[]): T {
   return finalResult;
 }
 
-function applyGlobalRegex(
-  regex: RegExp,
-  htmlString: string
-): RegExpExecArray[] {
+function applyGlobalRegex(regex: RegExp, string: string): RegExpExecArray[] {
   const candidates: RegExpExecArray[] = [];
-  let result = regex.exec(htmlString);
+  let result = regex.exec(string);
   while (result) {
     candidates.push(result);
-    result = regex.exec(htmlString);
+    result = regex.exec(string);
   }
   return candidates;
 }
