@@ -22,6 +22,7 @@ updates:
       - emilgoldsmith
     versioning-strategy: increase
     ignore: 
+      - dependency-name: "eslint"
       - dependency-name: "eslint-*"
       - dependency-name: "@typescript-eslint/*"
       
