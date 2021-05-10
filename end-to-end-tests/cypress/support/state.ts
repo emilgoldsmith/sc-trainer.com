@@ -64,7 +64,7 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
       () => {
         cy.visit(this.startPath, { log: false });
         this.getToThatState(this.getStateByNavigate.bind(this), { log: false });
-        this.waitForStateToAppear();
+        this.waitForStateToAppear({ log: false });
       }
     );
   }
