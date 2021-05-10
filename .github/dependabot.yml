@@ -25,6 +25,7 @@ updates:
       - dependency-name: "eslint"
       - dependency-name: "eslint-*"
       - dependency-name: "@typescript-eslint/*"
+      - dependency-name: prettier
       
   - package-ecosystem: github-actions
     directory: /
