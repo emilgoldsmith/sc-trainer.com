@@ -43,9 +43,9 @@ export function interceptJavascript(
   expect(Cypress.minimatch(Cypress.config().baseUrl + "/main.js", jsPattern)).to
     .be.true;
   cy.intercept(jsPattern, (req) => {
+    // Delete caching headers so we always get fresh javascript to modify
     delete req.headers["if-modified-since"];
     delete req.headers["if-none-match"];
-    console.log(req.headers);
     req.reply((res) => {
       if (res.statusCode === 304) {
         throw new Error(

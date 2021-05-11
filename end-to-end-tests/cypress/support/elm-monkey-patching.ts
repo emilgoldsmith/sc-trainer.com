@@ -32,13 +32,35 @@ export function fixRandomnessSeedInJavascript(
   previousJavascript: { type: "js"; value: string },
   seed = 0
 ): string {
+  const toTry = [fixSeedUnminimized, fixSeedMinimized];
+  const errors: Error[] = [];
+  for (const fixer of toTry) {
+    try {
+      return fixer(previousJavascript, seed);
+    } catch (e) {
+      if (e instanceof Error) errors.push(e);
+      else errors.push(new Error(e));
+    }
+  }
+  const errorMessage = errors.reduce(
+    (curMessage, nextError) =>
+      (curMessage += `ErrorMessage: ${nextError.message}\n\nStacktrace: ${nextError.stack}\n\n`),
+    ""
+  );
+  throw new Error(errorMessage);
+}
+
+function fixSeedUnminimized(
+  previousJavascript: { type: "js"; value: string },
+  seed: number
+) {
   const initExtractorRegex = buildRegex(
     [
       // The identifier
       String.raw`\['Random'\]`,
       // Assignment and function name
       String.raw`\s*=\s*\w+\s*\(`,
-      // Get the first argument which is random init
+      // Get the first argument which is the function Random.init
       `(.+?),`,
     ],
     "g"
@@ -51,16 +73,21 @@ export function fixRandomnessSeedInJavascript(
     1,
     ensureSingletonListAndExtract(matches)
   );
-  console.log(initFunctionName);
   const regex = buildRegex(
     [
+      // Capture the prefix we just include to make sure it's a unique match
       "(",
+      // The identifier
       initFunctionName.replace(/\$/g, "\\$"),
+      // The assignment of that identifier
       String.raw`\b\s*=.*\(`,
+      // Go through three function openings
       String.raw`[\s\S]+?\(`,
       String.raw`[\s\S]+?\(`,
       String.raw`[\s\S]+?\(`,
+      // This is where we want to replace from so we stop capturing
       ")",
+      // Capture everything passed to the last function, so until the parentheses close
       String.raw`[\s\S]+?\)`,
     ],
     "g"
@@ -72,10 +99,75 @@ export function fixRandomnessSeedInJavascript(
       applyGlobalRegex(regex, previousJavascript.value)
     )
   );
-  console.log(applyGlobalRegex(regex, previousJavascript.value));
-  const ret = previousJavascript.value.replace(regex, "$10");
-  console.log(
-    ret.substr(applyGlobalRegex(regex, previousJavascript.value)[0].index, 400)
+  // Replace the matched part with our specified seed
+  const withPatchedSeedValue = previousJavascript.value.replace(
+    regex,
+    "$1" + seed.toString()
+  );
+  return withPatchedSeedValue;
+}
+
+function fixSeedMinimized(
+  previousJavascript: { type: "js"; value: string },
+  seed: number
+) {
+  const initExtractorRegex = buildRegex(
+    [
+      // The identifier
+      String.raw`\.Random`,
+      // expecting an assignment, we don't have to care about whitespace
+      // since it's minimized
+      String.raw`=`,
+      // We grab up until the value of the first property of the object
+      String.raw`\{[^:]*:`,
+      // Capture that first property name which is the Random.init function name
+      String.raw`(\w+),`,
+    ],
+    "g"
+  );
+  const matches = applyGlobalRegex(
+    initExtractorRegex,
+    previousJavascript.value
+  );
+  const initFunctionName = getOrThrow(
+    1,
+    ensureSingletonListAndExtract(matches)
+  );
+  const regex = buildRegex(
+    [
+      // Capture the prefix for the replace. Since it's minimized several
+      // places can use this variable name so we need a lot of context for it to be unique
+      "(",
+      String.raw`\b${initFunctionName}\b`,
+      // The asignment of our function name which value is the result of a function call
+      String.raw`=\w+\(`,
+      // Which has the first argument as an identifier, and the second a function with one argument that directly returns something
+      String.raw`\w+,function\(\w+\){return `,
+      // A function call with a leading open paranthesis for a comma operator syntax
+      String.raw`\w+\(\(`,
+      // Which is an assignment to an identifier
+      String.raw`\w+=`,
+      // We want to replace the rest from here so no more capturing
+      ")",
+      // get up until the next part of the comma operator
+      "[^,]+",
+      // Ensure a comma shows up and capture it as we don't want to change it
+      "(",
+      ",",
+      ")",
+    ],
+    "g"
+  );
+  // Ensure there's only a single match with a capture group
+  getOrThrow(
+    0,
+    ensureSingletonListAndExtract(
+      applyGlobalRegex(regex, previousJavascript.value)
+    )
+  );
+  const ret = previousJavascript.value.replace(
+    regex,
+    "$1" + seed.toString() + "$2"
   );
   return ret;
 }
