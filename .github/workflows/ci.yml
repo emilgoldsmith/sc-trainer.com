@@ -220,7 +220,7 @@ jobs:
           - viewportWidth: 375
             viewportHeight: 667
             extraSpecs: []
-            ignoredSpecs: tests/**/uses-dynamic-viewports/*
+            ignoredSpecs: "**/uses-dynamic-viewports/*"
             deviceName: iPhone 8
     # Dependabot doesn't receive secrets on a push event
     # so can't run our CI, so we just skip CI for it.
@@ -284,7 +284,7 @@ jobs:
           ./node_modules/.bin/percy exec --parallel --config percy-config.json --
           ./node_modules/.bin/cypress run
           --browser ${{ matrix.platform.browser }}
-          --config "viewportWidth=${{ matrix.sizeRelevant.viewportWidth}},viewportHeight=${{ matrix.sizeRelevant.viewportHeight }},baseUrl=http://sctrainer-server:${{ env.PORT }},ignoreTestFiles=${{ matrix.sizeRelevant.ignoredSpecs }}"
+          --config "viewportWidth=${{ matrix.sizeRelevant.viewportWidth}},viewportHeight=${{ matrix.sizeRelevant.viewportHeight }},baseUrl=http://sctrainer-server:${{ env.PORT }},ignoreTestFiles=[\"**/*.helper.ts\",\"${{ matrix.sizeRelevant.ignoredSpecs }}\"]"
           --spec cypress/tests/**/*.ts,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}
 
       - name: Upload recorded videos
