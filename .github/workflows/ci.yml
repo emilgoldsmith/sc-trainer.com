@@ -22,7 +22,7 @@ jobs:
         run: echo "$GITHUB_CONTEXT"
 
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
 
       - name: Wait For Docker Containers To Be Built And Pushed
         uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.7
@@ -70,7 +70,7 @@ jobs:
     if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
 
       - name: Assert elm-verify-examples is up to date
         run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommitted-changes.sh
@@ -179,7 +179,7 @@ jobs:
     if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
 
       - name: Handle Yarn caching
         uses: actions/cache@v2
