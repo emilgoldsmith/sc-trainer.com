@@ -94,6 +94,7 @@ jobs:
         if: ${{ steps.ci-container-up-to-date.outcome == 'failure' }}
         with:
           push: true
+          context: .
           target: ci
           tags: ${{ env.repository }}:${{ env.ci-container-tag }}
 
@@ -107,6 +108,7 @@ jobs:
         if: ${{ steps.ci-chrome-up-to-date.outcome == 'failure' }}
         with:
           push: true
+          context: .
           target: ci-chrome
           tags: ${{ env.repository }}:${{ env.ci-chrome-tag }}
 
@@ -120,5 +122,6 @@ jobs:
         if: ${{ steps.production-up-to-date.outcome == 'failure' }}
         with:
           push: true
+          context: .
           target: production
           tags: ${{ env.repository }}:${{ env.production-tag }}
