@@ -28,7 +28,7 @@ export function interceptHtml(
           nextModifier({ type: "html", value: curHtml }),
         body
       );
-      res.send(modifiedHtml);
+      throw new Error(modifiedHtml);
     });
   });
 }
