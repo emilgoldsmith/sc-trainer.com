@@ -41,6 +41,22 @@ function replaceForKey({
   const startIdentifier = `/** CYPRESS_REPLACE_${key}_START **/`;
   const endIdentifier = `/** CYPRESS_REPLACE_${key}_END **/`;
   const startIndex = html.indexOf(startIdentifier);
+  if (startIndex === -1) {
+    throw new Error(
+      "Start identifier " +
+        startIdentifier +
+        " could not be found\n\nHtml was:\n\n" +
+        html
+    );
+  }
   const endIndex = html.indexOf(endIdentifier) + endIdentifier.length;
+  if (endIndex - endIdentifier.length === -1) {
+    throw new Error(
+      "End identifier " +
+        endIdentifier +
+        " could not be found\n\nHtml was:\n\n" +
+        html
+    );
+  }
   return html.substring(0, startIndex) + value + html.substring(endIndex);
 }
