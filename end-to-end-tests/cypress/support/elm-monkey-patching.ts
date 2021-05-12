@@ -54,6 +54,10 @@ function fixSeedUnminimized(
   previousJavascript: { type: "js"; value: string },
   seed: number
 ) {
+  /**
+   * Here we are aiming to match the following line:
+   * _Platform_effectManagers['Random'] = _Platform_createManager($elm$random$Random$init, $elm$random$Random$onEffects, $elm$random$Random$onSelfMsg, $elm$random$Random$cmdMap);
+   */
   const initExtractorRegex = buildRegex(
     [
       // The identifier
@@ -73,6 +77,19 @@ function fixSeedUnminimized(
     1,
     ensureSingletonListAndExtract(matches)
   );
+  /**
+   * Here we are aiming to match the following code:
+   *
+   *
+   * var $elm$random$Random$init = A2(
+   * 	$elm$core$Task$andThen,
+   * 	function (time) {
+   * 		return $elm$core$Task$succeed(
+   * 			$elm$random$Random$initialSeed(
+   * 				$elm$time$Time$posixToMillis(time)));
+   * 	},
+   * 	$elm$time$Time$now);
+   */
   const regex = buildRegex(
     [
       // Capture the prefix we just include to make sure it's a unique match
@@ -80,7 +97,7 @@ function fixSeedUnminimized(
       // The identifier
       initFunctionName.replace(/\$/g, "\\$"),
       // The assignment of that identifier
-      String.raw`\b\s*=.*\(`,
+      String.raw`\b\s*=.*?\(`,
       // Go through three function openings
       String.raw`[\s\S]+?\(`,
       String.raw`[\s\S]+?\(`,
@@ -111,6 +128,10 @@ function fixSeedMinimized(
   previousJavascript: { type: "js"; value: string },
   seed: number
 ) {
+  /**
+   * Here we are trying to match the following line:
+   * Bn.Random={b:O,c:Oc,d:zn,e:U,f:void 0}
+   */
   const initExtractorRegex = buildRegex(
     [
       // The identifier
@@ -119,7 +140,7 @@ function fixSeedMinimized(
       // since it's minimized
       String.raw`=`,
       // We grab up until the value of the first property of the object
-      String.raw`\{[^:]*:`,
+      String.raw`\{.*?:`,
       // Capture that first property name which is the Random.init function name
       String.raw`(\w+),`,
     ],
@@ -133,6 +154,10 @@ function fixSeedMinimized(
     1,
     ensureSingletonListAndExtract(matches)
   );
+  /**
+   * Here we are trying to match the following line:
+   * O=N(Pe,function(n){return ze((r=ou(n),n=fu(N(Lc,0,1013904223)),fu(N(Lc,n.a+r>>>0,n.b))))
+   */
   const regex = buildRegex(
     [
       // Capture the prefix for the replace. Since it's minimized several
@@ -165,11 +190,11 @@ function fixSeedMinimized(
       applyGlobalRegex(regex, previousJavascript.value)
     )
   );
-  const ret = previousJavascript.value.replace(
+  const withPatchedSeed = previousJavascript.value.replace(
     regex,
     "$1" + seed.toString() + "$2"
   );
-  return ret;
+  return withPatchedSeed;
 }
 
 function addE2ETestHelpersToWindow() {
