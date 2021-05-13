@@ -2,4 +2,4 @@
 
 set -euo pipefail
 
-npx serve --listen tcp://0.0.0.0:$PORT public
+npx serve --listen tcp://0.0.0.0:$PORT --no-clipboard public
