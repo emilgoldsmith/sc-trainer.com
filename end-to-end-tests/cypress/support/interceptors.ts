@@ -19,6 +19,10 @@ export function interceptHtml(
           "Got 304, which means we need to remove more headers from the request to force a fresh asset on every test"
         );
       }
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        // Just ignore redirects, they'll be followed
+        return;
+      }
       const body = res.body;
       if (typeof body !== "string") {
         throw new Error("Body response wasn't a string");
@@ -51,6 +55,10 @@ export function interceptJavascript(
         throw new Error(
           "Got 304, which means we need to remove more headers from the request to force a fresh asset on every test"
         );
+      }
+      if (res.statusCode === 301 || res.statusCode === 302) {
+        // Just ignore redirects, they'll be followed
+        return;
       }
       const body = res.body;
       if (typeof body !== "string") {
