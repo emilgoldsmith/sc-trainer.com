@@ -8,32 +8,22 @@ jobs:
     name: Wait For Docker Containers To Be Built And Pushed
     runs-on: ubuntu-20.04
     outputs:
-      ci-container: ${{ steps.output.outputs.ci-container }}
-      ci-chrome: ${{ steps.output.outputs.ci-chrome }}
-      production: ${{ steps.output.outputs.production }}
+      ci-container: ${{ steps.outputter.outputs.ci-container }}
+      ci-chrome: ${{ steps.outputter.outputs.ci-chrome }}
+      production: ${{ steps.outputter.outputs.production }}
+    env:
+      repository: sctrainer/main
     # Dependabot doesn't receive secrets on a push event
     # so can't run our CI, so we just skip CI for it.
     # We have settings set up that ensure it can't be merged without
     # being up to date with main, so it shouldn't be an issue
     if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
-      - env:
-          GITHUB_CONTEXT: ${{ toJSON(github) }}
-        run: echo "$GITHUB_CONTEXT"
-
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Wait For Docker Containers To Be Built And Pushed
-        uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.7
-        with:
-          wait-interval-seconds: 15
-          wait-max-seconds: 120
-          workflows: build-and-push-docker-containers.yml
-          repo-token: ${{ github.token }}
-
-      - name: Output the container names
-        id: output
+      - name: Get container tags
+        id: tags
         env:
           EVENT_NAME: ${{ github.event_name }}
           MAIN_SHA: ${{ github.sha }}
@@ -54,9 +44,67 @@ jobs:
             ) \
           )
 
-          echo "::set-output name=ci-container::sctrainer/main:ci-container-v1"
-          echo "::set-output name=ci-chrome::sctrainer/main:ci-chrome-v1"
-          echo "::set-output name=production::sctrainer/main:production-$SHA"
+          echo "::set-output name=ci-container::ci-container-v1"
+          echo "::set-output name=ci-chrome::ci-chrome-v1"
+          echo "::set-output name=production::production-$SHA"
+
+      - name: Wait for CI Container image to exist
+        shell: bash
+        run: |
+          SECONDS=0
+          max_wait_time=300
+          wait_interval=5
+
+          while (( SECONDS  < max_wait_time )); do
+            curl --silent -f -lSL https://index.docker.io/v1/repositories/${{ env.repository }}/tags/${{ steps.tags.outputs.ci-container }} && break;
+            echo "Failed so sleeping"
+            sleep $wait_interval
+            echo "Trying again"
+          done
+
+          (( SECONDS >= max_wait_time )) && echo "failed" && exit 1
+          echo "Success"
+
+      - name: Wait for CI Chrome image to exist
+        shell: bash
+        run: |
+          SECONDS=0
+          max_wait_time=300
+          wait_interval=5
+
+          while (( SECONDS  < max_wait_time )); do
+            curl --silent -f -lSL https://index.docker.io/v1/repositories/${{ env.repository }}/tags/${{ steps.tags.outputs.ci-chrome }} && break;
+            echo "Failed so sleeping"
+            sleep $wait_interval
+            echo "Trying again"
+          done
+
+          (( SECONDS >= max_wait_time )) && echo "failed" && exit 1
+          echo "Success"
+
+      - name: Wait for Production image to exist
+        shell: bash
+        run: |
+          SECONDS=0
+          max_wait_time=300
+          wait_interval=5
+
+          while (( SECONDS  < max_wait_time )); do
+            curl --silent -f -lSL https://index.docker.io/v1/repositories/${{ env.repository }}/tags/${{ steps.tags.outputs.production }} && break;
+            echo "Failed so sleeping"
+            sleep $wait_interval
+            echo "Trying again"
+          done
+
+          (( SECONDS >= max_wait_time )) && echo "failed" && exit 1
+          echo "Success"
+
+      - name: Output the container names
+        id: outputter
+        run: |
+          echo "::set-output name=ci-container::${{ env.repository }}:${{ steps.tags.outputs.ci-container }}"
+          echo "::set-output name=ci-chrome::${{ env.repository }}:${{ steps.tags.outputs.ci-chrome }}"
+          echo "::set-output name=production::${{ env.repository }}:${{ steps.tags.outputs.production }}"
 
   lint-and-unit-tests:
     name: Linting And Unit Tests
