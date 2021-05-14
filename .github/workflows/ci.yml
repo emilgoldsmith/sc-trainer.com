@@ -3,6 +3,9 @@ on:
   push: { branches: [main] }
   pull_request: {}
 
+permissions:
+  contents: read
+
 jobs:
   wait-for-docker-containers:
     name: Wait For Docker Containers To Be Built And Pushed

@@ -3,6 +3,8 @@ on:
   pull_request_target:
     types: [review_requested]
 
+permissions: {}
+
 jobs:
   automerge:
     name: Auto Merge Trusted Dependabot Updates

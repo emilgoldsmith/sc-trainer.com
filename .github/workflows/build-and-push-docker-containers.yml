@@ -7,6 +7,8 @@ on:
     branches: main
   pull_request_target: {}
 
+permissions: {}
+
 jobs:
   get-ref-and-sha:
     name: Get Ref And SHA
@@ -49,6 +51,8 @@ jobs:
   main:
     name: Build And Push All Our Docker Containers
     runs-on: ubuntu-20.04
+    permissions:
+      contents: read
     needs: get-ref-and-sha
     env:
       repository: sctrainer/main
