@@ -141,6 +141,7 @@ jobs:
           PERCY_PARALLEL_TOTAL: ${{ strategy.job-total }}
           PERCY_BRANCH: ${{ github.event.workflow_run.head_branch }}
           PERCY_PULL_REQUEST: ${{ github.event.workflow_run.pull_requests[0].number }}
+          PERCY_COMMIT: ${{ github.event.workflow_run.head_sha }}
         run: >
           ./node_modules/.bin/percy exec --parallel --config percy-config.json --
           ./node_modules/.bin/cypress run
