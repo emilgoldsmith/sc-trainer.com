@@ -58,10 +58,6 @@ describe("Algorithm Trainer", function () {
       );
     });
 
-    it("looks right", function () {
-      cy.percySnapshotWithProperName("Start Page");
-    });
-
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
       pllTrainerElements.testRunning.container.assertShows();
@@ -97,10 +93,6 @@ describe("Algorithm Trainer", function () {
       it("sizes elements reasonably", function () {
         cy.assertNoHorizontalScrollbar();
         cy.assertNoVerticalScrollbar();
-      });
-
-      it("looks right", function () {
-        cy.percySnapshotWithProperName("Get Ready Screen");
       });
     });
     describe("During Test", function () {
@@ -141,11 +133,6 @@ describe("Algorithm Trainer", function () {
             ).to.be.at.least(minDimension * 0.5 - 1);
           });
         });
-      });
-
-      it("looks right", function () {
-        getTestRunningWithMockedTime();
-        cy.percySnapshotWithProperName("Test Running");
       });
 
       it("tracks time correctly", function () {
@@ -505,10 +492,6 @@ describe("Algorithm Trainer", function () {
         });
       });
 
-      it("looks right", function () {
-        cy.percySnapshotWithProperName("Evaluate Result");
-      });
-
       describe("displays the correct time", function () {
         function getEvaluateAfterTestRanFor({
           milliseconds,
@@ -680,10 +663,6 @@ describe("Algorithm Trainer", function () {
       cy.assertNoVerticalScrollbar();
     });
 
-    it("looks right", function () {
-      cy.percySnapshotWithProperName("Correct Page");
-    });
-
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
       pllTrainerElements.testRunning.container.assertShows();
@@ -740,10 +719,6 @@ describe("Algorithm Trainer", function () {
     it("sizes elements reasonably", function () {
       cy.assertNoHorizontalScrollbar();
       cy.assertNoVerticalScrollbar();
-    });
-
-    it("looks right", function () {
-      cy.percySnapshotWithProperName("Wrong Page");
     });
 
     it("starts test when pressing space", function () {
