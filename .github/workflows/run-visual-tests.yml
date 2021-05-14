@@ -1,0 +1,147 @@
+name: Run Visual Tests
+on:
+  pull_request_target: {}
+
+permissions: {}
+
+jobs:
+  wait-for-docker-images-to-build:
+    name: Wait For Docker Images To Build
+    runs-on: ubuntu-20.04
+    outputs:
+      ci-chrome: ${{ steps.outputter.outputs.ci-chrome }}
+      production: ${{ steps.outputter.outputs.production }}
+    env:
+      REPOSITORY: sctrainer/main
+      PRODUCTION_TAG: production-${{ github.event.pull_request.head.sha }}
+      CHROME_TAG: ci-chrome-v1
+    steps:
+      - name: Wait for Production image to exist
+        shell: bash
+        run: |
+          SECONDS=0
+          max_wait_time=300
+          wait_interval=5
+
+          while (( SECONDS  < max_wait_time )); do
+            curl --silent -f -lSL https://index.docker.io/v1/repositories/$REPOSITORY/tags/$PRODUCTION_TAG && break;
+            echo "Failed so sleeping"
+            sleep $wait_interval
+            echo "Trying again"
+          done
+
+          (( SECONDS >= max_wait_time )) && echo "failed" && exit 1
+          echo "Success"
+
+      - name: Wait for CI Chrome image to exist
+        shell: bash
+        run: |
+          SECONDS=0
+          max_wait_time=300
+          wait_interval=5
+
+          while (( SECONDS  < max_wait_time )); do
+            curl --silent -f -lSL https://index.docker.io/v1/repositories/$REPOSITORY/tags/$CHROME_TAG && break;
+            echo "Failed so sleeping"
+            sleep $wait_interval
+            echo "Trying again"
+          done
+
+          (( SECONDS >= max_wait_time )) && echo "failed" && exit 1
+          echo "Success"
+
+      - name: Output the container names
+        id: outputter
+        run: |
+          echo "::set-output name=ci-chrome::$REPOSITORY:$CHROME_TAG"
+          echo "::set-output name=production::$REPOSITORY:$PRODUCTION_TAG"
+
+  run-visual-tests:
+    name: Run Visual Tests on ${{ matrix.sizes.name }} screen size
+    runs-on: ubuntu-20.04
+    needs: wait-for-docker-images-to-build
+    permissions:
+      contents: read
+    container: ${{ needs.wait-for-docker-images-to-build.outputs.ci-chrome }}
+    env:
+      PORT: 8080
+    services:
+      sctrainer-server:
+        image: ${{ needs.wait-for-docker-images-to-build.outputs.production }}
+        env:
+          PORT: ${{ env.PORT }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Values for devices taken from https://docs.cypress.io/api/commands/viewport#Arguments
+        sizes:
+          - width: 1280
+            height: 800
+            name: Macbook 13
+          - width: 375
+            height: 667
+            name: Iphone 8
+    steps:
+      - name: Checkout unsafe code from forked repository
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      ### We are now working with unsafe code from a forked repository
+      ### So don't allow any dangerous permissions on the github token
+      ### or expose any of our secrets without great thought behind it
+
+      - name: Handle Yarn caching
+        uses: actions/cache@v2
+        env:
+          cache-name: yarn-cache-v1
+        with:
+          path: |
+            ~/.cache/yarn
+          key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('end-to-end-tests/**/yarn.lock')}}
+          # Note we purposefully don't specify fallback restore keys.
+          # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
+
+      - name: Handle Cypress caching
+        uses: actions/cache@v2
+        env:
+          cache-name: cypress-cache-v1
+        with:
+          path: |
+            ~/.cache/Cypress
+          key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('end-to-end-tests/**/yarn.lock')}}
+          # Note we purposefully don't specify fallback restore keys.
+          # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
+
+      - name: Install Dependencies
+        run: yarn --frozen-lockfile
+        working-directory: end-to-end-tests
+
+      - name: Log Cypress Info
+        run: npx cypress info
+        working-directory: end-to-end-tests
+
+      - name: Setup Percy Configuration
+        working-directory: end-to-end-tests
+        run: 'echo ''{ "version": 2, "snapshot": { "widths": [${{ matrix.sizes.width }}], "min-height": ${{ matrix.sizes.height }} } }'' > percy-config.json'
+
+      ### This is the only place we run the untrusted code
+      ### We have made sure that the github token has minimum
+      ### permissions and the only secret we are passing is the
+      ### PERCY_TOKEN which shouldn't be able to do too much damage
+      ### even if abused, though if there are ways to do this more securely
+      ### though that would be appreciated
+      - name: Run Cypress Tests
+        working-directory: end-to-end-tests
+        env:
+          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
+          PERCY_PARALLEL_NONCE: ${{ github.run_id }}
+          PERCY_PARALLEL_TOTAL: ${{ strategy.job-total }}
+          PERCY_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PERCY_PULL_REQUEST: ${{ github.event.number }}
+        run: >
+          ./node_modules/.bin/percy exec --parallel --config percy-config.json --
+          ./node_modules/.bin/cypress run
+          --browser chrome
+          --config "viewportWidth=${{ matrix.sizes.width }},viewportHeight=${{ matrix.sizes.height }},baseUrl=http://sctrainer-server:${{ env.PORT }}"
+          --spec cypress/tests/visual-tests.ts
