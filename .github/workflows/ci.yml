@@ -150,7 +150,7 @@ jobs:
         working-directory: end-to-end-tests
         run: yarn
 
-      - name: Run Prettier on Cypress Code
+      - name: Run Prettier
         run: ./scripts/checks/prettier.sh
 
       - name: Run Eslint on Cypress Code

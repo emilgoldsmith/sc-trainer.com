@@ -162,7 +162,13 @@ function replaceInTemplateForKey({ template, key, value }) {
   const startIdentifier = `/** REPLACED_WITH_${key}_START **/`;
   const endIdentifier = `/** REPLACED_WITH_${key}_END **/`;
   const startIndex = template.indexOf(startIdentifier);
+  if (startIndex === -1) {
+    throw new Error("Couldn't find start identifier " + startIdentifier);
+  }
   const endIndex = template.indexOf(endIdentifier) + endIdentifier.length;
+  if (endIndex - endIdentifier.length === -1) {
+    throw new Error("Couldn't find end identifier " + endIdentifier);
+  }
   return (
     template.substring(0, startIndex) +
     JSON.stringify(value) +
@@ -187,26 +193,22 @@ function replaceMany(template, replacements) {
   );
 }
 
-const builtIndexHtml = replaceMany(
-  indexHtmlTemplate,
-
-  [
-    {
-      key: "FEATURE_FLAGS",
-      value: { placeholder: false, ...featureFlagsToUse },
-    },
-    {
-      key: "SENTRY_ENABLE",
-      value: environment === PRODUCTION || environment === STAGING,
-    },
-    {
-      key: "SENTRY_ENVIRONMENT",
-      value:
-        { [PRODUCTION]: "production", [STAGING]: "staging" }[environment] ||
-        undefined,
-    },
-  ]
-);
+const builtIndexHtml = replaceMany(indexHtmlTemplate, [
+  {
+    key: "FEATURE_FLAGS",
+    value: { placeholder: false, ...featureFlagsToUse },
+  },
+  {
+    key: "SENTRY_ENABLE",
+    value: environment === PRODUCTION || environment === STAGING,
+  },
+  {
+    key: "SENTRY_ENVIRONMENT",
+    value:
+      { [PRODUCTION]: "production", [STAGING]: "staging" }[environment] ||
+      undefined,
+  },
+]);
 
 childProcess.execSync(`rm ${path.join(BUILT_PUBLIC_PATH, HTML_TEMPLATE_NAME)}`);
 fs.writeFileSync(path.join(BUILT_PUBLIC_PATH, "index.html"), builtIndexHtml);

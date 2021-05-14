@@ -68,8 +68,8 @@ run_check \
 
 run_check "Checking Unit Tests" "Unit Tests Failed" ./elm-test.sh
 
-run_check "Checking Cypress ESLint" "ESLint Failed" ./eslint.sh
+run_check "Checking Prettier" "Prettier Failed" ./prettier.sh
 
-run_check "Checking Cypress Prettier" "Prettier Failed" ./prettier.sh
+run_check "Checking Cypress ESLint" "ESLint Failed" ./eslint.sh
 
 run_check "Checking Cypress Typescript" "Typescript Failed" ./typescript.sh
