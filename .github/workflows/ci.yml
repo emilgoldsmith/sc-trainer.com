@@ -257,34 +257,16 @@ jobs:
         run: yarn --frozen-lockfile
         working-directory: end-to-end-tests
 
-      - name: Install Cypress
-        run: yarn run cypress install
-        working-directory: end-to-end-tests
-
       - name: Log Cypress Info
         run: npx cypress info
         working-directory: end-to-end-tests
 
-      - name: Set Percy Environment Variables
-        uses: percy/exec-action@v0.3.1
-        with:
-          passthrough: true
-
-      - name: Setup Percy Configuration
-        working-directory: end-to-end-tests
-        run: 'echo ''{ "version": 2, "snapshot": { "widths": [${{ matrix.sizeRelevant.viewportWidth }}], "min-height": ${{ matrix.sizeRelevant.viewportHeight }} } }'' > percy-config.json'
-
       - name: Run Cypress Tests
         working-directory: end-to-end-tests
-        env:
-          PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
-          PERCY_PARALLEL_NONCE: ${{ github.run_id }}
-          PERCY_PARALLEL_TOTAL: ${{ strategy.job-total }}
         run: >
-          ./node_modules/.bin/percy exec --parallel --config percy-config.json --
           ./node_modules/.bin/cypress run
           --browser ${{ matrix.platform.browser }}
-          --config "viewportWidth=${{ matrix.sizeRelevant.viewportWidth}},viewportHeight=${{ matrix.sizeRelevant.viewportHeight }},baseUrl=http://sctrainer-server:${{ env.PORT }},ignoreTestFiles=[\"**/*.helper.ts\",\"${{ matrix.sizeRelevant.ignoredSpecs }}\"]"
+          --config "viewportWidth=${{ matrix.sizeRelevant.viewportWidth }},viewportHeight=${{ matrix.sizeRelevant.viewportHeight }},baseUrl=http://sctrainer-server:${{ env.PORT }},ignoreTestFiles=[\"**/*.helper.ts\",\"**/visual-tests.ts\",\"${{ matrix.sizeRelevant.ignoredSpecs }}\"]"
           --spec cypress/tests/**/*.ts,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}
 
       - name: Upload recorded videos
