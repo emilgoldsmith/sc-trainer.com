@@ -1,6 +1,8 @@
 name: Run Visual Tests
 on:
-  pull_request_target: {}
+  workflow_run:
+    workflows: ["Trigger Unsafe Workflows"]
+    types: [completed]
 
 permissions: {}
 
@@ -13,9 +15,13 @@ jobs:
       production: ${{ steps.outputter.outputs.production }}
     env:
       REPOSITORY: sctrainer/main
-      PRODUCTION_TAG: production-${{ github.event.pull_request.head.sha }}
+      PRODUCTION_TAG: production-${{ github.event.head_sha }}
       CHROME_TAG: ci-chrome-v1
     steps:
+      - env:
+          OBJECT: ${{ toJSON(github.event) }}
+        run: echo $OBJECT
+
       - name: Wait for Production image to exist
         shell: bash
         run: |
@@ -85,7 +91,7 @@ jobs:
       - name: Checkout unsafe code from forked repository
         uses: actions/checkout@v2
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: ${{ github.event.head_branch }}
 
       ### We are now working with unsafe code from a forked repository
       ### So don't allow any dangerous permissions on the github token
@@ -137,8 +143,8 @@ jobs:
           PERCY_TOKEN: ${{ secrets.PERCY_TOKEN }}
           PERCY_PARALLEL_NONCE: ${{ github.run_id }}
           PERCY_PARALLEL_TOTAL: ${{ strategy.job-total }}
-          PERCY_BRANCH: ${{ github.event.pull_request.head.ref }}
-          PERCY_PULL_REQUEST: ${{ github.event.number }}
+          PERCY_BRANCH: ${{ github.event.head_branch }}
+          PERCY_PULL_REQUEST: ${{ github.event.pull_requests[0].number }}
         run: >
           ./node_modules/.bin/percy exec --parallel --config percy-config.json --
           ./node_modules/.bin/cypress run

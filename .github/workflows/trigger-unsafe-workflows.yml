@@ -1,0 +1,15 @@
+name: Trigger Unsafe Workflows
+on:
+  push:
+    branches: main
+  pull_request: {}
+
+permissions: {}
+
+jobs:
+  trigger-unsafe-workflows:
+    name: Trigger Unsafe Workflows
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Just pass
+        run: echo "Success"
