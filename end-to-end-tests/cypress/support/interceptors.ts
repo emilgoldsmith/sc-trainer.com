@@ -8,7 +8,7 @@ import { handleHtmlCypressModifications } from "./html-template-replacements";
 export function interceptHtml(
   ...modifiers: ((previousHtml: { type: "html"; value: string }) => string)[]
 ): void {
-  cy.intercept("*", (req) => {
+  cy.intercept("GET", new RegExp(`^${Cypress.config().baseUrl}`), (req) => {
     const expectsHtml =
       req.headers.accept && req.headers.accept.split(",").includes("text/html");
     if (!expectsHtml) return;
@@ -46,7 +46,7 @@ export function interceptJavascript(
   const jsPattern = Cypress.config().baseUrl + "/main.js";
   expect(Cypress.minimatch(Cypress.config().baseUrl + "/main.js", jsPattern)).to
     .be.true;
-  cy.intercept(jsPattern, (req) => {
+  cy.intercept("GET", jsPattern, (req) => {
     // Delete caching headers so we always get fresh javascript to modify
     delete req.headers["if-modified-since"];
     delete req.headers["if-none-match"];
