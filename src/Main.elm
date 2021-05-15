@@ -546,8 +546,7 @@ view model =
     , body =
         [ layout
             (topLevelEventListeners model
-                ++ [ padding 10
-                   , inFront <| viewFullScreen model
+                ++ [ inFront <| viewFullScreen model
                    ]
                 -- Order is important as the last one shows on top
                 ++ feedbackButtonIfNeeded
@@ -557,21 +556,69 @@ view model =
     }
 
 
+spaceScale : Int -> Int
+spaceScale scale =
+    modular 21 (4 / 3) scale |> round
+
+
+fontScale : Int -> Int
+fontScale scale =
+    modular 16 (4 / 3) scale |> round
+
+
+spaces : { small : Int, medium : Int, large : Int }
+spaces =
+    { small = spaceScale -1
+    , medium = spaceScale 1
+    , large = spaceScale 2
+    }
+
+
+fontSizes : { small : Int, medium : Int, large : Int, veryLarge : Int }
+fontSizes =
+    { small = fontScale -1
+    , medium = fontScale 1
+    , large = fontScale 2
+    , veryLarge = fontScale 3
+    }
+
+
+colors =
+    { primary = rgb255 0 128 0
+    , correct = rgb255 0 128 0
+    }
+
+
 viewFullScreen : Model -> Element Msg
 viewFullScreen model =
     case model.trainerState of
         StartPage ->
+            let
+                contentWidth =
+                    width (fill |> maximum (model.viewportSize.width * 3 // 4))
+
+                divider =
+                    el
+                        [ testid "divider"
+                        , Border.solid
+                        , centerX
+                        , width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                        , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
+                        , Border.color (rgb255 0 0 0)
+                        ]
+                        none
+            in
             Element.map BetweenTestsMessage <|
                 column
                     [ testid "start-page-container"
                     , centerY
-                    , spacing 30
+                    , spacing spaces.small
                     , scrollbarY
 
                     -- We do it like this because for some reason with scroll the bottom
                     -- padding doesn't show, so we add it manually with an empty element at
                     -- the bottom of the list
-                    , paddingEach { top = 30, bottom = 0, right = 0, left = 0 }
+                    , paddingEach { top = spaces.small, bottom = 0, right = 0, left = 0 }
                     , width fill
                     ]
                 <|
@@ -582,13 +629,13 @@ viewFullScreen model =
                     <|
                         [ column
                             [ testid "welcome-text"
-                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                            , contentWidth
                             , Font.center
                             , centerX
-                            , spacing 15
-                            , Font.size 20
+                            , spacing spaces.small
+                            , Font.size fontSizes.large
                             ]
-                            [ paragraph [ Font.size 30, Region.heading 1 ]
+                            [ paragraph [ Font.size fontSizes.veryLarge, Region.heading 1 ]
                                 [ text "Welcome!" ]
                             , paragraph []
                                 [ text "This is a "
@@ -605,18 +652,10 @@ viewFullScreen model =
                                     " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
                                 ]
                             ]
-                        , el
-                            [ testid "divider"
-                            , Border.solid
-                            , centerX
-                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
-                            , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
-                            , Border.color (rgb255 0 0 0)
-                            ]
-                            none
+                        , divider
                         , paragraph
                             [ width (fill |> maximum (model.viewportSize.width * 3 // 4))
-                            , Font.size 30
+                            , Font.size fontSizes.veryLarge
                             , centerX
                             , Font.center
                             , testid "cube-start-explanation"
@@ -634,7 +673,7 @@ viewFullScreen model =
                             model
                             [ testid "start-button"
                             , centerX
-                            , Background.color <| rgb255 0 128 0
+                            , Background.color colors.primary
                             , padding 20
                             , Border.rounded 15
                             ]
