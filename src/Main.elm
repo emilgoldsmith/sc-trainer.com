@@ -583,9 +583,64 @@ fontSizes =
     }
 
 
+colors : { primary : Color, correct : Color, wrong : Color }
 colors =
     { primary = rgb255 0 128 0
     , correct = rgb255 0 128 0
+    , wrong = rgb255 255 0 0
+    }
+
+
+type alias Button msg =
+    List (Attribute msg) -> { onPress : Maybe msg, color : Color, label : Int -> Element msg } -> Element msg
+
+
+mediumButton : Button msg
+mediumButton attributes { onPress, label, color } =
+    Input.button (attributes ++ [ Background.color color, padding 20, Border.rounded 15 ]) { onPress = onPress, label = label 25 }
+
+
+largeScreenScaledButton : ViewportSize -> Button msg
+largeScreenScaledButton viewportSize attributes { onPress, label, color } =
+    let
+        buttonSize =
+            minDimension viewportSize // 15
+
+        buttonPadding =
+            buttonSize * 2 // 3
+
+        buttonRounding =
+            buttonSize // 3
+    in
+    Input.button
+        (attributes
+            ++ [ Font.center
+               , width (px <| minDimension viewportSize // 3)
+               , Background.color color
+               , padding buttonPadding
+               , Border.rounded buttonRounding
+               ]
+        )
+        { onPress = onPress, label = label buttonSize }
+
+
+smallScreenScaledButton : ViewportSize -> Button msg
+smallScreenScaledButton viewportSize attributes { onPress, label, color } =
+    Input.button
+        (attributes
+            ++ [ Background.color color
+               , padding (minDimension viewportSize // 40)
+               , Border.rounded (minDimension viewportSize // 45)
+               ]
+        )
+        { onPress = onPress, label = label <| minDimension viewportSize // 25 }
+
+
+buttons : { medium : Button msg1, largeScreenScaled : ViewportSize -> Button msg2, smallScreenScaled : ViewportSize -> Button msg3 }
+buttons =
+    { medium = mediumButton
+    , largeScreenScaled = largeScreenScaledButton
+    , smallScreenScaled = smallScreenScaledButton
     }
 
 
@@ -673,15 +728,13 @@ viewFullScreen model =
                             model
                             [ testid "start-button"
                             , centerX
-                            , Background.color colors.primary
-                            , padding 20
-                            , Border.rounded 15
                             ]
                             { onPress = Just StartTestGetReady
                             , labelText = "Start"
-                            , fontSize = 25
+                            , color = colors.primary
                             , keyboardShortcut = Space
                             }
+                            buttons.medium
                         , el
                             [ testid "divider"
                             , width (fill |> maximum (model.viewportSize.width * 3 // 4))
@@ -817,17 +870,8 @@ viewFullScreen model =
                     timerSize =
                         minDimension model.viewportSize // 6
 
-                    buttonSize =
-                        minDimension model.viewportSize // 15
-
-                    buttonPadding =
-                        buttonSize * 2 // 3
-
-                    buttonRounding =
-                        buttonSize // 3
-
                     buttonSpacing =
-                        buttonSize
+                        minDimension model.viewportSize // 15
                 in
                 column
                     [ testid "evaluate-test-result-container"
@@ -858,11 +902,6 @@ viewFullScreen model =
                         [ buttonWithShortcut
                             model
                             [ testid "correct-button"
-                            , Background.color <| rgb255 0 128 0
-                            , padding buttonPadding
-                            , Border.rounded buttonRounding
-                            , Font.center
-                            , width (px <| minDimension model.viewportSize // 3)
                             ]
                             { onPress =
                                 if tooEarlyToTransition then
@@ -871,17 +910,13 @@ viewFullScreen model =
                                 else
                                     Just EvaluateCorrect
                             , labelText = "Correct"
+                            , color = colors.correct
                             , keyboardShortcut = Space
-                            , fontSize = buttonSize
                             }
+                            (buttons.largeScreenScaled model.viewportSize)
                         , buttonWithShortcut
                             model
                             [ testid "wrong-button"
-                            , Background.color <| rgb255 255 0 0
-                            , padding buttonPadding
-                            , Border.rounded buttonRounding
-                            , Font.center
-                            , width (px <| minDimension model.viewportSize // 3)
                             ]
                             { onPress =
                                 if tooEarlyToTransition then
@@ -891,8 +926,9 @@ viewFullScreen model =
                                     Just EvaluateWrong
                             , labelText = "Wrong"
                             , keyboardShortcut = W
-                            , fontSize = buttonSize
+                            , color = colors.wrong
                             }
+                            (buttons.largeScreenScaled model.viewportSize)
                         ]
                     ]
 
@@ -920,15 +956,13 @@ viewFullScreen model =
                         model
                         [ testid "next-button"
                         , centerX
-                        , Background.color <| rgb255 0 128 0
-                        , padding (minDimension model.viewportSize // 40)
-                        , Border.rounded (minDimension model.viewportSize // 45)
                         ]
                         { onPress = Just StartTestGetReady
                         , labelText = "Next"
                         , keyboardShortcut = Space
-                        , fontSize = minDimension model.viewportSize // 25
+                        , color = colors.primary
                         }
+                        (buttons.smallScreenScaled model.viewportSize)
                     ]
 
         WrongPage (( _, pll, _ ) as testCase) ->
@@ -980,15 +1014,13 @@ viewFullScreen model =
                         model
                         [ testid "next-button"
                         , centerX
-                        , Background.color <| rgb255 0 128 0
-                        , padding (minDimension model.viewportSize // 40)
-                        , Border.rounded (minDimension model.viewportSize // 45)
                         ]
                         { onPress = Just StartTestGetReady
                         , labelText = "Next"
                         , keyboardShortcut = Space
-                        , fontSize = minDimension model.viewportSize // 25
+                        , color = colors.primary
                         }
+                        (buttons.smallScreenScaled model.viewportSize)
                     ]
 
 
@@ -1032,8 +1064,8 @@ pllToString pll =
     PLL.getLetters pll ++ "-perm"
 
 
-buttonWithShortcut : { a | userHasKeyboard : Bool } -> List (Attribute msg) -> { b | onPress : Maybe msg, labelText : String, fontSize : Int, keyboardShortcut : Key } -> Element msg
-buttonWithShortcut { userHasKeyboard } attributes { onPress, labelText, keyboardShortcut, fontSize } =
+buttonWithShortcut : { a | userHasKeyboard : Bool } -> List (Attribute msg) -> { onPress : Maybe msg, labelText : String, color : Color, keyboardShortcut : Key } -> Button msg -> Element msg
+buttonWithShortcut { userHasKeyboard } attributes { onPress, labelText, keyboardShortcut, color } button =
     let
         keyString =
             case keyboardShortcut of
@@ -1050,20 +1082,24 @@ buttonWithShortcut { userHasKeyboard } attributes { onPress, labelText, keyboard
             text <| "(" ++ keyString ++ ")"
 
         withShortcutLabel =
-            Input.button attributes
+            button attributes
                 { onPress = onPress
+                , color = color
                 , label =
-                    column [ centerX ]
-                        [ el [ centerX, Font.size fontSize ] <| text labelText
-                        , el [ centerX, Font.size (fontSize // 2) ] shortcutText
-                        ]
+                    \fontSize ->
+                        column [ centerX ]
+                            [ el [ centerX, Font.size fontSize ] <| text labelText
+                            , el [ centerX, Font.size (fontSize // 2) ] shortcutText
+                            ]
                 }
 
         withoutShortcutLabel =
-            Input.button attributes
+            button attributes
                 { onPress = onPress
+                , color = color
                 , label =
-                    el [ centerX, Font.size fontSize ] <| text labelText
+                    \fontSize ->
+                        el [ centerX, Font.size fontSize ] <| text labelText
                 }
     in
     if userHasKeyboard then
