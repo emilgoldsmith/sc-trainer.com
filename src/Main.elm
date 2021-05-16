@@ -546,10 +546,9 @@ view model =
     , body =
         [ layout
             (topLevelEventListeners model
-                ++ [ inFront <| viewFullScreen model
-                   ]
+                ++ inFront (viewFullScreen model)
                 -- Order is important as the last one shows on top
-                ++ feedbackButtonIfNeeded
+                :: feedbackButtonIfNeeded
             )
             (viewState model)
         ]
@@ -566,11 +565,39 @@ fontScale scale =
     modular 16 (4 / 3) scale |> round
 
 
-spaces : { small : Int, medium : Int, large : Int }
+spaces : { verySmall : Int, small : Int, medium : Int, large : Int }
 spaces =
-    { small = spaceScale -1
+    { verySmall = spaceScale -2
+    , small = spaceScale -1
     , medium = spaceScale 1
     , large = spaceScale 2
+    }
+
+
+layoutSizes :
+    { quarterScreen : ViewportSize -> Int
+    , halfScreen : ViewportSize -> Int
+    , threeQuarterScreen : ViewportSize -> Int
+    , thirdScreen : ViewportSize -> Int
+    }
+layoutSizes =
+    { quarterScreen = \viewportSize -> minDimension viewportSize // 4
+    , halfScreen = \viewportSize -> minDimension viewportSize // 2
+    , threeQuarterScreen = \viewportSize -> minDimension viewportSize * 3 // 4
+    , thirdScreen = \viewportSize -> minDimension viewportSize // 3
+    }
+
+
+screenScaledElementScale : ViewportSize -> Int -> Float
+screenScaledElementScale viewportSize scale =
+    modular (toFloat (minDimension viewportSize) / 20) 1.5 scale
+
+
+elementSizes : { smallScreenScaled : ViewportSize -> Int, mediumScreenScaled : ViewportSize -> Int, largeScreenScaled : ViewportSize -> Int }
+elementSizes =
+    { smallScreenScaled = \viewportSize -> screenScaledElementScale viewportSize -1 |> round
+    , mediumScreenScaled = \viewportSize -> screenScaledElementScale viewportSize 1 |> round
+    , largeScreenScaled = \viewportSize -> screenScaledElementScale viewportSize 2 |> round
     }
 
 
@@ -604,7 +631,7 @@ largeScreenScaledButton : ViewportSize -> Button msg
 largeScreenScaledButton viewportSize attributes { onPress, label, color } =
     let
         buttonSize =
-            minDimension viewportSize // 15
+            elementSizes.largeScreenScaled viewportSize
 
         buttonPadding =
             buttonSize * 2 // 3
@@ -615,7 +642,7 @@ largeScreenScaledButton viewportSize attributes { onPress, label, color } =
     Input.button
         (attributes
             ++ [ Font.center
-               , width (px <| minDimension viewportSize // 3)
+               , width (px <| layoutSizes.thirdScreen viewportSize)
                , Background.color color
                , padding buttonPadding
                , Border.rounded buttonRounding
@@ -664,27 +691,22 @@ viewFullScreen model =
                         none
             in
             Element.map BetweenTestsMessage <|
-                column
+                el
                     [ testid "start-page-container"
                     , centerY
-                    , spacing spaces.small
                     , scrollbarY
-
-                    -- We do it like this because for some reason with scroll the bottom
-                    -- padding doesn't show, so we add it manually with an empty element at
-                    -- the bottom of the list
-                    , paddingEach { top = spaces.small, bottom = 0, right = 0, left = 0 }
                     , width fill
                     ]
                 <|
-                    -- Add the last element here at the start for easy reading with the padding of the container.
-                    -- The main part of the padding comes from the spacing seen above.
-                    -- It could seem a bit more confusing out of context at the bottom
-                    (\x -> x ++ [ el [ testid "padding", height (px 1), width fill ] none ])
+                    column
+                        [ spacing spaces.small
+                        , centerX
+                        , contentWidth
+                        , paddingXY 0 spaces.small
+                        ]
                     <|
                         [ column
                             [ testid "welcome-text"
-                            , contentWidth
                             , Font.center
                             , centerX
                             , spacing spaces.small
@@ -709,8 +731,7 @@ viewFullScreen model =
                             ]
                         , divider
                         , paragraph
-                            [ width (fill |> maximum (model.viewportSize.width * 3 // 4))
-                            , Font.size fontSizes.veryLarge
+                            [ Font.size fontSizes.veryLarge
                             , centerX
                             , Font.center
                             , testid "cube-start-explanation"
@@ -735,24 +756,14 @@ viewFullScreen model =
                             , keyboardShortcut = Space
                             }
                             buttons.medium
-                        , el
-                            [ testid "divider"
-                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
-                            , centerX
-                            , Border.solid
-                            , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
-                            , Border.color (rgb255 0 0 0)
-                            , Font.size 20
-                            ]
-                            none
+                        , divider
                         , column
                             [ testid "instructions-text"
                             , Font.center
                             , centerX
-                            , spacing 15
-                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                            , spacing spaces.small
                             ]
-                            [ paragraph [ Font.size 30, Region.heading 1 ] [ text "Instructions:" ]
+                            [ paragraph [ Font.size fontSizes.veryLarge, Region.heading 1 ] [ text "Instructions:" ]
                             , paragraph []
                                 [ text "When you press the start button (or space) you will have a second to get your cube in "
                                 , newTabLink linkStyling
@@ -774,25 +785,15 @@ viewFullScreen model =
                                 [ text "If you got it wrong you will have to solve the cube to reset it before being able to continue to the next case. Don't worry, you will be instructed through all this by the application."
                                 ]
                             ]
-                        , el
-                            [ testid "divider"
-                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
-                            , centerX
-                            , Border.solid
-                            , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
-                            , Border.color (rgb255 0 0 0)
-                            , Font.size 20
-                            ]
-                            none
+                        , divider
                         , column
                             [ testid "learning-resources"
                             , centerX
-                            , spacing 15
-                            , width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                            , spacing spaces.small
                             ]
-                            [ paragraph [ Font.size 30, Region.heading 1, Font.center ] [ text "Learning Resources:" ]
-                            , column [ spacing 15, centerX ]
-                                [ row [ spacing 10 ]
+                            [ paragraph [ Font.size fontSizes.veryLarge, Region.heading 1, Font.center ] [ text "Learning Resources:" ]
+                            , column [ spacing spaces.small, centerX ]
+                                [ row [ spacing spaces.verySmall ]
                                     [ text "-"
                                     , paragraph []
                                         [ newTabLink linkStyling
