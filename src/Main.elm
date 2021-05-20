@@ -593,11 +593,12 @@ screenScaledElementScale viewportSize scale =
     modular (toFloat (minDimension viewportSize) / 20) 1.5 scale
 
 
-elementSizes : { smallScreenScaled : ViewportSize -> Int, mediumScreenScaled : ViewportSize -> Int, largeScreenScaled : ViewportSize -> Int }
+elementSizes : { smallScreenScaled : ViewportSize -> Int, mediumScreenScaled : ViewportSize -> Int, largeScreenScaled : ViewportSize -> Int, cubeSize : Int }
 elementSizes =
     { smallScreenScaled = \viewportSize -> screenScaledElementScale viewportSize -1 |> round
     , mediumScreenScaled = \viewportSize -> screenScaledElementScale viewportSize 1 |> round
     , largeScreenScaled = \viewportSize -> screenScaledElementScale viewportSize 2 |> round
+    , cubeSize = 200
     }
 
 
@@ -610,11 +611,12 @@ fontSizes =
     }
 
 
-colors : { primary : Color, correct : Color, wrong : Color }
+colors : { primary : Color, correct : Color, wrong : Color, black : Color }
 colors =
     { primary = rgb255 0 128 0
     , correct = rgb255 0 128 0
     , wrong = rgb255 255 0 0
+    , black = rgb255 0 0 0
     }
 
 
@@ -686,7 +688,7 @@ viewFullScreen model =
                         , centerX
                         , width (fill |> maximum (model.viewportSize.width * 3 // 4))
                         , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
-                        , Border.color (rgb255 0 0 0)
+                        , Border.color colors.black
                         ]
                         none
             in
@@ -744,7 +746,7 @@ viewFullScreen model =
                             , centerX
                             ]
                           <|
-                            ViewCube.uFRWithLetters 200 model.expectedCube
+                            ViewCube.uFRWithLetters elementSizes.cubeSize model.expectedCube
                         , buttonWithShortcut
                             model
                             [ testid "start-button"
@@ -792,30 +794,21 @@ viewFullScreen model =
                             , spacing spaces.small
                             ]
                             [ paragraph [ Font.size fontSizes.veryLarge, Region.heading 1, Font.center ] [ text "Learning Resources:" ]
-                            , column [ spacing spaces.small, centerX ]
-                                [ row [ spacing spaces.verySmall ]
-                                    [ text "-"
-                                    , paragraph []
-                                        [ newTabLink linkStyling
-                                            { url = "http://cubing.pt/wp-content/uploads/2017/03/pll2side-20140531.pdf"
-                                            , label = text "Two Sided PLL Recognition Guide"
-                                            }
-                                        ]
+                            , unorderedList [ centerX ]
+                                [ paragraph []
+                                    [ newTabLink linkStyling
+                                        { url = "http://cubing.pt/wp-content/uploads/2017/03/pll2side-20140531.pdf"
+                                        , label = text "Two Sided PLL Recognition Guide"
+                                        }
                                     ]
-                                , row [ spacing 10 ]
-                                    [ text "-"
-                                    , paragraph []
-                                        [ newTabLink linkStyling
-                                            { url = "https://www.youtube.com/watch?v=JvqGU0UZPcE"
-                                            , label = text "Fast PLL Algorithms And Finger Tricks"
-                                            }
-                                        ]
+                                , paragraph []
+                                    [ newTabLink linkStyling
+                                        { url = "https://www.youtube.com/watch?v=JvqGU0UZPcE"
+                                        , label = text "Fast PLL Algorithms And Finger Tricks"
+                                        }
                                     ]
-                                , row [ spacing 10 ]
-                                    [ text "-"
-                                    , paragraph []
-                                        [ text "And just generally make sure you drill you algorithms until you can do them without looking!" ]
-                                    ]
+                                , paragraph []
+                                    [ text "And just generally make sure you drill you algorithms until you can do them without looking!" ]
                                 ]
                             ]
                         ]
@@ -1023,6 +1016,15 @@ viewFullScreen model =
                         }
                         (buttons.smallScreenScaled model.viewportSize)
                     ]
+
+
+unorderedList : List (Attribute msg) -> List (Element msg) -> Element msg
+unorderedList attributes listItemContents =
+    let
+        listItems =
+            List.map (\content -> row [ spacing spaces.verySmall ] [ text "-", content ]) listItemContents
+    in
+    column ([ spacing spaces.small ] ++ attributes) listItems
 
 
 linkStyling : List (Attribute msg)
