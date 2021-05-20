@@ -556,13 +556,13 @@ view model =
 
 
 spaceScale : Int -> Int
-spaceScale scale =
-    modular 21 (4 / 3) scale |> round
+spaceScale =
+    modular 21 (4 / 3) >> round
 
 
 fontScale : Int -> Int
-fontScale scale =
-    modular 16 (4 / 3) scale |> round
+fontScale =
+    modular 16 (4 / 3) >> round
 
 
 spaces : { verySmall : Int, small : Int, medium : Int, large : Int }
@@ -579,18 +579,22 @@ layoutSizes :
     , halfScreen : ViewportSize -> Int
     , threeQuarterScreen : ViewportSize -> Int
     , thirdScreen : ViewportSize -> Int
+    , tenthOfScreen : ViewportSize -> Int
+    , fifthOfScreen : ViewportSize -> Int
     }
 layoutSizes =
     { quarterScreen = \viewportSize -> minDimension viewportSize // 4
     , halfScreen = \viewportSize -> minDimension viewportSize // 2
     , threeQuarterScreen = \viewportSize -> minDimension viewportSize * 3 // 4
     , thirdScreen = \viewportSize -> minDimension viewportSize // 3
+    , tenthOfScreen = \viewportSize -> minDimension viewportSize // 10
+    , fifthOfScreen = \viewportSize -> minDimension viewportSize // 5
     }
 
 
 screenScaledElementScale : ViewportSize -> Int -> Float
-screenScaledElementScale viewportSize scale =
-    modular (toFloat (minDimension viewportSize) / 20) 1.5 scale
+screenScaledElementScale viewportSize =
+    modular (toFloat (minDimension viewportSize) / 20) 1.5
 
 
 elementSizes : { smallScreenScaled : ViewportSize -> Int, mediumScreenScaled : ViewportSize -> Int, largeScreenScaled : ViewportSize -> Int, cubeSize : Int }
@@ -602,12 +606,13 @@ elementSizes =
     }
 
 
-fontSizes : { small : Int, medium : Int, large : Int, veryLarge : Int }
+fontSizes : { small : Int, medium : Int, large : Int, veryLarge : Int, screenScaledHumongous : ViewportSize -> Int }
 fontSizes =
     { small = fontScale -1
     , medium = fontScale 1
     , large = fontScale 2
     , veryLarge = fontScale 3
+    , screenScaledHumongous = \viewportSize -> minDimension viewportSize * 2 // 9
     }
 
 
@@ -620,13 +625,23 @@ colors =
     }
 
 
+paddingScale : Int -> Int
+paddingScale =
+    modular 4 2 >> round
+
+
+paddingSizes : { verySmall : Int, small : Int, medium : Int, large : Int, veryLarge : Int }
+paddingSizes =
+    { verySmall = paddingScale -2, small = paddingScale -1, medium = paddingScale 1, large = paddingScale 2, veryLarge = paddingScale 3 }
+
+
 type alias Button msg =
     List (Attribute msg) -> { onPress : Maybe msg, color : Color, label : Int -> Element msg } -> Element msg
 
 
 mediumButton : Button msg
 mediumButton attributes { onPress, label, color } =
-    Input.button (attributes ++ [ Background.color color, padding 20, Border.rounded 15 ]) { onPress = onPress, label = label 25 }
+    Input.button (attributes ++ [ Background.color color, padding paddingSizes.veryLarge, Border.rounded 15 ]) { onPress = onPress, label = label 25 }
 
 
 largeScreenScaledButton : ViewportSize -> Button msg
@@ -822,9 +837,9 @@ viewFullScreen model =
             <|
                 paragraph
                     [ testid "get-ready-explanation"
-                    , Font.size (minDimension model.viewportSize * 2 // 9)
+                    , Font.size (fontSizes.screenScaledHumongous model.viewportSize)
                     , Font.center
-                    , padding 2
+                    , padding paddingSizes.medium
                     ]
                     [ text "Go To Home Grip" ]
 
@@ -834,15 +849,15 @@ viewFullScreen model =
                     [ testid "test-running-container"
                     , centerX
                     , centerY
-                    , spacing (minDimension model.viewportSize // 10)
+                    , spacing (layoutSizes.tenthOfScreen model.viewportSize)
                     ]
                     [ el [ testid "test-case", centerX ] <|
-                        ViewCube.uFRNoLetters (minDimension model.viewportSize // 2) <|
+                        ViewCube.uFRNoLetters (layoutSizes.halfScreen model.viewportSize) <|
                             (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse (toAlg testCase)))
                     , el
                         [ testid "timer"
                         , centerX
-                        , Font.size (min model.viewportSize.height model.viewportSize.width // 5)
+                        , Font.size (layoutSizes.fifthOfScreen model.viewportSize)
                         ]
                       <|
                         text <|
@@ -1024,7 +1039,7 @@ unorderedList attributes listItemContents =
         listItems =
             List.map (\content -> row [ spacing spaces.verySmall ] [ text "-", content ]) listItemContents
     in
-    column ([ spacing spaces.small ] ++ attributes) listItems
+    column (spacing spaces.small :: attributes) listItems
 
 
 linkStyling : List (Attribute msg)
