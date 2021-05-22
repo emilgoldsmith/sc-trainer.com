@@ -639,52 +639,30 @@ type alias Button msg =
     List (Attribute msg) -> { onPress : Maybe msg, color : Color, label : Int -> Element msg } -> Element msg
 
 
-mediumButton : Button msg
-mediumButton attributes { onPress, label, color } =
-    Input.button (attributes ++ [ Background.color color, padding paddingSizes.veryLarge, Border.rounded 15 ]) { onPress = onPress, label = label 25 }
-
-
-largeScreenScaledButton : ViewportSize -> Button msg
-largeScreenScaledButton viewportSize attributes { onPress, label, color } =
+baseButton : Int -> List (Attribute msg) -> { onPress : Maybe msg, color : Color, label : Int -> Element msg } -> Element msg
+baseButton size attributes { onPress, label, color } =
     let
-        buttonSize =
-            elementSizes.largeScreenScaled viewportSize
+        paddingSize =
+            size * 2 // 3
 
-        buttonPadding =
-            buttonSize * 2 // 3
-
-        buttonRounding =
-            buttonSize // 3
+        roundingSize =
+            size // 3
     in
-    Input.button
-        (attributes
-            ++ [ Font.center
-               , width (px <| layoutSizes.thirdScreen viewportSize)
-               , Background.color color
-               , padding buttonPadding
-               , Border.rounded buttonRounding
-               ]
-        )
-        { onPress = onPress, label = label buttonSize }
+    Input.button (attributes ++ [ Background.color color, padding paddingSize, Border.rounded roundingSize ]) { onPress = onPress, label = label size }
 
 
-smallScreenScaledButton : ViewportSize -> Button msg
-smallScreenScaledButton viewportSize attributes { onPress, label, color } =
-    Input.button
-        (attributes
-            ++ [ Background.color color
-               , padding (minDimension viewportSize // 40)
-               , Border.rounded (minDimension viewportSize // 45)
-               ]
-        )
-        { onPress = onPress, label = label <| minDimension viewportSize // 25 }
-
-
-buttons : { medium : Button msg1, largeScreenScaled : ViewportSize -> Button msg2, smallScreenScaled : ViewportSize -> Button msg3 }
+buttons : { medium : Button msg1, largeScreenScaled : ViewportSize -> Button msg2, mediumScreenScaled : ViewportSize -> Button msg3 }
 buttons =
-    { medium = mediumButton
-    , largeScreenScaled = largeScreenScaledButton
-    , smallScreenScaled = smallScreenScaledButton
+    { medium = baseButton 25
+    , mediumScreenScaled = \viewportSize -> baseButton (elementSizes.mediumScreenScaled viewportSize)
+    , largeScreenScaled =
+        \viewportSize attributes ->
+            baseButton (elementSizes.largeScreenScaled viewportSize)
+                (attributes
+                    ++ [ Font.center
+                       , width (px <| layoutSizes.thirdScreen viewportSize)
+                       ]
+                )
     }
 
 
@@ -971,7 +949,7 @@ viewFullScreen model =
                         , keyboardShortcut = Space
                         , color = colors.primary
                         }
-                        (buttons.smallScreenScaled model.viewportSize)
+                        (buttons.mediumScreenScaled model.viewportSize)
                     ]
 
         WrongPage (( _, pll, _ ) as testCase) ->
@@ -1029,7 +1007,7 @@ viewFullScreen model =
                         , keyboardShortcut = Space
                         , color = colors.primary
                         }
-                        (buttons.smallScreenScaled model.viewportSize)
+                        (buttons.mediumScreenScaled model.viewportSize)
                     ]
 
 
