@@ -672,14 +672,14 @@ viewFullScreen model =
         StartPage ->
             let
                 contentWidth =
-                    width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                    width (fill |> maximum (layoutSizes.threeQuarterScreen model.viewportSize))
 
                 divider =
                     el
                         [ testid "divider"
                         , Border.solid
                         , centerX
-                        , width (fill |> maximum (model.viewportSize.width * 3 // 4))
+                        , width fill
                         , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
                         , Border.color colors.black
                         ]
