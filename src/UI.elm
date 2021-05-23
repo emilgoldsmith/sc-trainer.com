@@ -49,8 +49,16 @@ viewDivider palette =
 
 
 type alias Palette =
-    { black : Color
+    { -- General
+      primary : Color
+    , correct : Color
+    , wrong : Color
+    , black : Color
+
+    -- Link
     , mouseOverLink : Color
+
+    -- Focus
     , focusBorder : Color
     }
 
@@ -58,7 +66,10 @@ type alias Palette =
 defaultPalette : Palette
 defaultPalette =
     { -- General
-      black = rgb255 0 0 0
+      primary = rgb255 0 128 0
+    , correct = rgb255 0 128 0
+    , wrong = rgb255 255 0 0
+    , black = rgb255 0 0 0
 
     -- Link
     , mouseOverLink = rgb255 125 125 125
