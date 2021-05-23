@@ -620,15 +620,6 @@ fontSizes =
     }
 
 
-colors : { primary : Color, correct : Color, wrong : Color, black : Color }
-colors =
-    { primary = rgb255 0 128 0
-    , correct = rgb255 0 128 0
-    , wrong = rgb255 255 0 0
-    , black = rgb255 0 0 0
-    }
-
-
 paddingScale : Int -> Int
 paddingScale =
     modular 4 2 >> round
@@ -737,7 +728,7 @@ viewFullScreen model =
                             ]
                             { onPress = Just StartTestGetReady
                             , labelText = "Start"
-                            , color = colors.primary
+                            , color = model.palette.primary
                             , keyboardShortcut = Space
                             }
                             buttons.medium
@@ -881,7 +872,7 @@ viewFullScreen model =
                                 else
                                     Just EvaluateCorrect
                             , labelText = "Correct"
-                            , color = colors.correct
+                            , color = model.palette.correct
                             , keyboardShortcut = Space
                             }
                             (buttons.largeScreenScaled model.viewportSize)
@@ -897,7 +888,7 @@ viewFullScreen model =
                                     Just EvaluateWrong
                             , labelText = "Wrong"
                             , keyboardShortcut = W
-                            , color = colors.wrong
+                            , color = model.palette.wrong
                             }
                             (buttons.largeScreenScaled model.viewportSize)
                         ]
@@ -931,7 +922,7 @@ viewFullScreen model =
                         { onPress = Just StartTestGetReady
                         , labelText = "Next"
                         , keyboardShortcut = Space
-                        , color = colors.primary
+                        , color = model.palette.primary
                         }
                         (buttons.mediumScreenScaled model.viewportSize)
                     ]
@@ -989,7 +980,7 @@ viewFullScreen model =
                         { onPress = Just StartTestGetReady
                         , labelText = "Next"
                         , keyboardShortcut = Space
-                        , color = colors.primary
+                        , color = model.palette.primary
                         }
                         (buttons.mediumScreenScaled model.viewportSize)
                     ]
