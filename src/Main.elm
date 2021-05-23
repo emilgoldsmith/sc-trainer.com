@@ -578,24 +578,6 @@ spaces =
     }
 
 
-layoutSizes :
-    { quarterScreen : ViewportSize -> Int
-    , halfScreen : ViewportSize -> Int
-    , threeQuarterScreen : ViewportSize -> Int
-    , thirdScreen : ViewportSize -> Int
-    , tenthOfScreen : ViewportSize -> Int
-    , fifthOfScreen : ViewportSize -> Int
-    }
-layoutSizes =
-    { quarterScreen = \viewportSize -> minDimension viewportSize // 4
-    , halfScreen = \viewportSize -> minDimension viewportSize // 2
-    , threeQuarterScreen = \viewportSize -> minDimension viewportSize * 3 // 4
-    , thirdScreen = \viewportSize -> minDimension viewportSize // 3
-    , tenthOfScreen = \viewportSize -> minDimension viewportSize // 10
-    , fifthOfScreen = \viewportSize -> minDimension viewportSize // 5
-    }
-
-
 screenScaledElementScale : ViewportSize -> Int -> Float
 screenScaledElementScale viewportSize =
     modular (toFloat (minDimension viewportSize) / 20) 1.5
@@ -632,10 +614,6 @@ viewFullScreen : Model -> Element Msg
 viewFullScreen model =
     case model.trainerState of
         StartPage ->
-            let
-                contentWidth =
-                    width (fill |> maximum (layoutSizes.threeQuarterScreen model.viewportSize))
-            in
             Element.map BetweenTestsMessage <|
                 el
                     [ testid "start-page-container"
@@ -647,7 +625,7 @@ viewFullScreen model =
                     column
                         [ spacing spaces.small
                         , centerX
-                        , contentWidth
+                        , width (fill |> maximum (minDimension model.viewportSize * 3 // 4))
                         , paddingXY 0 spaces.small
                         ]
                     <|
@@ -769,15 +747,15 @@ viewFullScreen model =
                     [ testid "test-running-container"
                     , centerX
                     , centerY
-                    , spacing (layoutSizes.tenthOfScreen model.viewportSize)
+                    , spacing (minDimension model.viewportSize // 10)
                     ]
                     [ el [ testid "test-case", centerX ] <|
-                        ViewCube.uFRNoLetters (layoutSizes.halfScreen model.viewportSize) <|
+                        ViewCube.uFRNoLetters (minDimension model.viewportSize // 2) <|
                             (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse (toAlg testCase)))
                     , el
                         [ testid "timer"
                         , centerX
-                        , Font.size (layoutSizes.fifthOfScreen model.viewportSize)
+                        , Font.size (minDimension model.viewportSize // 5)
                         ]
                       <|
                         text <|
