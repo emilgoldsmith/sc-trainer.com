@@ -19,10 +19,12 @@ import Process
 import Random
 import Task
 import Time
+import UI
 import Url
 import Utils.Css exposing (testid)
 import Utils.TimeInterval as TimeInterval
 import ViewCube
+import WebResource
 
 
 main : Program Flags Model Msg
@@ -711,15 +713,12 @@ viewFullScreen model =
                                 [ text "Welcome!" ]
                             , paragraph []
                                 [ text "This is a "
-                                , newTabLink linkStyling { label = text "PLL", url = "https://www.speedsolving.com/wiki/index.php/PLL" }
+                                , UI.viewWebResourceLink WebResource.PLLExplanation "PLL"
                                 , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from "
-                                , newTabLink linkStyling
-                                    { url = "https://www.quora.com/How-should-a-speedcuber-hold-and-grip-the-cube/answer/Sukant-Koul-1"
-                                    , label = text "home grip"
-                                    }
+                                , UI.viewWebResourceLink WebResource.HomeGripExplanation "home grip"
                                 , text
                                     ", and including recognition and pre- and post-"
-                                , newTabLink linkStyling { label = text "AUF", url = "https://www.speedsolving.com/wiki/index.php/AUF" }
+                                , UI.viewWebResourceLink WebResource.AUFExplanation "AUF"
                                 , text
                                     " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
                                 ]
@@ -761,15 +760,13 @@ viewFullScreen model =
                             [ paragraph [ Font.size fontSizes.veryLarge, Region.heading 1 ] [ text "Instructions:" ]
                             , paragraph []
                                 [ text "When you press the start button (or space) you will have a second to get your cube in "
-                                , newTabLink linkStyling
-                                    { url = "https://www.quora.com/How-should-a-speedcuber-hold-and-grip-the-cube/answer/Sukant-Koul-1"
-                                    , label = text "home grip"
-                                    }
+                                , UI.viewWebResourceLink
+                                    WebResource.HomeGripExplanation
+                                    "home grip"
                                 , text ". Then a "
-                                , newTabLink linkStyling { label = text "PLL", url = "https://www.speedsolving.com/wiki/index.php/PLL" }
+                                , UI.viewWebResourceLink WebResource.PLLExplanation "PLL"
                                 , text " case will show up and the timer will start. If you successfully recognize the case apply the moves to your cube that would solve the cube on screen (including pre- and post-"
-                                , newTabLink linkStyling
-                                    { label = text "AUF", url = "https://www.speedsolving.com/wiki/index.php/AUF" }
+                                , UI.viewWebResourceLink WebResource.AUFExplanation "AUF"
                                 , text
                                     "), and then press anything to stop the timer. If you don't recognize the case just press anything when you are sure you can't recall it. Things to press include any keyboard key, the screen and your mouse/touchpad."
                                 ]
@@ -789,16 +786,12 @@ viewFullScreen model =
                             [ paragraph [ Font.size fontSizes.veryLarge, Region.heading 1, Font.center ] [ text "Learning Resources:" ]
                             , unorderedList [ centerX ]
                                 [ paragraph []
-                                    [ newTabLink linkStyling
-                                        { url = "http://cubing.pt/wp-content/uploads/2017/03/pll2side-20140531.pdf"
-                                        , label = text "Two Sided PLL Recognition Guide"
-                                        }
+                                    [ UI.viewWebResourceLink
+                                        WebResource.TwoSidedPllRecognitionGuide
+                                        "Two Sided PLL Recognition Guide"
                                     ]
                                 , paragraph []
-                                    [ newTabLink linkStyling
-                                        { url = "https://www.youtube.com/watch?v=JvqGU0UZPcE"
-                                        , label = text "Fast PLL Algorithms And Finger Tricks"
-                                        }
+                                    [ UI.viewWebResourceLink WebResource.PLLAlgorithmsResource "Fast PLL Algorithms And Finger Tricks"
                                     ]
                                 , paragraph []
                                     [ text "And just generally make sure you drill you algorithms until you can do them without looking!" ]
@@ -1018,23 +1011,6 @@ unorderedList attributes listItemContents =
             List.map (\content -> row [ spacing spaces.verySmall ] [ text "-", content ]) listItemContents
     in
     column (spacing spaces.small :: attributes) listItems
-
-
-linkStyling : List (Attribute msg)
-linkStyling =
-    [ Font.underline
-    , mouseOver
-        [ Font.color (rgb255 125 125 125)
-        ]
-    , focused
-        [ Border.shadow
-            { offset = ( 0, 0 )
-            , blur = 0
-            , size = 3
-            , color = rgb255 155 203 255
-            }
-        ]
-    ]
 
 
 viewState : Model -> Element msg
