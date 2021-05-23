@@ -601,22 +601,20 @@ screenScaledElementScale viewportSize =
     modular (toFloat (minDimension viewportSize) / 20) 1.5
 
 
-elementSizes : { smallScreenScaled : ViewportSize -> Int, mediumScreenScaled : ViewportSize -> Int, largeScreenScaled : ViewportSize -> Int, cubeSize : Int }
+elementSizes : { smallScreenScaled : ViewportSize -> Int, mediumScreenScaled : ViewportSize -> Int, largeScreenScaled : ViewportSize -> Int }
 elementSizes =
     { smallScreenScaled = \viewportSize -> screenScaledElementScale viewportSize -1 |> round
     , mediumScreenScaled = \viewportSize -> screenScaledElementScale viewportSize 1 |> round
     , largeScreenScaled = \viewportSize -> screenScaledElementScale viewportSize 2 |> round
-    , cubeSize = 200
     }
 
 
-fontSizes : { small : Int, medium : Int, large : Int, veryLarge : Int, screenScaledHumongous : ViewportSize -> Int }
+fontSizes : { small : Int, medium : Int, large : Int, veryLarge : Int }
 fontSizes =
     { small = fontScale -1
     , medium = fontScale 1
     , large = fontScale 2
     , veryLarge = fontScale 3
-    , screenScaledHumongous = \viewportSize -> minDimension viewportSize * 2 // 9
     }
 
 
@@ -628,37 +626,6 @@ paddingScale =
 paddingSizes : { verySmall : Int, small : Int, medium : Int, large : Int, veryLarge : Int }
 paddingSizes =
     { verySmall = paddingScale -2, small = paddingScale -1, medium = paddingScale 1, large = paddingScale 2, veryLarge = paddingScale 3 }
-
-
-type alias Button msg =
-    List (Attribute msg) -> { onPress : Maybe msg, color : Color, label : Int -> Element msg } -> Element msg
-
-
-baseButton : Int -> List (Attribute msg) -> { onPress : Maybe msg, color : Color, label : Int -> Element msg } -> Element msg
-baseButton size attributes { onPress, label, color } =
-    let
-        paddingSize =
-            size * 2 // 3
-
-        roundingSize =
-            size // 3
-    in
-    Input.button (attributes ++ [ Background.color color, padding paddingSize, Border.rounded roundingSize ]) { onPress = onPress, label = label size }
-
-
-buttons : { medium : Button msg1, largeScreenScaled : ViewportSize -> Button msg2, mediumScreenScaled : ViewportSize -> Button msg3 }
-buttons =
-    { medium = baseButton 25
-    , mediumScreenScaled = \viewportSize -> baseButton (elementSizes.mediumScreenScaled viewportSize)
-    , largeScreenScaled =
-        \viewportSize attributes ->
-            baseButton (elementSizes.largeScreenScaled viewportSize)
-                (attributes
-                    ++ [ Font.center
-                       , width (px <| layoutSizes.thirdScreen viewportSize)
-                       ]
-                )
-    }
 
 
 viewFullScreen : Model -> Element Msg
@@ -720,7 +687,7 @@ viewFullScreen model =
                             , centerX
                             ]
                           <|
-                            ViewCube.uFRWithLetters elementSizes.cubeSize model.expectedCube
+                            ViewCube.uFRWithLetters 200 model.expectedCube
                         , buttonWithShortcut
                             model
                             [ testid "start-button"
@@ -731,7 +698,7 @@ viewFullScreen model =
                             , color = model.palette.primary
                             , keyboardShortcut = Space
                             }
-                            buttons.medium
+                            UI.viewButton.medium
                         , UI.viewDivider model.palette
                         , column
                             [ testid "instructions-text"
@@ -790,7 +757,7 @@ viewFullScreen model =
             <|
                 paragraph
                     [ testid "get-ready-explanation"
-                    , Font.size (fontSizes.screenScaledHumongous model.viewportSize)
+                    , Font.size (minDimension model.viewportSize * 2 // 9)
                     , Font.center
                     , padding paddingSizes.medium
                     ]
@@ -834,6 +801,15 @@ viewFullScreen model =
 
                     buttonSpacing =
                         minDimension model.viewportSize // 15
+
+                    button =
+                        \attributes ->
+                            UI.viewButton.customSize (elementSizes.largeScreenScaled model.viewportSize)
+                                (attributes
+                                    ++ [ Font.center
+                                       , width (px <| minDimension model.viewportSize // 3)
+                                       ]
+                                )
                 in
                 column
                     [ testid "evaluate-test-result-container"
@@ -875,7 +851,7 @@ viewFullScreen model =
                             , color = model.palette.correct
                             , keyboardShortcut = Space
                             }
-                            (buttons.largeScreenScaled model.viewportSize)
+                            button
                         , buttonWithShortcut
                             model
                             [ testid "wrong-button"
@@ -890,7 +866,7 @@ viewFullScreen model =
                             , keyboardShortcut = W
                             , color = model.palette.wrong
                             }
-                            (buttons.largeScreenScaled model.viewportSize)
+                            button
                         ]
                     ]
 
@@ -924,7 +900,7 @@ viewFullScreen model =
                         , keyboardShortcut = Space
                         , color = model.palette.primary
                         }
-                        (buttons.mediumScreenScaled model.viewportSize)
+                        (UI.viewButton.customSize <| elementSizes.mediumScreenScaled model.viewportSize)
                     ]
 
         WrongPage (( _, pll, _ ) as testCase) ->
@@ -982,7 +958,7 @@ viewFullScreen model =
                         , keyboardShortcut = Space
                         , color = model.palette.primary
                         }
-                        (buttons.mediumScreenScaled model.viewportSize)
+                        (UI.viewButton.customSize <| elementSizes.mediumScreenScaled model.viewportSize)
                     ]
 
 
@@ -1018,7 +994,7 @@ pllToString pll =
     PLL.getLetters pll ++ "-perm"
 
 
-buttonWithShortcut : { a | userHasKeyboard : Bool } -> List (Attribute msg) -> { onPress : Maybe msg, labelText : String, color : Color, keyboardShortcut : Key } -> Button msg -> Element msg
+buttonWithShortcut : { a | userHasKeyboard : Bool } -> List (Attribute msg) -> { onPress : Maybe msg, labelText : String, color : Color, keyboardShortcut : Key } -> UI.Button msg -> Element msg
 buttonWithShortcut { userHasKeyboard } attributes { onPress, labelText, keyboardShortcut, color } button =
     let
         keyString =

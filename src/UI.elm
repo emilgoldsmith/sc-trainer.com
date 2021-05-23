@@ -1,8 +1,10 @@
-module UI exposing (Palette, defaultPalette, viewDivider, viewWebResourceLink)
+module UI exposing (Button, Palette, defaultPalette, viewButton, viewDivider, viewWebResourceLink)
 
 import Element exposing (..)
+import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Element.Input as Input
 import Utils.Css exposing (testid)
 import WebResource
 
@@ -42,6 +44,27 @@ viewDivider palette =
         , Border.color palette.black
         ]
         none
+
+
+type alias Button msg =
+    List (Attribute msg) -> { onPress : Maybe msg, color : Color, label : Int -> Element msg } -> Element msg
+
+
+baseButton : Int -> Button msg
+baseButton size attributes { onPress, label, color } =
+    let
+        paddingSize =
+            size * 2 // 3
+
+        roundingSize =
+            size // 3
+    in
+    Input.button (attributes ++ [ Background.color color, padding paddingSize, Border.rounded roundingSize ]) { onPress = onPress, label = label size }
+
+
+viewButton : { medium : Button msg1, customSize : Int -> Button msg2 }
+viewButton =
+    { medium = baseButton 25, customSize = baseButton }
 
 
 
