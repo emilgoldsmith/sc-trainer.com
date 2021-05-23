@@ -606,6 +606,7 @@ viewFullScreen model =
                     , centerY
                     , scrollbarY
                     , width fill
+                    , Font.size fontSizes.large
                     ]
                 <|
                     column
@@ -620,7 +621,6 @@ viewFullScreen model =
                             , Font.center
                             , centerX
                             , spacing spaces.small
-                            , Font.size fontSizes.large
                             ]
                             [ paragraph [ Font.size fontSizes.veryLarge, Region.heading 1 ]
                                 [ text "Welcome!" ]
