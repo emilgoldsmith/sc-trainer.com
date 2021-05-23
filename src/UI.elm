@@ -1,6 +1,8 @@
-module UI exposing (Button, Palette, defaultPalette, fontSize, viewButton, viewDivider, viewWebResourceLink)
+module UI exposing (Button, Palette, defaultPalette, fontSize, paddingAll, paddingVertical, spacing, viewButton, viewDivider, viewWebResourceLink)
 
-import Element exposing (..)
+-- We can't expose all of Element as it clashes with the spacing export
+
+import Element as El
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
@@ -13,14 +15,14 @@ import WebResource
 -- Views
 
 
-viewWebResourceLink : Palette -> WebResource.WebResource -> String -> Element msg
+viewWebResourceLink : Palette -> WebResource.WebResource -> String -> El.Element msg
 viewWebResourceLink palette resource labelText =
-    newTabLink
+    El.newTabLink
         [ Font.underline
-        , mouseOver
+        , El.mouseOver
             [ Font.color palette.mouseOverLink
             ]
-        , focused
+        , El.focused
             [ Border.shadow
                 { offset = ( 0, 0 )
                 , blur = 0
@@ -29,25 +31,25 @@ viewWebResourceLink palette resource labelText =
                 }
             ]
         ]
-        { label = text labelText
+        { label = El.text labelText
         , url = WebResource.getUrl resource
         }
 
 
-viewDivider : Palette -> Element msg
+viewDivider : Palette -> El.Element msg
 viewDivider palette =
-    el
+    El.el
         [ testid "divider"
         , Border.solid
-        , width fill
+        , El.width El.fill
         , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
         , Border.color palette.black
         ]
-        none
+        El.none
 
 
 type alias Button msg =
-    List (Attribute msg) -> { onPress : Maybe msg, color : Color, label : Int -> Element msg } -> Element msg
+    List (El.Attribute msg) -> { onPress : Maybe msg, color : El.Color, label : Int -> El.Element msg } -> El.Element msg
 
 
 baseButton : Int -> Button msg
@@ -59,7 +61,7 @@ baseButton size attributes { onPress, label, color } =
         roundingSize =
             size // 3
     in
-    Input.button (attributes ++ [ Background.color color, padding paddingSize, Border.rounded roundingSize ]) { onPress = onPress, label = label size }
+    Input.button (attributes ++ [ Background.color color, El.padding paddingSize, Border.rounded roundingSize ]) { onPress = onPress, label = label size }
 
 
 viewButton : { large : Button msg1, customSize : Int -> Button msg2 }
@@ -73,32 +75,32 @@ viewButton =
 
 type alias Palette =
     { -- General
-      primary : Color
-    , correct : Color
-    , wrong : Color
-    , black : Color
+      primary : El.Color
+    , correct : El.Color
+    , wrong : El.Color
+    , black : El.Color
 
     -- Link
-    , mouseOverLink : Color
+    , mouseOverLink : El.Color
 
     -- Focus
-    , focusBorder : Color
+    , focusBorder : El.Color
     }
 
 
 defaultPalette : Palette
 defaultPalette =
     { -- General
-      primary = rgb255 0 128 0
-    , correct = rgb255 0 128 0
-    , wrong = rgb255 255 0 0
-    , black = rgb255 0 0 0
+      primary = El.rgb255 0 128 0
+    , correct = El.rgb255 0 128 0
+    , wrong = El.rgb255 255 0 0
+    , black = El.rgb255 0 0 0
 
     -- Link
-    , mouseOverLink = rgb255 125 125 125
+    , mouseOverLink = El.rgb255 125 125 125
 
     -- Focus
-    , focusBorder = rgb255 155 203 255
+    , focusBorder = El.rgb255 155 203 255
     }
 
 
@@ -106,15 +108,59 @@ defaultPalette =
 -- Sizings
 
 
+type alias Sizes decorative msg =
+    { verySmall : El.Attr decorative msg
+    , small : El.Attr decorative msg
+    , medium : El.Attr decorative msg
+    , large : El.Attr decorative msg
+    , veryLarge : El.Attr decorative msg
+    }
+
+
+type alias Scale =
+    Int -> Int
+
+
+buildSizes : (Int -> El.Attr decorative msg) -> Scale -> Sizes decorative msg
+buildSizes buildAttribute scale =
+    { verySmall = buildAttribute <| scale -2
+    , small = buildAttribute <| scale -1
+    , medium = buildAttribute <| scale 1
+    , large = buildAttribute <| scale 2
+    , veryLarge = buildAttribute <| scale 3
+    }
+
+
 fontScale : Int -> Int
 fontScale =
-    modular 16 (4 / 3) >> round
+    El.modular 16 (4 / 3) >> round
 
 
-fontSize : { small : Attr decorative msg, medium : Attr a b, large : Attr c d, veryLarge : Attr e f }
+fontSize : Sizes decorative msg
 fontSize =
-    { small = Font.size <| fontScale -1
-    , medium = Font.size <| fontScale 1
-    , large = Font.size <| fontScale 2
-    , veryLarge = Font.size <| fontScale 3
-    }
+    buildSizes Font.size fontScale
+
+
+spaceScale : Int -> Int
+spaceScale =
+    El.modular 21 (4 / 3) >> round
+
+
+spacing : Sizes () msg
+spacing =
+    buildSizes El.spacing spaceScale
+
+
+paddingScale : Int -> Int
+paddingScale =
+    El.modular 4 2 >> round
+
+
+paddingAll : Sizes () msg
+paddingAll =
+    buildSizes El.padding paddingScale
+
+
+paddingVertical : Sizes () msg
+paddingVertical =
+    buildSizes (El.paddingXY 0) paddingScale
