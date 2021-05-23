@@ -563,26 +563,12 @@ spaceScale =
     modular 21 (4 / 3) >> round
 
 
-fontScale : Int -> Int
-fontScale =
-    modular 16 (4 / 3) >> round
-
-
 spaces : { verySmall : Int, small : Int, medium : Int, large : Int }
 spaces =
     { verySmall = spaceScale -2
     , small = spaceScale -1
     , medium = spaceScale 1
     , large = spaceScale 2
-    }
-
-
-fontSizes : { small : Int, medium : Int, large : Int, veryLarge : Int }
-fontSizes =
-    { small = fontScale -1
-    , medium = fontScale 1
-    , large = fontScale 2
-    , veryLarge = fontScale 3
     }
 
 
@@ -606,7 +592,7 @@ viewFullScreen model =
                     , centerY
                     , scrollbarY
                     , width fill
-                    , Font.size fontSizes.large
+                    , UI.fontSize.large
                     ]
                 <|
                     column
@@ -622,7 +608,7 @@ viewFullScreen model =
                             , centerX
                             , spacing spaces.small
                             ]
-                            [ paragraph [ Font.size fontSizes.veryLarge, Region.heading 1 ]
+                            [ paragraph [ UI.fontSize.veryLarge, Region.heading 1 ]
                                 [ text "Welcome!" ]
                             , paragraph []
                                 [ text "This is a "
@@ -638,7 +624,7 @@ viewFullScreen model =
                             ]
                         , UI.viewDivider model.palette
                         , paragraph
-                            [ Font.size fontSizes.veryLarge
+                            [ UI.fontSize.veryLarge
                             , centerX
                             , Font.center
                             , testid "cube-start-explanation"
@@ -662,7 +648,7 @@ viewFullScreen model =
                             , color = model.palette.primary
                             , keyboardShortcut = Space
                             }
-                            UI.viewButton.medium
+                            UI.viewButton.large
                         , UI.viewDivider model.palette
                         , column
                             [ testid "instructions-text"
@@ -670,7 +656,7 @@ viewFullScreen model =
                             , centerX
                             , spacing spaces.small
                             ]
-                            [ paragraph [ Font.size fontSizes.veryLarge, Region.heading 1 ] [ text "Instructions:" ]
+                            [ paragraph [ UI.fontSize.veryLarge, Region.heading 1 ] [ text "Instructions:" ]
                             , paragraph []
                                 [ text "When you press the start button (or space) you will have a second to get your cube in "
                                 , UI.viewWebResourceLink model.palette
@@ -696,7 +682,7 @@ viewFullScreen model =
                             , centerX
                             , spacing spaces.small
                             ]
-                            [ paragraph [ Font.size fontSizes.veryLarge, Region.heading 1, Font.center ] [ text "Learning Resources:" ]
+                            [ paragraph [ UI.fontSize.veryLarge, Region.heading 1, Font.center ] [ text "Learning Resources:" ]
                             , unorderedList [ centerX ]
                                 [ paragraph []
                                     [ UI.viewWebResourceLink model.palette
