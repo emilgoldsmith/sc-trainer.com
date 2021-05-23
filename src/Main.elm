@@ -558,30 +558,6 @@ view model =
     }
 
 
-spaceScale : Int -> Int
-spaceScale =
-    modular 21 (4 / 3) >> round
-
-
-spaces : { verySmall : Int, small : Int, medium : Int, large : Int }
-spaces =
-    { verySmall = spaceScale -2
-    , small = spaceScale -1
-    , medium = spaceScale 1
-    , large = spaceScale 2
-    }
-
-
-paddingScale : Int -> Int
-paddingScale =
-    modular 4 2 >> round
-
-
-paddingSizes : { verySmall : Int, small : Int, medium : Int, large : Int, veryLarge : Int }
-paddingSizes =
-    { verySmall = paddingScale -2, small = paddingScale -1, medium = paddingScale 1, large = paddingScale 2, veryLarge = paddingScale 3 }
-
-
 viewFullScreen : Model -> Element Msg
 viewFullScreen model =
     case model.trainerState of
@@ -596,17 +572,17 @@ viewFullScreen model =
                     ]
                 <|
                     column
-                        [ spacing spaces.small
+                        [ UI.spacing.small
                         , centerX
                         , width (fill |> maximum (minDimension model.viewportSize * 3 // 4))
-                        , paddingXY 0 spaces.small
+                        , UI.paddingVertical.veryLarge
                         ]
                     <|
                         [ column
                             [ testid "welcome-text"
                             , Font.center
                             , centerX
-                            , spacing spaces.small
+                            , UI.spacing.small
                             ]
                             [ paragraph [ UI.fontSize.veryLarge, Region.heading 1 ]
                                 [ text "Welcome!" ]
@@ -654,7 +630,7 @@ viewFullScreen model =
                             [ testid "instructions-text"
                             , Font.center
                             , centerX
-                            , spacing spaces.small
+                            , UI.spacing.small
                             ]
                             [ paragraph [ UI.fontSize.veryLarge, Region.heading 1 ] [ text "Instructions:" ]
                             , paragraph []
@@ -680,7 +656,7 @@ viewFullScreen model =
                         , column
                             [ testid "learning-resources"
                             , centerX
-                            , spacing spaces.small
+                            , UI.spacing.small
                             ]
                             [ paragraph [ UI.fontSize.veryLarge, Region.heading 1, Font.center ] [ text "Learning Resources:" ]
                             , unorderedList [ centerX ]
@@ -709,7 +685,7 @@ viewFullScreen model =
                     [ testid "get-ready-explanation"
                     , Font.size (minDimension model.viewportSize * 2 // 9)
                     , Font.center
-                    , padding paddingSizes.medium
+                    , UI.paddingAll.medium
                     ]
                     [ text "Go To Home Grip" ]
 
@@ -916,9 +892,9 @@ unorderedList : List (Attribute msg) -> List (Element msg) -> Element msg
 unorderedList attributes listItemContents =
     let
         listItems =
-            List.map (\content -> row [ spacing spaces.verySmall ] [ text "-", content ]) listItemContents
+            List.map (\content -> row [ UI.spacing.verySmall ] [ text "-", content ]) listItemContents
     in
-    column (spacing spaces.small :: attributes) listItems
+    column (UI.spacing.small :: attributes) listItems
 
 
 viewState : Model -> Element msg
