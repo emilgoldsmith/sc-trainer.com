@@ -47,29 +47,48 @@ function run_check() {
     )
 }
 
+BRANCH_NAME=$(git symbolic-ref --short HEAD)
+
+# Make sure we have it up to date as we will be using it
+git fetch origin $BRANCH_NAME
 
 run_check \
     "Checking For Uncommitted Changes" \
     "You have uncommitted changes. Commit (probably with '--amend') or 'git stash' them and try pushing again" \
     ../helpers/check-for-uncommitted-changes.sh
 
-run_check "Checking Compilation" "Compilation Failed" elm make ../../src/Main.elm --output=../../main.js
-rm ../../main.js
-
-run_check "Checking Linting" "Elm analyse found linting issues" ./elm-analyse.sh
-
-run_check "Checking Code Formatting" "Formatting issues found" ./elm-format.sh
-
-./elm-verify-examples.sh
 run_check \
-    "Checking Elm Verify Examples is up to date" \
-    "You seem to have forgotten to update the elm-verify-examples. They are now up to date. Check them in, commit and try pushing again" \
-    ../helpers/check-for-uncommitted-changes.sh
+    "Can Be Pushed" \
+    "It seems like the branch and the remote have diverged, rebase and try again" \
+    git merge-base --is-ancestor origin/$BRANCH_NAME HEAD
 
-run_check "Checking Unit Tests" "Unit Tests Failed" ./elm-test.sh
+if ! git diff --quiet --exit-code origin/$BRANCH_NAME HEAD -- ../../src ../../elm*.json;
+then
+    run_check "Checking Elm Compilation" "Elm Compilation Failed" elm make ../../src/Main.elm --output=../../main.js
+    rm ../../main.js
 
-run_check "Checking Prettier" "Prettier Failed" ./prettier.sh
+    run_check "Checking Elm Linting" "Elm analyse found linting issues" ./elm-analyse.sh
 
-run_check "Checking Cypress ESLint" "ESLint Failed" ./eslint.sh
+    run_check "Checking Elm Code Formatting" "Elm Formatting issues found" ./elm-format.sh
 
-run_check "Checking Cypress Typescript" "Typescript Failed" ./typescript.sh
+    ./elm-verify-examples.sh
+    run_check \
+        "Checking Elm Verify Examples is up to date" \
+        "You seem to have forgotten to update the elm-verify-examples. They are now up to date. Check them in, commit and try pushing again" \
+        ../helpers/check-for-uncommitted-changes.sh
+
+    run_check "Checking Elm Unit Tests" "Elm Unit Tests Failed" ./elm-test.sh
+else
+    echo "${YELLOW}No Elm Changes Found, Skipping Elm Checks$RESET_COLOUR"
+fi
+
+if ! git diff --quiet --exit-code origin/$BRANCH_NAME HEAD -- ../../end-to-end-tests;
+then
+    run_check "Checking Cypress Prettier" "Prettier Failed" ./prettier.sh
+
+    run_check "Checking Cypress ESLint" "ESLint Failed" ./eslint.sh
+
+    run_check "Checking Cypress Typescript" "Typescript Failed" ./typescript.sh
+else
+    echo "${YELLOW}No Cypress Changes Found, Skipping Cypress Checks$RESET_COLOUR"
+fi
