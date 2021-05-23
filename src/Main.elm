@@ -9,7 +9,6 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
-import Element.Input as Input
 import Element.Region as Region
 import Html.Events
 import Json.Decode as Decode
@@ -578,19 +577,6 @@ spaces =
     }
 
 
-screenScaledElementScale : ViewportSize -> Int -> Float
-screenScaledElementScale viewportSize =
-    modular (toFloat (minDimension viewportSize) / 20) 1.5
-
-
-elementSizes : { smallScreenScaled : ViewportSize -> Int, mediumScreenScaled : ViewportSize -> Int, largeScreenScaled : ViewportSize -> Int }
-elementSizes =
-    { smallScreenScaled = \viewportSize -> screenScaledElementScale viewportSize -1 |> round
-    , mediumScreenScaled = \viewportSize -> screenScaledElementScale viewportSize 1 |> round
-    , largeScreenScaled = \viewportSize -> screenScaledElementScale viewportSize 2 |> round
-    }
-
-
 fontSizes : { small : Int, medium : Int, large : Int, veryLarge : Int }
 fontSizes =
     { small = fontScale -1
@@ -782,7 +768,7 @@ viewFullScreen model =
 
                     button =
                         \attributes ->
-                            UI.viewButton.customSize (elementSizes.largeScreenScaled model.viewportSize)
+                            UI.viewButton.customSize (minDimension model.viewportSize // 13)
                                 (attributes
                                     ++ [ Font.center
                                        , width (px <| minDimension model.viewportSize // 3)
@@ -878,7 +864,7 @@ viewFullScreen model =
                         , keyboardShortcut = Space
                         , color = model.palette.primary
                         }
-                        (UI.viewButton.customSize <| elementSizes.mediumScreenScaled model.viewportSize)
+                        (UI.viewButton.customSize <| minDimension model.viewportSize // 20)
                     ]
 
         WrongPage (( _, pll, _ ) as testCase) ->
@@ -936,7 +922,7 @@ viewFullScreen model =
                         , keyboardShortcut = Space
                         , color = model.palette.primary
                         }
-                        (UI.viewButton.customSize <| elementSizes.mediumScreenScaled model.viewportSize)
+                        (UI.viewButton.customSize <| minDimension model.viewportSize // 20)
                     ]
 
 
