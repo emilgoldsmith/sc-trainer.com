@@ -1,8 +1,9 @@
-module UI exposing (viewWebResourceLink)
+module UI exposing (viewDivider, viewWebResourceLink)
 
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
+import Utils.Css exposing (testid)
 import WebResource
 
 
@@ -29,3 +30,30 @@ viewWebResourceLink resource labelText =
         { label = text labelText
         , url = WebResource.getUrl resource
         }
+
+
+viewDivider : Element msg
+viewDivider =
+    el
+        [ testid "divider"
+        , Border.solid
+        , width fill
+        , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
+        , Border.color defaultPalette.black
+        ]
+        none
+
+
+
+-- Palette
+
+
+type alias Palette =
+    { black : Color
+    }
+
+
+defaultPalette : Palette
+defaultPalette =
+    { black = rgb255 0 0 0
+    }

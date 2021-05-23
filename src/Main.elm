@@ -675,17 +675,6 @@ viewFullScreen model =
             let
                 contentWidth =
                     width (fill |> maximum (layoutSizes.threeQuarterScreen model.viewportSize))
-
-                divider =
-                    el
-                        [ testid "divider"
-                        , Border.solid
-                        , centerX
-                        , width fill
-                        , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
-                        , Border.color colors.black
-                        ]
-                        none
             in
             Element.map BetweenTestsMessage <|
                 el
@@ -723,7 +712,7 @@ viewFullScreen model =
                                     " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
                                 ]
                             ]
-                        , divider
+                        , UI.viewDivider
                         , paragraph
                             [ Font.size fontSizes.veryLarge
                             , centerX
@@ -750,7 +739,7 @@ viewFullScreen model =
                             , keyboardShortcut = Space
                             }
                             buttons.medium
-                        , divider
+                        , UI.viewDivider
                         , column
                             [ testid "instructions-text"
                             , Font.center
@@ -777,7 +766,7 @@ viewFullScreen model =
                                 [ text "If you got it wrong you will have to solve the cube to reset it before being able to continue to the next case. Don't worry, you will be instructed through all this by the application."
                                 ]
                             ]
-                        , divider
+                        , UI.viewDivider
                         , column
                             [ testid "learning-resources"
                             , centerX
