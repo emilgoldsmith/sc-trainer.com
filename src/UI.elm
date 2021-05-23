@@ -1,4 +1,4 @@
-module UI exposing (viewDivider, viewWebResourceLink)
+module UI exposing (Palette, defaultPalette, viewDivider, viewWebResourceLink)
 
 import Element exposing (..)
 import Element.Border as Border
@@ -11,19 +11,19 @@ import WebResource
 -- Views
 
 
-viewWebResourceLink : WebResource.WebResource -> String -> Element msg
-viewWebResourceLink resource labelText =
+viewWebResourceLink : Palette -> WebResource.WebResource -> String -> Element msg
+viewWebResourceLink palette resource labelText =
     newTabLink
         [ Font.underline
         , mouseOver
-            [ Font.color (rgb255 125 125 125)
+            [ Font.color palette.mouseOverLink
             ]
         , focused
             [ Border.shadow
                 { offset = ( 0, 0 )
                 , blur = 0
                 , size = 3
-                , color = rgb255 155 203 255
+                , color = palette.focusBorder
                 }
             ]
         ]
@@ -32,14 +32,14 @@ viewWebResourceLink resource labelText =
         }
 
 
-viewDivider : Element msg
-viewDivider =
+viewDivider : Palette -> Element msg
+viewDivider palette =
     el
         [ testid "divider"
         , Border.solid
         , width fill
         , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
-        , Border.color defaultPalette.black
+        , Border.color palette.black
         ]
         none
 
@@ -50,10 +50,19 @@ viewDivider =
 
 type alias Palette =
     { black : Color
+    , mouseOverLink : Color
+    , focusBorder : Color
     }
 
 
 defaultPalette : Palette
 defaultPalette =
-    { black = rgb255 0 0 0
+    { -- General
+      black = rgb255 0 0 0
+
+    -- Link
+    , mouseOverLink = rgb255 125 125 125
+
+    -- Focus
+    , focusBorder = rgb255 155 203 255
     }
