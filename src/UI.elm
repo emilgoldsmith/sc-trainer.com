@@ -1,4 +1,4 @@
-module UI exposing (Button, Palette, defaultPalette, viewButton, viewDivider, viewWebResourceLink)
+module UI exposing (Button, Palette, defaultPalette, fontSize, viewButton, viewDivider, viewWebResourceLink)
 
 import Element exposing (..)
 import Element.Background as Background
@@ -62,9 +62,9 @@ baseButton size attributes { onPress, label, color } =
     Input.button (attributes ++ [ Background.color color, padding paddingSize, Border.rounded roundingSize ]) { onPress = onPress, label = label size }
 
 
-viewButton : { medium : Button msg1, customSize : Int -> Button msg2 }
+viewButton : { large : Button msg1, customSize : Int -> Button msg2 }
 viewButton =
-    { medium = baseButton 25, customSize = baseButton }
+    { large = baseButton <| fontScale 2, customSize = baseButton }
 
 
 
@@ -99,4 +99,22 @@ defaultPalette =
 
     -- Focus
     , focusBorder = rgb255 155 203 255
+    }
+
+
+
+-- Sizings
+
+
+fontScale : Int -> Int
+fontScale =
+    modular 16 (4 / 3) >> round
+
+
+fontSize : { small : Attr decorative msg, medium : Attr a b, large : Attr c d, veryLarge : Attr e f }
+fontSize =
+    { small = Font.size <| fontScale -1
+    , medium = Font.size <| fontScale 1
+    , large = Font.size <| fontScale 2
+    , veryLarge = Font.size <| fontScale 3
     }
