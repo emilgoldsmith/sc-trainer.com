@@ -47,22 +47,41 @@ function run_check() {
     )
 }
 
-BRANCH_NAME=$(git symbolic-ref --short HEAD)
+function has_upstream_branch() {
+    git rev-parse @{u} &> /dev/null
+}
+
+function changed_compared_to_upstream() {
+    ! has_upstream_branch || ! git diff --quiet --exit-code $UPSTREAM_BRANCH HEAD -- "$@"
+}
+
+UPSTREAM_REMOTE=$(git for-each-ref --format='%(upstream:remotename)' "$(git symbolic-ref -q HEAD)")
+UPSTREAM_BRANCH_NAME=$(git for-each-ref --format='%(upstream:remoteref)' "$(git symbolic-ref -q HEAD)")
+UPSTREAM_BRANCH=$(git for-each-ref --format='%(upstream:short)' "$(git symbolic-ref -q HEAD)")
 
 # Make sure we have it up to date as we will be using it
-git fetch origin $BRANCH_NAME
+has_upstream_branch && git fetch $UPSTREAM_REMOTE $UPSTREAM_BRANCH_NAME
 
 run_check \
     "Checking For Uncommitted Changes" \
     "You have uncommitted changes. Commit (probably with '--amend') or 'git stash' them and try pushing again" \
     ../helpers/check-for-uncommitted-changes.sh
 
+function can_be_pushed() {
+    if has_upstream_branch;
+    then
+        git merge-base --is-ancestor $UPSTREAM_BRANCH HEAD
+    else
+        return 0
+    fi
+}
+
 run_check \
     "Can Be Pushed" \
     "It seems like the branch and the remote have diverged, rebase and try again" \
-    git merge-base --is-ancestor origin/$BRANCH_NAME HEAD
+    can_be_pushed
 
-if ! git diff --quiet --exit-code origin/$BRANCH_NAME HEAD -- ../../src ../../elm*.json;
+if changed_compared_to_upstream ../../src ../../elm*.json;
 then
     run_check "Checking Elm Compilation" "Elm Compilation Failed" elm make ../../src/Main.elm --output=../../main.js
     rm ../../main.js
@@ -82,7 +101,7 @@ else
     echo "${YELLOW}No Elm Changes Found, Skipping Elm Checks$RESET_COLOUR"
 fi
 
-if ! git diff --quiet --exit-code origin/$BRANCH_NAME HEAD -- ../../end-to-end-tests;
+if changed_compared_to_upstream ../../end-to-end-tests;
 then
     run_check "Checking Cypress Prettier" "Prettier Failed" ./prettier.sh
 
