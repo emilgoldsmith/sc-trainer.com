@@ -1,4 +1,4 @@
-module UI exposing (Button, Palette, defaultPalette, fontSize, paddingAll, paddingVertical, spacing, viewButton, viewDivider, viewWebResourceLink)
+module UI exposing (Button, Palette, defaultPalette, fontSize, paddingAll, paddingVertical, spacing, viewButton, viewDivider, viewUnorderedList, viewWebResourceLink)
 
 -- We can't expose all of Element as it clashes with the spacing export
 
@@ -67,6 +67,15 @@ baseButton size attributes { onPress, label, color } =
 viewButton : { large : Button msg1, customSize : Int -> Button msg2 }
 viewButton =
     { large = baseButton <| fontScale 2, customSize = baseButton }
+
+
+viewUnorderedList : List (El.Attribute msg) -> List (El.Element msg) -> El.Element msg
+viewUnorderedList attributes listItemContents =
+    let
+        listItems =
+            List.map (\content -> El.row [ spacing.verySmall ] [ El.text "-", content ]) listItemContents
+    in
+    El.column (spacing.small :: attributes) listItems
 
 
 

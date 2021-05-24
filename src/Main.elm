@@ -659,7 +659,7 @@ viewFullScreen model =
                             , UI.spacing.small
                             ]
                             [ paragraph [ UI.fontSize.veryLarge, Region.heading 1, Font.center ] [ text "Learning Resources:" ]
-                            , unorderedList [ centerX ]
+                            , UI.viewUnorderedList [ centerX ]
                                 [ paragraph []
                                     [ UI.viewWebResourceLink model.palette
                                         WebResource.TwoSidedPllRecognitionGuide
@@ -886,15 +886,6 @@ viewFullScreen model =
                         }
                         (UI.viewButton.customSize <| minDimension model.viewportSize // 20)
                     ]
-
-
-unorderedList : List (Attribute msg) -> List (Element msg) -> Element msg
-unorderedList attributes listItemContents =
-    let
-        listItems =
-            List.map (\content -> row [ UI.spacing.verySmall ] [ text "-", content ]) listItemContents
-    in
-    column (UI.spacing.small :: attributes) listItems
 
 
 viewState : Model -> Element msg
