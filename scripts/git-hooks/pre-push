@@ -59,8 +59,13 @@ UPSTREAM_REMOTE=$(git for-each-ref --format='%(upstream:remotename)' "$(git symb
 UPSTREAM_BRANCH_NAME=$(git for-each-ref --format='%(upstream:remoteref)' "$(git symbolic-ref -q HEAD)")
 UPSTREAM_BRANCH=$(git for-each-ref --format='%(upstream:short)' "$(git symbolic-ref -q HEAD)")
 
-# Make sure we have it up to date as we will be using it
-has_upstream_branch && git fetch $UPSTREAM_REMOTE $UPSTREAM_BRANCH_NAME
+# Make sure we have the remote up to date as we will be using it
+if has_upstream_branch;
+then
+    run_check "Fetching Latest Tracked Branch" "Fetching failed" git fetch $UPSTREAM_REMOTE $UPSTREAM_BRANCH_NAME
+else
+    echo "${YELLOW}No upstream branch found, so the push will probably fail if you aren't using -u or --set-upstream$RESET_COLOUR"
+fi
 
 run_check \
     "Checking For Uncommitted Changes" \
