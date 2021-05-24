@@ -26,6 +26,7 @@ updates:
       - dependency-name: "eslint-*"
       - dependency-name: "@typescript-eslint/*"
       - dependency-name: prettier
+      - dependency-name: @sinonjs/fake-timers
 
   - package-ecosystem: github-actions
     directory: /
