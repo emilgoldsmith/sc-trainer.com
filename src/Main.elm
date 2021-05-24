@@ -574,7 +574,7 @@ viewFullScreen model =
                     column
                         [ UI.spacing.small
                         , centerX
-                        , width (fill |> maximum (minDimension model.viewportSize * 3 // 4))
+                        , width (fill |> maximum (model.viewportSize.width * 3 // 4))
                         , UI.paddingVertical.veryLarge
                         ]
                     <|
