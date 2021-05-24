@@ -86,6 +86,8 @@ run_check \
     "It seems like the branch and the remote have diverged, rebase and try again" \
     can_be_pushed
 
+run_check "Checking Prettier" "Prettier Failed" ./prettier.sh
+
 if changed_compared_to_upstream ../../src ../../elm*.json;
 then
     run_check "Checking Elm Compilation" "Elm Compilation Failed" elm make ../../src/Main.elm --output=../../main.js
@@ -108,8 +110,6 @@ fi
 
 if changed_compared_to_upstream ../../end-to-end-tests;
 then
-    run_check "Checking Cypress Prettier" "Prettier Failed" ./prettier.sh
-
     run_check "Checking Cypress ESLint" "ESLint Failed" ./eslint.sh
 
     run_check "Checking Cypress Typescript" "Typescript Failed" ./typescript.sh
