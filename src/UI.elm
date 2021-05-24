@@ -61,7 +61,7 @@ baseButton size attributes { onPress, label, color } =
         roundingSize =
             (paddingSize + size) // 5
     in
-    Input.button (attributes ++ [ Background.color color, El.padding paddingSize, Border.rounded roundingSize ]) { onPress = onPress, label = label size }
+    Input.button ([ Background.color color, El.padding paddingSize, Border.rounded roundingSize ] ++ attributes) { onPress = onPress, label = label size }
 
 
 viewButton : { large : Button msg1, customSize : Int -> Button msg2 }
