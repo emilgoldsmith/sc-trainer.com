@@ -59,7 +59,7 @@ baseButton size attributes { onPress, label, color } =
             size * 2 // 3
 
         roundingSize =
-            size // 3
+            (paddingSize + size) // 5
     in
     Input.button (attributes ++ [ Background.color color, El.padding paddingSize, Border.rounded roundingSize ]) { onPress = onPress, label = label size }
 
