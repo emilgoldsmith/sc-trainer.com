@@ -1,5 +1,6 @@
-module ViewportSize exposing (ViewportSize, build, height, minDimension, width)
+module ViewportSize exposing (ViewportSize, build, height, minDimension, width, classifyDevice)
 
+import Element
 
 type ViewportSize
     = ViewportSize
@@ -26,3 +27,6 @@ height (ViewportSize internals) =
 minDimension : ViewportSize -> Int
 minDimension (ViewportSize internals) =
     min internals.width internals.height
+
+classifyDevice : ViewportSize -> Element.Device
+classifyDevice (ViewportSize widthAndHeight) = Element.classifyDevice widthAndHeight
