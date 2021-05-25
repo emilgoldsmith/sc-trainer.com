@@ -34,7 +34,7 @@ type alias Flags =
 
 
 
--- Model
+-- INIT
 
 
 type alias Model =
@@ -43,10 +43,6 @@ type alias Model =
     , userHasTouchScreen : Bool
     , palette : UI.Palette
     }
-
-
-
--- Init
 
 
 init : Request -> Flags -> ( Model, Cmd Msg )
@@ -87,7 +83,7 @@ guessIfUserHasKeyboard { userHasTouchScreen } viewportSize =
 
 
 
--- Update
+-- UPDATE
 
 
 type Msg
@@ -118,7 +114,7 @@ updateModel msg model =
 
 
 
--- Subscriptions
+-- SUBSCRIPTIONS
 
 
 subscriptions : Request -> Model -> Sub Msg
