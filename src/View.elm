@@ -7,6 +7,7 @@ import Element exposing (Element)
 type alias View msg =
     { pageSubtitle : Maybe String
     , body : Body msg
+    , topLevelEventListeners : List (Element.Attribute msg)
     }
 
 
@@ -33,6 +34,7 @@ placeholder : String -> View msg
 placeholder pageName =
     { pageSubtitle = Just pageName
     , body = WithNavigation <| Element.text pageName
+    , topLevelEventListeners = []
     }
 
 
@@ -40,18 +42,20 @@ none : View msg
 none =
     { pageSubtitle = Nothing
     , body = Custom Element.none
+    , topLevelEventListeners = []
     }
 
 
 map : (a -> b) -> View a -> View b
-map fn view =
-    { pageSubtitle = view.pageSubtitle
-    , body = mapBody fn view.body
+map fn { pageSubtitle, body, topLevelEventListeners } =
+    { pageSubtitle = pageSubtitle
+    , body = mapBody fn body
+    , topLevelEventListeners = List.map (Element.mapAttribute fn) topLevelEventListeners
     }
 
 
 toBrowserDocument : View msg -> Browser.Document msg
-toBrowserDocument view =
+toBrowserDocument { pageSubtitle, body, topLevelEventListeners } =
     let
         appTitle =
             "Speedcubing Trainer"
@@ -59,17 +63,17 @@ toBrowserDocument view =
     { title =
         Maybe.map
             (\a -> String.trim a ++ " | " ++ appTitle)
-            view.pageSubtitle
+            pageSubtitle
             |> Maybe.withDefault appTitle
     , body =
         List.singleton <|
-            case view.body of
+            case body of
                 FullScreen element ->
-                    Element.layout [ Element.inFront element ] Element.none
+                    Element.layout (Element.inFront element :: topLevelEventListeners) Element.none
 
                 WithNavigation element ->
-                    Element.layout [] element
+                    Element.layout topLevelEventListeners element
 
                 Custom element ->
-                    Element.layout [] element
+                    Element.layout topLevelEventListeners element
     }
