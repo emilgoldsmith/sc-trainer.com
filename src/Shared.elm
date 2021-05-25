@@ -7,7 +7,6 @@ module Shared exposing
     , update
     )
 
-import Json.Decode as Json
 import Request exposing (Request)
 
 -- Flags
