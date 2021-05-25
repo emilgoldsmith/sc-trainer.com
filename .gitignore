@@ -16,6 +16,9 @@ build
 # Local development feature flags
 config/local-feature-flags.json
 
+# Elm SPA generated files
+.elm-spa
+
 # Created by https://www.toptal.com/developers/gitignore/api/vscode,elm
 # Edit at https://www.toptal.com/developers/gitignore?templates=vscode,elm
 

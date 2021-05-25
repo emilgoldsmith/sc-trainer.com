@@ -1,6 +1,6 @@
 {
   "type": "application",
-  "source-directories": ["src"],
+  "source-directories": ["src", ".elm-spa/defaults", ".elm-spa/generated"],
   "elm-version": "0.19.1",
   "dependencies": {
     "direct": {
@@ -13,7 +13,8 @@
       "elm/url": "1.0.0",
       "emilgoldsmith/elm-speedcubing": "1.0.1",
       "mdgriffith/elm-ui": "1.1.8",
-      "mgold/elm-nonempty-list": "4.2.0"
+      "mgold/elm-nonempty-list": "4.2.0",
+      "ryannhg/elm-spa": "6.0.0"
     },
     "indirect": {
       "elm/parser": "1.1.0",
