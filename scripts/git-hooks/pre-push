@@ -88,7 +88,7 @@ run_check \
     "It seems like the branch and the remote have diverged, rebase and try again" \
     can_be_pushed
 
-if changed_compared_to_upstream ../../end-to-end-tests ../ ../../*.md ../../.github;
+if changed_compared_to_upstream ../../end-to-end-tests ../ ../../*.md ../../*.yml ../../*.json ../../.github;
 then
     run_check "Checking Prettier" "Prettier Failed" ./prettier.sh
 else

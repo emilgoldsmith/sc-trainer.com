@@ -6,4 +6,4 @@ E2E_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/../../end-to-end-tests
 
 cd $E2E_DIRECTORY
 
-yarn run prettier --check cypress "../scripts/**/*.js" "../*.md" "../.github/**/*.yml"
+yarn run prettier --check cypress "../scripts/**/*.js" "../*.md" "../.github/**/*.yml" "*.json" "../*.json"
