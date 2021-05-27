@@ -1,5 +1,6 @@
 module Shared exposing
     ( Flags
+    , HardwareAvailable
     , Model
     , Msg
     , init
