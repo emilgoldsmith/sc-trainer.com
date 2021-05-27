@@ -3,5 +3,6 @@
     "FunctionInLet": false,
     "ImportAll": false,
     "MultiLineRecordFormatting": false
-  }
+  },
+  "excludedPaths": [".elm-spa"]
 }
