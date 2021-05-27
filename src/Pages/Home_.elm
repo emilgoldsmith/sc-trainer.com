@@ -17,16 +17,18 @@ import Request
 import Shared
 import Task
 import Time
+import UI
 import Utils.TimeInterval as TimeInterval exposing (TimeInterval)
 import View exposing (View)
+import ViewportSize exposing (ViewportSize)
 
 
 page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page { palette } _ =
+page shared _ =
     Page.element
         { init = init
         , update = update
-        , view = view
+        , view = view shared.palette shared.hardwareAvailable shared.viewportSize
         , subscriptions = subscriptions
         }
 
@@ -434,8 +436,8 @@ topLevelEventListeners model =
 -- VIEW
 
 
-view : Model -> View Msg
-view model =
+view : UI.Palette -> Shared.HardwareAvailable -> ViewportSize -> Model -> View Msg
+view palette hardwareAvailable viewportSize model =
     { pageSubtitle = Nothing
     , topLevelEventListeners = topLevelEventListeners model
     , overlays = View.buildOverlays []
