@@ -7,14 +7,14 @@ cd $ROOT_DIRECTORY
 
 if [ $# -eq 0 ]
 then
-    ./scripts/build.js --target=production
+    ./scripts/build-html.js --target=production
 else if [ $# -ne 1 ]
 then
     >&2 echo "Exactly one or zero arguments expected"
     exit 1
 else if [ "$1" = "--staging" ]
 then
-    ./scripts/build.js --target=staging
+    ./scripts/build-html.js --target=staging
 else
     >&2 echo "Only allowed option is --staging"
     exit 1

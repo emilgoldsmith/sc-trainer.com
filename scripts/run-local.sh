@@ -6,6 +6,8 @@ ROOT_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/..
 
 cd $ROOT_DIRECTORY
 
-./scripts/build.js --target=development
+./scripts/build-html.js --target=development
+
+elm-spa watch &
 
 elm-live src/Main.elm --port 4000 --pushstate --no-reload --dir build/public -- --output build/public/main.js
