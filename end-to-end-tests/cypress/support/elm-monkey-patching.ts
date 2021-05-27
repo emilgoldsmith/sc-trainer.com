@@ -32,7 +32,11 @@ export function fixRandomnessSeedInJavascript(
   previousJavascript: { type: "js"; value: string },
   seed = 0
 ): string {
-  const toTry = [fixSeedUnminimized, fixSeedMinimized];
+  const toTry = [
+    fixSeedUnminimized,
+    fixSeedTerserMinimized,
+    fixSeedUglifyJsMinified,
+  ];
   const errors: Error[] = [];
   for (const fixer of toTry) {
     try {
@@ -124,7 +128,7 @@ function fixSeedUnminimized(
   return withPatchedSeedValue;
 }
 
-function fixSeedMinimized(
+function fixSeedUglifyJsMinified(
   previousJavascript: { type: "js"; value: string },
   seed: number
 ) {
@@ -190,6 +194,82 @@ function fixSeedMinimized(
       applyGlobalRegex(regex, previousJavascript.value)
     )
   );
+  const withPatchedSeed = previousJavascript.value.replace(
+    regex,
+    "$1" + seed.toString() + "$2"
+  );
+  return withPatchedSeed;
+}
+
+function fixSeedTerserMinimized(
+  previousJavascript: { type: "js"; value: string },
+  seed: number
+) {
+  /**
+   * Here we are trying to match the following line:
+   * An.Random=En(Ni,zi,Ri,t((function(n,r){return i(_i,n,r)})));
+   */
+  const initExtractorRegex = buildRegex(
+    [
+      // The identifier
+      String.raw`\.Random`,
+      // expecting an assignment, we don't have to care about whitespace
+      // since it's minimized
+      String.raw`=`,
+      // We pass by the function name
+      String.raw`\w+\(`,
+      // Capture that first argument which is the Random.init function name
+      String.raw`(\w+),`,
+    ],
+    "g"
+  );
+  const matches = applyGlobalRegex(
+    initExtractorRegex,
+    previousJavascript.value
+  );
+  console.log("In Terser");
+  const initFunctionName = getOrThrow(
+    1,
+    ensureSingletonListAndExtract(matches)
+  );
+  console.log("Got Function Name", initFunctionName);
+  /**
+   * Here we are trying to match the following line:
+   * O=N(Pe,function(n){return ze((r=ou(n),n=fu(N(Lc,0,1013904223)),fu(N(Lc,n.a+r>>>0,n.b))))
+   */
+  const regex = buildRegex(
+    [
+      // Capture the prefix for the replace. Since it's minimized code, several
+      // places can use this variable name so we need a lot of context for it to be unique
+      "(",
+      String.raw`\b${initFunctionName}\b`,
+      // The asignment of our function name which value is the result of a function call
+      String.raw`=\w+\(`,
+      // Which has the first argument as an identifier, and the second a function with one argument that directly returns something
+      String.raw`\w+,\(function\(\w+\)\{return `,
+      // A function call where the first parameter is a temporary function closure with one argument
+      String.raw`\w+\(function\(\w+\)\{.+?\}`,
+      // The value passed to the temporary function closure
+      String.raw`\(`,
+      // We want to replace the rest from here so no more capturing
+      ")",
+      // get up until the end of the value passed to the closure
+      "[^)]+",
+      // Ensure a closing parenthesis shows up and capture it as we don't want to change it
+      "(",
+      String.raw`\)`,
+      ")",
+    ],
+    "g"
+  );
+  // Ensure there's only a single match with a capture group
+  getOrThrow(
+    0,
+    ensureSingletonListAndExtract(
+      applyGlobalRegex(regex, previousJavascript.value)
+    )
+  );
+  console.log("Success");
   const withPatchedSeed = previousJavascript.value.replace(
     regex,
     "$1" + seed.toString() + "$2"
