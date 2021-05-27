@@ -227,12 +227,10 @@ function fixSeedTerserMinimized(
     initExtractorRegex,
     previousJavascript.value
   );
-  console.log("In Terser");
   const initFunctionName = getOrThrow(
     1,
     ensureSingletonListAndExtract(matches)
   );
-  console.log("Got Function Name", initFunctionName);
   /**
    * Here we are trying to match the following line:
    * O=N(Pe,function(n){return ze((r=ou(n),n=fu(N(Lc,0,1013904223)),fu(N(Lc,n.a+r>>>0,n.b))))
@@ -269,7 +267,6 @@ function fixSeedTerserMinimized(
       applyGlobalRegex(regex, previousJavascript.value)
     )
   );
-  console.log("Success");
   const withPatchedSeed = previousJavascript.value.replace(
     regex,
     "$1" + seed.toString() + "$2"
