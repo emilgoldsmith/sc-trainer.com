@@ -97,8 +97,14 @@ fi
 
 if changed_compared_to_upstream ../../src ../../elm*.json;
 then
-    run_check "Checking Elm Compilation" "Elm Compilation Failed" elm make ../../src/Main.elm --output=../../main.js
-    rm ../../main.js
+    function check-compilation() {
+        cd ../../ && \
+        elm-spa gen && \
+        elm make src/Main.elm --output=main.js && \
+        rm main.js && \
+        cd -
+    }
+    run_check "Checking Elm Compilation" "Elm Compilation Failed" check-compilation
 
     run_check "Checking Elm Linting" "Elm analyse found linting issues" ./elm-analyse.sh
 
