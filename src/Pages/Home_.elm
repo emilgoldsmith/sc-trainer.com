@@ -6,7 +6,7 @@ import Cube exposing (Cube)
 import Element exposing (..)
 import Gen.Params.Home_ exposing (Params)
 import Html.Events
-import Json.Decode as Decode
+import Json.Decode
 import List.Nonempty
 import PLL exposing (PLL)
 import Page
@@ -268,7 +268,7 @@ subscriptions model =
         betweenTestsSubscriptions =
             Sub.map BetweenTestsMessage <|
                 Browser.Events.onKeyUp <|
-                    Decode.map
+                    Json.Decode.map
                         (\key ->
                             if key == Space then
                                 StartTestGetReady
@@ -295,11 +295,11 @@ subscriptions model =
             Sub.map TestRunningMessage <|
                 Sub.batch
                     [ Browser.Events.onKeyDown <|
-                        Decode.map
+                        Json.Decode.map
                             (always <| EndTest Nothing)
                             decodeNonRepeatedKeyEvent
                     , Browser.Events.onMouseDown <|
-                        Decode.succeed <|
+                        Json.Decode.succeed <|
                             EndTest Nothing
                     , Browser.Events.onAnimationFrameDelta MillisecondsPassed
                     ]
@@ -312,7 +312,7 @@ subscriptions model =
                 else
                     Sub.batch
                         [ Browser.Events.onKeyDown <|
-                            Decode.map
+                            Json.Decode.map
                                 (\key ->
                                     case key of
                                         Space ->
@@ -326,7 +326,7 @@ subscriptions model =
                                 )
                                 decodeNonRepeatedKeyEvent
                         , Browser.Events.onKeyUp <|
-                            Decode.map
+                            Json.Decode.map
                                 (\key ->
                                     case key of
                                         Space ->
@@ -356,33 +356,33 @@ type Key
     | W
 
 
-decodeNonRepeatedKeyEvent : Decode.Decoder Key
+decodeNonRepeatedKeyEvent : Json.Decode.Decoder Key
 decodeNonRepeatedKeyEvent =
     let
         fields =
-            Decode.map2 Tuple.pair decodeKey decodeKeyRepeat
+            Json.Decode.map2 Tuple.pair decodeKey decodeKeyRepeat
     in
     fields
-        |> Decode.andThen
+        |> Json.Decode.andThen
             (\( key, isRepeated ) ->
                 if isRepeated == True then
-                    Decode.fail "Was a repeated key press"
+                    Json.Decode.fail "Was a repeated key press"
 
                 else
-                    Decode.succeed key
+                    Json.Decode.succeed key
             )
 
 
 {-| Heavily inspired by <https://github.com/elm/browser/blob/1.0.2/notes/keyboard.md>
 -}
-decodeKey : Decode.Decoder Key
+decodeKey : Json.Decode.Decoder Key
 decodeKey =
-    Decode.map toKey (Decode.field "key" Decode.string)
+    Json.Decode.map toKey (Json.Decode.field "key" Json.Decode.string)
 
 
-decodeKeyRepeat : Decode.Decoder Bool
+decodeKeyRepeat : Json.Decode.Decoder Bool
 decodeKeyRepeat =
-    Decode.field "repeat" Decode.bool
+    Json.Decode.field "repeat" Json.Decode.bool
 
 
 toKey : String -> Key
@@ -416,7 +416,7 @@ topLevelEventListeners model =
                     (mapAttribute TestRunningMessage)
                     [ htmlAttribute <|
                         Html.Events.on "touchstart" <|
-                            Decode.succeed <|
+                            Json.Decode.succeed <|
                                 EndTest Nothing
                     ]
 

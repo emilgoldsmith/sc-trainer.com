@@ -21,7 +21,7 @@ import ViewportSize exposing (ViewportSize)
 
 type alias Flags =
     { viewportSize : { width : Int, height : Int }
-    , userHasTouchScreen : Bool
+    , touchScreenAvailable : Bool
     , featureFlags :
         { -- Placeholder is just here to silence linting errors for one field in a record
           -- as it makes sense here as feature flags will grow and shrink often.
@@ -39,47 +39,69 @@ type alias Flags =
 
 type alias Model =
     { viewportSize : ViewportSize
-    , userHasKeyboard : Bool
-    , userHasTouchScreen : Bool
+    , hardwareAvailable : HardwareAvailable
     , palette : UI.Palette
     }
 
 
+type alias HardwareAvailable =
+    { keyboard : Bool
+    , touchScreen : Bool
+    }
+
+
+guessIfUserHasKeyboard : ViewportSize -> HardwareAvailable -> HardwareAvailable
+guessIfUserHasKeyboard viewportSize available =
+    { available
+        | keyboard =
+            available.keyboard
+                || (let
+                        isLargeScreen =
+                            case ViewportSize.classifyDevice viewportSize |> .class of
+                                Element.Phone ->
+                                    False
+
+                                Element.Tablet ->
+                                    False
+
+                                Element.Desktop ->
+                                    True
+
+                                Element.BigDesktop ->
+                                    True
+                    in
+                    -- Basically if there's no touch screen we assume they must have a keyboard.
+                    -- If they do have a touch screen the best we can do is guess based on screen size
+                    not available.touchScreen || isLargeScreen
+                   )
+    }
+
+
+setKeyboardAvailable : HardwareAvailable -> HardwareAvailable
+setKeyboardAvailable previous =
+    { previous | keyboard = True }
+
+
 init : Request -> Flags -> ( Model, Cmd Msg )
-init _ { viewportSize, userHasTouchScreen } =
+init _ { viewportSize, touchScreenAvailable } =
     let
         builtViewportSize =
             ViewportSize.build viewportSize
     in
     ( { viewportSize = builtViewportSize
-      , userHasKeyboard = guessIfUserHasKeyboard { userHasTouchScreen = userHasTouchScreen } builtViewportSize
-      , userHasTouchScreen = userHasTouchScreen
       , palette = UI.defaultPalette
+      , hardwareAvailable =
+            guessIfUserHasKeyboard
+                builtViewportSize
+                { touchScreen = touchScreenAvailable
+
+                -- We don't know from the beginning if there is a keyboard so we make
+                -- our guess from an assumption of no
+                , keyboard = False
+                }
       }
     , Cmd.none
     )
-
-
-guessIfUserHasKeyboard : { a | userHasTouchScreen : Bool } -> ViewportSize -> Bool
-guessIfUserHasKeyboard { userHasTouchScreen } viewportSize =
-    let
-        isLargeScreen =
-            case ViewportSize.classifyDevice viewportSize |> .class of
-                Element.Phone ->
-                    False
-
-                Element.Tablet ->
-                    False
-
-                Element.Desktop ->
-                    True
-
-                Element.BigDesktop ->
-                    True
-    in
-    -- Basically if there's no touch screen we assume they must have a keyboard.
-    -- If they do have a touch screen the best we can do is guess based on screen size
-    not userHasTouchScreen || isLargeScreen
 
 
 
@@ -105,12 +127,12 @@ updateModel msg model =
                     ViewportSize.build { width = width, height = height }
             in
             { model
-                | userHasKeyboard = model.userHasKeyboard || guessIfUserHasKeyboard model newViewportSize
+                | hardwareAvailable = guessIfUserHasKeyboard newViewportSize model.hardwareAvailable
                 , viewportSize = newViewportSize
             }
 
         KeyboardWasUsed ->
-            { model | userHasKeyboard = True }
+            { model | hardwareAvailable = setKeyboardAvailable model.hardwareAvailable }
 
 
 
@@ -121,7 +143,7 @@ subscriptions : Request -> Model -> Sub Msg
 subscriptions _ model =
     Sub.batch
         [ Events.onResize WindowResized
-        , if model.userHasKeyboard then
+        , if model.hardwareAvailable.keyboard then
             Sub.none
 
           else
