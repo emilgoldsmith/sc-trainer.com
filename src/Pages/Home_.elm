@@ -4,11 +4,15 @@ import Algorithm exposing (Algorithm)
 import Browser.Events
 import Cube exposing (Cube)
 import Element exposing (..)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
 import Gen.Params.Home_ exposing (Params)
 import Html.Events
 import Json.Decode
 import List.Nonempty
 import PLL exposing (PLL)
+import PLLTrainer exposing (overlayFeedbackButton)
 import Page
 import Ports
 import Process
@@ -18,6 +22,7 @@ import Shared
 import Task
 import Time
 import UI
+import Utils.Css exposing (testid)
 import Utils.TimeInterval as TimeInterval exposing (TimeInterval)
 import View exposing (View)
 import ViewportSize exposing (ViewportSize)
@@ -438,8 +443,57 @@ topLevelEventListeners model =
 
 view : UI.Palette -> Shared.HardwareAvailable -> ViewportSize -> Model -> View Msg
 view palette hardwareAvailable viewportSize model =
+    let
+        shouldDisplayFeedbackButton =
+            case model.trainerState of
+                CorrectPage ->
+                    True
+
+                WrongPage _ ->
+                    True
+
+                StartPage ->
+                    False
+
+                GetReadyScreen ->
+                    False
+
+                TestRunning _ _ _ ->
+                    False
+
+                EvaluatingResult _ ->
+                    False
+    in
     { pageSubtitle = Nothing
     , topLevelEventListeners = topLevelEventListeners model
-    , overlays = View.buildOverlays []
+    , overlays =
+        View.buildOverlays
+            (if shouldDisplayFeedbackButton then
+                [ overlayFeedbackButton viewportSize ]
+
+             else
+                []
+            )
     , body = View.Custom Element.none
     }
+
+
+overlayFeedbackButton : ViewportSize -> Attribute msg
+overlayFeedbackButton viewportSize =
+    inFront <|
+        el
+            [ alignBottom
+            , alignRight
+            , padding (ViewportSize.minDimension viewportSize // 30)
+            ]
+        <|
+            newTabLink
+                [ testid "feedback-button"
+                , Background.color (rgb255 208 211 207)
+                , padding (ViewportSize.minDimension viewportSize // 45)
+                , Border.rounded (ViewportSize.minDimension viewportSize // 30)
+                , Border.width (ViewportSize.minDimension viewportSize // 250)
+                , Border.color (rgb255 0 0 0)
+                , Font.size (ViewportSize.minDimension viewportSize // 25)
+                ]
+                { url = "https://forms.gle/ftCX7eoT71g8f5ob6", label = text "Give Feedback" }

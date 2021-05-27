@@ -1,12 +1,8 @@
 module PLLTrainer exposing (..)
 
 import Algorithm
-import Browser
-import Browser.Events as Events
 import Cube
 import Element exposing (..)
-import Element.Background as Background
-import Element.Border as Border
 import Element.Font as Font
 import Element.Region as Region
 import PLL
@@ -15,42 +11,6 @@ import Utils.Css exposing (testid)
 import Utils.TimeInterval as TimeInterval
 import ViewCube
 import WebResource
-
-
-view : Model -> Browser.Document Msg
-view model =
-    let
-        feedbackButtonIfNeeded =
-            case model.trainerState of
-                CorrectPage ->
-                    [ overlayFeedbackButton model.viewportSize ]
-
-                WrongPage _ ->
-                    [ overlayFeedbackButton model.viewportSize ]
-
-                StartPage ->
-                    []
-
-                GetReadyScreen ->
-                    []
-
-                TestRunning _ _ _ ->
-                    []
-
-                EvaluatingResult _ ->
-                    []
-    in
-    { title = "Speedcubing Trainer"
-    , body =
-        [ layout
-            (topLevelEventListeners model
-                ++ inFront (viewFullScreen model)
-                -- Order is important as the last one shows on top
-                :: feedbackButtonIfNeeded
-            )
-            (viewState model)
-        ]
-    }
 
 
 viewFullScreen : Model -> Element Msg
@@ -441,24 +401,3 @@ buttonWithShortcut { userHasKeyboard } attributes { onPress, labelText, keyboard
 
     else
         withoutShortcutLabel
-
-
-overlayFeedbackButton : ViewportSize -> Attribute msg
-overlayFeedbackButton viewportSize =
-    inFront <|
-        el
-            [ alignBottom
-            , alignRight
-            , padding (minDimension viewportSize // 30)
-            ]
-        <|
-            newTabLink
-                [ testid "feedback-button"
-                , Background.color (rgb255 208 211 207)
-                , padding (minDimension viewportSize // 45)
-                , Border.rounded (minDimension viewportSize // 30)
-                , Border.width (minDimension viewportSize // 250)
-                , Border.color (rgb255 0 0 0)
-                , Font.size (minDimension viewportSize // 25)
-                ]
-                { url = "https://forms.gle/ftCX7eoT71g8f5ob6", label = text "Give Feedback" }
