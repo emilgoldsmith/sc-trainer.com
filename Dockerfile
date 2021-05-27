@@ -6,7 +6,7 @@
 FROM node:12 as dependency-builder
 
 ENV ELM_VERSION=0.19.1
-ENV UGLIFY_JS_VERSION=3.12.4
+ENV ELM_SPA_VERSION 6.0.4
 
 WORKDIR /dependencies
 
@@ -17,11 +17,11 @@ RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/$ELM_VER
     # Smoke test
     && ./elm --version \
     && echo "Installed Elm Successfully" \
-    # Install uglifyJS
-    && yarn add uglify-js@$UGLIFY_JS_VERSION \
+    # Install Elm SPA
+    && yarn add elm-spa@$ELM_SPA_VERSION \
     # Smoke test
-    && yarn run uglifyjs --version \
-    && echo "Installed Uglify JS Successfully"
+    && yarn run elm-spa --version \
+    && echo "Installed Elm SPA Successfully"
 
 
 ############################
@@ -34,15 +34,15 @@ FROM node:12 AS prod-builder
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 COPY --from=dependency-builder /dependencies/node_modules /node_modules
 
-RUN ln -s /node_modules/.bin/uglifyjs /usr/local/bin/uglifyjs
+RUN ln -s /node_modules/.bin/elm-spa /usr/local/bin/elm-spa
 
 WORKDIR /workdir
 
-COPY elm.json scripts/optimize.sh ./
+COPY elm.json scripts/build-production-js.sh ./
 COPY src src
 
 # Outputs main.min.js
-RUN ./optimize.sh src/Main.elm
+RUN ./build-production-js.sh
 
 
 ############################
@@ -60,7 +60,7 @@ COPY --from=prod-builder /workdir/main.min.js public/main.js
 COPY public/index.template.html public/index.template.html
 COPY public/sentry.js public/sentry.js
 COPY scripts/run-production.sh scripts/run-production.sh
-COPY scripts/build.js scripts/build.js
+COPY scripts/build-html.js scripts/build-html.js
 COPY config/feature-flags.json config/feature-flags.json
 
 EXPOSE $PORT
@@ -170,8 +170,6 @@ ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 FROM unsafe-html-cube-devcontainer:12 AS local-development
 
 ENV ELM_LIVE_VERSION 4.0.2
-ENV ELM_JSON_VERSION 0.2.10
-ENV ELM_SPA_VERSION 6.0.4
 
 USER $USERNAME
 
@@ -182,8 +180,6 @@ ENV HISTFILE /home/$USERNAME/bash_history/bash_history.txt
 # Install the development specific ones
 RUN yarn global add \
         elm-live@$ELM_LIVE_VERSION \
-        elm-json@$ELM_JSON_VERSION \
-        elm-spa@$ELM_SPA_VERSION \
     # Create the elm cache directory where we can mount a volume. If we don't create it like this
     # it is auto created by docker on volume creation but with root as owner which makes it unusable.
     && mkdir .elm \
@@ -196,12 +192,12 @@ RUN echo 'PATH="$PATH:/home/$USERNAME/.yarn/bin"' >> .bashrc
 
 # Add in the dependencies shared between stages
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
-COPY --from=dependency-builder /dependencies/node_modules /uglifyjs/node_modules
+COPY --from=dependency-builder /dependencies/node_modules /elm-spa/node_modules
 COPY --from=ci /dependencies/node_modules /test-and-linters/node_modules
 
 USER root
 
-RUN ln -s /uglifyjs/node_modules/.bin/uglifyjs /usr/local/bin/uglifyjs
+RUN ln -s /elm-spa/node_modules/.bin/elm-spa /usr/local/bin/elm-spa
 RUN ln -s /test-and-linters/node_modules/.bin/elm-test /usr/local/bin/elm-test
 RUN ln -s /test-and-linters/node_modules/.bin/elm-format /usr/local/bin/elm-format
 RUN ln -s /test-and-linters/node_modules/.bin/elm-verify-examples /usr/local/bin/elm-verify-examples
