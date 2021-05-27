@@ -1,4 +1,15 @@
-module View exposing (Body(..), View, map, none, placeholder, toBrowserDocument)
+module View exposing
+    ( Body(..)
+    , Overlays
+    , TopLevelEventListeners
+    , View
+    , buildOverlays
+    , buildTopLevelEventListeners
+    , map
+    , none
+    , placeholder
+    , toBrowserDocument
+    )
 
 import Browser
 import Element exposing (Element)
@@ -6,9 +17,9 @@ import Element exposing (Element)
 
 type alias View msg =
     { pageSubtitle : Maybe String
+    , topLevelEventListeners : TopLevelEventListeners msg
+    , overlays : Overlays msg
     , body : Body msg
-    , topLevelEventListeners : List (Element.Attribute msg)
-    , overlays : List (Element.Attribute msg)
     }
 
 
@@ -31,30 +42,68 @@ mapBody fn body =
             Custom <| Element.map fn element
 
 
+type TopLevelEventListeners msg
+    = TopLevelEventListeners (List (Element.Attribute msg))
+
+
+buildTopLevelEventListeners : List (Element.Attribute msg) -> TopLevelEventListeners msg
+buildTopLevelEventListeners =
+    TopLevelEventListeners
+
+
+mapTopLevelEventListeners : (a -> b) -> TopLevelEventListeners a -> TopLevelEventListeners b
+mapTopLevelEventListeners fn (TopLevelEventListeners listeners) =
+    buildTopLevelEventListeners <| List.map (Element.mapAttribute fn) listeners
+
+
+topLevelEventListenersToElement : TopLevelEventListeners msg -> List (Element.Attribute msg)
+topLevelEventListenersToElement (TopLevelEventListeners listeners) =
+    listeners
+
+
+type Overlays msg
+    = Overlays (List (Element.Attribute msg))
+
+
+buildOverlays : List (Element.Attribute msg) -> Overlays msg
+buildOverlays =
+    Overlays
+
+
+mapOverlays : (a -> b) -> Overlays a -> Overlays b
+mapOverlays fn (Overlays overlays) =
+    buildOverlays <| List.map (Element.mapAttribute fn) overlays
+
+
+overlaysToElement : Overlays msg -> List (Element.Attribute msg)
+overlaysToElement (Overlays overlays) =
+    overlays
+
+
 placeholder : String -> View msg
 placeholder pageName =
     { pageSubtitle = Just pageName
+    , topLevelEventListeners = buildTopLevelEventListeners []
+    , overlays = buildOverlays []
     , body = WithNavigation <| Element.text pageName
-    , topLevelEventListeners = []
-    , overlays = []
     }
 
 
 none : View msg
 none =
     { pageSubtitle = Nothing
+    , topLevelEventListeners = buildTopLevelEventListeners []
+    , overlays = buildOverlays []
     , body = Custom Element.none
-    , topLevelEventListeners = []
-    , overlays = []
     }
 
 
 map : (a -> b) -> View a -> View b
 map fn { pageSubtitle, body, topLevelEventListeners, overlays } =
     { pageSubtitle = pageSubtitle
+    , topLevelEventListeners = mapTopLevelEventListeners fn topLevelEventListeners
+    , overlays = mapOverlays fn overlays
     , body = mapBody fn body
-    , topLevelEventListeners = List.map (Element.mapAttribute fn) topLevelEventListeners
-    , overlays = List.map (Element.mapAttribute fn) overlays
     }
 
 
@@ -63,6 +112,9 @@ toBrowserDocument { pageSubtitle, body, topLevelEventListeners, overlays } =
     let
         appTitle =
             "Speedcubing Trainer"
+
+        topLevelAttributes =
+            topLevelEventListenersToElement topLevelEventListeners ++ overlaysToElement overlays
     in
     { title =
         Maybe.map
@@ -73,11 +125,11 @@ toBrowserDocument { pageSubtitle, body, topLevelEventListeners, overlays } =
         List.singleton <|
             case body of
                 FullScreen element ->
-                    Element.layout (Element.inFront element :: topLevelEventListeners ++ overlays) Element.none
+                    Element.layout (Element.inFront element :: topLevelAttributes) Element.none
 
                 WithNavigation element ->
-                    Element.layout (topLevelEventListeners ++ overlays) element
+                    Element.layout topLevelAttributes element
 
                 Custom element ->
-                    Element.layout (topLevelEventListeners ++ overlays) element
+                    Element.layout topLevelAttributes element
     }
