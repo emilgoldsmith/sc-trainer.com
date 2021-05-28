@@ -3,6 +3,7 @@ import { buildElementsCategory, buildGlobalsCategory } from "support/elements";
 import { buildStates, StateOptions } from "support/state";
 import { paths } from "support/paths";
 
+const cubeTestId = "cube";
 export const pllTrainerElements = {
   startPage: buildElementsCategory({
     container: "start-page-container",
@@ -34,16 +35,29 @@ export const pllTrainerElements = {
     container: "correct-container",
     nextButton: "next-button",
   }),
+  typeOfWrongPage: buildElementsCategory({
+    container: "type-of-wrong-container",
+    noMoveExplanation: "no-move-explanation",
+    noMoveButton: "no-move-button",
+    noMoveCubeStateFront: "no-move-cube-state-front",
+    noMoveCubeStateBack: "no-move-cube-state-back",
+    nearlyThereExplanation: "nearly-there-explanation",
+    nearlyThereButton: "nearly-there-button",
+    nearlyThereCubeStateFront: "nearly-there-cube-state-front",
+    nearlyThereCubeStateBack: "nearly-there-cube-state-back",
+    unrecoverableExplanation: "unrecoverable-explanation",
+    unrecoverableButton: "unrecoverable-button",
+  }),
   wrongPage: buildElementsCategory({
     container: "wrong-container",
     testCaseName: "test-case-name",
     fullTestCase: "full-test-case",
     cubeStartExplanation: "cube-start-explanation",
-    cubeStartState: ["cube-start-state", "cube"],
+    cubeStartState: ["cube-start-state", cubeTestId],
     nextButton: "next-button",
   }),
   globals: buildGlobalsCategory({
-    cube: "cube",
+    cube: cubeTestId,
     feedbackButton: "feedback-button",
   }),
 };
@@ -55,6 +69,7 @@ export const pllTrainerStates = buildStates<
   | "evaluateResult"
   | "evaluateResultAfterIgnoringKeyPresses"
   | "correctPage"
+  | "typeOfWrongPage"
   | "wrongPage"
 >(paths.pllTrainer, {
   startPage: {
@@ -130,11 +145,24 @@ export const pllTrainerStates = buildStates<
       cy.waitForDocumentEventListeners("keyup");
     },
   },
-  wrongPage: {
-    name: "wrongPage",
+  typeOfWrongPage: {
+    name: "typeOfWrongPage",
     getToThatState: (getState, options) => {
       getState("evaluateResultAfterIgnoringKeyPresses");
       pllTrainerElements.evaluateResult.wrongButton.get().click(options);
+    },
+    waitForStateToAppear: (options?: StateOptions) => {
+      pllTrainerElements.typeOfWrongPage.container.waitFor(options);
+      cy.waitForDocumentEventListeners("keyup");
+    },
+  },
+  wrongPage: {
+    name: "wrongPage",
+    getToThatState: (getState, options) => {
+      getState("typeOfWrongPage");
+      pllTrainerElements.typeOfWrongPage.unrecoverableButton
+        .get()
+        .click(options);
     },
     waitForStateToAppear: (options?: StateOptions) => {
       pllTrainerElements.wrongPage.container.waitFor(options);

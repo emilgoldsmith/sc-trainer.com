@@ -22,7 +22,7 @@ import Shared
 import Task
 import Time
 import UI
-import Utils.Css exposing (testid)
+import Utils.Css exposing (htmlTestid, testid)
 import Utils.TimeInterval as TimeInterval exposing (TimeInterval)
 import View exposing (View)
 import ViewCube
@@ -61,8 +61,9 @@ type TrainerState
         , result : TimeInterval
         , testCase : TestCase
         }
-    | CorrectPage
+    | TypeOfWrongPage TestCase
     | WrongPage TestCase
+    | CorrectPage
 
 
 type alias TestCase =
@@ -101,11 +102,17 @@ type Msg
     | GetReadyMessage GetReadyMsg
     | TestRunningMessage TestRunningMsg
     | EvaluateResultMessage EvaluateResultMsg
+    | TypeOfWrongMessage TypeOfWrongMsg
 
 
 type BetweenTestsMsg
     = StartTestGetReady
     | DoNothingBetweenTests
+
+
+type TypeOfWrongMsg
+    = GoToWrong
+    | DoNothingTypeOfWrong
 
 
 type GetReadyMsg
@@ -195,9 +202,18 @@ update messageCategory model =
                         ( { model | trainerState = CorrectPage }, Cmd.none )
 
                     EvaluateWrong ->
-                        ( { model | trainerState = WrongPage keyStates.testCase, expectedCube = Cube.solved }, Cmd.none )
+                        ( { model | trainerState = TypeOfWrongPage keyStates.testCase }, Cmd.none )
 
                     DoNothingEvaluateResult ->
+                        ( model, Cmd.none )
+
+        ( TypeOfWrongMessage msg, TypeOfWrongPage testCase ) ->
+            Tuple.mapSecond (Cmd.map TypeOfWrongMessage) <|
+                case msg of
+                    GoToWrong ->
+                        ( { model | trainerState = WrongPage testCase }, Cmd.none )
+
+                    DoNothingTypeOfWrong ->
                         ( model, Cmd.none )
 
         ( msg, trainerState ) ->
@@ -224,6 +240,9 @@ update messageCategory model =
                                             "A yet unimplemented stringify"
                                    )
 
+                        TypeOfWrongMessage _ ->
+                            "TypeOfWrongMessage"
+
                 trainerStateString =
                     case trainerState of
                         StartPage ->
@@ -238,11 +257,14 @@ update messageCategory model =
                         EvaluatingResult _ ->
                             "EvaluatingResult"
 
-                        CorrectPage ->
-                            "CorrectPage"
+                        TypeOfWrongPage _ ->
+                            "TypeOfWrongPage"
 
                         WrongPage _ ->
                             "WrongPage"
+
+                        CorrectPage ->
+                            "CorrectPage"
               in
               Ports.logError
                 ("Message received during unexpected state: "
@@ -296,6 +318,11 @@ subscriptions model =
 
         WrongPage _ ->
             betweenTestsSubscriptions
+
+        TypeOfWrongPage _ ->
+            Sub.map TypeOfWrongMessage <|
+                Browser.Events.onKeyUp <|
+                    Json.Decode.map (always DoNothingTypeOfWrong) decodeNonRepeatedKeyEvent
 
         GetReadyScreen ->
             Sub.none
@@ -432,10 +459,13 @@ topLevelEventListeners model =
             EvaluatingResult _ ->
                 []
 
-            CorrectPage ->
+            TypeOfWrongPage _ ->
                 []
 
             WrongPage _ ->
+                []
+
+            CorrectPage ->
                 []
 
 
@@ -453,6 +483,9 @@ view palette hardwareAvailable viewportSize model =
 
                 WrongPage _ ->
                     True
+
+                TypeOfWrongPage _ ->
+                    False
 
                 StartPage ->
                     False
@@ -749,6 +782,26 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         , color = palette.primary
                         }
                         (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 20)
+                    ]
+
+        TypeOfWrongPage _ ->
+            Element.map TypeOfWrongMessage <|
+                column [ testid "type-of-wrong-container" ]
+                    [ el [ testid "no-move-explanation" ] <| text "placeholder"
+                    , ViewCube.uFRWithLetters [ htmlTestid "no-move-cube-state-front" ] 50 Cube.solved
+                    , ViewCube.uFRWithLetters [ htmlTestid "no-move-cube-state-back" ] 50 Cube.solved
+                    , el [ testid "no-move-button" ] <| text "placeholder"
+                    , el [ testid "nearly-there-explanation" ] <| text "placeholder"
+                    , ViewCube.uFRWithLetters [ htmlTestid "nearly-there-cube-state-front" ] 50 Cube.solved
+                    , ViewCube.uFRWithLetters [ htmlTestid "nearly-there-cube-state-back" ] 50 Cube.solved
+                    , el [ testid "nearly-there-button" ] <| text "placeholder"
+                    , el [ testid "unrecoverable-explanation" ] <| text "placeholder"
+                    , UI.viewButton.large
+                        [ testid "unrecoverable-button" ]
+                        { onPress = Just GoToWrong
+                        , color = palette.primary
+                        , label = \_ -> text "hi"
+                        }
                     ]
 
         WrongPage (( _, pll, _ ) as testCase) ->

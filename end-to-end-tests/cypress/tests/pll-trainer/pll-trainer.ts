@@ -682,6 +682,21 @@ describe("Algorithm Trainer", function () {
       pllTrainerElements.correctPage.container.assertShows();
     });
   });
+
+  describe.only("Type Of Wrong Page", function () {
+    beforeEach(function () {
+      pllTrainerStates.typeOfWrongPage.restoreState();
+    });
+
+    it("has all the correct elements", function () {
+      pllTrainerElements.typeOfWrongPage.assertAllShow();
+    });
+
+    it("sizes elements reasonably", function () {
+      cy.assertNoHorizontalScrollbar();
+      cy.assertNoVerticalScrollbar();
+    });
+  });
   describe("Wrong Page", function () {
     beforeEach(function () {
       pllTrainerStates.wrongPage.restoreState();
