@@ -12,6 +12,7 @@
   "editor.codeActionsOnSave": {
     "source.fixAll": true
   },
+  "typescript.tsdk": "./end-to-end-tests/node_modules/typescript/lib",
   // Javascript stuff
   "prettier.prettierPath": "./end-to-end-tests/node_modules/prettier",
   "[typescript]": {
