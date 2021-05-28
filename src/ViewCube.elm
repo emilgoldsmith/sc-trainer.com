@@ -2,20 +2,20 @@ module ViewCube exposing (uBLWithLetters, uFRNoLetters, uFRWithLetters)
 
 import Cube
 import Element
-import Html.Lazy
-import Utils.Css exposing (testid)
+import Html
+import Utils.Css exposing (htmlTestid)
 
 
-uBLWithLetters : Int -> Cube.Cube -> Element.Element msg
-uBLWithLetters size cube =
-    Element.el [ testid "cube" ] <| Element.html <| Html.Lazy.lazy2 Cube.viewUBLWithLetters size cube
+uBLWithLetters : List (Html.Attribute msg) -> Int -> Cube.Cube -> Element.Element msg
+uBLWithLetters attributes size cube =
+    Element.html <| Cube.viewUBLWithLetters (htmlTestid "cube" :: attributes) size cube
 
 
-uFRNoLetters : Int -> Cube.Cube -> Element.Element msg
-uFRNoLetters size cube =
-    Element.el [ testid "cube" ] <| Element.html <| Html.Lazy.lazy2 Cube.viewUFRNoLetters size cube
+uFRNoLetters : List (Html.Attribute msg) -> Int -> Cube.Cube -> Element.Element msg
+uFRNoLetters attributes size cube =
+    Element.html <| Cube.viewUFRNoLetters (htmlTestid "cube" :: attributes) size cube
 
 
-uFRWithLetters : Int -> Cube.Cube -> Element.Element msg
-uFRWithLetters size cube =
-    Element.el [ testid "cube" ] <| Element.html <| Html.Lazy.lazy2 Cube.viewUFRWithLetters size cube
+uFRWithLetters : List (Html.Attribute msg) -> Int -> Cube.Cube -> Element.Element msg
+uFRWithLetters attributes size cube =
+    Element.html <| Cube.viewUFRWithLetters (htmlTestid "cube" :: attributes) size cube
