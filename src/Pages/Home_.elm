@@ -535,7 +535,7 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                             , centerX
                             ]
                           <|
-                            ViewCube.uFRWithLetters 200 model.expectedCube
+                            ViewCube.uFRWithLetters [] 200 model.expectedCube
                         , buttonWithShortcut
                             hardwareAvailable
                             [ testid "start-button"
@@ -620,7 +620,7 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                     , spacing (ViewportSize.minDimension viewportSize // 10)
                     ]
                     [ el [ testid "test-case", centerX ] <|
-                        ViewCube.uFRNoLetters (ViewportSize.minDimension viewportSize // 2) <|
+                        ViewCube.uFRNoLetters [] (ViewportSize.minDimension viewportSize // 2) <|
                             (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse (toAlg testCase)))
                     , el
                         [ testid "timer"
@@ -680,9 +680,9 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         , spacing cubeSpacing
                         ]
                         [ el [ testid "expected-cube-front" ] <|
-                            ViewCube.uFRWithLetters cubeSize model.expectedCube
+                            ViewCube.uFRWithLetters [] cubeSize model.expectedCube
                         , el [ testid "expected-cube-back" ] <|
-                            ViewCube.uBLWithLetters cubeSize model.expectedCube
+                            ViewCube.uBLWithLetters [] cubeSize model.expectedCube
                         ]
                     , row [ centerX, spacing buttonSpacing ]
                         [ buttonWithShortcut
@@ -776,10 +776,10 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         [ testid "full-test-case"
                         , centerX
                         ]
-                        [ ViewCube.uFRWithLetters
+                        [ ViewCube.uFRWithLetters []
                             (ViewportSize.minDimension viewportSize // 4)
                             testCaseCube
-                        , ViewCube.uBLWithLetters
+                        , ViewCube.uBLWithLetters []
                             (ViewportSize.minDimension viewportSize // 4)
                             testCaseCube
                         ]
@@ -795,7 +795,7 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         , centerX
                         ]
                       <|
-                        ViewCube.uFRWithLetters (ViewportSize.minDimension viewportSize // 4) model.expectedCube
+                        ViewCube.uFRWithLetters [] (ViewportSize.minDimension viewportSize // 4) model.expectedCube
                     , buttonWithShortcut
                         hardwareAvailable
                         [ testid "next-button"
