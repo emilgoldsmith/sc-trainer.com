@@ -1,12 +1,8 @@
-import { withGlobal } from "@sinonjs/fake-timers";
+import { Clock, withGlobal } from "@sinonjs/fake-timers";
 
-let clock: {
-  tick: (ms: number) => number;
-  setSystemTime: (now: number) => void;
-  next: () => void;
-} | null = null;
+let clock: Clock | null = null;
 
-export function getClock(): NonNullable<typeof clock> {
+function getClock(): NonNullable<typeof clock> {
   if (clock === null) {
     throw new Error("Can't call a clock method before you called install");
   }
@@ -14,9 +10,7 @@ export function getClock(): NonNullable<typeof clock> {
 }
 export function installClock(): void {
   cy.window({ log: false }).then((window) => {
-    clock = (withGlobal(window).install() as unknown) as NonNullable<
-      typeof clock
-    >;
+    clock = withGlobal(window).install();
   });
 }
 export function tick(ms: number): void {
