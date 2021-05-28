@@ -17,6 +17,7 @@ export function buildElementsCategory<keys extends string>(
   }
 ): {
   container: Element;
+  assertAllShow: () => void;
 } & {
   [key in keys]: Element;
 } {
@@ -80,7 +81,7 @@ export function buildElementsCategory<keys extends string>(
     };
   }
 
-  return Cypress._.mapValues(
+  const elements = Cypress._.mapValues(
     testIds,
     (testId: string | string[], key: string) => {
       if (key === "container") {
@@ -107,6 +108,13 @@ export function buildElementsCategory<keys extends string>(
       };
     }
   );
+
+  return {
+    ...elements,
+    assertAllShow() {
+      Cypress._.forEach(elements, (elem) => elem.assertShows());
+    },
+  };
 }
 
 export function buildGlobalsCategory<keys extends string>(
