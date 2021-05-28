@@ -441,7 +441,7 @@ function addObserversAndModifiers(htmlString: string) {
  * This function is intending to find and parse the initialize function
  * in both an unminimized and a minimized/uglified version.
  *
- * For more information about the parsing logic see the parseSendToAppFunction documentation
+ * @see {@link parseSendToAppFunction}'s documentation for more information about the parsing logic
  * as that is where the most complex bits of the logic live
  *
  * For reference the unminimized code looks like this:
