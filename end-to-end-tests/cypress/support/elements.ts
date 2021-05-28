@@ -80,10 +80,6 @@ export function buildElementsCategory<keys extends string>(
     };
   }
 
-  // TODO: When Cypress gets updated with the new fixed lodash types remove this
-  // this should be any version after 7.1 by the way
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
   return Cypress._.mapValues(
     testIds,
     (testId: string | string[], key: string) => {
@@ -120,10 +116,6 @@ export function buildGlobalsCategory<keys extends string>(
 ): {
   [key in keys]: Element;
 } {
-  // TODO: When Cypress gets updated with the new fixed lodash types remove this
-  // this should be any version after 7.1 by the way
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
   return Cypress._.mapValues(testIds, buildElement);
 }
 
