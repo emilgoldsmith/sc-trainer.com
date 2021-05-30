@@ -683,7 +683,7 @@ describe("Algorithm Trainer", function () {
     });
   });
 
-  describe.only("Type Of Wrong Page", function () {
+  describe("Type Of Wrong Page", function () {
     beforeEach(function () {
       pllTrainerStates.typeOfWrongPage.restoreState();
     });
@@ -697,22 +697,13 @@ describe("Algorithm Trainer", function () {
       cy.assertNoVerticalScrollbar();
     });
   });
-  describe("Wrong Page", function () {
+  describe.only("Wrong Page", function () {
     beforeEach(function () {
       pllTrainerStates.wrongPage.restoreState();
     });
 
     it("has all the correct elements", function () {
-      pllTrainerElements.wrongPage.testCaseName.assertShows();
-      pllTrainerElements.wrongPage.fullTestCase.get().within(() => {
-        pllTrainerElements.globals.cube
-          .get()
-          .should("have.length", 2)
-          .and("be.visible");
-      });
-      pllTrainerElements.wrongPage.cubeStartExplanation.assertShows();
-      pllTrainerElements.wrongPage.cubeStartState.assertShows();
-      pllTrainerElements.wrongPage.nextButton.assertShows();
+      pllTrainerElements.wrongPage.assertAllShow();
       pllTrainerElements.globals.feedbackButton
         .assertShows()
         .parent()

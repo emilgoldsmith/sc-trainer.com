@@ -3,7 +3,6 @@ import { buildElementsCategory, buildGlobalsCategory } from "support/elements";
 import { buildStates, StateOptions } from "support/state";
 import { paths } from "support/paths";
 
-const cubeTestId = "cube";
 export const pllTrainerElements = {
   startPage: buildElementsCategory({
     container: "start-page-container",
@@ -51,13 +50,14 @@ export const pllTrainerElements = {
   wrongPage: buildElementsCategory({
     container: "wrong-container",
     testCaseName: "test-case-name",
-    fullTestCase: "full-test-case",
-    cubeStartExplanation: "cube-start-explanation",
-    cubeStartState: ["cube-start-state", cubeTestId],
+    testCaseFront: "test-case-front",
+    testCaseBack: "test-case-back",
+    expectedCubeStateText: "expected-cube-state-text",
+    expectedCubeStateFront: "expected-cube-state-front",
+    expectedCubeStateBack: "expected-cube-state-back",
     nextButton: "next-button",
   }),
   globals: buildGlobalsCategory({
-    cube: cubeTestId,
     feedbackButton: "feedback-button",
   }),
 };

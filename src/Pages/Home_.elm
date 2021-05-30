@@ -826,13 +826,12 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                       <|
                         text ("The Correct Answer Was " ++ pllToString pll)
                     , row
-                        [ testid "full-test-case"
-                        , centerX
+                        [ centerX
                         ]
-                        [ ViewCube.uFRWithLetters []
+                        [ ViewCube.uFRWithLetters [ htmlTestid "test-case-front" ]
                             (ViewportSize.minDimension viewportSize // 4)
                             testCaseCube
-                        , ViewCube.uBLWithLetters []
+                        , ViewCube.uBLWithLetters [ htmlTestid "test-case-back" ]
                             (ViewportSize.minDimension viewportSize // 4)
                             testCaseCube
                         ]
@@ -840,15 +839,15 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         [ centerX
                         , Font.center
                         , Font.size (ViewportSize.minDimension viewportSize // 20)
-                        , testid "cube-start-explanation"
+                        , testid "expected-cube-state-text"
                         ]
                         [ text "Solve Cube And Orient Like This Before Restarting:" ]
-                    , el
-                        [ testid "cube-start-state"
-                        , centerX
+                    , row
+                        [ centerX
                         ]
-                      <|
-                        ViewCube.uFRWithLetters [] (ViewportSize.minDimension viewportSize // 4) model.expectedCube
+                        [ ViewCube.uFRWithLetters [ htmlTestid "expected-cube-state-front" ] (ViewportSize.minDimension viewportSize // 4) model.expectedCube
+                        , ViewCube.uBLWithLetters [ htmlTestid "expected-cube-state-back" ] (ViewportSize.minDimension viewportSize // 4) model.expectedCube
+                        ]
                     , buttonWithShortcut
                         hardwareAvailable
                         [ testid "next-button"
