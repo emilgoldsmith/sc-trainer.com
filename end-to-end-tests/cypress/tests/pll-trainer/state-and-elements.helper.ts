@@ -58,6 +58,7 @@ export const pllTrainerElements = {
     nextButton: "next-button",
   }),
   globals: buildGlobalsCategory({
+    cube: "cube",
     feedbackButton: "feedback-button",
   }),
 };

@@ -824,7 +824,7 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         , testid "test-case-name"
                         ]
                       <|
-                        text ("The Correct Answer Was " ++ pllToString pll)
+                        text ("The Correct Answer Was " ++ pllToString pll ++ ":")
                     , row
                         [ centerX
                         ]
@@ -841,7 +841,7 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         , Font.size (ViewportSize.minDimension viewportSize // 20)
                         , testid "expected-cube-state-text"
                         ]
-                        [ text "Solve Cube And Orient Like This Before Restarting:" ]
+                        [ text "Your Cube Should Now Look Like This:" ]
                     , row
                         [ centerX
                         ]
