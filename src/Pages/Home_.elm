@@ -111,7 +111,9 @@ type BetweenTestsMsg
 
 
 type TypeOfWrongMsg
-    = GoToWrong
+    = NoMoveWasApplied
+    | ExpectedStateWasReached
+    | CubeStateIsUnrecoverable
     | DoNothingTypeOfWrong
 
 
@@ -210,8 +212,14 @@ update messageCategory model =
         ( TypeOfWrongMessage msg, TypeOfWrongPage testCase ) ->
             Tuple.mapSecond (Cmd.map TypeOfWrongMessage) <|
                 case msg of
-                    GoToWrong ->
+                    NoMoveWasApplied ->
+                        ( { model | trainerState = WrongPage testCase, expectedCube = model.expectedCube |> Cube.applyAlgorithm (Algorithm.inverse <| toAlg testCase) }, Cmd.none )
+
+                    ExpectedStateWasReached ->
                         ( { model | trainerState = WrongPage testCase }, Cmd.none )
+
+                    CubeStateIsUnrecoverable ->
+                        ( { model | trainerState = WrongPage testCase, expectedCube = Cube.solved }, Cmd.none )
 
                     DoNothingTypeOfWrong ->
                         ( model, Cmd.none )
@@ -322,7 +330,22 @@ subscriptions model =
         TypeOfWrongPage _ ->
             Sub.map TypeOfWrongMessage <|
                 Browser.Events.onKeyUp <|
-                    Json.Decode.map (always DoNothingTypeOfWrong) decodeNonRepeatedKeyEvent
+                    Json.Decode.map
+                        (\key ->
+                            case key of
+                                One ->
+                                    NoMoveWasApplied
+
+                                Two ->
+                                    ExpectedStateWasReached
+
+                                Three ->
+                                    CubeStateIsUnrecoverable
+
+                                _ ->
+                                    DoNothingTypeOfWrong
+                        )
+                        decodeNonRepeatedKeyEvent
 
         GetReadyScreen ->
             Sub.none
@@ -357,7 +380,7 @@ subscriptions model =
                                         W ->
                                             WStarted
 
-                                        SomeKey _ ->
+                                        _ ->
                                             DoNothingEvaluateResult
                                 )
                                 decodeNonRepeatedKeyEvent
@@ -379,7 +402,7 @@ subscriptions model =
                                             else
                                                 DoNothingEvaluateResult
 
-                                        SomeKey _ ->
+                                        _ ->
                                             DoNothingEvaluateResult
                                 )
                                 decodeNonRepeatedKeyEvent
@@ -388,8 +411,11 @@ subscriptions model =
 
 type Key
     = Space
-    | SomeKey String
     | W
+    | One
+    | Two
+    | Three
+    | SomeKey String
 
 
 decodeNonRepeatedKeyEvent : Json.Decode.Decoder Key
@@ -432,6 +458,15 @@ toKey keyString =
 
         "W" ->
             W
+
+        "1" ->
+            One
+
+        "2" ->
+            Two
+
+        "3" ->
+            Three
 
         _ ->
             SomeKey keyString
@@ -712,10 +747,8 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         [ centerX
                         , spacing cubeSpacing
                         ]
-                        [ el [ testid "expected-cube-front" ] <|
-                            ViewCube.uFRWithLetters [] cubeSize model.expectedCube
-                        , el [ testid "expected-cube-back" ] <|
-                            ViewCube.uBLWithLetters [] cubeSize model.expectedCube
+                        [ ViewCube.uFRWithLetters [ htmlTestid "expected-cube-front" ] cubeSize model.expectedCube
+                        , ViewCube.uBLWithLetters [ htmlTestid "expected-cube-back" ] cubeSize model.expectedCube
                         ]
                     , row [ centerX, spacing buttonSpacing ]
                         [ buttonWithShortcut
@@ -790,15 +823,17 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                     [ el [ testid "no-move-explanation" ] <| text "placeholder"
                     , ViewCube.uFRWithLetters [ htmlTestid "no-move-cube-state-front" ] 50 Cube.solved
                     , ViewCube.uFRWithLetters [ htmlTestid "no-move-cube-state-back" ] 50 Cube.solved
-                    , el [ testid "no-move-button" ] <| text "placeholder"
+                    , UI.viewButton.large [ testid "no-move-button" ] { onPress = Just NoMoveWasApplied, color = palette.primary, label = \_ -> text "hi" }
                     , el [ testid "nearly-there-explanation" ] <| text "placeholder"
                     , ViewCube.uFRWithLetters [ htmlTestid "nearly-there-cube-state-front" ] 50 Cube.solved
                     , ViewCube.uFRWithLetters [ htmlTestid "nearly-there-cube-state-back" ] 50 Cube.solved
-                    , el [ testid "nearly-there-button" ] <| text "placeholder"
+                    , UI.viewButton.large
+                        [ testid "nearly-there-button" ]
+                        { onPress = Just ExpectedStateWasReached, color = palette.primary, label = \_ -> text "hi" }
                     , el [ testid "unrecoverable-explanation" ] <| text "placeholder"
                     , UI.viewButton.large
                         [ testid "unrecoverable-button" ]
-                        { onPress = Just GoToWrong
+                        { onPress = Just CubeStateIsUnrecoverable
                         , color = palette.primary
                         , label = \_ -> text "hi"
                         }
@@ -877,6 +912,15 @@ buttonWithShortcut hardwareAvailable attributes { onPress, labelText, keyboardSh
 
                 Space ->
                     "Space"
+
+                One ->
+                    "1"
+
+                Two ->
+                    "2"
+
+                Three ->
+                    "3"
 
                 SomeKey keyStr ->
                     keyStr

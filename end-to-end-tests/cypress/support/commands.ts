@@ -51,6 +51,13 @@ const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (
       .trigger("keydown", { ...event, log: false })
       .trigger("keypress", { ...event, log: false })
       .trigger("keyup", { ...event, log: false });
+
+    // We need it here as otherwise the event loop doesn't fire
+    // properly which makes things such as asserting that a keypress
+    // did NOT trigger an event fail as it doesn't wait for the event
+    // loop without this
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(0, { log: false });
   };
   if (options?.log === false) {
     handleKeyPress();

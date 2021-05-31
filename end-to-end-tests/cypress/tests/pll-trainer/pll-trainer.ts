@@ -4,6 +4,7 @@ import {
   pllTrainerStates,
   pllTrainerElements,
 } from "./state-and-elements.helper";
+import { Element } from "support/elements";
 import { paths } from "support/paths";
 
 describe("Algorithm Trainer", function () {
@@ -683,7 +684,7 @@ describe("Algorithm Trainer", function () {
     });
   });
 
-  describe("Type Of Wrong Page", function () {
+  describe.only("Type Of Wrong Page", function () {
     beforeEach(function () {
       pllTrainerStates.typeOfWrongPage.restoreState();
     });
@@ -696,8 +697,193 @@ describe("Algorithm Trainer", function () {
       cy.assertNoHorizontalScrollbar();
       cy.assertNoVerticalScrollbar();
     });
+
+    it("doesn't leave the page on arbitrary key presses", function () {
+      // on purpose use some of the ones we often use like space and w
+      installClock();
+      [Key.space, Key.w, Key.W, Key.five, Key.d, Key.shift].forEach((key) => {
+        cy.pressKey(key);
+        pllTrainerElements.typeOfWrongPage.container.assertShows();
+      });
+    });
+
+    context(
+      "continues to wrong page with expected cube states when",
+      function () {
+        const solvedCubeFrontAlias = "solvedCubeFront";
+        const originalCubeFrontAlias = "originalCubeFront";
+        const originalCubeBackAlias = "originalCubeBack";
+        const nextCubeFrontAlias = "nextCubeFront";
+        const nextCubeBackAlias = "nextCubeBack";
+        const aliases: { [key: string]: string } = {};
+        beforeEach(function () {
+          // Get the solved front
+          cy.visit(paths.homePage1);
+          aliasCubeHtmlAs(
+            solvedCubeFrontAlias,
+            pllTrainerElements.startPage.cubeStartState
+          );
+          // Go to evaluate to get the "original" cube state
+          pllTrainerStates.evaluateResultAfterIgnoringKeyPresses.restoreState();
+          cy.log("GETTING ORIGINAL CUBE HTMLS");
+          aliasCubeHtmlAs(
+            originalCubeFrontAlias,
+            pllTrainerElements.evaluateResult.expectedCubeFront
+          );
+          aliasCubeHtmlAs(
+            originalCubeBackAlias,
+            pllTrainerElements.evaluateResult.expectedCubeBack
+          );
+          // Run another test case
+          pllTrainerElements.evaluateResult.correctButton.get().click();
+          cy.clock();
+          pllTrainerElements.correctPage.nextButton.get().click();
+          pllTrainerElements.getReadyScreen.container.waitFor();
+          cy.tick(1000);
+          pllTrainerElements.testRunning.container.waitFor();
+          cy.mouseClickScreen("center");
+          // We're back at Evaluate Result
+          cy.log("GETTING NEXT CUBE HTMLS");
+          aliasCubeHtmlAs(
+            nextCubeFrontAlias,
+            pllTrainerElements.evaluateResult.expectedCubeFront
+          );
+          aliasCubeHtmlAs(
+            nextCubeBackAlias,
+            pllTrainerElements.evaluateResult.expectedCubeBack
+          );
+          // Navigate to Type Of Wrong for the tests
+          cy.tick(500);
+          pllTrainerElements.evaluateResult.wrongButton.get().click();
+          pllTrainerElements.typeOfWrongPage.container.waitFor();
+
+          function aliasCubeHtmlAs(alias: string, element: Element): void {
+            getCubeHtml(element).then((html) => (aliases[alias] = html));
+          }
+        });
+
+        const assertCubeMatchesAlias = (
+          alias: string,
+          element: Element
+        ): void => {
+          getCubeHtml(element).should((actualHtml) => {
+            const expectedHtml = aliases[alias];
+            console.log(expectedHtml);
+            console.log(actualHtml);
+            // Don't do a string "equal" as the diff isn't useful anyway
+            // and it takes a long time to generate it due to the large strings
+            expect(
+              actualHtml === expectedHtml,
+              "cube html should equal " + alias + " html"
+            ).to.be.true;
+          });
+        };
+
+        function getCubeHtml(element: Element) {
+          return element.get().then((jqueryElement) => {
+            const html = jqueryElement.html();
+            const sanitized = Cypress._.flow(
+              removeTestids,
+              removeSizeSpecifications,
+              sortStyleBlocks
+            )(html);
+
+            return sanitized;
+          });
+
+          function removeTestids(html: string): string {
+            return html.replace(/\s*data-testid=".+?"\s*/g, "");
+          }
+          function removeSizeSpecifications(html: string): string {
+            return html.replace(/-?[0-9]+px/g, "px");
+          }
+          function sortStyleBlocks(html: string): string {
+            return html.replace(
+              /style="(.*?)"/g,
+              (_, styleString: string) =>
+                `style="${styleString
+                  .split(";")
+                  .map((x) => x.trim())
+                  .sort()
+                  .join(";")}"`
+            );
+          }
+        }
+        it("no moves applied button clicked", function () {
+          pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
+          assertCubeMatchesAlias(
+            originalCubeFrontAlias,
+            pllTrainerElements.wrongPage.expectedCubeStateFront
+          );
+          assertCubeMatchesAlias(
+            originalCubeBackAlias,
+            pllTrainerElements.wrongPage.expectedCubeStateBack
+          );
+        });
+
+        it("1 pressed which should trigger no moves applied", function () {
+          cy.pressKey(Key.one);
+          assertCubeMatchesAlias(
+            originalCubeFrontAlias,
+            pllTrainerElements.wrongPage.expectedCubeStateFront
+          );
+          assertCubeMatchesAlias(
+            originalCubeBackAlias,
+            pllTrainerElements.wrongPage.expectedCubeStateBack
+          );
+        });
+
+        it("nearly there button clicked", function () {
+          pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
+          assertCubeMatchesAlias(
+            nextCubeFrontAlias,
+            pllTrainerElements.wrongPage.expectedCubeStateFront
+          );
+          assertCubeMatchesAlias(
+            nextCubeBackAlias,
+            pllTrainerElements.wrongPage.expectedCubeStateBack
+          );
+        });
+
+        it("2 pressed which should trigger nearly there behaviour", function () {
+          cy.pressKey(Key.two);
+          assertCubeMatchesAlias(
+            nextCubeFrontAlias,
+            pllTrainerElements.wrongPage.expectedCubeStateFront
+          );
+          assertCubeMatchesAlias(
+            nextCubeBackAlias,
+            pllTrainerElements.wrongPage.expectedCubeStateBack
+          );
+        });
+
+        it("unrecoverable button clicked", function () {
+          pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+          assertCubeMatchesAlias(
+            solvedCubeFrontAlias,
+            pllTrainerElements.wrongPage.expectedCubeStateFront
+          );
+          // We only do the front as we don't have access to what the back looks like
+          // anywhere in the app to reference. TODO: If we in the future make some
+          // introspective test access to the cube states it would be good to
+          // make this more rigorous
+        });
+
+        it("3 pressed which should trigger unrecoverable behaviour", function () {
+          cy.pressKey(Key.three);
+          assertCubeMatchesAlias(
+            solvedCubeFrontAlias,
+            pllTrainerElements.wrongPage.expectedCubeStateFront
+          );
+          // We only do the front as we don't have access to what the back looks like
+          // anywhere in the app to reference. TODO: If we in the future make some
+          // introspective test access to the cube states it would be good to
+          // make this more rigorous
+        });
+      }
+    );
   });
-  describe.only("Wrong Page", function () {
+  describe("Wrong Page", function () {
     beforeEach(function () {
       pllTrainerStates.wrongPage.restoreState();
     });
