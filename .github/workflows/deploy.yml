@@ -16,7 +16,7 @@ jobs:
     # just use the workflow dispatch manual trigger after CI passed
 
     # Also skip if there is a no-deploy tag in the commit message
-    if: ${{ github.event.sender.login != 'dependabot[bot]' || startsWith(github.event.commits[0].message, '[no-deploy]') }}
+    if: ${{ github.event.sender.login != 'dependabot[bot]' || ! startsWith(github.event.commits[0].message, '[no-deploy]') }}
     env:
       SERVICE: speedcubing-trainer
       REGION: us-east4
