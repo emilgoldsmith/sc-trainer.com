@@ -687,8 +687,8 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                     , centerY
                     , spacing (ViewportSize.minDimension viewportSize // 10)
                     ]
-                    [ el [ testid "test-case", centerX ] <|
-                        ViewCube.uFRNoLetters [] (ViewportSize.minDimension viewportSize // 2) <|
+                    [ el [ centerX ] <|
+                        ViewCube.uFRNoLetters [ htmlTestid "test-case" ] (ViewportSize.minDimension viewportSize // 2) <|
                             (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse (toAlg testCase)))
                     , el
                         [ testid "timer"
@@ -854,7 +854,7 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                 testCaseCube =
                     Cube.applyAlgorithm
                         (Algorithm.inverse <| toAlg testCase)
-                        model.expectedCube
+                        Cube.solved
             in
             Element.map BetweenTestsMessage <|
                 column
