@@ -817,16 +817,26 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 20)
                     ]
 
-        TypeOfWrongPage _ ->
+        TypeOfWrongPage testCase ->
+            let
+                noMovesCube =
+                    model.expectedCube |> Cube.applyAlgorithm (Algorithm.inverse <| toAlg testCase)
+            in
             Element.map TypeOfWrongMessage <|
                 column [ testid "type-of-wrong-container" ]
                     [ el [ testid "no-move-explanation" ] <| text "placeholder"
-                    , ViewCube.uFRWithLetters [ htmlTestid "no-move-cube-state-front" ] 50 Cube.solved
-                    , ViewCube.uFRWithLetters [ htmlTestid "no-move-cube-state-back" ] 50 Cube.solved
+                    , ViewCube.uFRWithLetters
+                        [ htmlTestid "no-move-cube-state-front" ]
+                        50
+                        noMovesCube
+                    , ViewCube.uBLWithLetters
+                        [ htmlTestid "no-move-cube-state-back" ]
+                        50
+                        noMovesCube
                     , UI.viewButton.large [ testid "no-move-button" ] { onPress = Just NoMoveWasApplied, color = palette.primary, label = \_ -> text "hi" }
                     , el [ testid "nearly-there-explanation" ] <| text "placeholder"
-                    , ViewCube.uFRWithLetters [ htmlTestid "nearly-there-cube-state-front" ] 50 Cube.solved
-                    , ViewCube.uFRWithLetters [ htmlTestid "nearly-there-cube-state-back" ] 50 Cube.solved
+                    , ViewCube.uFRWithLetters [ htmlTestid "nearly-there-cube-state-front" ] 50 model.expectedCube
+                    , ViewCube.uBLWithLetters [ htmlTestid "nearly-there-cube-state-back" ] 50 model.expectedCube
                     , UI.viewButton.large
                         [ testid "nearly-there-button" ]
                         { onPress = Just ExpectedStateWasReached, color = palette.primary, label = \_ -> text "hi" }
