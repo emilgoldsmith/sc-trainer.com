@@ -1,9 +1,6 @@
 {
   "name": "Elm Dev Container",
   "dockerFile": "../Dockerfile",
-  "settings": {
-    "terminal.integrated.shell.linux": "/bin/bash"
-  },
   "extensions": [
     "elmtooling.elm-ls-vscode",
     "esbenp.prettier-vscode",

@@ -1,4 +1,9 @@
 {
+  "terminal.integrated.profiles.linux": {
+    "bash": {
+      "path": "bash"
+    }
+  },
   "editor.tabSize": 4,
   "editor.formatOnSave": true,
   "editor.linkedEditing": false,
