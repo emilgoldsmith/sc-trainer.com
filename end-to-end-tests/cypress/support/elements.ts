@@ -1,4 +1,4 @@
-type Element = {
+export type Element = {
   get: ReturnType<typeof buildGetter>;
   waitFor: ReturnType<typeof buildWaiter>;
   assertShows: ReturnType<typeof buildAsserter>;

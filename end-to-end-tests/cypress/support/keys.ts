@@ -35,6 +35,15 @@ import {
   VALUE_SHIFT,
   CODE_SHIFT_LEFT,
   KEY_SHIFT,
+  KEY_1,
+  KEY_2,
+  KEY_3,
+  VALUE_2,
+  VALUE_1,
+  VALUE_3,
+  CODE_1,
+  CODE_2,
+  CODE_3,
 } from "keycode-js";
 
 export enum Key {
@@ -46,6 +55,9 @@ export enum Key {
   x,
   w,
   W,
+  one,
+  two,
+  three,
   five,
   space,
   leftCtrl,
@@ -71,6 +83,12 @@ export function getKeyValue(key: Key): string {
       return VALUE_W.toUpperCase();
     case Key.x:
       return VALUE_X;
+    case Key.one:
+      return VALUE_1;
+    case Key.two:
+      return VALUE_2;
+    case Key.three:
+      return VALUE_3;
     case Key.five:
       return VALUE_5;
     case Key.leftCtrl:
@@ -102,6 +120,12 @@ export function getCode(key: Key): string {
       return CODE_W;
     case Key.x:
       return CODE_X;
+    case Key.one:
+      return CODE_1;
+    case Key.two:
+      return CODE_2;
+    case Key.three:
+      return CODE_3;
     case Key.five:
       return CODE_5;
     case Key.leftCtrl:
@@ -133,6 +157,12 @@ export function getKeyCode(key: Key): number {
       return KEY_W;
     case Key.x:
       return KEY_X;
+    case Key.one:
+      return KEY_1;
+    case Key.two:
+      return KEY_2;
+    case Key.three:
+      return KEY_3;
     case Key.five:
       return KEY_5;
     case Key.leftCtrl:
