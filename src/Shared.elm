@@ -9,7 +9,6 @@ module Shared exposing
     )
 
 import Browser.Events as Events
-import Element
 import Json.Decode as Decode
 import Request exposing (Request)
 import UI
@@ -58,17 +57,17 @@ guessIfUserHasKeyboard viewportSize available =
             available.keyboard
                 || (let
                         isLargeScreen =
-                            case ViewportSize.classifyDevice viewportSize |> .class of
-                                Element.Phone ->
+                            case ViewportSize.getDeviceClass viewportSize of
+                                ViewportSize.Phone ->
                                     False
 
-                                Element.Tablet ->
+                                ViewportSize.Tablet ->
                                     False
 
-                                Element.Desktop ->
+                                ViewportSize.Desktop ->
                                     True
 
-                                Element.BigDesktop ->
+                                ViewportSize.BigDesktop ->
                                     True
                     in
                     -- Basically if there's no touch screen we assume they must have a keyboard.
