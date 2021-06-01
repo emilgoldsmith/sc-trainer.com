@@ -846,7 +846,7 @@ describe("Algorithm Trainer", function () {
       );
     });
 
-    it.only("navigates to 'wrong page' displaying a solved cube when unrecoverable button clicked", function () {
+    it("navigates to 'wrong page' displaying a solved cube when unrecoverable button clicked", function () {
       cy.visit(paths.homePage1);
       getCubeHtml(pllTrainerElements.startPage.cubeStartState).as(
         "solved-front"
@@ -865,7 +865,7 @@ describe("Algorithm Trainer", function () {
       );
     });
 
-    it.only("navigates to 'wrong page' displaying a solved cube when '3' is pressed", function () {
+    it("navigates to 'wrong page' displaying a solved cube when '3' is pressed", function () {
       cy.visit(paths.homePage1);
       getCubeHtml(pllTrainerElements.startPage.cubeStartState).as(
         "solved-front"
@@ -890,7 +890,7 @@ describe("Algorithm Trainer", function () {
       pllTrainerStates.wrongPage.restoreState();
     });
 
-    it.only("has all the correct elements", function () {
+    it("has all the correct elements", function () {
       pllTrainerElements.wrongPage.assertAllShow();
       pllTrainerElements.globals.feedbackButton
         .assertShows()

@@ -21,7 +21,7 @@ const largeViewportConfigOverride: Cypress.TestConfigOverrides = {
  * 5. A small touch screen after a keyboard event shows shortcuts
  */
 
-describe("Algorithm Trainer Dynamic Viewport Tests", function () {
+describe.only("Algorithm Trainer Dynamic Viewport Tests", function () {
   context("touch screen", function () {
     beforeEach(function () {
       cy.visit(paths.pllTrainer, { onBeforeLoad: simulateIsTouchScreen });
@@ -95,7 +95,7 @@ function checkWhetherShortcutsDisplay(
   pllTrainerElements.startPage.startButton
     .get()
     .invoke("text")
-    .should(matcher, /\(\s*Space\s*\)/);
+    .should(matcher, buildShortcutRegex("Space"));
 
   if (method === "useKeyboard") {
     // Note this also checks the space shortcut actually works as the label implies
@@ -115,7 +115,7 @@ function checkWhetherShortcutsDisplay(
   pllTrainerElements.evaluateResult.correctButton
     .get()
     .invoke("text")
-    .should(matcher, /\(\s*Space\s*\)/);
+    .should(matcher, buildShortcutRegex("Space"));
 
   cy.tick(300);
   if (method === "useKeyboard") {
@@ -128,7 +128,7 @@ function checkWhetherShortcutsDisplay(
   pllTrainerElements.correctPage.nextButton
     .get()
     .invoke("text")
-    .should(matcher, /\(\s*Space\s*\)/);
+    .should(matcher, buildShortcutRegex("Space"));
 
   if (method === "useKeyboard") {
     // Note this also checks the space shortcut actually works as the label implies
@@ -150,7 +150,7 @@ function checkWhetherShortcutsDisplay(
   pllTrainerElements.evaluateResult.wrongButton
     .get()
     .invoke("text")
-    .should(matcher, /\(\s*[wW]\s*\)/);
+    .should(matcher, buildShortcutRegex("[wW]"));
 
   cy.tick(300);
   if (method === "useKeyboard") {
@@ -159,11 +159,45 @@ function checkWhetherShortcutsDisplay(
   } else {
     pllTrainerElements.evaluateResult.wrongButton.get().click();
   }
-  pllTrainerElements.wrongPage.container.waitFor();
+  pllTrainerElements.typeOfWrongPage.container.waitFor();
+
+  // For easy return here to check all the branches
+  const typeOfWrongStateAlias = "type-of-wrong-state";
+  cy.getApplicationState("type of wrong").as(typeOfWrongStateAlias);
+
+  ([
+    [pllTrainerElements.typeOfWrongPage.noMoveButton, "1", Key.one],
+    [pllTrainerElements.typeOfWrongPage.nearlyThereButton, "2", Key.two],
+    [pllTrainerElements.typeOfWrongPage.unrecoverableButton, "3", Key.three],
+  ] as const).forEach(([element, shortcutText, key]) => {
+    cy.get("@" + typeOfWrongStateAlias).then((state) => {
+      cy.setApplicationState(
+        // The cypress types here are just too narrow for one specific usecase
+        (state as unknown) as Cypress.OurApplicationState,
+        "type of wrong"
+      );
+    });
+    pllTrainerElements.typeOfWrongPage.container.waitFor();
+
+    element
+      .get()
+      .invoke("text")
+      .should(matcher, buildShortcutRegex(shortcutText));
+    if (method === "useKeyboard") {
+      // Note this also checks the given shortcut actually works as the label implies
+      cy.pressKey(key);
+    } else {
+      element.get().click();
+    }
+    // Just making sure the navigation works as intended simply, it's more thoroughly checked in the main test
+    pllTrainerElements.wrongPage.container.assertShows();
+  });
+
+  // And then we test wrong page works as intended too
   pllTrainerElements.wrongPage.nextButton
     .get()
     .invoke("text")
-    .should(matcher, /\(\s*Space\s*\)/);
+    .should(matcher, buildShortcutRegex("Space"));
 
   if (method === "useKeyboard") {
     // Check space actually works as a shortcut too as the label implies.
@@ -174,4 +208,8 @@ function checkWhetherShortcutsDisplay(
     pllTrainerElements.wrongPage.nextButton.get().click();
   }
   pllTrainerElements.getReadyScreen.container.waitFor();
+}
+
+function buildShortcutRegex(shortcutText: string): RegExp {
+  return new RegExp(String.raw`\(\s*${shortcutText}\s*\)`);
 }
