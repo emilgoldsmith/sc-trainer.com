@@ -826,19 +826,19 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                     model.expectedCube
 
                 cubeSize =
-                    ViewportSize.minDimension viewportSize // 5
+                    ViewportSize.minDimension viewportSize // 7
 
                 buttonSize =
-                    ViewportSize.minDimension viewportSize // 20
+                    ViewportSize.minDimension viewportSize // 40
 
                 fontSize =
-                    ViewportSize.minDimension viewportSize // 20
+                    ViewportSize.minDimension viewportSize // 30
 
                 headerSize =
                     fontSize * 4 // 3
 
                 elementSeparation =
-                    ViewportSize.minDimension viewportSize // 25
+                    ViewportSize.minDimension viewportSize // 30
             in
             Element.map TypeOfWrongMessage <|
                 column
