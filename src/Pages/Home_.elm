@@ -833,20 +833,35 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         [ htmlTestid "no-move-cube-state-back" ]
                         50
                         noMovesCube
-                    , UI.viewButton.large [ testid "no-move-button" ] { onPress = Just NoMoveWasApplied, color = palette.primary, label = \_ -> text "hi" }
+                    , buttonWithShortcut
+                        hardwareAvailable
+                        [ testid "no-move-button" ]
+                        { onPress = Just NoMoveWasApplied, color = palette.primary, labelText = "hi", keyboardShortcut = One }
+                        UI.viewButton.large
                     , el [ testid "nearly-there-explanation" ] <| text "placeholder"
-                    , ViewCube.uFRWithLetters [ htmlTestid "nearly-there-cube-state-front" ] 50 model.expectedCube
-                    , ViewCube.uBLWithLetters [ htmlTestid "nearly-there-cube-state-back" ] 50 model.expectedCube
-                    , UI.viewButton.large
+                    , ViewCube.uFRWithLetters
+                        [ htmlTestid "nearly-there-cube-state-front" ]
+                        50
+                        model.expectedCube
+                    , ViewCube.uBLWithLetters
+                        [ htmlTestid "nearly-there-cube-state-back" ]
+                        50
+                        model.expectedCube
+                    , buttonWithShortcut
+                        hardwareAvailable
                         [ testid "nearly-there-button" ]
-                        { onPress = Just ExpectedStateWasReached, color = palette.primary, label = \_ -> text "hi" }
+                        { onPress = Just ExpectedStateWasReached, color = palette.primary, labelText = "hi", keyboardShortcut = Two }
+                        UI.viewButton.large
                     , el [ testid "unrecoverable-explanation" ] <| text "placeholder"
-                    , UI.viewButton.large
+                    , buttonWithShortcut
+                        hardwareAvailable
                         [ testid "unrecoverable-button" ]
                         { onPress = Just CubeStateIsUnrecoverable
                         , color = palette.primary
-                        , label = \_ -> text "hi"
+                        , labelText = "hi"
+                        , keyboardShortcut = Three
                         }
+                        UI.viewButton.large
                     ]
 
         WrongPage (( _, pll, _ ) as testCase) ->
