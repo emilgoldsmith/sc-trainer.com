@@ -33,7 +33,9 @@ describe("Visual Tests", function () {
       cy.percySnapshotWithProperName("PLL Trainer Type Of Wrong Page");
       pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
       pllTrainerElements.wrongPage.container.waitFor();
-      cy.percySnapshotWithProperName("PLL Trainer Wrong Page");
+      cy.percySnapshotWithProperName(
+        "PLL Trainer Wrong Page (Correct + Nearly There)"
+      );
     });
   });
 });

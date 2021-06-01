@@ -435,17 +435,17 @@ describe("Algorithm Trainer", function () {
           pllTrainerElements.evaluateResult.expectedCubeFront,
           pllTrainerElements.evaluateResult.expectedCubeBack,
         ].forEach((cubeElement) =>
-          cubeElement.get().should((cubeElement) => {
+          cubeElement.get().should((jqueryCube) => {
             expect(
-              cubeElement.width(),
+              jqueryCube.width(),
               "cube width to fill at least a quarter of min dimension"
             ).to.be.at.least(minDimension / 4);
             expect(
-              cubeElement.height(),
+              jqueryCube.height(),
               "cube height to fill at least a quarter of min dimension"
             ).to.be.at.least(minDimension / 4);
             expect(
-              cubeElement.height(),
+              jqueryCube.height(),
               "cube height to fill at most half of screen height"
             ).to.be.at.most(Cypress.config().viewportHeight / 2);
           })
@@ -718,7 +718,7 @@ describe("Algorithm Trainer", function () {
 
       // Check all the cubes look right
 
-      // no moves cube should be the same state as the previous/original expected cube state
+      // The cube for 'no moves applied' should be the same state as the previous/original expected cube state
       assertCubeMatchesAlias(
         originalCubeFrontAlias,
         pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
@@ -727,7 +727,8 @@ describe("Algorithm Trainer", function () {
         originalCubeBackAlias,
         pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
       );
-      // Nearly there cube should look like the expected state if you got it right
+      // The cube for 'nearly there' should look like the expected state if you had
+      // solved the case correctly
       assertCubeMatchesAlias(
         nextCubeFrontAlias,
         pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
@@ -745,7 +746,6 @@ describe("Algorithm Trainer", function () {
 
     it("doesn't leave the page on arbitrary key presses", function () {
       // on purpose use some of the ones we often use like space and w
-      installClock();
       [Key.space, Key.w, Key.W, Key.five, Key.d, Key.shift].forEach((key) => {
         cy.pressKey(key);
         pllTrainerElements.typeOfWrongPage.container.assertShows();
@@ -909,7 +909,9 @@ describe("Algorithm Trainer", function () {
       pllTrainerElements.typeOfWrongPage.container.waitFor();
       // It's important we use this button as otherwise
       // expected state is solved state which could avoid catching
-      // a bug we actually (nearly) had in production
+      // a bug we actually (nearly) had in production where what was
+      // displayed was the expectedCube with the inverse test case applied
+      // to it instead of the solved cube with inverse test case
       pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
 
       assertCubeMatchesAlias(
@@ -988,7 +990,7 @@ function getCubeHtml(element: Element) {
       removeSizeSpecifications,
       sortStyleBlocks,
       removeRandomClassAttribute,
-      removeAnyDoubleWhitespaces
+      normalizeWhitespace
     )(html);
 
     return sanitized;
@@ -996,7 +998,7 @@ function getCubeHtml(element: Element) {
 }
 
 function removeTestids(html: string): string {
-  return html.replaceAll(/\s*data-testid=".+?"\s*/g, "");
+  return html.replaceAll(/data-testid=".+?"/g, "");
 }
 function removeSizeSpecifications(html: string): string {
   return html.replaceAll(/-?[0-9]+px/g, "px");
@@ -1015,8 +1017,8 @@ function sortStyleBlocks(html: string): string {
 function removeRandomClassAttribute(html: string): string {
   return html.replaceAll('class=""', "");
 }
-function removeAnyDoubleWhitespaces(html: string): string {
-  return html.replaceAll("  ", " ");
+function normalizeWhitespace(html: string): string {
+  return html.replaceAll(/ +/g, " ");
 }
 function removeAnySVGs(html: string): string {
   return html.replaceAll(/<svg.*?>.*?<\/svg>/g, "");
@@ -1036,8 +1038,9 @@ function assertCubeMatchesAlias(alias: string, element: Element): void {
         console.log("expected html:");
         console.log(expectedHtml);
       }
-      // Don't do a string "equal" as the diff isn't useful anyway
+      // Don't do a expect().equal as the diff isn't useful anyway
       // and it takes a long time to generate it due to the large strings
+      // We just deal with a boolean and a custom message instead
       expect(
         actualHtml === expectedHtml,
         "cube html should equal " + alias + " html"
@@ -1049,8 +1052,9 @@ function assertCubeMatchesAlias(alias: string, element: Element): void {
 /**
  * This function is very implementation dependant, much more so than the other cube
  * asserting functions, so could definitely break if the implementation changes.
- * For now we use it as it's not to be able to assert on the back, but up to
- * next developers judgement what to do if it breaks.
+ * For now we use it as it allows us to assert the backside of cubes displayed even
+ * when we don't have a reference to compare to, but up to next developer's judgement
+ * what to do if it breaks because of implementation change.
  *
  * Some of the assumptions it makes:
  * - The html for the front side includes the description of the back side even if

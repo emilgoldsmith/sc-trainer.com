@@ -55,7 +55,12 @@ const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (
     // We need it here as otherwise the event loop doesn't fire
     // properly which makes things such as asserting that a keypress
     // did NOT trigger an event fail as it doesn't wait for the event
-    // loop without this
+    // loop without this.
+    // This for example has incorrectly passed when a transition actually
+    // was happening, which this fixes:
+    // cy.pressKey(keyThatShouldHaveNoEffect);
+    // pllTrainerElements.originalPage.assertShows();
+    //
     // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(0, { log: false });
   };

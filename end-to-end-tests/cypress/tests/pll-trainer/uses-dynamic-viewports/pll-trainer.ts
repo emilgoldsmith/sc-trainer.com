@@ -172,7 +172,7 @@ function checkWhetherShortcutsDisplay(
   ] as const).forEach(([element, shortcutText, key]) => {
     cy.get("@" + typeOfWrongStateAlias).then((state) => {
       cy.setApplicationState(
-        // The cypress types here are just too narrow for one specific usecase
+        // TODO: If Cypress types become inclusive of aliases remove these type casts
         (state as unknown) as Cypress.OurApplicationState,
         "type of wrong"
       );
