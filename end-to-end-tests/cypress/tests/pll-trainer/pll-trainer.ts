@@ -846,7 +846,7 @@ describe("Algorithm Trainer", function () {
       );
     });
 
-    it("navigates to 'wrong page' displaying a solved cube when unrecoverable button clicked", function () {
+    it.only("navigates to 'wrong page' displaying a solved cube when unrecoverable button clicked", function () {
       cy.visit(paths.homePage1);
       getCubeHtml(pllTrainerElements.startPage.cubeStartState).as(
         "solved-front"
@@ -855,17 +855,17 @@ describe("Algorithm Trainer", function () {
 
       pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
 
-      // We only do the front as we don't have access to what the back looks like
-      // anywhere in the app to reference. TODO: If we in the future make some
-      // introspective test access to the cube states it would be good to
-      // make this more rigorous
       assertCubeMatchesAlias(
         "solved-front",
         pllTrainerElements.wrongPage.expectedCubeStateFront
       );
+      assertCubeMatchesBackOfAlias(
+        "solved-front",
+        pllTrainerElements.wrongPage.expectedCubeStateBack
+      );
     });
 
-    it("navigates to 'wrong page' displaying a solved cube when '3' is pressed", function () {
+    it.only("navigates to 'wrong page' displaying a solved cube when '3' is pressed", function () {
       cy.visit(paths.homePage1);
       getCubeHtml(pllTrainerElements.startPage.cubeStartState).as(
         "solved-front"
@@ -874,13 +874,13 @@ describe("Algorithm Trainer", function () {
 
       cy.pressKey(Key.three);
 
-      // We only do the front as we don't have access to what the back looks like
-      // anywhere in the app to reference. TODO: If we in the future make some
-      // introspective test access to the cube states it would be good to
-      // make this more rigorous
       assertCubeMatchesAlias(
         "solved-front",
         pllTrainerElements.wrongPage.expectedCubeStateFront
+      );
+      assertCubeMatchesBackOfAlias(
+        "solved-front",
+        pllTrainerElements.wrongPage.expectedCubeStateBack
       );
     });
   });
@@ -911,7 +911,9 @@ describe("Algorithm Trainer", function () {
 
       // Check that the test case cube is actually displaying the case that was tested
       pllTrainerStates.testRunning.restoreState();
-      getCubeHtml(pllTrainerElements.testRunning.testCase).as("test-case");
+      getCubeHtml(pllTrainerElements.testRunning.testCase).as(
+        "test-case-front"
+      );
 
       cy.clock();
       cy.mouseClickScreen("center");
@@ -924,12 +926,13 @@ describe("Algorithm Trainer", function () {
       // a bug we actually (nearly) had in production
       pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
 
-      // We can only test the front because we don't display the back during the test so we
-      // don't have a reference to compare to
-      // TODO: If we get the capabilities later do a more through check that also verifies the backside
       assertCubeMatchesAlias(
-        "test-case",
+        "test-case-front",
         pllTrainerElements.wrongPage.testCaseFront
+      );
+      assertCubeMatchesBackOfAlias(
+        "test-case-front",
+        pllTrainerElements.wrongPage.testCaseBack
       );
     });
 
@@ -1035,15 +1038,67 @@ function removeAnySVGs(html: string): string {
 
 function assertCubeMatchesAlias(alias: string, element: Element): void {
   getCubeHtml(element).should((actualHtml) => {
-    cy.get("@" + alias).then((expectedHtml) => {
-      if (typeof expectedHtml !== "string") {
+    cy.get("@" + alias).then((wronglyTypedArg) => {
+      if (typeof wronglyTypedArg !== "string") {
         throw new Error("html alias was not a string. Alias name was " + alias);
+      }
+      const expectedHtml: string = wronglyTypedArg;
+      if (actualHtml !== expectedHtml) {
+        cy.log("Actual and expected HTML Logged To Console");
+        console.log("actual html:");
+        console.log(actualHtml);
+        console.log("expected html:");
+        console.log(expectedHtml);
       }
       // Don't do a string "equal" as the diff isn't useful anyway
       // and it takes a long time to generate it due to the large strings
       expect(
         actualHtml === expectedHtml,
         "cube html should equal " + alias + " html"
+      ).to.be.true;
+    });
+  });
+}
+
+/**
+ * This function is very implementation dependant, much more so than the other cube
+ * asserting functions, so could definitely break if the implementation changes.
+ * For now we use it as it's not to be able to assert on the back, but up to
+ * next developers judgement what to do if it breaks.
+ *
+ * Some of the assumptions it makes:
+ * - The html for the front side includes the description of the back side even if
+ *   it doesn't display it to the user
+ * - The way it shows the backside is by using the exactly same html as for the
+ *   front side, but just adding a 'rotateY(180deg) ' to the transform
+ */
+function assertCubeMatchesBackOfAlias(alias: string, element: Element): void {
+  getCubeHtml(element).should((actualBacksideHtml) => {
+    cy.get("@" + alias).then((wronglyTypedArg) => {
+      if (typeof wronglyTypedArg !== "string") {
+        throw new Error("html alias was not a string. Alias name was " + alias);
+      }
+      const expectedFrontSideHtml: string = wronglyTypedArg;
+      expect(
+        actualBacksideHtml !== expectedFrontSideHtml,
+        "actual backside shouldn't be equal to front side for alias " + alias
+      );
+      const actualFrontSideHtml = actualBacksideHtml.replace(
+        "rotateY(180deg) ",
+        ""
+      );
+      if (actualFrontSideHtml !== expectedFrontSideHtml) {
+        cy.log("Actual and expected HTML Logged To Console");
+        console.log("actual front side html:");
+        console.log(actualBacksideHtml);
+        console.log("expected back side html:");
+        console.log(expectedFrontSideHtml);
+      }
+      expect(
+        actualFrontSideHtml === expectedFrontSideHtml,
+        "simulated front side of cube html should equal " +
+          alias +
+          " front side html"
       ).to.be.true;
     });
   });
