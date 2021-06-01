@@ -821,47 +821,80 @@ viewFullScreen palette hardwareAvailable viewportSize model =
             let
                 noMovesCube =
                     model.expectedCube |> Cube.applyAlgorithm (Algorithm.inverse <| toAlg testCase)
+
+                nearlyThereCube =
+                    model.expectedCube
+
+                cubeSize =
+                    ViewportSize.minDimension viewportSize // 5
+
+                buttonSize =
+                    ViewportSize.minDimension viewportSize // 20
+
+                fontSize =
+                    ViewportSize.minDimension viewportSize // 20
+
+                headerSize =
+                    fontSize * 4 // 3
+
+                elementSeparation =
+                    ViewportSize.minDimension viewportSize // 25
             in
             Element.map TypeOfWrongMessage <|
-                column [ testid "type-of-wrong-container" ]
-                    [ el [ testid "no-move-explanation" ] <| text "placeholder"
-                    , ViewCube.uFRWithLetters
-                        [ htmlTestid "no-move-cube-state-front" ]
-                        50
-                        noMovesCube
-                    , ViewCube.uBLWithLetters
-                        [ htmlTestid "no-move-cube-state-back" ]
-                        50
-                        noMovesCube
+                column
+                    [ testid "type-of-wrong-container"
+                    , width fill
+                    , centerY
+                    , UI.paddingAll.large
+                    , spacing elementSeparation
+                    , Font.size fontSize
+                    ]
+                    [ paragraph [ centerX, Font.center, Font.bold, Font.size headerSize ] [ text "Choose the case that fits your cube state:" ]
+                    , paragraph [ testid "no-move-explanation", centerX, Font.center ] [ text "1. I didn't apply any moves to the cube" ]
+                    , row [ centerX ]
+                        [ ViewCube.uFRWithLetters
+                            [ htmlTestid "no-move-cube-state-front" ]
+                            cubeSize
+                            noMovesCube
+                        , ViewCube.uBLWithLetters
+                            [ htmlTestid "no-move-cube-state-back" ]
+                            cubeSize
+                            noMovesCube
+                        ]
                     , buttonWithShortcut
                         hardwareAvailable
-                        [ testid "no-move-button" ]
-                        { onPress = Just NoMoveWasApplied, color = palette.primary, labelText = "hi", keyboardShortcut = One }
-                        UI.viewButton.large
-                    , el [ testid "nearly-there-explanation" ] <| text "placeholder"
-                    , ViewCube.uFRWithLetters
-                        [ htmlTestid "nearly-there-cube-state-front" ]
-                        50
-                        model.expectedCube
-                    , ViewCube.uBLWithLetters
-                        [ htmlTestid "nearly-there-cube-state-back" ]
-                        50
-                        model.expectedCube
+                        [ testid "no-move-button", centerX ]
+                        { onPress = Just NoMoveWasApplied, color = palette.primary, labelText = "No Moves Applied", keyboardShortcut = One }
+                        (UI.viewButton.customSize buttonSize)
+                    , paragraph [ testid "nearly-there-explanation", centerX, Font.center ]
+                        [ text "2. I can get to the expected state. I for example just got the AUF wrong"
+                        ]
+                    , row [ centerX ]
+                        [ ViewCube.uFRWithLetters
+                            [ htmlTestid "nearly-there-cube-state-front" ]
+                            cubeSize
+                            nearlyThereCube
+                        , ViewCube.uBLWithLetters
+                            [ htmlTestid "nearly-there-cube-state-back" ]
+                            cubeSize
+                            nearlyThereCube
+                        ]
                     , buttonWithShortcut
                         hardwareAvailable
-                        [ testid "nearly-there-button" ]
-                        { onPress = Just ExpectedStateWasReached, color = palette.primary, labelText = "hi", keyboardShortcut = Two }
-                        UI.viewButton.large
-                    , el [ testid "unrecoverable-explanation" ] <| text "placeholder"
+                        [ testid "nearly-there-button", centerX ]
+                        { onPress = Just ExpectedStateWasReached, color = palette.primary, labelText = "Cube Is As Expected", keyboardShortcut = Two }
+                        (UI.viewButton.customSize buttonSize)
+                    , paragraph [ testid "unrecoverable-explanation", centerX, Font.center ]
+                        [ text "3. I can't get to either of the above states, so I will just solve it to reset it" ]
                     , buttonWithShortcut
                         hardwareAvailable
-                        [ testid "unrecoverable-button" ]
+                        [ testid "unrecoverable-button", centerX ]
                         { onPress = Just CubeStateIsUnrecoverable
                         , color = palette.primary
-                        , labelText = "hi"
+                        , labelText = "Reset To Solved"
                         , keyboardShortcut = Three
                         }
-                        UI.viewButton.large
+                        (UI.viewButton.customSize buttonSize)
                     ]
 
         WrongPage (( _, pll, _ ) as testCase) ->
