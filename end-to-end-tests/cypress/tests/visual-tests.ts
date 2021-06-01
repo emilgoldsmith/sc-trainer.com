@@ -29,6 +29,9 @@ describe("Visual Tests", function () {
       pllTrainerElements.evaluateResult.container.waitFor();
       cy.tick(1000);
       pllTrainerElements.evaluateResult.wrongButton.get().click();
+      pllTrainerElements.typeOfWrongPage.container.waitFor();
+      cy.percySnapshotWithProperName("PLL Trainer Type Of Wrong Page");
+      pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
       pllTrainerElements.wrongPage.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer Wrong Page");
     });
