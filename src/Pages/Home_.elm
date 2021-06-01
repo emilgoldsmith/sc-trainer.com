@@ -415,7 +415,7 @@ type Key
     | One
     | Two
     | Three
-    | SomeKey String
+    | OtherKey String
 
 
 decodeNonRepeatedKeyEvent : Json.Decode.Decoder Key
@@ -469,7 +469,7 @@ toKey keyString =
             Three
 
         _ ->
-            SomeKey keyString
+            OtherKey keyString
 
 
 topLevelEventListeners : Model -> View.TopLevelEventListeners Msg
@@ -980,7 +980,7 @@ buttonWithShortcut hardwareAvailable attributes { onPress, labelText, keyboardSh
                 Three ->
                     "3"
 
-                SomeKey keyStr ->
+                OtherKey keyStr ->
                     keyStr
 
         shortcutText =
@@ -1034,7 +1034,7 @@ smallButtonWithShortcut hardwareAvailable attributes { onPress, labelText, keybo
                 Three ->
                     "3"
 
-                SomeKey keyStr ->
+                OtherKey keyStr ->
                     keyStr
 
         shortcutText =
