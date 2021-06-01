@@ -861,7 +861,7 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                             cubeSize
                             noMovesCube
                         ]
-                    , buttonWithShortcut
+                    , smallButtonWithShortcut
                         hardwareAvailable
                         [ testid "no-move-button", centerX ]
                         { onPress = Just NoMoveWasApplied, color = palette.primary, labelText = "No Moves Applied", keyboardShortcut = One }
@@ -879,14 +879,14 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                             cubeSize
                             nearlyThereCube
                         ]
-                    , buttonWithShortcut
+                    , smallButtonWithShortcut
                         hardwareAvailable
                         [ testid "nearly-there-button", centerX ]
                         { onPress = Just ExpectedStateWasReached, color = palette.primary, labelText = "Cube Is As Expected", keyboardShortcut = Two }
                         (UI.viewButton.customSize buttonSize)
                     , paragraph [ testid "unrecoverable-explanation", centerX, Font.center ]
                         [ text "3. I can't get to either of the above states, so I will just solve it to reset it" ]
-                    , buttonWithShortcut
+                    , smallButtonWithShortcut
                         hardwareAvailable
                         [ testid "unrecoverable-button", centerX ]
                         { onPress = Just CubeStateIsUnrecoverable
@@ -995,6 +995,60 @@ buttonWithShortcut hardwareAvailable attributes { onPress, labelText, keyboardSh
                         column [ centerX ]
                             [ el [ centerX, Font.size fontSize ] <| text labelText
                             , el [ centerX, Font.size (fontSize // 2) ] shortcutText
+                            ]
+                }
+
+        withoutShortcutLabel =
+            button attributes
+                { onPress = onPress
+                , color = color
+                , label =
+                    \fontSize ->
+                        el [ centerX, Font.size fontSize ] <| text labelText
+                }
+    in
+    if hardwareAvailable.keyboard then
+        withShortcutLabel
+
+    else
+        withoutShortcutLabel
+
+
+smallButtonWithShortcut : Shared.HardwareAvailable -> List (Attribute msg) -> { onPress : Maybe msg, labelText : String, color : Color, keyboardShortcut : Key } -> UI.Button msg -> Element msg
+smallButtonWithShortcut hardwareAvailable attributes { onPress, labelText, keyboardShortcut, color } button =
+    let
+        keyString =
+            case keyboardShortcut of
+                W ->
+                    "W"
+
+                Space ->
+                    "Space"
+
+                One ->
+                    "1"
+
+                Two ->
+                    "2"
+
+                Three ->
+                    "3"
+
+                SomeKey keyStr ->
+                    keyStr
+
+        shortcutText =
+            text <| "(" ++ keyString ++ ")"
+
+        withShortcutLabel =
+            button attributes
+                { onPress = onPress
+                , color = color
+                , label =
+                    \fontSize ->
+                        column [ centerX, spacing 3 ]
+                            [ el [ centerX, Font.size fontSize ] <| text labelText
+                            , el [ centerX, Font.size (fontSize * 3 // 4) ] shortcutText
                             ]
                 }
 
