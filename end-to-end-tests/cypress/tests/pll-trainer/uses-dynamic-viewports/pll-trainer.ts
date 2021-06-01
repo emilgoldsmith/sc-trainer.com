@@ -21,7 +21,7 @@ const largeViewportConfigOverride: Cypress.TestConfigOverrides = {
  * 5. A small touch screen after a keyboard event shows shortcuts
  */
 
-describe.only("Algorithm Trainer Dynamic Viewport Tests", function () {
+describe("Algorithm Trainer Dynamic Viewport Tests", function () {
   context("touch screen", function () {
     beforeEach(function () {
       cy.visit(paths.pllTrainer, { onBeforeLoad: simulateIsTouchScreen });

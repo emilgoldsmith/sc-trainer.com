@@ -102,11 +102,7 @@ describe("Algorithm Trainer", function () {
       });
 
       it("has all the correct elements", function () {
-        pllTrainerElements.testRunning.timer.assertShows();
-        // The test case is a cube
-        pllTrainerElements.testRunning.testCase.get().within(() => {
-          pllTrainerElements.globals.cube.assertShows();
-        });
+        pllTrainerElements.testRunning.assertAllShow();
       });
 
       it("sizes elements reasonably", function () {
@@ -122,8 +118,9 @@ describe("Algorithm Trainer", function () {
         pllTrainerElements.testRunning.timer.get().should((timerElement) => {
           expect(timerElement.height()).to.be.at.least(0.2 * minDimension);
         });
-        pllTrainerElements.testRunning.testCase.get().within(() => {
-          pllTrainerElements.globals.cube.assertShows().and((cubeElement) => {
+        pllTrainerElements.testRunning.testCase
+          .assertShows()
+          .and((cubeElement) => {
             expect(
               cubeElement.width(),
               "cube width to fill at least half of screen"
@@ -133,7 +130,6 @@ describe("Algorithm Trainer", function () {
               "cube height to fill at least half of screen"
             ).to.be.at.least(minDimension * 0.5 - 1);
           });
-        });
       });
 
       it("tracks time correctly", function () {
@@ -420,15 +416,7 @@ describe("Algorithm Trainer", function () {
       });
 
       it("has all the correct elements", function () {
-        pllTrainerElements.evaluateResult.timeResult.assertShows();
-        pllTrainerElements.evaluateResult.expectedCubeFront.get().within(() => {
-          pllTrainerElements.globals.cube.assertShows();
-        });
-        pllTrainerElements.evaluateResult.expectedCubeBack.get().within(() => {
-          pllTrainerElements.globals.cube.assertShows();
-        });
-        pllTrainerElements.evaluateResult.correctButton.assertShows();
-        pllTrainerElements.evaluateResult.wrongButton.assertShows();
+        pllTrainerElements.evaluateResult.assertAllShow();
       });
 
       it("sizes elements reasonably", function () {
@@ -446,22 +434,20 @@ describe("Algorithm Trainer", function () {
         [
           pllTrainerElements.evaluateResult.expectedCubeFront,
           pllTrainerElements.evaluateResult.expectedCubeBack,
-        ].forEach((cubeContainer) =>
-          cubeContainer.get().within(() => {
-            pllTrainerElements.globals.cube.get().should((cubeElement) => {
-              expect(
-                cubeElement.width(),
-                "cube width to fill at least a quarter of min dimension"
-              ).to.be.at.least(minDimension / 4);
-              expect(
-                cubeElement.height(),
-                "cube height to fill at least a quarter of min dimension"
-              ).to.be.at.least(minDimension / 4);
-              expect(
-                cubeElement.height(),
-                "cube height to fill at most half of screen height"
-              ).to.be.at.most(Cypress.config().viewportHeight / 2);
-            });
+        ].forEach((cubeElement) =>
+          cubeElement.get().should((cubeElement) => {
+            expect(
+              cubeElement.width(),
+              "cube width to fill at least a quarter of min dimension"
+            ).to.be.at.least(minDimension / 4);
+            expect(
+              cubeElement.height(),
+              "cube height to fill at least a quarter of min dimension"
+            ).to.be.at.least(minDimension / 4);
+            expect(
+              cubeElement.height(),
+              "cube height to fill at most half of screen height"
+            ).to.be.at.most(Cypress.config().viewportHeight / 2);
           })
         );
         pllTrainerElements.evaluateResult.timeResult
@@ -573,17 +559,17 @@ describe("Algorithm Trainer", function () {
       describe("rejects correctly", function () {
         it("on w key pressed", function () {
           cy.pressKey(Key.w);
-          pllTrainerElements.wrongPage.container.assertShows();
+          pllTrainerElements.typeOfWrongPage.container.assertShows();
         });
 
         it("on shift + w pressed", function () {
           cy.pressKey(Key.W);
-          pllTrainerElements.wrongPage.container.assertShows();
+          pllTrainerElements.typeOfWrongPage.container.assertShows();
         });
 
         it("on button pressed", function () {
           pllTrainerElements.evaluateResult.wrongButton.get().click();
-          pllTrainerElements.wrongPage.container.assertShows();
+          pllTrainerElements.typeOfWrongPage.container.assertShows();
         });
       });
 
