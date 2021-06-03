@@ -2,6 +2,7 @@ module Pages.Home_ exposing (Model, Msg, page)
 
 import Algorithm exposing (Algorithm)
 import Browser.Events
+import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Background as Background
@@ -24,9 +25,8 @@ import Request
 import Shared
 import Task
 import Time
+import TimeInterval as TimeInterval exposing (TimeInterval)
 import UI
-import Utils.Css exposing (htmlTestid, testid)
-import Utils.TimeInterval as TimeInterval exposing (TimeInterval)
 import View exposing (View)
 import ViewCube
 import ViewportSize exposing (ViewportSize)

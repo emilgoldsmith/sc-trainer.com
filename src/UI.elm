@@ -2,12 +2,12 @@ module UI exposing (Button, Palette, defaultPalette, fontSize, paddingAll, paddi
 
 -- We can't expose all of Element as it clashes with the spacing export
 
+import Css exposing (testid)
 import Element as El
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Utils.Css exposing (testid)
 import WebResource
 
 
