@@ -5,11 +5,13 @@ import Cube exposing (Cube)
 import PLL
 import PLLTrainer.States.GetReadyScreen
 import PLLTrainer.States.StartPage
+import PLLTrainer.States.TestRunning
 import PLLTrainer.TestCase exposing (TestCase)
 import Page
-import Ports
+import Process
 import Shared
 import StatefulPage
+import Task
 import View exposing (View)
 
 
@@ -17,7 +19,7 @@ page : Shared.Model -> Page.With Model Msg
 page shared =
     Page.element
         { init = init
-        , update = update
+        , update = update shared
         , view = view shared
         , subscriptions = subscriptions shared
         }
@@ -40,26 +42,46 @@ init =
     )
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
-    case ( msg, model.trainerState ) of
-        ( NoOp, _ ) ->
+update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
+update shared msg model =
+    let
+        state =
+            getState shared model.trainerState
+    in
+    case msg of
+        NoOp ->
             ( model, Cmd.none )
 
-        ( Transition GetReadyForTest, StartPage ) ->
-            ( { model | trainerState = GetReadyScreen }, Cmd.none )
+        Transition transition ->
+            doTransition shared model transition
 
-        _ ->
-            ( model, Ports.logError "Unexpected PLL Trainer msg + trainer state combination" )
+
+doTransition : Shared.Model -> Model -> Transition -> ( Model, Cmd Msg )
+doTransition shared model transition =
+    let
+        nextTrainerState =
+            case transition of
+                GetReadyForTest ->
+                    GetReadyScreen
+
+                StartTest ->
+                    TestRunning
+
+        nextState =
+            getState shared nextTrainerState
+    in
+    ( { model | trainerState = nextTrainerState }, Tuple.second nextState.init )
 
 
 type Transition
     = GetReadyForTest
+    | StartTest
 
 
 type TrainerState
     = StartPage
     | GetReadyScreen
+    | TestRunning
 
 
 type alias Model =
@@ -78,11 +100,15 @@ type InternalMsg
     = Placeholder
 
 
+type alias StateModel =
+    ()
+
+
 view : Shared.Model -> Model -> View Msg
 view shared model =
     let
         state =
-            getState shared model
+            getState shared model.trainerState
 
         pageSubtitle =
             Nothing
@@ -94,22 +120,51 @@ subscriptions : Shared.Model -> Model -> Sub Msg
 subscriptions shared model =
     let
         state =
-            getState shared model
+            getState shared model.trainerState
     in
     state.subscriptions
 
 
 getState :
     Shared.Model
-    -> Model
-    ->
-        { view : StatefulPage.StateView Msg
-        , subscriptions : Sub Msg
-        }
-getState shared model =
-    case model.trainerState of
+    -> TrainerState
+    -> State StateModel
+getState shared trainerState =
+    case trainerState of
         StartPage ->
-            PLLTrainer.States.StartPage.state shared { startTest = Transition GetReadyForTest, noOp = NoOp }
+            let
+                state =
+                    PLLTrainer.States.StartPage.state
+                        shared
+                        { startTest = Transition GetReadyForTest
+                        , noOp = NoOp
+                        }
+            in
+            { init = ( (), Cmd.none )
+            , view = state.view
+            , subscriptions = state.subscriptions
+            }
 
         GetReadyScreen ->
-            { view = PLLTrainer.States.GetReadyScreen.state shared, subscriptions = Sub.none }
+            { init =
+                ( ()
+                , Task.perform
+                    (always <| Transition StartTest)
+                    (Process.sleep 1000)
+                )
+            , view = PLLTrainer.States.GetReadyScreen.state shared
+            , subscriptions = Sub.none
+            }
+
+        TestRunning ->
+            { init = ( (), Cmd.none )
+            , view = PLLTrainer.States.TestRunning.state shared
+            , subscriptions = Sub.none
+            }
+
+
+type alias State model =
+    { init : ( model, Cmd Msg )
+    , view : StatefulPage.StateView Msg
+    , subscriptions : Sub Msg
+    }
