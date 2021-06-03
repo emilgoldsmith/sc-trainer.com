@@ -11,8 +11,11 @@ import Element.Region as Region
 import Gen.Params.Home_ exposing (Params)
 import Html.Events
 import Json.Decode
+import Key
 import List.Nonempty
 import PLL exposing (PLL)
+import PLLTrainer.ButtonWithShortcut as ButtonWithShortcut
+import PLLTrainer.Main
 import Page
 import Ports
 import Process
@@ -30,21 +33,24 @@ import ViewportSize exposing (ViewportSize)
 import WebResource
 
 
-page : Shared.Model -> Request.With Params -> Page.With Model Msg
+page : Shared.Model -> Request.With Params -> Page.With PLLTrainer.Main.Model PLLTrainer.Main.Msg
 page shared _ =
-    Page.element
-        { init = init
-        , update = update
-        , view = view shared.palette shared.hardwareAvailable shared.viewportSize
-        , subscriptions = subscriptions
-        }
+    PLLTrainer.Main.page shared
+
+
+type alias Msg =
+    PLLTrainer.Main.Msg
+
+
+type alias Model =
+    PLLTrainer.Main.Model
 
 
 
 -- INIT
 
 
-type alias Model =
+type alias Model2 =
     { trainerState : TrainerState
     , expectedCube : Cube
     }
@@ -85,7 +91,7 @@ generateTestCase =
         (List.Nonempty.sample Algorithm.aufs)
 
 
-init : ( Model, Cmd msg )
+init : ( Model2, Cmd msg )
 init =
     { trainerState = StartPage
     , expectedCube = Cube.solved
@@ -97,7 +103,7 @@ init =
 -- UPDATE
 
 
-type Msg
+type Msg2
     = BetweenTestsMessage BetweenTestsMsg
     | GetReadyMessage GetReadyMsg
     | TestRunningMessage TestRunningMsg
@@ -141,7 +147,7 @@ type EvaluateResultMsg
     | DoNothingEvaluateResult
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
+update : Msg2 -> Model2 -> ( Model2, Cmd Msg2 )
 update messageCategory model =
     case ( messageCategory, model.trainerState ) of
         ( BetweenTestsMessage msg, StartPage ) ->
@@ -285,7 +291,7 @@ update messageCategory model =
             )
 
 
-updateBetweenTests : Model -> BetweenTestsMsg -> ( Model, Cmd Msg )
+updateBetweenTests : Model2 -> BetweenTestsMsg -> ( Model2, Cmd Msg2 )
 updateBetweenTests model msg =
     case msg of
         StartTestGetReady ->
@@ -301,7 +307,7 @@ updateBetweenTests model msg =
 -- SUBSCRIPTIONS
 
 
-subscriptions : Model -> Sub Msg
+subscriptions : Model2 -> Sub Msg2
 subscriptions model =
     let
         betweenTestsSubscriptions =
@@ -309,13 +315,13 @@ subscriptions model =
                 Browser.Events.onKeyUp <|
                     Json.Decode.map
                         (\key ->
-                            if key == Space then
+                            if key == Key.Space then
                                 StartTestGetReady
 
                             else
                                 DoNothingBetweenTests
                         )
-                        decodeNonRepeatedKeyEvent
+                        Key.decodeNonRepeatedKeyEvent
     in
     case model.trainerState of
         StartPage ->
@@ -333,19 +339,19 @@ subscriptions model =
                     Json.Decode.map
                         (\key ->
                             case key of
-                                One ->
+                                Key.One ->
                                     NoMoveWasApplied
 
-                                Two ->
+                                Key.Two ->
                                     ExpectedStateWasReached
 
-                                Three ->
+                                Key.Three ->
                                     CubeStateIsUnrecoverable
 
                                 _ ->
                                     DoNothingTypeOfWrong
                         )
-                        decodeNonRepeatedKeyEvent
+                        Key.decodeNonRepeatedKeyEvent
 
         GetReadyScreen ->
             Sub.none
@@ -356,7 +362,7 @@ subscriptions model =
                     [ Browser.Events.onKeyDown <|
                         Json.Decode.map
                             (always <| EndTest Nothing)
-                            decodeNonRepeatedKeyEvent
+                            Key.decodeNonRepeatedKeyEvent
                     , Browser.Events.onMouseDown <|
                         Json.Decode.succeed <|
                             EndTest Nothing
@@ -374,28 +380,28 @@ subscriptions model =
                             Json.Decode.map
                                 (\key ->
                                     case key of
-                                        Space ->
+                                        Key.Space ->
                                             SpaceStarted
 
-                                        W ->
+                                        Key.W ->
                                             WStarted
 
                                         _ ->
                                             DoNothingEvaluateResult
                                 )
-                                decodeNonRepeatedKeyEvent
+                                Key.decodeNonRepeatedKeyEvent
                         , Browser.Events.onKeyUp <|
                             Json.Decode.map
                                 (\key ->
                                     case key of
-                                        Space ->
+                                        Key.Space ->
                                             if spacePressStarted then
                                                 EvaluateCorrect
 
                                             else
                                                 DoNothingEvaluateResult
 
-                                        W ->
+                                        Key.W ->
                                             if wPressStarted then
                                                 EvaluateWrong
 
@@ -405,74 +411,11 @@ subscriptions model =
                                         _ ->
                                             DoNothingEvaluateResult
                                 )
-                                decodeNonRepeatedKeyEvent
+                                Key.decodeNonRepeatedKeyEvent
                         ]
 
 
-type Key
-    = Space
-    | W
-    | One
-    | Two
-    | Three
-    | OtherKey String
-
-
-decodeNonRepeatedKeyEvent : Json.Decode.Decoder Key
-decodeNonRepeatedKeyEvent =
-    let
-        fields =
-            Json.Decode.map2 Tuple.pair decodeKey decodeKeyRepeat
-    in
-    fields
-        |> Json.Decode.andThen
-            (\( key, isRepeated ) ->
-                if isRepeated == True then
-                    Json.Decode.fail "Was a repeated key press"
-
-                else
-                    Json.Decode.succeed key
-            )
-
-
-{-| Heavily inspired by <https://github.com/elm/browser/blob/1.0.2/notes/keyboard.md>
--}
-decodeKey : Json.Decode.Decoder Key
-decodeKey =
-    Json.Decode.map toKey (Json.Decode.field "key" Json.Decode.string)
-
-
-decodeKeyRepeat : Json.Decode.Decoder Bool
-decodeKeyRepeat =
-    Json.Decode.field "repeat" Json.Decode.bool
-
-
-toKey : String -> Key
-toKey keyString =
-    case keyString of
-        " " ->
-            Space
-
-        "w" ->
-            W
-
-        "W" ->
-            W
-
-        "1" ->
-            One
-
-        "2" ->
-            Two
-
-        "3" ->
-            Three
-
-        _ ->
-            OtherKey keyString
-
-
-topLevelEventListeners : Model -> View.TopLevelEventListeners Msg
+topLevelEventListeners : Model2 -> View.TopLevelEventListeners Msg2
 topLevelEventListeners model =
     View.buildTopLevelEventListeners <|
         case model.trainerState of
@@ -508,7 +451,7 @@ topLevelEventListeners model =
 -- VIEW
 
 
-view : UI.Palette -> Shared.HardwareAvailable -> ViewportSize -> Model -> View Msg
+view : UI.Palette -> Shared.HardwareAvailable -> ViewportSize -> Model2 -> View Msg2
 view palette hardwareAvailable viewportSize model =
     let
         shouldDisplayFeedbackButton =
@@ -548,7 +491,7 @@ view palette hardwareAvailable viewportSize model =
     }
 
 
-viewFullScreen : UI.Palette -> Shared.HardwareAvailable -> ViewportSize -> Model -> Element Msg
+viewFullScreen : UI.Palette -> Shared.HardwareAvailable -> ViewportSize -> Model2 -> Element Msg2
 viewFullScreen palette hardwareAvailable viewportSize model =
     case model.trainerState of
         StartPage ->
@@ -604,7 +547,7 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                             ]
                           <|
                             ViewCube.uFRWithLetters [] 200 model.expectedCube
-                        , buttonWithShortcut
+                        , ButtonWithShortcut.view
                             hardwareAvailable
                             [ testid "start-button"
                             , centerX
@@ -612,7 +555,7 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                             { onPress = Just StartTestGetReady
                             , labelText = "Start"
                             , color = palette.primary
-                            , keyboardShortcut = Space
+                            , keyboardShortcut = Key.Space
                             }
                             UI.viewButton.large
                         , UI.viewDivider palette
@@ -751,7 +694,7 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         , ViewCube.uBLWithLetters [ htmlTestid "expected-cube-back" ] cubeSize model.expectedCube
                         ]
                     , row [ centerX, spacing buttonSpacing ]
-                        [ buttonWithShortcut
+                        [ ButtonWithShortcut.view
                             hardwareAvailable
                             [ testid "correct-button"
                             ]
@@ -763,10 +706,10 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                                     Just EvaluateCorrect
                             , labelText = "Correct"
                             , color = palette.correct
-                            , keyboardShortcut = Space
+                            , keyboardShortcut = Key.Space
                             }
                             button
-                        , buttonWithShortcut
+                        , ButtonWithShortcut.view
                             hardwareAvailable
                             [ testid "wrong-button"
                             ]
@@ -777,7 +720,7 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                                 else
                                     Just EvaluateWrong
                             , labelText = "Wrong"
-                            , keyboardShortcut = W
+                            , keyboardShortcut = Key.W
                             , color = palette.wrong
                             }
                             button
@@ -804,14 +747,14 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         ]
                       <|
                         text "Continue When Ready"
-                    , buttonWithShortcut
+                    , ButtonWithShortcut.view
                         hardwareAvailable
                         [ testid "next-button"
                         , centerX
                         ]
                         { onPress = Just StartTestGetReady
                         , labelText = "Next"
-                        , keyboardShortcut = Space
+                        , keyboardShortcut = Key.Space
                         , color = palette.primary
                         }
                         (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 20)
@@ -861,10 +804,10 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                             cubeSize
                             noMovesCube
                         ]
-                    , smallButtonWithShortcut
+                    , ButtonWithShortcut.viewSmall
                         hardwareAvailable
                         [ testid "no-move-button", centerX ]
-                        { onPress = Just NoMoveWasApplied, color = palette.primary, labelText = "No Moves Applied", keyboardShortcut = One }
+                        { onPress = Just NoMoveWasApplied, color = palette.primary, labelText = "No Moves Applied", keyboardShortcut = Key.One }
                         (UI.viewButton.customSize buttonSize)
                     , paragraph [ testid "nearly-there-explanation", centerX, Font.center ]
                         [ text "2. I can get to the expected state. I for example just got the AUF wrong"
@@ -879,20 +822,20 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                             cubeSize
                             nearlyThereCube
                         ]
-                    , smallButtonWithShortcut
+                    , ButtonWithShortcut.viewSmall
                         hardwareAvailable
                         [ testid "nearly-there-button", centerX ]
-                        { onPress = Just ExpectedStateWasReached, color = palette.primary, labelText = "Cube Is As Expected", keyboardShortcut = Two }
+                        { onPress = Just ExpectedStateWasReached, color = palette.primary, labelText = "Cube Is As Expected", keyboardShortcut = Key.Two }
                         (UI.viewButton.customSize buttonSize)
                     , paragraph [ testid "unrecoverable-explanation", centerX, Font.center ]
                         [ text "3. I can't get to either of the above states, so I will just solve it to reset it" ]
-                    , smallButtonWithShortcut
+                    , ButtonWithShortcut.viewSmall
                         hardwareAvailable
                         [ testid "unrecoverable-button", centerX ]
                         { onPress = Just CubeStateIsUnrecoverable
                         , color = palette.primary
                         , labelText = "Reset To Solved"
-                        , keyboardShortcut = Three
+                        , keyboardShortcut = Key.Three
                         }
                         (UI.viewButton.customSize buttonSize)
                     ]
@@ -941,14 +884,14 @@ viewFullScreen palette hardwareAvailable viewportSize model =
                         [ ViewCube.uFRWithLetters [ htmlTestid "expected-cube-state-front" ] (ViewportSize.minDimension viewportSize // 4) model.expectedCube
                         , ViewCube.uBLWithLetters [ htmlTestid "expected-cube-state-back" ] (ViewportSize.minDimension viewportSize // 4) model.expectedCube
                         ]
-                    , buttonWithShortcut
+                    , ButtonWithShortcut.view
                         hardwareAvailable
                         [ testid "next-button"
                         , centerX
                         ]
                         { onPress = Just StartTestGetReady
                         , labelText = "Next"
-                        , keyboardShortcut = Space
+                        , keyboardShortcut = Key.Space
                         , color = palette.primary
                         }
                         (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 20)
@@ -958,114 +901,6 @@ viewFullScreen palette hardwareAvailable viewportSize model =
 pllToString : PLL -> String
 pllToString pll =
     PLL.getLetters pll ++ "-perm"
-
-
-buttonWithShortcut : Shared.HardwareAvailable -> List (Attribute msg) -> { onPress : Maybe msg, labelText : String, color : Color, keyboardShortcut : Key } -> UI.Button msg -> Element msg
-buttonWithShortcut hardwareAvailable attributes { onPress, labelText, keyboardShortcut, color } button =
-    let
-        keyString =
-            case keyboardShortcut of
-                W ->
-                    "W"
-
-                Space ->
-                    "Space"
-
-                One ->
-                    "1"
-
-                Two ->
-                    "2"
-
-                Three ->
-                    "3"
-
-                OtherKey keyStr ->
-                    keyStr
-
-        shortcutText =
-            text <| "(" ++ keyString ++ ")"
-
-        withShortcutLabel =
-            button attributes
-                { onPress = onPress
-                , color = color
-                , label =
-                    \fontSize ->
-                        column [ centerX ]
-                            [ el [ centerX, Font.size fontSize ] <| text labelText
-                            , el [ centerX, Font.size (fontSize // 2) ] shortcutText
-                            ]
-                }
-
-        withoutShortcutLabel =
-            button attributes
-                { onPress = onPress
-                , color = color
-                , label =
-                    \fontSize ->
-                        el [ centerX, Font.size fontSize ] <| text labelText
-                }
-    in
-    if hardwareAvailable.keyboard then
-        withShortcutLabel
-
-    else
-        withoutShortcutLabel
-
-
-smallButtonWithShortcut : Shared.HardwareAvailable -> List (Attribute msg) -> { onPress : Maybe msg, labelText : String, color : Color, keyboardShortcut : Key } -> UI.Button msg -> Element msg
-smallButtonWithShortcut hardwareAvailable attributes { onPress, labelText, keyboardShortcut, color } button =
-    let
-        keyString =
-            case keyboardShortcut of
-                W ->
-                    "W"
-
-                Space ->
-                    "Space"
-
-                One ->
-                    "1"
-
-                Two ->
-                    "2"
-
-                Three ->
-                    "3"
-
-                OtherKey keyStr ->
-                    keyStr
-
-        shortcutText =
-            text <| "(" ++ keyString ++ ")"
-
-        withShortcutLabel =
-            button attributes
-                { onPress = onPress
-                , color = color
-                , label =
-                    \fontSize ->
-                        column [ centerX, spacing 3 ]
-                            [ el [ centerX, Font.size fontSize ] <| text labelText
-                            , el [ centerX, Font.size (fontSize * 3 // 4) ] shortcutText
-                            ]
-                }
-
-        withoutShortcutLabel =
-            button attributes
-                { onPress = onPress
-                , color = color
-                , label =
-                    \fontSize ->
-                        el [ centerX, Font.size fontSize ] <| text labelText
-                }
-    in
-    if hardwareAvailable.keyboard then
-        withShortcutLabel
-
-    else
-        withoutShortcutLabel
 
 
 overlayFeedbackButton : ViewportSize -> Attribute msg
