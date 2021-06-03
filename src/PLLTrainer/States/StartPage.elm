@@ -1,6 +1,7 @@
 module PLLTrainer.States.StartPage exposing (Transitions, state)
 
 import Browser.Events
+import Css exposing (testid)
 import Cube
 import Element exposing (..)
 import Element.Font as Font
@@ -11,7 +12,6 @@ import PLLTrainer.ButtonWithShortcut
 import Shared
 import StatefulPage
 import UI
-import Utils.Css exposing (testid)
 import View
 import ViewCube
 import ViewportSize exposing (ViewportSize)

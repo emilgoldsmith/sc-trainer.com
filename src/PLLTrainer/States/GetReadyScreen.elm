@@ -1,11 +1,11 @@
 module PLLTrainer.States.GetReadyScreen exposing (state)
 
+import Css exposing (testid)
 import Element exposing (..)
 import Element.Font as Font
 import Shared
 import StatefulPage
 import UI
-import Utils.Css exposing (testid)
 import View
 import ViewportSize exposing (ViewportSize)
 

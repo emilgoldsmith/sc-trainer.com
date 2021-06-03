@@ -1,4 +1,4 @@
-module Utils.Css exposing (htmlTestid, testid)
+module Css exposing (htmlTestid, testid)
 
 import Element exposing (..)
 import Html

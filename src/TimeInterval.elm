@@ -1,4 +1,4 @@
-module Utils.TimeInterval exposing (TimeInterval, betweenTimestamps, displayOneDecimal, displayTwoDecimals, increment, zero)
+module TimeInterval exposing (TimeInterval, betweenTimestamps, displayOneDecimal, displayTwoDecimals, increment, zero)
 
 import Time
 

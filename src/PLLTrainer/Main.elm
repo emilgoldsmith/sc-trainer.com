@@ -44,33 +44,25 @@ init =
 
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
 update shared msg model =
-    let
-        state =
-            getState shared model.trainerState
-    in
     case msg of
         NoOp ->
             ( model, Cmd.none )
 
         Transition transition ->
-            doTransition shared model transition
-
-
-doTransition : Shared.Model -> Model -> Transition -> ( Model, Cmd Msg )
-doTransition shared model transition =
-    let
-        nextTrainerState =
             case transition of
                 GetReadyForTest ->
-                    GetReadyScreen
+                    let
+                        ( _, stateCmd ) =
+                            (states shared).getReadyScreen.init
+                    in
+                    ( { model | trainerState = GetReadyScreen }, stateCmd )
 
                 StartTest ->
-                    TestRunning
-
-        nextState =
-            getState shared nextTrainerState
-    in
-    ( { model | trainerState = nextTrainerState }, Tuple.second nextState.init )
+                    let
+                        ( stateModel, stateCmd ) =
+                            (states shared).testRunning.init
+                    in
+                    ( { model | trainerState = TestRunning stateModel }, stateCmd )
 
 
 type Transition
@@ -81,7 +73,7 @@ type Transition
 type TrainerState
     = StartPage
     | GetReadyScreen
-    | TestRunning
+    | TestRunning PLLTrainer.States.TestRunning.Model
 
 
 type alias Model =
@@ -100,71 +92,84 @@ type InternalMsg
     = Placeholder
 
 
-type alias StateModel =
-    ()
-
-
 view : Shared.Model -> Model -> View Msg
 view shared model =
     let
-        state =
-            getState shared model.trainerState
+        stateView =
+            case model.trainerState of
+                StartPage ->
+                    (states shared).startPage.view ()
+
+                GetReadyScreen ->
+                    (states shared).getReadyScreen.view ()
+
+                TestRunning stateModel ->
+                    (states shared).testRunning.view stateModel
 
         pageSubtitle =
             Nothing
     in
-    StatefulPage.toView pageSubtitle state.view
+    StatefulPage.toView pageSubtitle stateView
 
 
 subscriptions : Shared.Model -> Model -> Sub Msg
 subscriptions shared model =
-    let
-        state =
-            getState shared model.trainerState
-    in
-    state.subscriptions
-
-
-getState :
-    Shared.Model
-    -> TrainerState
-    -> State StateModel
-getState shared trainerState =
-    case trainerState of
+    case model.trainerState of
         StartPage ->
-            let
-                state =
-                    PLLTrainer.States.StartPage.state
-                        shared
-                        { startTest = Transition GetReadyForTest
-                        , noOp = NoOp
-                        }
-            in
-            { init = ( (), Cmd.none )
-            , view = state.view
-            , subscriptions = state.subscriptions
-            }
+            (states shared).startPage.subscriptions
 
         GetReadyScreen ->
-            { init =
-                ( ()
-                , Task.perform
-                    (always <| Transition StartTest)
-                    (Process.sleep 1000)
-                )
-            , view = PLLTrainer.States.GetReadyScreen.state shared
-            , subscriptions = Sub.none
-            }
+            (states shared).getReadyScreen.subscriptions
 
-        TestRunning ->
-            { init = ( (), Cmd.none )
-            , view = PLLTrainer.States.TestRunning.state shared
-            , subscriptions = Sub.none
-            }
+        TestRunning _ ->
+            (states shared).testRunning.subscriptions
+
+
+states :
+    Shared.Model
+    ->
+        { startPage : State ()
+        , getReadyScreen : State ()
+        , testRunning : State PLLTrainer.States.TestRunning.Model
+        }
+states shared =
+    { startPage =
+        let
+            state =
+                PLLTrainer.States.StartPage.state
+                    shared
+                    { startTest = Transition GetReadyForTest
+                    , noOp = NoOp
+                    }
+        in
+        { init = ( (), Cmd.none )
+        , view = always <| state.view
+        , subscriptions = state.subscriptions
+        }
+    , getReadyScreen =
+        { init =
+            ( ()
+            , Task.perform
+                (always <| Transition StartTest)
+                (Process.sleep 1000)
+            )
+        , view = always <| PLLTrainer.States.GetReadyScreen.state shared
+        , subscriptions = Sub.none
+        }
+    , testRunning =
+        let
+            state =
+                PLLTrainer.States.TestRunning.state shared (Tuple.first init).currentTestCase
+        in
+        { init = ( state.init, Cmd.none )
+        , view = state.view
+        , subscriptions = Sub.none
+        }
+    }
 
 
 type alias State model =
     { init : ( model, Cmd Msg )
-    , view : StatefulPage.StateView Msg
+    , view : model -> StatefulPage.StateView Msg
     , subscriptions : Sub Msg
     }

@@ -1,9 +1,9 @@
 module ViewCube exposing (uBLWithLetters, uFRNoLetters, uFRWithLetters)
 
+import Css exposing (htmlTestid)
 import Cube
 import Element
 import Html
-import Utils.Css exposing (htmlTestid)
 
 
 uBLWithLetters : List (Html.Attribute msg) -> Int -> Cube.Cube -> Element.Element msg
