@@ -25,13 +25,13 @@ state { viewportSize, palette, hardwareAvailable } transitions =
     }
 
 
-type alias Transitions transition =
-    { startTest : transition
-    , noOp : transition
+type alias Transitions msg =
+    { startTest : msg
+    , noOp : msg
     }
 
 
-subscriptions : Transitions transition -> Sub transition
+subscriptions : Transitions msg -> Sub msg
 subscriptions transitions =
     Browser.Events.onKeyUp <|
         Json.Decode.map
