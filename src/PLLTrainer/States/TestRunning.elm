@@ -6,6 +6,7 @@ import Css exposing (htmlTestid, testid)
 import Cube
 import Element exposing (..)
 import Element.Font as Font
+import Html.Events
 import Json.Decode
 import Key
 import PLLTrainer.TestCase exposing (TestCase)
@@ -30,7 +31,7 @@ state :
         }
 state { viewportSize } testCase toMsg transitions =
     { init = init
-    , view = view viewportSize testCase
+    , view = view viewportSize testCase transitions
     , update = update toMsg
     , subscriptions = subscriptions toMsg transitions
     }
@@ -74,9 +75,17 @@ subscriptions toMsg transitions =
         ]
 
 
-view : ViewportSize -> TestCase -> Model -> StatefulPage.StateView msg
-view viewportSize testCase model =
-    { topLevelEventListeners = View.buildTopLevelEventListeners []
+topLevelEventListeners : Transitions msg -> List (Attribute msg)
+topLevelEventListeners transitions =
+    [ htmlAttribute <|
+        Html.Events.on "touchstart" <|
+            Json.Decode.succeed transitions.endTest
+    ]
+
+
+view : ViewportSize -> TestCase -> Transitions msg -> Model -> StatefulPage.StateView msg
+view viewportSize testCase transitions model =
+    { topLevelEventListeners = View.buildTopLevelEventListeners (topLevelEventListeners transitions)
     , overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
