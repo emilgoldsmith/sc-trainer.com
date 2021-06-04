@@ -1,4 +1,4 @@
-module PLLTrainer.States.EvaluateResult exposing (Transitions, state)
+module PLLTrainer.States.EvaluateResult exposing (Arguments, Transitions, state)
 
 import Browser.Events
 import Css exposing (htmlTestid, testid)
