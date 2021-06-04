@@ -3,6 +3,7 @@ module PLLTrainer.Main exposing (Model, Msg, page)
 import Algorithm
 import Cube exposing (Cube)
 import PLL
+import PLLTrainer.States.EvaluateResult
 import PLLTrainer.States.GetReadyScreen
 import PLLTrainer.States.StartPage
 import PLLTrainer.States.TestRunning
@@ -15,6 +16,7 @@ import Shared
 import StatefulPage
 import Task
 import Time
+import TimeInterval
 import View exposing (View)
 
 
@@ -67,6 +69,9 @@ update shared msg model =
                         PLLTrainer.TestCase.generate
                     )
 
+                EndTest ->
+                    ( { model | trainerState = EvaluateResult }, Cmd.none )
+
         InternalMsg internalMsg ->
             case internalMsg of
                 GenerateStartTestData (TestCaseGenerated testCase) ->
@@ -104,12 +109,14 @@ update shared msg model =
 type TransitionMsg
     = GetReadyForTest
     | StartTest
+    | EndTest
 
 
 type TrainerState
     = StartPage
     | GetReadyScreen
     | TestRunning PLLTrainer.States.TestRunning.Model Time.Posix
+    | EvaluateResult
 
 
 type alias Model =
@@ -157,6 +164,9 @@ view shared model =
                 TestRunning stateModel _ ->
                     (states shared model).testRunning.view stateModel
 
+                EvaluateResult ->
+                    (states shared model).evaluateResult.view ()
+
         pageSubtitle =
             Nothing
     in
@@ -175,6 +185,9 @@ subscriptions shared model =
         TestRunning _ _ ->
             (states shared model).testRunning.subscriptions
 
+        EvaluateResult ->
+            (states shared model).evaluateResult.subscriptions
+
 
 states :
     Shared.Model
@@ -183,6 +196,7 @@ states :
         { startPage : State () ()
         , getReadyScreen : State () ()
         , testRunning : State PLLTrainer.States.TestRunning.Msg PLLTrainer.States.TestRunning.Model
+        , evaluateResult : State () ()
         }
 states shared model =
     { startPage =
@@ -217,11 +231,31 @@ states shared model =
                     shared
                     model.currentTestCase
                     (StateMsg << TestRunningMsg)
+                    { endTest = TransitionMsg EndTest }
         in
         { init = ( state.init, Cmd.none )
         , view = state.view
         , subscriptions = state.subscriptions
         , update = \msg myModel -> Tuple.pair (state.update msg myModel) Cmd.none
+        }
+    , evaluateResult =
+        let
+            state =
+                PLLTrainer.States.EvaluateResult.state
+                    shared
+                    { evaluateCorrect = NoOp
+                    , evaluateWrong = NoOp
+                    , noOp = NoOp
+                    }
+                    { expectedCubeState = model.expectedCubeState
+                    , result = TimeInterval.zero
+                    , transitionsDisabled = False
+                    }
+        in
+        { init = ( (), Cmd.none )
+        , view = always <| state.view
+        , subscriptions = state.subscriptions
+        , update = \_ _ -> ( (), Cmd.none )
         }
     }
 

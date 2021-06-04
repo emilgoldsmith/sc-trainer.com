@@ -7,6 +7,7 @@ import Cube
 import Element exposing (..)
 import Element.Font as Font
 import Json.Decode
+import Key
 import PLLTrainer.TestCase exposing (TestCase)
 import Shared
 import StatefulPage
@@ -20,22 +21,28 @@ state :
     Shared.Model
     -> TestCase
     -> (Msg -> msg)
+    -> Transitions msg
     ->
         { init : Model
         , view : Model -> StatefulPage.StateView msg
         , update : Msg -> Model -> Model
         , subscriptions : Sub msg
         }
-state { viewportSize } testCase toMsg =
+state { viewportSize } testCase toMsg transitions =
     { init = init
     , view = view viewportSize testCase
     , update = update toMsg
-    , subscriptions = subscriptions toMsg
+    , subscriptions = subscriptions toMsg transitions
     }
 
 
 type alias Model =
     { elapsedTime : TimeInterval }
+
+
+type alias Transitions msg =
+    { endTest : msg
+    }
 
 
 type Msg
@@ -54,9 +61,17 @@ update toMsg msg model =
             { model | elapsedTime = TimeInterval.increment timeDelta model.elapsedTime }
 
 
-subscriptions : (Msg -> msg) -> Sub msg
-subscriptions toMsg =
-    Browser.Events.onAnimationFrameDelta (toMsg << MillisecondsPassed)
+subscriptions : (Msg -> msg) -> Transitions msg -> Sub msg
+subscriptions toMsg transitions =
+    Sub.batch
+        [ Browser.Events.onKeyDown <|
+            Json.Decode.map
+                (always transitions.endTest)
+                Key.decodeNonRepeatedKeyEvent
+        , Browser.Events.onMouseDown <|
+            Json.Decode.succeed transitions.endTest
+        , Browser.Events.onAnimationFrameDelta (toMsg << MillisecondsPassed)
+        ]
 
 
 view : ViewportSize -> TestCase -> Model -> StatefulPage.StateView msg
