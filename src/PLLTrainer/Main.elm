@@ -62,35 +62,21 @@ update shared msg model =
                     in
                     ( { model | trainerState = GetReadyScreen }, stateCmd )
 
-                StartTest ->
+                StartTest NothingGenerated ->
                     ( model
                     , Random.generate
-                        (InternalMsg << GenerateStartTestData << TestCaseGenerated)
+                        (TransitionMsg << StartTest << TestCaseGenerated)
                         PLLTrainer.TestCase.generate
                     )
 
-                EndTest _ ->
-                    ( { model
-                        | trainerState =
-                            EvaluateResult
-                                { expectedCubeState = model.expectedCubeState
-                                , result = TimeInterval.zero
-                                , transitionsDisabled = False
-                                }
-                      }
-                    , Cmd.none
-                    )
-
-        InternalMsg internalMsg ->
-            case internalMsg of
-                GenerateStartTestData (TestCaseGenerated testCase) ->
+                StartTest (TestCaseGenerated testCase) ->
                     ( model
                     , Task.perform
-                        (InternalMsg << GenerateStartTestData << EverythingGenerated testCase)
+                        (TransitionMsg << StartTest << EverythingGenerated testCase)
                         Time.now
                     )
 
-                GenerateStartTestData (EverythingGenerated testCase startTime) ->
+                StartTest (EverythingGenerated testCase startTime) ->
                     let
                         arguments =
                             { startTime = startTime }
@@ -103,6 +89,18 @@ update shared msg model =
                         , currentTestCase = testCase
                       }
                     , stateCmd
+                    )
+
+                EndTest _ ->
+                    ( { model
+                        | trainerState =
+                            EvaluateResult
+                                { expectedCubeState = model.expectedCubeState
+                                , result = TimeInterval.zero
+                                , transitionsDisabled = False
+                                }
+                      }
+                    , Cmd.none
                     )
 
         StateMsg typeOfLocalMsg ->
@@ -120,7 +118,7 @@ update shared msg model =
 
 type TransitionMsg
     = GetReadyForTest
-    | StartTest
+    | StartTest StartTestData
     | EndTest { startTime : Time.Posix }
 
 
@@ -141,7 +139,6 @@ type alias Model =
 type Msg
     = TransitionMsg TransitionMsg
     | StateMsg StateMsg
-    | InternalMsg InternalMsg
     | NoOp
 
 
@@ -149,16 +146,13 @@ type StateMsg
     = TestRunningMsg PLLTrainer.States.TestRunning.Msg
 
 
-type InternalMsg
-    = GenerateStartTestData StartTestData
-
-
 {-| We use this structure to make sure the test case
 is generated before the start time, so we can ensure
 we don't record the start time until the very last moment
 -}
 type StartTestData
-    = TestCaseGenerated TestCase
+    = NothingGenerated
+    | TestCaseGenerated TestCase
     | EverythingGenerated TestCase Time.Posix
 
 
@@ -231,7 +225,7 @@ states shared model =
             { init =
                 ( ()
                 , Task.perform
-                    (always <| TransitionMsg StartTest)
+                    (always <| TransitionMsg (StartTest NothingGenerated))
                     (Process.sleep 1000)
                 )
             , view = always <| PLLTrainer.States.GetReadyScreen.state shared
