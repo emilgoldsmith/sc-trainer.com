@@ -58,7 +58,7 @@ update shared msg model =
                 GetReadyForTest ->
                     let
                         ( _, stateCmd ) =
-                            (states shared model).getReadyScreen.init
+                            ((states shared model).getReadyScreen ()).init
                     in
                     ( { model | trainerState = GetReadyScreen }, stateCmd )
 
@@ -69,8 +69,17 @@ update shared msg model =
                         PLLTrainer.TestCase.generate
                     )
 
-                EndTest ->
-                    ( { model | trainerState = EvaluateResult }, Cmd.none )
+                EndTest _ ->
+                    ( { model
+                        | trainerState =
+                            EvaluateResult
+                                { expectedCubeState = model.expectedCubeState
+                                , result = TimeInterval.zero
+                                , transitionsDisabled = False
+                                }
+                      }
+                    , Cmd.none
+                    )
 
         InternalMsg internalMsg ->
             case internalMsg of
@@ -83,11 +92,14 @@ update shared msg model =
 
                 GenerateStartTestData (EverythingGenerated testCase startTime) ->
                     let
+                        arguments =
+                            { startTime = startTime }
+
                         ( stateModel, stateCmd ) =
-                            (states shared model).testRunning.init
+                            ((states shared model).testRunning arguments).init
                     in
                     ( { model
-                        | trainerState = TestRunning stateModel startTime
+                        | trainerState = TestRunning stateModel arguments
                         , currentTestCase = testCase
                       }
                     , stateCmd
@@ -95,11 +107,11 @@ update shared msg model =
 
         StateMsg typeOfLocalMsg ->
             case ( typeOfLocalMsg, model.trainerState ) of
-                ( TestRunningMsg localMsg, TestRunning localModel startTime ) ->
-                    (states shared model).testRunning.update localMsg localModel
+                ( TestRunningMsg localMsg, TestRunning localModel arguments ) ->
+                    ((states shared model).testRunning arguments).update localMsg localModel
                         |> Tuple.mapFirst
                             (\newTrainerState ->
-                                { model | trainerState = TestRunning newTrainerState startTime }
+                                { model | trainerState = TestRunning newTrainerState arguments }
                             )
 
                 _ ->
@@ -109,14 +121,14 @@ update shared msg model =
 type TransitionMsg
     = GetReadyForTest
     | StartTest
-    | EndTest
+    | EndTest { startTime : Time.Posix }
 
 
 type TrainerState
     = StartPage
     | GetReadyScreen
-    | TestRunning PLLTrainer.States.TestRunning.Model Time.Posix
-    | EvaluateResult
+    | TestRunning PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
+    | EvaluateResult PLLTrainer.States.EvaluateResult.Arguments
 
 
 type alias Model =
@@ -156,16 +168,16 @@ view shared model =
         stateView =
             case model.trainerState of
                 StartPage ->
-                    (states shared model).startPage.view ()
+                    ((states shared model).startPage ()).view ()
 
                 GetReadyScreen ->
-                    (states shared model).getReadyScreen.view ()
+                    ((states shared model).getReadyScreen ()).view ()
 
-                TestRunning stateModel _ ->
-                    (states shared model).testRunning.view stateModel
+                TestRunning stateModel arguments ->
+                    ((states shared model).testRunning arguments).view stateModel
 
-                EvaluateResult ->
-                    (states shared model).evaluateResult.view ()
+                EvaluateResult arguments ->
+                    ((states shared model).evaluateResult arguments).view ()
 
         pageSubtitle =
             Nothing
@@ -177,92 +189,95 @@ subscriptions : Shared.Model -> Model -> Sub Msg
 subscriptions shared model =
     case model.trainerState of
         StartPage ->
-            (states shared model).startPage.subscriptions
+            ((states shared model).startPage ()).subscriptions
 
         GetReadyScreen ->
-            (states shared model).getReadyScreen.subscriptions
+            ((states shared model).getReadyScreen ()).subscriptions
 
-        TestRunning _ _ ->
-            (states shared model).testRunning.subscriptions
+        TestRunning _ arguments ->
+            ((states shared model).testRunning arguments).subscriptions
 
-        EvaluateResult ->
-            (states shared model).evaluateResult.subscriptions
+        EvaluateResult arguments ->
+            ((states shared model).evaluateResult arguments).subscriptions
 
 
 states :
     Shared.Model
     -> Model
     ->
-        { startPage : State () ()
-        , getReadyScreen : State () ()
-        , testRunning : State PLLTrainer.States.TestRunning.Msg PLLTrainer.States.TestRunning.Model
-        , evaluateResult : State () ()
+        { startPage : State () () ()
+        , getReadyScreen : State () () ()
+        , testRunning : State PLLTrainer.States.TestRunning.Msg PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
+        , evaluateResult : State () () PLLTrainer.States.EvaluateResult.Arguments
         }
 states shared model =
     { startPage =
-        let
-            state =
-                PLLTrainer.States.StartPage.state
-                    shared
-                    { startTest = TransitionMsg GetReadyForTest
-                    , noOp = NoOp
-                    }
-        in
-        { init = ( (), Cmd.none )
-        , view = always <| state.view
-        , subscriptions = state.subscriptions
-        , update = \_ _ -> ( (), Cmd.none )
-        }
+        always <|
+            let
+                state =
+                    PLLTrainer.States.StartPage.state
+                        shared
+                        { startTest = TransitionMsg GetReadyForTest
+                        , noOp = NoOp
+                        }
+            in
+            { init = ( (), Cmd.none )
+            , view = always <| state.view
+            , subscriptions = state.subscriptions
+            , update = \_ _ -> ( (), Cmd.none )
+            }
     , getReadyScreen =
-        { init =
-            ( ()
-            , Task.perform
-                (always <| TransitionMsg StartTest)
-                (Process.sleep 1000)
-            )
-        , view = always <| PLLTrainer.States.GetReadyScreen.state shared
-        , subscriptions = Sub.none
-        , update = \_ _ -> ( (), Cmd.none )
-        }
+        always <|
+            { init =
+                ( ()
+                , Task.perform
+                    (always <| TransitionMsg StartTest)
+                    (Process.sleep 1000)
+                )
+            , view = always <| PLLTrainer.States.GetReadyScreen.state shared
+            , subscriptions = Sub.none
+            , update = \_ _ -> ( (), Cmd.none )
+            }
     , testRunning =
-        let
-            state =
-                PLLTrainer.States.TestRunning.state
-                    shared
-                    model.currentTestCase
-                    (StateMsg << TestRunningMsg)
-                    { endTest = TransitionMsg EndTest }
-        in
-        { init = ( state.init, Cmd.none )
-        , view = state.view
-        , subscriptions = state.subscriptions
-        , update = \msg myModel -> Tuple.pair (state.update msg myModel) Cmd.none
-        }
+        \arguments ->
+            let
+                state =
+                    PLLTrainer.States.TestRunning.state
+                        shared
+                        model.currentTestCase
+                        (StateMsg << TestRunningMsg)
+                        { endTest = TransitionMsg (EndTest arguments) }
+            in
+            { init = ( state.init, Cmd.none )
+            , view = state.view
+            , subscriptions = state.subscriptions
+            , update = \msg myModel -> Tuple.pair (state.update msg myModel) Cmd.none
+            }
     , evaluateResult =
-        let
-            state =
-                PLLTrainer.States.EvaluateResult.state
-                    shared
-                    { evaluateCorrect = NoOp
-                    , evaluateWrong = NoOp
-                    , noOp = NoOp
-                    }
-                    { expectedCubeState = model.expectedCubeState
-                    , result = TimeInterval.zero
-                    , transitionsDisabled = False
-                    }
-        in
-        { init = ( (), Cmd.none )
-        , view = always <| state.view
-        , subscriptions = state.subscriptions
-        , update = \_ _ -> ( (), Cmd.none )
+        \arguments ->
+            let
+                state =
+                    PLLTrainer.States.EvaluateResult.state
+                        shared
+                        { evaluateCorrect = NoOp
+                        , evaluateWrong = NoOp
+                        , noOp = NoOp
+                        }
+                        arguments
+            in
+            { init = ( (), Cmd.none )
+            , view = always <| state.view
+            , subscriptions = state.subscriptions
+            , update = \_ _ -> ( (), Cmd.none )
+            }
+    }
+
+
+type alias State msg model arguments =
+    arguments
+    ->
+        { init : ( model, Cmd Msg )
+        , view : model -> StatefulPage.StateView Msg
+        , subscriptions : Sub Msg
+        , update : msg -> model -> ( model, Cmd Msg )
         }
-    }
-
-
-type alias State msg model =
-    { init : ( model, Cmd Msg )
-    , view : model -> StatefulPage.StateView Msg
-    , subscriptions : Sub Msg
-    , update : msg -> model -> ( model, Cmd Msg )
-    }
