@@ -8,6 +8,7 @@ import PLLTrainer.States.StartPage
 import PLLTrainer.States.TestRunning
 import PLLTrainer.TestCase exposing (TestCase)
 import Page
+import Ports
 import Process
 import Shared
 import StatefulPage
@@ -48,7 +49,7 @@ update shared msg model =
         NoOp ->
             ( model, Cmd.none )
 
-        Transition transition ->
+        TransitionMsg transition ->
             case transition of
                 GetReadyForTest ->
                     let
@@ -64,8 +65,20 @@ update shared msg model =
                     in
                     ( { model | trainerState = TestRunning stateModel }, stateCmd )
 
+        LocalMsg typeOfLocalMsg ->
+            case ( typeOfLocalMsg, model.trainerState ) of
+                ( TestRunningMsg localMsg, TestRunning localModel ) ->
+                    (states shared).testRunning.update localMsg localModel
+                        |> Tuple.mapFirst
+                            (\newTrainerState ->
+                                { model | trainerState = TestRunning newTrainerState }
+                            )
 
-type Transition
+                _ ->
+                    ( model, Ports.logError "Unexpected" )
+
+
+type TransitionMsg
     = GetReadyForTest
     | StartTest
 
@@ -84,8 +97,13 @@ type alias Model =
 
 
 type Msg
-    = Transition Transition
+    = TransitionMsg TransitionMsg
+    | LocalMsg LocalMessage
     | NoOp
+
+
+type LocalMessage
+    = TestRunningMsg PLLTrainer.States.TestRunning.Msg
 
 
 type InternalMsg
@@ -128,9 +146,9 @@ subscriptions shared model =
 states :
     Shared.Model
     ->
-        { startPage : State ()
-        , getReadyScreen : State ()
-        , testRunning : State PLLTrainer.States.TestRunning.Model
+        { startPage : State () ()
+        , getReadyScreen : State () ()
+        , testRunning : State PLLTrainer.States.TestRunning.Msg PLLTrainer.States.TestRunning.Model
         }
 states shared =
     { startPage =
@@ -138,38 +156,45 @@ states shared =
             state =
                 PLLTrainer.States.StartPage.state
                     shared
-                    { startTest = Transition GetReadyForTest
+                    { startTest = TransitionMsg GetReadyForTest
                     , noOp = NoOp
                     }
         in
         { init = ( (), Cmd.none )
         , view = always <| state.view
         , subscriptions = state.subscriptions
+        , update = \_ _ -> ( (), Cmd.none )
         }
     , getReadyScreen =
         { init =
             ( ()
             , Task.perform
-                (always <| Transition StartTest)
+                (always <| TransitionMsg StartTest)
                 (Process.sleep 1000)
             )
         , view = always <| PLLTrainer.States.GetReadyScreen.state shared
         , subscriptions = Sub.none
+        , update = \_ _ -> ( (), Cmd.none )
         }
     , testRunning =
         let
             state =
-                PLLTrainer.States.TestRunning.state shared (Tuple.first init).currentTestCase
+                PLLTrainer.States.TestRunning.state
+                    shared
+                    (Tuple.first init).currentTestCase
+                    (LocalMsg << TestRunningMsg)
         in
         { init = ( state.init, Cmd.none )
         , view = state.view
-        , subscriptions = Sub.none
+        , subscriptions = state.subscriptions
+        , update = \msg model -> Tuple.pair (state.update msg model) Cmd.none
         }
     }
 
 
-type alias State model =
+type alias State msg model =
     { init : ( model, Cmd Msg )
     , view : model -> StatefulPage.StateView Msg
     , subscriptions : Sub Msg
+    , update : msg -> model -> ( model, Cmd Msg )
     }
