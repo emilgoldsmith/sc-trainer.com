@@ -2,7 +2,8 @@
   "checks": {
     "FunctionInLet": false,
     "ImportAll": false,
-    "MultiLineRecordFormatting": false
+    "MultiLineRecordFormatting": false,
+    "SingleFieldRecord": false
   },
   "excludedPaths": [".elm-spa"]
 }
