@@ -10,9 +10,11 @@ import PLLTrainer.TestCase exposing (TestCase)
 import Page
 import Ports
 import Process
+import Random
 import Shared
 import StatefulPage
 import Task
+import Time
 import View exposing (View)
 
 
@@ -54,24 +56,45 @@ update shared msg model =
                 GetReadyForTest ->
                     let
                         ( _, stateCmd ) =
-                            (states shared).getReadyScreen.init
+                            (states shared model).getReadyScreen.init
                     in
                     ( { model | trainerState = GetReadyScreen }, stateCmd )
 
                 StartTest ->
+                    ( model
+                    , Random.generate
+                        (InternalMsg << GenerateStartTestData << TestCaseGenerated)
+                        PLLTrainer.TestCase.generate
+                    )
+
+        InternalMsg internalMsg ->
+            case internalMsg of
+                GenerateStartTestData (TestCaseGenerated testCase) ->
+                    ( model
+                    , Task.perform
+                        (InternalMsg << GenerateStartTestData << EverythingGenerated testCase)
+                        Time.now
+                    )
+
+                GenerateStartTestData (EverythingGenerated testCase startTime) ->
                     let
                         ( stateModel, stateCmd ) =
-                            (states shared).testRunning.init
+                            (states shared model).testRunning.init
                     in
-                    ( { model | trainerState = TestRunning stateModel }, stateCmd )
+                    ( { model
+                        | trainerState = TestRunning stateModel startTime
+                        , currentTestCase = testCase
+                      }
+                    , stateCmd
+                    )
 
-        LocalMsg typeOfLocalMsg ->
+        StateMsg typeOfLocalMsg ->
             case ( typeOfLocalMsg, model.trainerState ) of
-                ( TestRunningMsg localMsg, TestRunning localModel ) ->
-                    (states shared).testRunning.update localMsg localModel
+                ( TestRunningMsg localMsg, TestRunning localModel startTime ) ->
+                    (states shared model).testRunning.update localMsg localModel
                         |> Tuple.mapFirst
                             (\newTrainerState ->
-                                { model | trainerState = TestRunning newTrainerState }
+                                { model | trainerState = TestRunning newTrainerState startTime }
                             )
 
                 _ ->
@@ -86,7 +109,7 @@ type TransitionMsg
 type TrainerState
     = StartPage
     | GetReadyScreen
-    | TestRunning PLLTrainer.States.TestRunning.Model
+    | TestRunning PLLTrainer.States.TestRunning.Model Time.Posix
 
 
 type alias Model =
@@ -98,16 +121,26 @@ type alias Model =
 
 type Msg
     = TransitionMsg TransitionMsg
-    | LocalMsg LocalMessage
+    | StateMsg StateMsg
+    | InternalMsg InternalMsg
     | NoOp
 
 
-type LocalMessage
+type StateMsg
     = TestRunningMsg PLLTrainer.States.TestRunning.Msg
 
 
 type InternalMsg
-    = Placeholder
+    = GenerateStartTestData StartTestData
+
+
+{-| We use this structure to make sure the test case
+is generated before the start time, so we can ensure
+we don't record the start time until the very last moment
+-}
+type StartTestData
+    = TestCaseGenerated TestCase
+    | EverythingGenerated TestCase Time.Posix
 
 
 view : Shared.Model -> Model -> View Msg
@@ -116,13 +149,13 @@ view shared model =
         stateView =
             case model.trainerState of
                 StartPage ->
-                    (states shared).startPage.view ()
+                    (states shared model).startPage.view ()
 
                 GetReadyScreen ->
-                    (states shared).getReadyScreen.view ()
+                    (states shared model).getReadyScreen.view ()
 
-                TestRunning stateModel ->
-                    (states shared).testRunning.view stateModel
+                TestRunning stateModel _ ->
+                    (states shared model).testRunning.view stateModel
 
         pageSubtitle =
             Nothing
@@ -134,23 +167,24 @@ subscriptions : Shared.Model -> Model -> Sub Msg
 subscriptions shared model =
     case model.trainerState of
         StartPage ->
-            (states shared).startPage.subscriptions
+            (states shared model).startPage.subscriptions
 
         GetReadyScreen ->
-            (states shared).getReadyScreen.subscriptions
+            (states shared model).getReadyScreen.subscriptions
 
-        TestRunning _ ->
-            (states shared).testRunning.subscriptions
+        TestRunning _ _ ->
+            (states shared model).testRunning.subscriptions
 
 
 states :
     Shared.Model
+    -> Model
     ->
         { startPage : State () ()
         , getReadyScreen : State () ()
         , testRunning : State PLLTrainer.States.TestRunning.Msg PLLTrainer.States.TestRunning.Model
         }
-states shared =
+states shared model =
     { startPage =
         let
             state =
@@ -181,13 +215,13 @@ states shared =
             state =
                 PLLTrainer.States.TestRunning.state
                     shared
-                    (Tuple.first init).currentTestCase
-                    (LocalMsg << TestRunningMsg)
+                    model.currentTestCase
+                    (StateMsg << TestRunningMsg)
         in
         { init = ( state.init, Cmd.none )
         , view = state.view
         , subscriptions = state.subscriptions
-        , update = \msg model -> Tuple.pair (state.update msg model) Cmd.none
+        , update = \msg myModel -> Tuple.pair (state.update msg myModel) Cmd.none
         }
     }
 
