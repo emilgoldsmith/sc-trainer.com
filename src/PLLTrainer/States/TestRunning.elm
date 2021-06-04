@@ -6,6 +6,7 @@ import Css exposing (htmlTestid, testid)
 import Cube
 import Element exposing (..)
 import Element.Font as Font
+import Json.Decode
 import PLLTrainer.TestCase exposing (TestCase)
 import Shared
 import StatefulPage
