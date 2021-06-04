@@ -91,17 +91,50 @@ update shared msg model =
                     , stateCmd
                     )
 
-                EndTest _ ->
+                EndTest arguments Nothing ->
+                    ( { model
+                        | expectedCubeState =
+                            model.expectedCubeState
+                                |> Cube.applyAlgorithm
+                                    (PLLTrainer.TestCase.toAlg model.currentTestCase)
+                      }
+                    , Task.perform (TransitionMsg << EndTest arguments << Just) Time.now
+                    )
+
+                EndTest { startTime } (Just endTime) ->
                     ( { model
                         | trainerState =
                             EvaluateResult
                                 { expectedCubeState = model.expectedCubeState
-                                , result = TimeInterval.zero
-                                , transitionsDisabled = False
+                                , result =
+                                    TimeInterval.betweenTimestamps
+                                        { start = startTime
+                                        , end = endTime
+                                        }
+
+                                -- We disable transitions to start in case people
+                                -- are button mashing to stop the test
+                                , transitionsDisabled = True
                                 }
                       }
-                    , Cmd.none
+                    , Task.perform
+                        (always <| TransitionMsg EnableEvaluateResultTransitions)
+                        -- 200 ms should be enough to prevent accidental further
+                        -- transitions based on some manual tests
+                        (Process.sleep 200)
                     )
+
+                EnableEvaluateResultTransitions ->
+                    case model.trainerState of
+                        EvaluateResult arguments ->
+                            let
+                                newTrainerState =
+                                    EvaluateResult { arguments | transitionsDisabled = False }
+                            in
+                            ( { model | trainerState = newTrainerState }, Cmd.none )
+
+                        _ ->
+                            ( model, Ports.logError "Unexpected enable evaluate result transitions outside of EvaluateResult state" )
 
         StateMsg typeOfLocalMsg ->
             case ( typeOfLocalMsg, model.trainerState ) of
@@ -119,7 +152,8 @@ update shared msg model =
 type TransitionMsg
     = GetReadyForTest
     | StartTest StartTestData
-    | EndTest { startTime : Time.Posix }
+    | EndTest { startTime : Time.Posix } (Maybe Time.Posix)
+    | EnableEvaluateResultTransitions
 
 
 type TrainerState
@@ -240,7 +274,7 @@ states shared model =
                         shared
                         model.currentTestCase
                         (StateMsg << TestRunningMsg)
-                        { endTest = TransitionMsg (EndTest arguments) }
+                        { endTest = TransitionMsg (EndTest arguments Nothing) }
             in
             { init = ( state.init, Cmd.none )
             , view = state.view
