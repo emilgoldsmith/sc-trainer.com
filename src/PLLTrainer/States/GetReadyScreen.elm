@@ -3,19 +3,26 @@ module PLLTrainer.States.GetReadyScreen exposing (state)
 import Css exposing (testid)
 import Element exposing (..)
 import Element.Font as Font
+import PLLTrainer.State
 import Shared
-import StatefulPage
 import UI
 import View
 import ViewportSize exposing (ViewportSize)
 
 
-state : Shared.Model -> StatefulPage.StateView msg
+state : Shared.Model -> PLLTrainer.State.State msg () ()
 state { viewportSize } =
-    view viewportSize
+    PLLTrainer.State.static
+        { subscriptions = Sub.none
+        , view = view viewportSize
+        }
 
 
-view : ViewportSize -> StatefulPage.StateView msg
+
+-- VIEW
+
+
+view : ViewportSize -> PLLTrainer.State.View msg
 view viewportSize =
     { topLevelEventListeners = View.buildTopLevelEventListeners []
     , overlays = View.buildOverlays []

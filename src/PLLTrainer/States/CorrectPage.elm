@@ -1,36 +1,40 @@
 module PLLTrainer.States.CorrectPage exposing (Transitions, state)
 
 import Browser.Events
-import Css exposing (htmlTestid, testid)
-import Cube exposing (Cube)
+import Css exposing (testid)
 import Element exposing (..)
 import Element.Font as Font
-import Element.Region as Region
 import FeedbackButton
 import Json.Decode
 import Key
 import PLLTrainer.ButtonWithShortcut
+import PLLTrainer.State
 import Shared
-import StatefulPage
-import TimeInterval exposing (TimeInterval)
 import UI
 import View
-import ViewCube
 import ViewportSize exposing (ViewportSize)
-import WebResource
 
 
-state : Shared.Model -> Transitions msg -> { view : StatefulPage.StateView msg, subscriptions : Sub msg }
+state : Shared.Model -> Transitions msg -> PLLTrainer.State.State msg () ()
 state { viewportSize, palette, hardwareAvailable } transitions =
-    { view = view viewportSize palette hardwareAvailable transitions
-    , subscriptions = subscriptions transitions
-    }
+    PLLTrainer.State.static
+        { view = view viewportSize palette hardwareAvailable transitions
+        , subscriptions = subscriptions transitions
+        }
+
+
+
+-- TRANSITIONS
 
 
 type alias Transitions msg =
     { startTest : msg
     , noOp : msg
     }
+
+
+
+-- SUBSCRIPTIONS
 
 
 subscriptions : Transitions msg -> Sub msg
@@ -48,7 +52,11 @@ subscriptions transitions =
             Key.decodeNonRepeatedKeyEvent
 
 
-view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> StatefulPage.StateView msg
+
+-- VIEW
+
+
+view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> PLLTrainer.State.View msg
 view viewportSize palette hardwareAvailable transitions =
     { topLevelEventListeners = View.buildTopLevelEventListeners []
     , overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]

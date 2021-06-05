@@ -6,25 +6,33 @@ import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Font as Font
-import Element.Region as Region
 import Json.Decode
 import Key
 import PLLTrainer.ButtonWithShortcut
+import PLLTrainer.State
 import PLLTrainer.TestCase exposing (TestCase)
 import Shared
-import StatefulPage
-import TimeInterval exposing (TimeInterval)
 import UI
 import View
 import ViewCube
 import ViewportSize exposing (ViewportSize)
-import WebResource
 
 
-state : Shared.Model -> Transitions msg -> Arguments -> { view : StatefulPage.StateView msg, subscriptions : Sub msg }
+state : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.State msg () ()
 state { viewportSize, palette, hardwareAvailable } transitions arguments =
-    { view = view viewportSize palette hardwareAvailable transitions arguments
-    , subscriptions = subscriptions transitions
+    PLLTrainer.State.static
+        { view = view viewportSize palette hardwareAvailable transitions arguments
+        , subscriptions = subscriptions transitions
+        }
+
+
+
+-- ARGUMENTS AND TRANSITIONS
+
+
+type alias Arguments =
+    { expectedCubeState : Cube
+    , testCase : TestCase
     }
 
 
@@ -36,10 +44,8 @@ type alias Transitions msg =
     }
 
 
-type alias Arguments =
-    { expectedCubeState : Cube
-    , testCase : TestCase
-    }
+
+-- SUBSCRIPTIONS
 
 
 subscriptions : Transitions msg -> Sub msg
@@ -63,7 +69,11 @@ subscriptions transitions =
             Key.decodeNonRepeatedKeyEvent
 
 
-view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> StatefulPage.StateView msg
+
+-- VIEW
+
+
+view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
 view viewportSize palette hardwareAvailable transitions arguments =
     { topLevelEventListeners = View.buildTopLevelEventListeners []
     , overlays = View.buildOverlays []
