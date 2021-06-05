@@ -33,6 +33,27 @@ page shared =
         }
 
 
+
+-- INIT
+
+
+type alias Model =
+    { trainerState : TrainerState
+    , expectedCubeState : Cube
+    , currentTestCase : TestCase
+    }
+
+
+type TrainerState
+    = StartPage
+    | GetReadyScreen
+    | TestRunning PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
+    | EvaluateResult PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
+    | CorrectPage
+    | TypeOfWrongPage
+    | WrongPage
+
+
 init : ( Model, Cmd Msg )
 init =
     ( { trainerState = StartPage
@@ -50,12 +71,46 @@ init =
     )
 
 
+
+-- UPDATE
+
+
+type Msg
+    = TransitionMsg TransitionMsg
+    | StateMsg StateMsg
+    | NoOp
+
+
+type TransitionMsg
+    = GetReadyForTest
+    | StartTest StartTestData
+    | EndTest { startTime : Time.Posix } (Maybe Time.Posix)
+    | EnableEvaluateResultTransitions
+    | EvaluateCorrect
+    | EvaluateWrong
+    | WrongButNoMoveApplied
+    | WrongButExpectedStateWasReached
+    | WrongAndUnrecoverable
+
+
+type StateMsg
+    = TestRunningMsg PLLTrainer.States.TestRunning.Msg
+    | EvaluateResultMsg PLLTrainer.States.EvaluateResult.Msg
+
+
+{-| We use this structure to make sure the test case
+is generated before the start time, so we can ensure
+we don't record the start time until the very last moment
+-}
+type StartTestData
+    = NothingGenerated
+    | TestCaseGenerated TestCase
+    | EverythingGenerated TestCase Time.Posix
+
+
 update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
 update shared msg model =
     case msg of
-        NoOp ->
-            ( model, Cmd.none )
-
         TransitionMsg transition ->
             case transition of
                 GetReadyForTest ->
@@ -173,157 +228,31 @@ update shared msg model =
                 WrongAndUnrecoverable ->
                     ( { model | trainerState = WrongPage, expectedCubeState = Cube.solved }, Cmd.none )
 
-        StateMsg typeOfLocalMsg ->
-            case ( typeOfLocalMsg, model.trainerState ) of
-                ( TestRunningMsg localMsg, TestRunning localModel arguments ) ->
-                    ((states shared model).testRunning arguments).update localMsg localModel
-                        |> Tuple.mapFirst
-                            (\newTrainerState ->
-                                { model | trainerState = TestRunning newTrainerState arguments }
-                            )
+        StateMsg stateMsg ->
+            handleStateMsgBoilerplate shared model stateMsg
 
-                ( EvaluateResultMsg localMsg, EvaluateResult localModel arguments ) ->
-                    ((states shared model).evaluateResult arguments).update localMsg localModel
-                        |> Tuple.mapFirst
-                            (\newTrainerState ->
-                                { model | trainerState = EvaluateResult newTrainerState arguments }
-                            )
-
-                ( localMsg, trainerState ) ->
-                    ( model
-                    , let
-                        localMsgString =
-                            case localMsg of
-                                TestRunningMsg _ ->
-                                    "TestRunningMsg"
-
-                                EvaluateResultMsg _ ->
-                                    "EvaluateResultMsg"
-
-                        trainerStateString =
-                            case trainerState of
-                                StartPage ->
-                                    "StartPage"
-
-                                GetReadyScreen ->
-                                    "GetReadyScreen"
-
-                                TestRunning _ { startTime } ->
-                                    "TestRunning: { startTime = "
-                                        ++ String.fromInt (Time.posixToMillis startTime)
-                                        ++ " }"
-
-                                EvaluateResult _ { result, transitionsDisabled } ->
-                                    "EvaluateResult: { result = "
-                                        ++ TimeInterval.toString result
-                                        ++ ", transitionsDisabled = "
-                                        ++ stringFromBool transitionsDisabled
-                                        ++ " }"
-
-                                CorrectPage ->
-                                    "CorrectPage"
-
-                                TypeOfWrongPage ->
-                                    "TypeOfWrongPage"
-
-                                WrongPage ->
-                                    "WrongPage"
-                      in
-                      Ports.logError
-                        ("Unexpected msg `"
-                            ++ localMsgString
-                            ++ "` during state `"
-                            ++ trainerStateString
-                            ++ "`"
-                        )
-                    )
+        NoOp ->
+            ( model, Cmd.none )
 
 
-stringFromBool : Bool -> String
-stringFromBool bool =
-    case bool of
-        True ->
-            "True"
 
-        False ->
-            "False"
+-- SUBSCRIPTIONS
 
 
-type TransitionMsg
-    = GetReadyForTest
-    | StartTest StartTestData
-    | EndTest { startTime : Time.Posix } (Maybe Time.Posix)
-    | EnableEvaluateResultTransitions
-    | EvaluateCorrect
-    | EvaluateWrong
-    | WrongButNoMoveApplied
-    | WrongButExpectedStateWasReached
-    | WrongAndUnrecoverable
+subscriptions : Shared.Model -> Model -> Sub Msg
+subscriptions =
+    handleStateSubscriptionsBoilerplate
 
 
-type TrainerState
-    = StartPage
-    | GetReadyScreen
-    | TestRunning PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
-    | EvaluateResult PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
-    | CorrectPage
-    | TypeOfWrongPage
-    | WrongPage
 
-
-type alias Model =
-    { trainerState : TrainerState
-    , expectedCubeState : Cube
-    , currentTestCase : TestCase
-    }
-
-
-type Msg
-    = TransitionMsg TransitionMsg
-    | StateMsg StateMsg
-    | NoOp
-
-
-type StateMsg
-    = TestRunningMsg PLLTrainer.States.TestRunning.Msg
-    | EvaluateResultMsg PLLTrainer.States.EvaluateResult.Msg
-
-
-{-| We use this structure to make sure the test case
-is generated before the start time, so we can ensure
-we don't record the start time until the very last moment
--}
-type StartTestData
-    = NothingGenerated
-    | TestCaseGenerated TestCase
-    | EverythingGenerated TestCase Time.Posix
+-- VIEW
 
 
 view : Shared.Model -> Model -> View Msg
 view shared model =
     let
         stateView =
-            case model.trainerState of
-                StartPage ->
-                    ((states shared model).startPage ()).view ()
-
-                GetReadyScreen ->
-                    ((states shared model).getReadyScreen ()).view ()
-
-                TestRunning stateModel arguments ->
-                    ((states shared model).testRunning arguments).view stateModel
-
-                EvaluateResult stateModel arguments ->
-                    ((states shared model).evaluateResult arguments).view stateModel
-
-                CorrectPage ->
-                    ((states shared model).correctPage ()).view ()
-
-                TypeOfWrongPage ->
-                    ((states shared model).typeOfWrongPage ()).view ()
-
-                WrongPage ->
-                    ((states shared model).wrongPage ()).view ()
+            handleStateViewBoilerplate shared model
 
         pageSubtitle =
             Nothing
@@ -331,29 +260,8 @@ view shared model =
     StatefulPage.toView pageSubtitle stateView
 
 
-subscriptions : Shared.Model -> Model -> Sub Msg
-subscriptions shared model =
-    case model.trainerState of
-        StartPage ->
-            ((states shared model).startPage ()).subscriptions ()
 
-        GetReadyScreen ->
-            ((states shared model).getReadyScreen ()).subscriptions ()
-
-        TestRunning stateModel arguments ->
-            ((states shared model).testRunning arguments).subscriptions stateModel
-
-        EvaluateResult stateModel arguments ->
-            ((states shared model).evaluateResult arguments).subscriptions stateModel
-
-        CorrectPage ->
-            ((states shared model).correctPage ()).subscriptions ()
-
-        TypeOfWrongPage ->
-            ((states shared model).typeOfWrongPage ()).subscriptions ()
-
-        WrongPage ->
-            ((states shared model).wrongPage ()).subscriptions ()
+-- BOILERPLATE
 
 
 states :
@@ -451,7 +359,7 @@ states shared model =
             , update = \_ _ -> ( (), Cmd.none )
             }
     , typeOfWrongPage =
-        \arguments ->
+        \_ ->
             let
                 state =
                     PLLTrainer.States.TypeOfWrongPage.state
@@ -471,7 +379,7 @@ states shared model =
             , update = \_ _ -> ( (), Cmd.none )
             }
     , wrongPage =
-        \arguments ->
+        \_ ->
             let
                 state =
                     PLLTrainer.States.WrongPage.state
@@ -499,3 +407,136 @@ type alias State msg model arguments =
         , subscriptions : model -> Sub Msg
         , update : msg -> model -> ( model, Cmd Msg )
         }
+
+
+handleStateMsgBoilerplate :
+    Shared.Model
+    -> Model
+    -> StateMsg
+    -> ( Model, Cmd Msg )
+handleStateMsgBoilerplate shared model stateMsg =
+    case ( stateMsg, model.trainerState ) of
+        ( TestRunningMsg localMsg, TestRunning localModel arguments ) ->
+            ((states shared model).testRunning arguments).update localMsg localModel
+                |> Tuple.mapFirst
+                    (\newTrainerState ->
+                        { model | trainerState = TestRunning newTrainerState arguments }
+                    )
+
+        ( EvaluateResultMsg localMsg, EvaluateResult localModel arguments ) ->
+            ((states shared model).evaluateResult arguments).update localMsg localModel
+                |> Tuple.mapFirst
+                    (\newTrainerState ->
+                        { model | trainerState = EvaluateResult newTrainerState arguments }
+                    )
+
+        ( unexpectedStateMsg, unexpectedTrainerState ) ->
+            ( model
+            , Ports.logError
+                ("Unexpected msg `"
+                    ++ stateMsgToString unexpectedStateMsg
+                    ++ "` during state `"
+                    ++ trainerStateToString unexpectedTrainerState
+                    ++ "`"
+                )
+            )
+
+
+stateMsgToString : StateMsg -> String
+stateMsgToString stateMsg =
+    case stateMsg of
+        TestRunningMsg _ ->
+            "TestRunningMsg"
+
+        EvaluateResultMsg _ ->
+            "EvaluateResultMsg"
+
+
+trainerStateToString : TrainerState -> String
+trainerStateToString trainerState =
+    case trainerState of
+        StartPage ->
+            "StartPage"
+
+        GetReadyScreen ->
+            "GetReadyScreen"
+
+        TestRunning _ { startTime } ->
+            "TestRunning: { startTime = "
+                ++ String.fromInt (Time.posixToMillis startTime)
+                ++ " }"
+
+        EvaluateResult _ { result, transitionsDisabled } ->
+            "EvaluateResult: { result = "
+                ++ TimeInterval.toString result
+                ++ ", transitionsDisabled = "
+                ++ stringFromBool transitionsDisabled
+                ++ " }"
+
+        CorrectPage ->
+            "CorrectPage"
+
+        TypeOfWrongPage ->
+            "TypeOfWrongPage"
+
+        WrongPage ->
+            "WrongPage"
+
+
+stringFromBool : Bool -> String
+stringFromBool bool =
+    if bool then
+        "True"
+
+    else
+        "False"
+
+
+handleStateSubscriptionsBoilerplate : Shared.Model -> Model -> Sub Msg
+handleStateSubscriptionsBoilerplate shared model =
+    case model.trainerState of
+        StartPage ->
+            ((states shared model).startPage ()).subscriptions ()
+
+        GetReadyScreen ->
+            ((states shared model).getReadyScreen ()).subscriptions ()
+
+        TestRunning stateModel arguments ->
+            ((states shared model).testRunning arguments).subscriptions stateModel
+
+        EvaluateResult stateModel arguments ->
+            ((states shared model).evaluateResult arguments).subscriptions stateModel
+
+        CorrectPage ->
+            ((states shared model).correctPage ()).subscriptions ()
+
+        TypeOfWrongPage ->
+            ((states shared model).typeOfWrongPage ()).subscriptions ()
+
+        WrongPage ->
+            ((states shared model).wrongPage ()).subscriptions ()
+
+
+handleStateViewBoilerplate : Shared.Model -> Model -> StatefulPage.StateView Msg
+handleStateViewBoilerplate shared model =
+    case model.trainerState of
+        StartPage ->
+            ((states shared model).startPage ()).view ()
+
+        GetReadyScreen ->
+            ((states shared model).getReadyScreen ()).view ()
+
+        TestRunning stateModel arguments ->
+            ((states shared model).testRunning arguments).view stateModel
+
+        EvaluateResult stateModel arguments ->
+            ((states shared model).evaluateResult arguments).view stateModel
+
+        CorrectPage ->
+            ((states shared model).correctPage ()).view ()
+
+        TypeOfWrongPage ->
+            ((states shared model).typeOfWrongPage ()).view ()
+
+        WrongPage ->
+            ((states shared model).wrongPage ()).view ()
