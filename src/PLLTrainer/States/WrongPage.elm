@@ -7,6 +7,7 @@ import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Font as Font
 import Element.Region as Region
+import FeedbackButton
 import Json.Decode
 import Key
 import PLL
@@ -59,7 +60,7 @@ subscriptions transitions =
 view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> StatefulPage.StateView msg
 view viewportSize palette hardwareAvailable transitions arguments =
     { topLevelEventListeners = View.buildTopLevelEventListeners []
-    , overlays = View.buildOverlays []
+    , overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
     , body =
         let
             testCaseCube =
