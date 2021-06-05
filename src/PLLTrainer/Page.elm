@@ -476,7 +476,7 @@ states shared model =
                 state =
                     PLLTrainer.States.WrongPage.state
                         shared
-                        { startNextTest = NoOp
+                        { startNextTest = TransitionMsg GetReadyForTest
                         , noOp = NoOp
                         }
                         { expectedCubeState = model.expectedCubeState
