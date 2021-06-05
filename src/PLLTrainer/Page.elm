@@ -9,6 +9,7 @@ import PLLTrainer.States.GetReadyScreen
 import PLLTrainer.States.StartPage
 import PLLTrainer.States.TestRunning
 import PLLTrainer.States.TypeOfWrongPage
+import PLLTrainer.States.WrongPage
 import PLLTrainer.TestCase exposing (TestCase)
 import Page
 import Ports
@@ -43,7 +44,7 @@ init =
       -- until after the first getReadyScreen is done which would then
       -- possibly need a Maybe or a difficult tagged type. A placeholder
       -- seems the best option of these right now
-      , currentTestCase = ( Algorithm.empty, PLL.Aa, Algorithm.empty )
+      , currentTestCase = PLLTrainer.TestCase.build PLLTrainer.TestCase.NoAUF PLL.Aa PLLTrainer.TestCase.NoAUF
       }
     , Cmd.none
     )
@@ -153,6 +154,25 @@ update shared msg model =
                     , Cmd.none
                     )
 
+                WrongButNoMoveApplied ->
+                    ( { model
+                        | trainerState = WrongPage
+                        , expectedCubeState =
+                            model.expectedCubeState
+                                |> Cube.applyAlgorithm
+                                    (Algorithm.inverse <|
+                                        PLLTrainer.TestCase.toAlg model.currentTestCase
+                                    )
+                      }
+                    , Cmd.none
+                    )
+
+                WrongButExpectedStateWasReached ->
+                    ( { model | trainerState = WrongPage }, Cmd.none )
+
+                WrongAndUnrecoverable ->
+                    ( { model | trainerState = WrongPage, expectedCubeState = Cube.solved }, Cmd.none )
+
         StateMsg typeOfLocalMsg ->
             case ( typeOfLocalMsg, model.trainerState ) of
                 ( TestRunningMsg localMsg, TestRunning localModel arguments ) ->
@@ -205,6 +225,9 @@ update shared msg model =
 
                                 TypeOfWrongPage ->
                                     "TypeOfWrongPage"
+
+                                WrongPage ->
+                                    "WrongPage"
                       in
                       Ports.logError
                         ("Unexpected msg `"
@@ -233,6 +256,9 @@ type TransitionMsg
     | EnableEvaluateResultTransitions
     | EvaluateCorrect
     | EvaluateWrong
+    | WrongButNoMoveApplied
+    | WrongButExpectedStateWasReached
+    | WrongAndUnrecoverable
 
 
 type TrainerState
@@ -242,6 +268,7 @@ type TrainerState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
     | CorrectPage
     | TypeOfWrongPage
+    | WrongPage
 
 
 type alias Model =
@@ -295,6 +322,9 @@ view shared model =
                 TypeOfWrongPage ->
                     ((states shared model).typeOfWrongPage ()).view ()
 
+                WrongPage ->
+                    ((states shared model).wrongPage ()).view ()
+
         pageSubtitle =
             Nothing
     in
@@ -322,6 +352,9 @@ subscriptions shared model =
         TypeOfWrongPage ->
             ((states shared model).typeOfWrongPage ()).subscriptions ()
 
+        WrongPage ->
+            ((states shared model).wrongPage ()).subscriptions ()
+
 
 states :
     Shared.Model
@@ -333,6 +366,7 @@ states :
         , evaluateResult : State PLLTrainer.States.EvaluateResult.Msg PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
         , correctPage : State () () ()
         , typeOfWrongPage : State () () ()
+        , wrongPage : State () () ()
         }
 states shared model =
     { startPage =
@@ -422,9 +456,27 @@ states shared model =
                 state =
                     PLLTrainer.States.TypeOfWrongPage.state
                         shared
-                        { noMoveWasApplied = NoOp
-                        , expectedStateWasReached = NoOp
-                        , resetCube = NoOp
+                        { noMoveWasApplied = TransitionMsg WrongButNoMoveApplied
+                        , expectedStateWasReached = TransitionMsg WrongButExpectedStateWasReached
+                        , cubeUnrecoverable = TransitionMsg WrongAndUnrecoverable
+                        , noOp = NoOp
+                        }
+                        { expectedCubeState = model.expectedCubeState
+                        , testCase = model.currentTestCase
+                        }
+            in
+            { init = ( (), Cmd.none )
+            , view = always <| state.view
+            , subscriptions = always state.subscriptions
+            , update = \_ _ -> ( (), Cmd.none )
+            }
+    , wrongPage =
+        \arguments ->
+            let
+                state =
+                    PLLTrainer.States.WrongPage.state
+                        shared
+                        { startNextTest = NoOp
                         , noOp = NoOp
                         }
                         { expectedCubeState = model.expectedCubeState
