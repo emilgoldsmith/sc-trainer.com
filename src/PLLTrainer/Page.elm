@@ -118,8 +118,18 @@ update shared msg model =
                     let
                         ( _, stateCmd ) =
                             ((states shared model).getReadyScreen ()).init
+
+                        startTestAfterASecond =
+                            Task.perform
+                                (always <| TransitionMsg (StartTest NothingGenerated))
+                                (Process.sleep 1000)
+
+                        cmd =
+                            Cmd.batch [ stateCmd, startTestAfterASecond ]
                     in
-                    ( { model | trainerState = GetReadyScreen }, stateCmd )
+                    ( { model | trainerState = GetReadyScreen }
+                    , cmd
+                    )
 
                 StartTest NothingGenerated ->
                     ( model
@@ -237,64 +247,6 @@ update shared msg model =
 
 
 
--- HERE WE DEFINE EXTRA TRANSITIONS DECIDED AT THE TOP LEVEL
-
-
-type alias States =
-    { startPage : StateBuilder () () ()
-    , getReadyScreen : StateBuilder () () ()
-    , testRunning : StateBuilder PLLTrainer.States.TestRunning.Msg PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
-    , evaluateResult : StateBuilder PLLTrainer.States.EvaluateResult.Msg PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
-    , correctPage : StateBuilder () () ()
-    , typeOfWrongPage : StateBuilder () () ()
-    , wrongPage : StateBuilder () () ()
-    }
-
-
-type alias StateBuilder localMsg model arguments =
-    arguments
-    -> PLLTrainer.State.State Msg localMsg model
-
-
-states : Shared.Model -> Model -> States
-states shared model =
-    let
-        boilerplate =
-            statesBoilerplate shared model
-
-        startTestAfterASecond =
-            Task.perform
-                (always <|
-                    TransitionMsg (StartTest NothingGenerated)
-                )
-                (Process.sleep 1000)
-    in
-    { boilerplate
-        | getReadyScreen =
-            addInitialCmd startTestAfterASecond boilerplate.getReadyScreen
-    }
-
-
-addInitialCmd :
-    Cmd Msg
-    -> StateBuilder localMsg model arguments
-    -> StateBuilder localMsg model arguments
-addInitialCmd newCmd stateBuilder =
-    stateBuilder
-        >> (\state ->
-                { state
-                    | init =
-                        ( Tuple.first state.init
-                        , Cmd.batch
-                            [ Tuple.second state.init
-                            , newCmd
-                            ]
-                        )
-                }
-           )
-
-
-
 -- SUBSCRIPTIONS
 
 
@@ -327,8 +279,24 @@ view shared model =
 -- BOILERPLATE
 
 
-statesBoilerplate : Shared.Model -> Model -> States
-statesBoilerplate shared model =
+type alias StateBuilder localMsg model arguments =
+    arguments
+    -> PLLTrainer.State.State Msg localMsg model
+
+
+states :
+    Shared.Model
+    -> Model
+    ->
+        { startPage : StateBuilder () () ()
+        , getReadyScreen : StateBuilder () () ()
+        , testRunning : StateBuilder PLLTrainer.States.TestRunning.Msg PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
+        , evaluateResult : StateBuilder PLLTrainer.States.EvaluateResult.Msg PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
+        , correctPage : StateBuilder () () ()
+        , typeOfWrongPage : StateBuilder () () ()
+        , wrongPage : StateBuilder () () ()
+        }
+states shared model =
     { startPage =
         always <|
             PLLTrainer.States.StartPage.state
