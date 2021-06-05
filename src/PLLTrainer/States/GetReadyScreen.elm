@@ -13,8 +13,8 @@ import ViewportSize exposing (ViewportSize)
 state : Shared.Model -> PLLTrainer.State.State msg () ()
 state { viewportSize } =
     PLLTrainer.State.static
-        { subscriptions = Sub.none
-        , view = view viewportSize
+        { view = view viewportSize
+        , nonRepeatedKeyUpHandler = Nothing
         }
 
 

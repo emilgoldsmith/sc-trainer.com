@@ -1,5 +1,8 @@
 module PLLTrainer.State exposing (State, View, element, stateViewToGlobalView, static)
 
+import Browser.Events
+import Json.Decode
+import Key exposing (Key)
 import View
 
 
@@ -19,14 +22,26 @@ type alias State msg localMsg model =
 
 
 static :
-    { subscriptions : Sub msg
+    { nonRepeatedKeyUpHandler : Maybe (Key -> msg)
     , view : View msg
     }
     -> State msg () ()
-static { subscriptions, view } =
+static { nonRepeatedKeyUpHandler, view } =
+    let
+        subscription =
+            Maybe.withDefault Sub.none <|
+                Maybe.map
+                    (\handler ->
+                        Browser.Events.onKeyUp <|
+                            Json.Decode.map
+                                handler
+                                Key.decodeNonRepeatedKeyEvent
+                    )
+                    nonRepeatedKeyUpHandler
+    in
     { init = ( (), Cmd.none )
     , update = always <| always ( (), Cmd.none )
-    , subscriptions = always subscriptions
+    , subscriptions = always subscription
     , view = always view
     }
 

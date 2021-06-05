@@ -22,7 +22,21 @@ state : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.State m
 state { viewportSize, palette, hardwareAvailable } transitions arguments =
     PLLTrainer.State.static
         { view = view viewportSize palette hardwareAvailable transitions arguments
-        , subscriptions = subscriptions transitions
+        , nonRepeatedKeyUpHandler =
+            Just <|
+                \key ->
+                    case key of
+                        Key.One ->
+                            transitions.noMoveWasApplied
+
+                        Key.Two ->
+                            transitions.expectedStateWasReached
+
+                        Key.Three ->
+                            transitions.cubeUnrecoverable
+
+                        _ ->
+                            transitions.noOp
         }
 
 
@@ -42,31 +56,6 @@ type alias Transitions msg =
     , cubeUnrecoverable : msg
     , noOp : msg
     }
-
-
-
--- SUBSCRIPTIONS
-
-
-subscriptions : Transitions msg -> Sub msg
-subscriptions transitions =
-    Browser.Events.onKeyUp <|
-        Json.Decode.map
-            (\key ->
-                case key of
-                    Key.One ->
-                        transitions.noMoveWasApplied
-
-                    Key.Two ->
-                        transitions.expectedStateWasReached
-
-                    Key.Three ->
-                        transitions.cubeUnrecoverable
-
-                    _ ->
-                        transitions.noOp
-            )
-            Key.decodeNonRepeatedKeyEvent
 
 
 
