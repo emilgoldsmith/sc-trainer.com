@@ -1,4 +1,4 @@
-module TimeInterval exposing (TimeInterval, betweenTimestamps, displayOneDecimal, displayTwoDecimals, increment, zero)
+module TimeInterval exposing (TimeInterval, betweenTimestamps, displayOneDecimal, displayTwoDecimals, increment, toString, zero)
 
 import Time
 
@@ -15,6 +15,11 @@ map f (TimeInterval milliseconds) =
 zero : TimeInterval
 zero =
     TimeInterval 0
+
+
+toString : TimeInterval -> String
+toString (TimeInterval milliseconds) =
+    String.fromFloat milliseconds
 
 
 betweenTimestamps : { start : Time.Posix, end : Time.Posix } -> TimeInterval

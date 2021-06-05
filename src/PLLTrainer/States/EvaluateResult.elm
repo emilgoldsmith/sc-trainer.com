@@ -1,4 +1,4 @@
-module PLLTrainer.States.EvaluateResult exposing (Arguments, Transitions, state)
+module PLLTrainer.States.EvaluateResult exposing (Arguments, Model, Msg, Transitions, state)
 
 import Browser.Events
 import Css exposing (htmlTestid, testid)
@@ -19,11 +19,34 @@ import ViewportSize exposing (ViewportSize)
 import WebResource
 
 
-state : Shared.Model -> Transitions msg -> Arguments -> { view : StatefulPage.StateView msg, subscriptions : Sub msg }
-state { viewportSize, palette, hardwareAvailable } transitions arguments =
-    { view = view viewportSize palette hardwareAvailable transitions arguments
-    , subscriptions = subscriptions transitions
+state : Shared.Model -> Transitions msg -> Arguments -> (Msg -> msg) -> { init : Model, view : StatefulPage.StateView msg, subscriptions : Model -> Sub msg, update : Msg -> Model -> Model }
+state { viewportSize, palette, hardwareAvailable } transitions arguments toMsg =
+    { init = { spacePressStarted = False, wPressStarted = False }
+    , view = view viewportSize palette hardwareAvailable transitions arguments
+    , subscriptions = subscriptions transitions arguments toMsg
+    , update = update
     }
+
+
+type alias Model =
+    { spacePressStarted : Bool
+    , wPressStarted : Bool
+    }
+
+
+type Msg
+    = SpaceStarted
+    | WStarted
+
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        SpaceStarted ->
+            { model | spacePressStarted = True }
+
+        WStarted ->
+            { model | wPressStarted = True }
 
 
 type alias Transitions msg =
@@ -40,22 +63,50 @@ type alias Arguments =
     }
 
 
-subscriptions : Transitions msg -> Sub msg
-subscriptions transitions =
-    Browser.Events.onKeyUp <|
-        Json.Decode.map
-            (\key ->
-                case key of
-                    Key.Space ->
-                        transitions.evaluateCorrect
+subscriptions : Transitions msg -> Arguments -> (Msg -> msg) -> Model -> Sub msg
+subscriptions transitions arguments toMsg model =
+    if arguments.transitionsDisabled then
+        Sub.none
 
-                    Key.W ->
-                        transitions.evaluateWrong
+    else
+        Sub.batch
+            [ Browser.Events.onKeyDown <|
+                Json.Decode.map
+                    (\key ->
+                        case key of
+                            Key.Space ->
+                                toMsg SpaceStarted
 
-                    _ ->
-                        transitions.noOp
-            )
-            Key.decodeNonRepeatedKeyEvent
+                            Key.W ->
+                                toMsg WStarted
+
+                            _ ->
+                                transitions.noOp
+                    )
+                    Key.decodeNonRepeatedKeyEvent
+            , Browser.Events.onKeyUp <|
+                Json.Decode.map
+                    (\key ->
+                        case key of
+                            Key.Space ->
+                                if model.spacePressStarted then
+                                    transitions.evaluateCorrect
+
+                                else
+                                    transitions.noOp
+
+                            Key.W ->
+                                if model.wPressStarted then
+                                    transitions.evaluateWrong
+
+                                else
+                                    transitions.noOp
+
+                            _ ->
+                                transitions.noOp
+                    )
+                    Key.decodeNonRepeatedKeyEvent
+            ]
 
 
 view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> StatefulPage.StateView msg

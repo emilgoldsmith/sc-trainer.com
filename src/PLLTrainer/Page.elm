@@ -1,12 +1,14 @@
-module PLLTrainer.Main exposing (Model, Msg, page)
+module PLLTrainer.Page exposing (Model, Msg, page)
 
 import Algorithm
 import Cube exposing (Cube)
 import PLL
+import PLLTrainer.States.CorrectPage
 import PLLTrainer.States.EvaluateResult
 import PLLTrainer.States.GetReadyScreen
 import PLLTrainer.States.StartPage
 import PLLTrainer.States.TestRunning
+import PLLTrainer.States.TypeOfWrongPage
 import PLLTrainer.TestCase exposing (TestCase)
 import Page
 import Ports
@@ -16,7 +18,7 @@ import Shared
 import StatefulPage
 import Task
 import Time
-import TimeInterval
+import TimeInterval exposing (TimeInterval)
 import View exposing (View)
 
 
@@ -102,39 +104,54 @@ update shared msg model =
                     )
 
                 EndTest { startTime } (Just endTime) ->
-                    ( { model
-                        | trainerState =
-                            EvaluateResult
-                                { expectedCubeState = model.expectedCubeState
-                                , result =
-                                    TimeInterval.betweenTimestamps
-                                        { start = startTime
-                                        , end = endTime
-                                        }
+                    let
+                        arguments =
+                            { result =
+                                TimeInterval.betweenTimestamps
+                                    { start = startTime
+                                    , end = endTime
+                                    }
 
-                                -- We disable transitions to start in case people
-                                -- are button mashing to stop the test
-                                , transitionsDisabled = True
-                                }
+                            -- We disable transitions to start in case people
+                            -- are button mashing to stop the test
+                            , transitionsDisabled = True
+                            }
+
+                        ( stateModel, stateCmd ) =
+                            ((states shared model).evaluateResult arguments).init
+                    in
+                    ( { model
+                        | trainerState = EvaluateResult stateModel arguments
                       }
-                    , Task.perform
-                        (always <| TransitionMsg EnableEvaluateResultTransitions)
-                        -- 200 ms should be enough to prevent accidental further
-                        -- transitions based on some manual tests
-                        (Process.sleep 200)
+                    , Cmd.batch
+                        [ stateCmd
+                        , Task.perform
+                            (always <| TransitionMsg EnableEvaluateResultTransitions)
+                            -- 200 ms should be enough to prevent accidental further
+                            -- transitions based on some manual tests
+                            (Process.sleep 200)
+                        ]
                     )
 
                 EnableEvaluateResultTransitions ->
                     case model.trainerState of
-                        EvaluateResult arguments ->
+                        EvaluateResult stateModel arguments ->
                             let
                                 newTrainerState =
-                                    EvaluateResult { arguments | transitionsDisabled = False }
+                                    EvaluateResult stateModel { arguments | transitionsDisabled = False }
                             in
                             ( { model | trainerState = newTrainerState }, Cmd.none )
 
                         _ ->
                             ( model, Ports.logError "Unexpected enable evaluate result transitions outside of EvaluateResult state" )
+
+                EvaluateCorrect ->
+                    ( { model | trainerState = CorrectPage }, Cmd.none )
+
+                EvaluateWrong ->
+                    ( { model | trainerState = TypeOfWrongPage }
+                    , Cmd.none
+                    )
 
         StateMsg typeOfLocalMsg ->
             case ( typeOfLocalMsg, model.trainerState ) of
@@ -145,8 +162,68 @@ update shared msg model =
                                 { model | trainerState = TestRunning newTrainerState arguments }
                             )
 
-                _ ->
-                    ( model, Ports.logError "Unexpected" )
+                ( EvaluateResultMsg localMsg, EvaluateResult localModel arguments ) ->
+                    ((states shared model).evaluateResult arguments).update localMsg localModel
+                        |> Tuple.mapFirst
+                            (\newTrainerState ->
+                                { model | trainerState = EvaluateResult newTrainerState arguments }
+                            )
+
+                ( localMsg, trainerState ) ->
+                    ( model
+                    , let
+                        localMsgString =
+                            case localMsg of
+                                TestRunningMsg _ ->
+                                    "TestRunningMsg"
+
+                                EvaluateResultMsg _ ->
+                                    "EvaluateResultMsg"
+
+                        trainerStateString =
+                            case trainerState of
+                                StartPage ->
+                                    "StartPage"
+
+                                GetReadyScreen ->
+                                    "GetReadyScreen"
+
+                                TestRunning _ { startTime } ->
+                                    "TestRunning: { startTime = "
+                                        ++ String.fromInt (Time.posixToMillis startTime)
+                                        ++ " }"
+
+                                EvaluateResult _ { result, transitionsDisabled } ->
+                                    "EvaluateResult: { result = "
+                                        ++ TimeInterval.toString result
+                                        ++ ", transitionsDisabled = "
+                                        ++ stringFromBool transitionsDisabled
+                                        ++ " }"
+
+                                CorrectPage ->
+                                    "CorrectPage"
+
+                                TypeOfWrongPage ->
+                                    "TypeOfWrongPage"
+                      in
+                      Ports.logError
+                        ("Unexpected msg `"
+                            ++ localMsgString
+                            ++ "` during state `"
+                            ++ trainerStateString
+                            ++ "`"
+                        )
+                    )
+
+
+stringFromBool : Bool -> String
+stringFromBool bool =
+    case bool of
+        True ->
+            "True"
+
+        False ->
+            "False"
 
 
 type TransitionMsg
@@ -154,13 +231,17 @@ type TransitionMsg
     | StartTest StartTestData
     | EndTest { startTime : Time.Posix } (Maybe Time.Posix)
     | EnableEvaluateResultTransitions
+    | EvaluateCorrect
+    | EvaluateWrong
 
 
 type TrainerState
     = StartPage
     | GetReadyScreen
     | TestRunning PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
-    | EvaluateResult PLLTrainer.States.EvaluateResult.Arguments
+    | EvaluateResult PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
+    | CorrectPage
+    | TypeOfWrongPage
 
 
 type alias Model =
@@ -178,6 +259,7 @@ type Msg
 
 type StateMsg
     = TestRunningMsg PLLTrainer.States.TestRunning.Msg
+    | EvaluateResultMsg PLLTrainer.States.EvaluateResult.Msg
 
 
 {-| We use this structure to make sure the test case
@@ -204,8 +286,14 @@ view shared model =
                 TestRunning stateModel arguments ->
                     ((states shared model).testRunning arguments).view stateModel
 
-                EvaluateResult arguments ->
-                    ((states shared model).evaluateResult arguments).view ()
+                EvaluateResult stateModel arguments ->
+                    ((states shared model).evaluateResult arguments).view stateModel
+
+                CorrectPage ->
+                    ((states shared model).correctPage ()).view ()
+
+                TypeOfWrongPage ->
+                    ((states shared model).typeOfWrongPage ()).view ()
 
         pageSubtitle =
             Nothing
@@ -217,16 +305,22 @@ subscriptions : Shared.Model -> Model -> Sub Msg
 subscriptions shared model =
     case model.trainerState of
         StartPage ->
-            ((states shared model).startPage ()).subscriptions
+            ((states shared model).startPage ()).subscriptions ()
 
         GetReadyScreen ->
-            ((states shared model).getReadyScreen ()).subscriptions
+            ((states shared model).getReadyScreen ()).subscriptions ()
 
-        TestRunning _ arguments ->
-            ((states shared model).testRunning arguments).subscriptions
+        TestRunning stateModel arguments ->
+            ((states shared model).testRunning arguments).subscriptions stateModel
 
-        EvaluateResult arguments ->
-            ((states shared model).evaluateResult arguments).subscriptions
+        EvaluateResult stateModel arguments ->
+            ((states shared model).evaluateResult arguments).subscriptions stateModel
+
+        CorrectPage ->
+            ((states shared model).correctPage ()).subscriptions ()
+
+        TypeOfWrongPage ->
+            ((states shared model).typeOfWrongPage ()).subscriptions ()
 
 
 states :
@@ -236,7 +330,9 @@ states :
         { startPage : State () () ()
         , getReadyScreen : State () () ()
         , testRunning : State PLLTrainer.States.TestRunning.Msg PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
-        , evaluateResult : State () () PLLTrainer.States.EvaluateResult.Arguments
+        , evaluateResult : State PLLTrainer.States.EvaluateResult.Msg PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
+        , correctPage : State () () ()
+        , typeOfWrongPage : State () () ()
         }
 states shared model =
     { startPage =
@@ -251,7 +347,7 @@ states shared model =
             in
             { init = ( (), Cmd.none )
             , view = always <| state.view
-            , subscriptions = state.subscriptions
+            , subscriptions = always state.subscriptions
             , update = \_ _ -> ( (), Cmd.none )
             }
     , getReadyScreen =
@@ -263,7 +359,7 @@ states shared model =
                     (Process.sleep 1000)
                 )
             , view = always <| PLLTrainer.States.GetReadyScreen.state shared
-            , subscriptions = Sub.none
+            , subscriptions = always Sub.none
             , update = \_ _ -> ( (), Cmd.none )
             }
     , testRunning =
@@ -278,24 +374,66 @@ states shared model =
             in
             { init = ( state.init, Cmd.none )
             , view = state.view
-            , subscriptions = state.subscriptions
+            , subscriptions = always state.subscriptions
             , update = \msg myModel -> Tuple.pair (state.update msg myModel) Cmd.none
             }
     , evaluateResult =
         \arguments ->
             let
+                fullArguments =
+                    { expectedCubeState = model.expectedCubeState
+                    , result = arguments.result
+                    , transitionsDisabled = arguments.transitionsDisabled
+                    }
+
                 state =
                     PLLTrainer.States.EvaluateResult.state
                         shared
-                        { evaluateCorrect = NoOp
-                        , evaluateWrong = NoOp
+                        { evaluateCorrect = TransitionMsg EvaluateCorrect
+                        , evaluateWrong = TransitionMsg EvaluateWrong
                         , noOp = NoOp
                         }
-                        arguments
+                        fullArguments
+                        (StateMsg << EvaluateResultMsg)
+            in
+            { init = ( state.init, Cmd.none )
+            , view = always <| state.view
+            , subscriptions = state.subscriptions
+            , update = \msg previousModel -> ( state.update msg previousModel, Cmd.none )
+            }
+    , correctPage =
+        always <|
+            let
+                state =
+                    PLLTrainer.States.CorrectPage.state
+                        shared
+                        { startTest = TransitionMsg GetReadyForTest
+                        , noOp = NoOp
+                        }
             in
             { init = ( (), Cmd.none )
             , view = always <| state.view
-            , subscriptions = state.subscriptions
+            , subscriptions = always state.subscriptions
+            , update = \_ _ -> ( (), Cmd.none )
+            }
+    , typeOfWrongPage =
+        \arguments ->
+            let
+                state =
+                    PLLTrainer.States.TypeOfWrongPage.state
+                        shared
+                        { noMoveWasApplied = NoOp
+                        , expectedStateWasReached = NoOp
+                        , resetCube = NoOp
+                        , noOp = NoOp
+                        }
+                        { expectedCubeState = model.expectedCubeState
+                        , testCase = model.currentTestCase
+                        }
+            in
+            { init = ( (), Cmd.none )
+            , view = always <| state.view
+            , subscriptions = always state.subscriptions
             , update = \_ _ -> ( (), Cmd.none )
             }
     }
@@ -306,6 +444,6 @@ type alias State msg model arguments =
     ->
         { init : ( model, Cmd Msg )
         , view : model -> StatefulPage.StateView Msg
-        , subscriptions : Sub Msg
+        , subscriptions : model -> Sub Msg
         , update : msg -> model -> ( model, Cmd Msg )
         }
