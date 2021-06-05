@@ -16,7 +16,7 @@ import Key
 import List.Nonempty
 import PLL exposing (PLL)
 import PLLTrainer.ButtonWithShortcut as ButtonWithShortcut
-import PLLTrainer.Main
+import PLLTrainer.Page
 import Page
 import Ports
 import Process
@@ -33,17 +33,17 @@ import ViewportSize exposing (ViewportSize)
 import WebResource
 
 
-page : Shared.Model -> Request.With Params -> Page.With PLLTrainer.Main.Model PLLTrainer.Main.Msg
+page : Shared.Model -> Request.With Params -> Page.With PLLTrainer.Page.Model PLLTrainer.Page.Msg
 page shared _ =
-    PLLTrainer.Main.page shared
+    PLLTrainer.Page.page shared
 
 
 type alias Msg =
-    PLLTrainer.Main.Msg
+    PLLTrainer.Page.Msg
 
 
 type alias Model =
-    PLLTrainer.Main.Model
+    PLLTrainer.Page.Model
 
 
 
