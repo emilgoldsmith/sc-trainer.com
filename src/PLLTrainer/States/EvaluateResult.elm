@@ -9,6 +9,7 @@ import Json.Decode
 import Key
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
+import PLLTrainer.Subscription
 import Shared
 import TimeInterval exposing (TimeInterval)
 import UI
@@ -83,50 +84,51 @@ update msg model =
 -- SUBSCRIPTIONS
 
 
-subscriptions : Transitions msg -> Arguments -> (Msg -> msg) -> Model -> Sub msg
+subscriptions : Transitions msg -> Arguments -> (Msg -> msg) -> Model -> PLLTrainer.Subscription.Subscription msg
 subscriptions transitions arguments toMsg model =
-    if arguments.transitionsDisabled then
-        Sub.none
+    PLLTrainer.Subscription.BrowserEvents <|
+        if arguments.transitionsDisabled then
+            Sub.none
 
-    else
-        Sub.batch
-            [ Browser.Events.onKeyDown <|
-                Json.Decode.map
-                    (\key ->
-                        case key of
-                            Key.Space ->
-                                toMsg SpaceStarted
+        else
+            Sub.batch
+                [ Browser.Events.onKeyDown <|
+                    Json.Decode.map
+                        (\key ->
+                            case key of
+                                Key.Space ->
+                                    toMsg SpaceStarted
 
-                            Key.W ->
-                                toMsg WStarted
+                                Key.W ->
+                                    toMsg WStarted
 
-                            _ ->
-                                transitions.noOp
-                    )
-                    Key.decodeNonRepeatedKeyEvent
-            , Browser.Events.onKeyUp <|
-                Json.Decode.map
-                    (\key ->
-                        case key of
-                            Key.Space ->
-                                if model.spacePressStarted then
-                                    transitions.evaluateCorrect
-
-                                else
+                                _ ->
                                     transitions.noOp
+                        )
+                        Key.decodeNonRepeatedKeyEvent
+                , Browser.Events.onKeyUp <|
+                    Json.Decode.map
+                        (\key ->
+                            case key of
+                                Key.Space ->
+                                    if model.spacePressStarted then
+                                        transitions.evaluateCorrect
 
-                            Key.W ->
-                                if model.wPressStarted then
-                                    transitions.evaluateWrong
+                                    else
+                                        transitions.noOp
 
-                                else
+                                Key.W ->
+                                    if model.wPressStarted then
+                                        transitions.evaluateWrong
+
+                                    else
+                                        transitions.noOp
+
+                                _ ->
                                     transitions.noOp
-
-                            _ ->
-                                transitions.noOp
-                    )
-                    Key.decodeNonRepeatedKeyEvent
-            ]
+                        )
+                        Key.decodeNonRepeatedKeyEvent
+                ]
 
 
 
@@ -135,8 +137,7 @@ subscriptions transitions arguments toMsg model =
 
 view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> Model -> PLLTrainer.State.View msg
 view viewportSize palette hardwareAvailable transitions arguments _ =
-    { topLevelEventListeners = View.buildTopLevelEventListeners []
-    , overlays = View.buildOverlays []
+    { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
             let

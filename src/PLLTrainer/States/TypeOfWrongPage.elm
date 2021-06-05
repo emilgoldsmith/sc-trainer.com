@@ -1,12 +1,10 @@
 module PLLTrainer.States.TypeOfWrongPage exposing (Arguments, Transitions, state)
 
 import Algorithm
-import Browser.Events
 import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Font as Font
-import Json.Decode
 import Key
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
@@ -64,8 +62,7 @@ type alias Transitions msg =
 
 view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
 view viewportSize palette hardwareAvailable transitions arguments =
-    { topLevelEventListeners = View.buildTopLevelEventListeners []
-    , overlays = View.buildOverlays []
+    { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
             let

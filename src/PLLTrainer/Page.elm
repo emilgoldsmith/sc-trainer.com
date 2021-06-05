@@ -11,6 +11,7 @@ import PLLTrainer.States.StartPage
 import PLLTrainer.States.TestRunning
 import PLLTrainer.States.TypeOfWrongPage
 import PLLTrainer.States.WrongPage
+import PLLTrainer.Subscription
 import PLLTrainer.TestCase exposing (TestCase)
 import Page
 import Ports
@@ -240,8 +241,9 @@ update shared msg model =
 
 
 subscriptions : Shared.Model -> Model -> Sub Msg
-subscriptions =
-    handleStateSubscriptionsBoilerplate
+subscriptions shared model =
+    handleStateSubscriptionsBoilerplate shared model
+        |> PLLTrainer.Subscription.getSub
 
 
 
@@ -254,10 +256,13 @@ view shared model =
         stateView =
             handleStateViewBoilerplate shared model
 
+        subscription =
+            handleStateSubscriptionsBoilerplate shared model
+
         pageSubtitle =
             Nothing
     in
-    PLLTrainer.State.stateViewToGlobalView pageSubtitle stateView
+    PLLTrainer.State.stateViewToGlobalView pageSubtitle subscription stateView
 
 
 
@@ -453,7 +458,7 @@ stringFromBool bool =
         "False"
 
 
-handleStateSubscriptionsBoilerplate : Shared.Model -> Model -> Sub Msg
+handleStateSubscriptionsBoilerplate : Shared.Model -> Model -> PLLTrainer.Subscription.Subscription Msg
 handleStateSubscriptionsBoilerplate shared model =
     case model.trainerState of
         StartPage ->
