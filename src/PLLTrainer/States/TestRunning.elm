@@ -10,6 +10,7 @@ import Html.Events
 import Json.Decode
 import Key
 import PLLTrainer.State
+import PLLTrainer.Subscription
 import PLLTrainer.TestCase exposing (TestCase)
 import Shared
 import TimeInterval exposing (TimeInterval)
@@ -27,7 +28,7 @@ state :
 state { viewportSize } testCase toMsg transitions =
     PLLTrainer.State.element
         { init = init
-        , view = view viewportSize testCase transitions
+        , view = view viewportSize testCase
         , update = update
         , subscriptions = subscriptions toMsg transitions
         }
@@ -74,35 +75,34 @@ update msg model =
 -- SUBSCRIPTIONS
 
 
-subscriptions : (Msg -> msg) -> Transitions msg -> Model -> Sub msg
+subscriptions : (Msg -> msg) -> Transitions msg -> Model -> PLLTrainer.Subscription.Subscription msg
 subscriptions toMsg transitions _ =
-    Sub.batch
-        [ Browser.Events.onKeyDown <|
-            Json.Decode.map
-                (always transitions.endTest)
-                Key.decodeNonRepeatedKeyEvent
-        , Browser.Events.onMouseDown <|
-            Json.Decode.succeed transitions.endTest
-        , Browser.Events.onAnimationFrameDelta (toMsg << MillisecondsPassed)
-        ]
-
-
-topLevelEventListeners : Transitions msg -> List (Attribute msg)
-topLevelEventListeners transitions =
-    [ htmlAttribute <|
-        Html.Events.on "touchstart" <|
-            Json.Decode.succeed transitions.endTest
-    ]
+    PLLTrainer.Subscription.BothSubscriptions
+        { browserEvents =
+            Sub.batch
+                [ Browser.Events.onKeyDown <|
+                    Json.Decode.map
+                        (always transitions.endTest)
+                        Key.decodeNonRepeatedKeyEvent
+                , Browser.Events.onMouseDown <|
+                    Json.Decode.succeed transitions.endTest
+                , Browser.Events.onAnimationFrameDelta (toMsg << MillisecondsPassed)
+                ]
+        , elementAttributes =
+            [ htmlAttribute <|
+                Html.Events.on "touchstart" <|
+                    Json.Decode.succeed transitions.endTest
+            ]
+        }
 
 
 
 -- VIEW
 
 
-view : ViewportSize -> TestCase -> Transitions msg -> Model -> PLLTrainer.State.View msg
-view viewportSize testCase transitions model =
-    { topLevelEventListeners = View.buildTopLevelEventListeners (topLevelEventListeners transitions)
-    , overlays = View.buildOverlays []
+view : ViewportSize -> TestCase -> Model -> PLLTrainer.State.View msg
+view viewportSize testCase model =
+    { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
             column

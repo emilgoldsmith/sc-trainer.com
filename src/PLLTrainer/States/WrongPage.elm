@@ -1,13 +1,11 @@
 module PLLTrainer.States.WrongPage exposing (Arguments, Transitions, state)
 
 import Algorithm
-import Browser.Events
 import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Font as Font
 import FeedbackButton
-import Json.Decode
 import Key
 import PLL
 import PLLTrainer.ButtonWithShortcut
@@ -58,8 +56,7 @@ type alias Transitions msg =
 
 view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
 view viewportSize palette hardwareAvailable transitions arguments =
-    { topLevelEventListeners = View.buildTopLevelEventListeners []
-    , overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
+    { overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
     , body =
         let
             testCaseCube =

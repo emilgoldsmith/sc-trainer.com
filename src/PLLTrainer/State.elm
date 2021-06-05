@@ -3,12 +3,12 @@ module PLLTrainer.State exposing (State, View, element, stateViewToGlobalView, s
 import Browser.Events
 import Json.Decode
 import Key exposing (Key)
+import PLLTrainer.Subscription
 import View
 
 
 type alias View msg =
-    { topLevelEventListeners : View.TopLevelEventListeners msg
-    , overlays : View.Overlays msg
+    { overlays : View.Overlays msg
     , body : View.Body msg
     }
 
@@ -16,7 +16,7 @@ type alias View msg =
 type alias State msg localMsg model =
     { init : ( model, Cmd msg )
     , update : localMsg -> model -> ( model, Cmd msg )
-    , subscriptions : model -> Sub msg
+    , subscriptions : model -> PLLTrainer.Subscription.Subscription msg
     , view : model -> View msg
     }
 
@@ -29,15 +29,16 @@ static :
 static { nonRepeatedKeyUpHandler, view } =
     let
         subscription =
-            Maybe.withDefault Sub.none <|
-                Maybe.map
-                    (\handler ->
-                        Browser.Events.onKeyUp <|
-                            Json.Decode.map
-                                handler
-                                Key.decodeNonRepeatedKeyEvent
-                    )
-                    nonRepeatedKeyUpHandler
+            PLLTrainer.Subscription.BrowserEvents <|
+                Maybe.withDefault Sub.none <|
+                    Maybe.map
+                        (\handler ->
+                            Browser.Events.onKeyUp <|
+                                Json.Decode.map
+                                    handler
+                                    Key.decodeNonRepeatedKeyEvent
+                        )
+                        nonRepeatedKeyUpHandler
     in
     { init = ( (), Cmd.none )
     , update = always <| always ( (), Cmd.none )
@@ -49,7 +50,7 @@ static { nonRepeatedKeyUpHandler, view } =
 element :
     { init : ( model, Cmd msg )
     , update : localMsg -> model -> ( model, Cmd msg )
-    , subscriptions : model -> Sub msg
+    , subscriptions : model -> PLLTrainer.Subscription.Subscription msg
     , view : model -> View msg
     }
     -> State msg localMsg model
@@ -57,6 +58,12 @@ element =
     identity
 
 
-stateViewToGlobalView : Maybe String -> View a -> View.View a
-stateViewToGlobalView pageSubtitle { topLevelEventListeners, overlays, body } =
-    { topLevelEventListeners = topLevelEventListeners, overlays = overlays, body = body, pageSubtitle = pageSubtitle }
+stateViewToGlobalView : Maybe String -> PLLTrainer.Subscription.Subscription msg -> View msg -> View.View msg
+stateViewToGlobalView pageSubtitle subscription { overlays, body } =
+    { topLevelEventListeners =
+        View.buildTopLevelEventListeners <|
+            PLLTrainer.Subscription.getTopLevelEventListeners subscription
+    , overlays = overlays
+    , body = body
+    , pageSubtitle = pageSubtitle
+    }

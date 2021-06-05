@@ -1,11 +1,9 @@
 module PLLTrainer.States.CorrectPage exposing (Transitions, state)
 
-import Browser.Events
 import Css exposing (testid)
 import Element exposing (..)
 import Element.Font as Font
 import FeedbackButton
-import Json.Decode
 import Key
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
@@ -47,8 +45,7 @@ type alias Transitions msg =
 
 view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> PLLTrainer.State.View msg
 view viewportSize palette hardwareAvailable transitions =
-    { topLevelEventListeners = View.buildTopLevelEventListeners []
-    , overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
+    { overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
     , body =
         View.FullScreen <|
             column

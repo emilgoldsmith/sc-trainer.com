@@ -24,8 +24,7 @@ state { viewportSize } =
 
 view : ViewportSize -> PLLTrainer.State.View msg
 view viewportSize =
-    { topLevelEventListeners = View.buildTopLevelEventListeners []
-    , overlays = View.buildOverlays []
+    { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
             el
