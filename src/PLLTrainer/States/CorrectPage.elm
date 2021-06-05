@@ -6,6 +6,7 @@ import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Font as Font
 import Element.Region as Region
+import FeedbackButton
 import Json.Decode
 import Key
 import PLLTrainer.ButtonWithShortcut
@@ -50,7 +51,7 @@ subscriptions transitions =
 view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> StatefulPage.StateView msg
 view viewportSize palette hardwareAvailable transitions =
     { topLevelEventListeners = View.buildTopLevelEventListeners []
-    , overlays = View.buildOverlays []
+    , overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
     , body =
         View.FullScreen <|
             column
