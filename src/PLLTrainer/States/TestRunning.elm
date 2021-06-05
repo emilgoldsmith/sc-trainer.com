@@ -9,9 +9,9 @@ import Element.Font as Font
 import Html.Events
 import Json.Decode
 import Key
+import PLLTrainer.State
 import PLLTrainer.TestCase exposing (TestCase)
 import Shared
-import StatefulPage
 import TimeInterval exposing (TimeInterval)
 import View
 import ViewCube
@@ -23,22 +23,18 @@ state :
     -> TestCase
     -> (Msg -> msg)
     -> Transitions msg
-    ->
-        { init : Model
-        , view : Model -> StatefulPage.StateView msg
-        , update : Msg -> Model -> Model
-        , subscriptions : Sub msg
-        }
+    -> PLLTrainer.State.State msg Msg Model
 state { viewportSize } testCase toMsg transitions =
-    { init = init
-    , view = view viewportSize testCase transitions
-    , update = update toMsg
-    , subscriptions = subscriptions toMsg transitions
-    }
+    PLLTrainer.State.element
+        { init = init
+        , view = view viewportSize testCase transitions
+        , update = update
+        , subscriptions = subscriptions toMsg transitions
+        }
 
 
-type alias Model =
-    { elapsedTime : TimeInterval }
+
+-- TRANSITIONS
 
 
 type alias Transitions msg =
@@ -46,24 +42,40 @@ type alias Transitions msg =
     }
 
 
+
+-- INIT
+
+
+type alias Model =
+    { elapsedTime : TimeInterval }
+
+
+init : ( Model, Cmd msg )
+init =
+    ( { elapsedTime = TimeInterval.zero }, Cmd.none )
+
+
+
+-- UPDATE
+
+
 type Msg
     = MillisecondsPassed Float
 
 
-init : Model
-init =
-    { elapsedTime = TimeInterval.zero }
-
-
-update : (Msg -> msg) -> Msg -> Model -> Model
-update toMsg msg model =
+update : Msg -> Model -> ( Model, Cmd msg )
+update msg model =
     case msg of
         MillisecondsPassed timeDelta ->
-            { model | elapsedTime = TimeInterval.increment timeDelta model.elapsedTime }
+            ( { model | elapsedTime = TimeInterval.increment timeDelta model.elapsedTime }, Cmd.none )
 
 
-subscriptions : (Msg -> msg) -> Transitions msg -> Sub msg
-subscriptions toMsg transitions =
+
+-- SUBSCRIPTIONS
+
+
+subscriptions : (Msg -> msg) -> Transitions msg -> Model -> Sub msg
+subscriptions toMsg transitions _ =
     Sub.batch
         [ Browser.Events.onKeyDown <|
             Json.Decode.map
@@ -83,7 +95,11 @@ topLevelEventListeners transitions =
     ]
 
 
-view : ViewportSize -> TestCase -> Transitions msg -> Model -> StatefulPage.StateView msg
+
+-- VIEW
+
+
+view : ViewportSize -> TestCase -> Transitions msg -> Model -> PLLTrainer.State.View msg
 view viewportSize testCase transitions model =
     { topLevelEventListeners = View.buildTopLevelEventListeners (topLevelEventListeners transitions)
     , overlays = View.buildOverlays []

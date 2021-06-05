@@ -3,6 +3,7 @@ module PLLTrainer.Page exposing (Model, Msg, page)
 import Algorithm
 import Cube exposing (Cube)
 import PLL
+import PLLTrainer.State
 import PLLTrainer.States.CorrectPage
 import PLLTrainer.States.EvaluateResult
 import PLLTrainer.States.GetReadyScreen
@@ -16,7 +17,6 @@ import Ports
 import Process
 import Random
 import Shared
-import StatefulPage
 import Task
 import Time
 import TimeInterval exposing (TimeInterval)
@@ -257,156 +257,117 @@ view shared model =
         pageSubtitle =
             Nothing
     in
-    StatefulPage.toView pageSubtitle stateView
+    PLLTrainer.State.stateViewToGlobalView pageSubtitle stateView
 
 
 
 -- BOILERPLATE
 
 
+type alias StateBuilder localMsg model arguments =
+    arguments
+    -> PLLTrainer.State.State Msg localMsg model
+
+
 states :
     Shared.Model
     -> Model
     ->
-        { startPage : State () () ()
-        , getReadyScreen : State () () ()
-        , testRunning : State PLLTrainer.States.TestRunning.Msg PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
-        , evaluateResult : State PLLTrainer.States.EvaluateResult.Msg PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
-        , correctPage : State () () ()
-        , typeOfWrongPage : State () () ()
-        , wrongPage : State () () ()
+        { startPage : StateBuilder () () ()
+        , getReadyScreen : StateBuilder () () ()
+        , testRunning : StateBuilder PLLTrainer.States.TestRunning.Msg PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
+        , evaluateResult : StateBuilder PLLTrainer.States.EvaluateResult.Msg PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
+        , correctPage : StateBuilder () () ()
+        , typeOfWrongPage : StateBuilder () () ()
+        , wrongPage : StateBuilder () () ()
         }
 states shared model =
     { startPage =
         always <|
-            let
-                state =
-                    PLLTrainer.States.StartPage.state
-                        shared
-                        { startTest = TransitionMsg GetReadyForTest
-                        , noOp = NoOp
-                        }
-            in
-            { init = ( (), Cmd.none )
-            , view = always <| state.view
-            , subscriptions = always state.subscriptions
-            , update = \_ _ -> ( (), Cmd.none )
-            }
+            PLLTrainer.States.StartPage.state
+                shared
+                { startTest = TransitionMsg GetReadyForTest
+                , noOp = NoOp
+                }
     , getReadyScreen =
         always <|
-            { init =
-                ( ()
-                , Task.perform
-                    (always <| TransitionMsg (StartTest NothingGenerated))
-                    (Process.sleep 1000)
-                )
-            , view = always <| PLLTrainer.States.GetReadyScreen.state shared
-            , subscriptions = always Sub.none
-            , update = \_ _ -> ( (), Cmd.none )
-            }
+            let
+                transitionAfterASecond =
+                    Task.perform
+                        (always <|
+                            TransitionMsg (StartTest NothingGenerated)
+                        )
+                        (Process.sleep 1000)
+            in
+            addInitialCmd
+                transitionAfterASecond
+                (PLLTrainer.States.GetReadyScreen.state shared)
     , testRunning =
         \arguments ->
-            let
-                state =
-                    PLLTrainer.States.TestRunning.state
-                        shared
-                        model.currentTestCase
-                        (StateMsg << TestRunningMsg)
-                        { endTest = TransitionMsg (EndTest arguments Nothing) }
-            in
-            { init = ( state.init, Cmd.none )
-            , view = state.view
-            , subscriptions = always state.subscriptions
-            , update = \msg myModel -> Tuple.pair (state.update msg myModel) Cmd.none
-            }
+            PLLTrainer.States.TestRunning.state
+                shared
+                model.currentTestCase
+                (StateMsg << TestRunningMsg)
+                { endTest = TransitionMsg (EndTest arguments Nothing) }
     , evaluateResult =
         \arguments ->
-            let
-                fullArguments =
-                    { expectedCubeState = model.expectedCubeState
-                    , result = arguments.result
-                    , transitionsDisabled = arguments.transitionsDisabled
-                    }
-
-                state =
-                    PLLTrainer.States.EvaluateResult.state
-                        shared
-                        { evaluateCorrect = TransitionMsg EvaluateCorrect
-                        , evaluateWrong = TransitionMsg EvaluateWrong
-                        , noOp = NoOp
-                        }
-                        fullArguments
-                        (StateMsg << EvaluateResultMsg)
-            in
-            { init = ( state.init, Cmd.none )
-            , view = always <| state.view
-            , subscriptions = state.subscriptions
-            , update = \msg previousModel -> ( state.update msg previousModel, Cmd.none )
-            }
+            PLLTrainer.States.EvaluateResult.state
+                shared
+                { evaluateCorrect = TransitionMsg EvaluateCorrect
+                , evaluateWrong = TransitionMsg EvaluateWrong
+                , noOp = NoOp
+                }
+                { expectedCubeState = model.expectedCubeState
+                , result = arguments.result
+                , transitionsDisabled = arguments.transitionsDisabled
+                }
+                (StateMsg << EvaluateResultMsg)
     , correctPage =
         always <|
-            let
-                state =
-                    PLLTrainer.States.CorrectPage.state
-                        shared
-                        { startTest = TransitionMsg GetReadyForTest
-                        , noOp = NoOp
-                        }
-            in
-            { init = ( (), Cmd.none )
-            , view = always <| state.view
-            , subscriptions = always state.subscriptions
-            , update = \_ _ -> ( (), Cmd.none )
-            }
+            PLLTrainer.States.CorrectPage.state
+                shared
+                { startTest = TransitionMsg GetReadyForTest
+                , noOp = NoOp
+                }
     , typeOfWrongPage =
         \_ ->
-            let
-                state =
-                    PLLTrainer.States.TypeOfWrongPage.state
-                        shared
-                        { noMoveWasApplied = TransitionMsg WrongButNoMoveApplied
-                        , expectedStateWasReached = TransitionMsg WrongButExpectedStateWasReached
-                        , cubeUnrecoverable = TransitionMsg WrongAndUnrecoverable
-                        , noOp = NoOp
-                        }
-                        { expectedCubeState = model.expectedCubeState
-                        , testCase = model.currentTestCase
-                        }
-            in
-            { init = ( (), Cmd.none )
-            , view = always <| state.view
-            , subscriptions = always state.subscriptions
-            , update = \_ _ -> ( (), Cmd.none )
-            }
+            PLLTrainer.States.TypeOfWrongPage.state
+                shared
+                { noMoveWasApplied = TransitionMsg WrongButNoMoveApplied
+                , expectedStateWasReached = TransitionMsg WrongButExpectedStateWasReached
+                , cubeUnrecoverable = TransitionMsg WrongAndUnrecoverable
+                , noOp = NoOp
+                }
+                { expectedCubeState = model.expectedCubeState
+                , testCase = model.currentTestCase
+                }
     , wrongPage =
         \_ ->
-            let
-                state =
-                    PLLTrainer.States.WrongPage.state
-                        shared
-                        { startNextTest = TransitionMsg GetReadyForTest
-                        , noOp = NoOp
-                        }
-                        { expectedCubeState = model.expectedCubeState
-                        , testCase = model.currentTestCase
-                        }
-            in
-            { init = ( (), Cmd.none )
-            , view = always <| state.view
-            , subscriptions = always state.subscriptions
-            , update = \_ _ -> ( (), Cmd.none )
-            }
+            PLLTrainer.States.WrongPage.state
+                shared
+                { startNextTest = TransitionMsg GetReadyForTest
+                , noOp = NoOp
+                }
+                { expectedCubeState = model.expectedCubeState
+                , testCase = model.currentTestCase
+                }
     }
 
 
-type alias State msg model arguments =
-    arguments
-    ->
-        { init : ( model, Cmd Msg )
-        , view : model -> StatefulPage.StateView Msg
-        , subscriptions : model -> Sub Msg
-        , update : msg -> model -> ( model, Cmd Msg )
-        }
+addInitialCmd :
+    Cmd Msg
+    -> PLLTrainer.State.State Msg localMsg model
+    -> PLLTrainer.State.State Msg localMsg model
+addInitialCmd newCmd state =
+    { state
+        | init =
+            ( Tuple.first state.init
+            , Cmd.batch
+                [ Tuple.second state.init
+                , newCmd
+                ]
+            )
+    }
 
 
 handleStateMsgBoilerplate :
@@ -517,7 +478,7 @@ handleStateSubscriptionsBoilerplate shared model =
             ((states shared model).wrongPage ()).subscriptions ()
 
 
-handleStateViewBoilerplate : Shared.Model -> Model -> StatefulPage.StateView Msg
+handleStateViewBoilerplate : Shared.Model -> Model -> PLLTrainer.State.View Msg
 handleStateViewBoilerplate shared model =
     case model.trainerState of
         StartPage ->

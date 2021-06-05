@@ -5,48 +5,37 @@ import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Font as Font
-import Element.Region as Region
 import Json.Decode
 import Key
 import PLLTrainer.ButtonWithShortcut
+import PLLTrainer.State
 import Shared
-import StatefulPage
 import TimeInterval exposing (TimeInterval)
 import UI
 import View
 import ViewCube
 import ViewportSize exposing (ViewportSize)
-import WebResource
 
 
-state : Shared.Model -> Transitions msg -> Arguments -> (Msg -> msg) -> { init : Model, view : StatefulPage.StateView msg, subscriptions : Model -> Sub msg, update : Msg -> Model -> Model }
+state : Shared.Model -> Transitions msg -> Arguments -> (Msg -> msg) -> PLLTrainer.State.State msg Msg Model
 state { viewportSize, palette, hardwareAvailable } transitions arguments toMsg =
-    { init = { spacePressStarted = False, wPressStarted = False }
-    , view = view viewportSize palette hardwareAvailable transitions arguments
-    , subscriptions = subscriptions transitions arguments toMsg
-    , update = update
+    PLLTrainer.State.element
+        { init = init
+        , view = view viewportSize palette hardwareAvailable transitions arguments
+        , subscriptions = subscriptions transitions arguments toMsg
+        , update = update
+        }
+
+
+
+-- ARGUMENTS AND TRANSITIONS
+
+
+type alias Arguments =
+    { expectedCubeState : Cube
+    , result : TimeInterval
+    , transitionsDisabled : Bool
     }
-
-
-type alias Model =
-    { spacePressStarted : Bool
-    , wPressStarted : Bool
-    }
-
-
-type Msg
-    = SpaceStarted
-    | WStarted
-
-
-update : Msg -> Model -> Model
-update msg model =
-    case msg of
-        SpaceStarted ->
-            { model | spacePressStarted = True }
-
-        WStarted ->
-            { model | wPressStarted = True }
 
 
 type alias Transitions msg =
@@ -56,11 +45,42 @@ type alias Transitions msg =
     }
 
 
-type alias Arguments =
-    { expectedCubeState : Cube
-    , result : TimeInterval
-    , transitionsDisabled : Bool
+
+-- INIT
+
+
+type alias Model =
+    { spacePressStarted : Bool
+    , wPressStarted : Bool
     }
+
+
+init : ( Model, Cmd msg )
+init =
+    ( { spacePressStarted = False, wPressStarted = False }, Cmd.none )
+
+
+
+-- UPDATE
+
+
+type Msg
+    = SpaceStarted
+    | WStarted
+
+
+update : Msg -> Model -> ( Model, Cmd msg )
+update msg model =
+    case msg of
+        SpaceStarted ->
+            ( { model | spacePressStarted = True }, Cmd.none )
+
+        WStarted ->
+            ( { model | wPressStarted = True }, Cmd.none )
+
+
+
+-- SUBSCRIPTIONS
 
 
 subscriptions : Transitions msg -> Arguments -> (Msg -> msg) -> Model -> Sub msg
@@ -109,8 +129,12 @@ subscriptions transitions arguments toMsg model =
             ]
 
 
-view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> StatefulPage.StateView msg
-view viewportSize palette hardwareAvailable transitions arguments =
+
+-- VIEW
+
+
+view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> Model -> PLLTrainer.State.View msg
+view viewportSize palette hardwareAvailable transitions arguments _ =
     { topLevelEventListeners = View.buildTopLevelEventListeners []
     , overlays = View.buildOverlays []
     , body =
