@@ -24,7 +24,15 @@ state : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.State m
 state { viewportSize, palette, hardwareAvailable } transitions arguments =
     PLLTrainer.State.static
         { view = view viewportSize palette hardwareAvailable transitions arguments
-        , subscriptions = subscriptions transitions
+        , nonRepeatedKeyUpHandler =
+            Just <|
+                \key ->
+                    case key of
+                        Key.Space ->
+                            transitions.startNextTest
+
+                        _ ->
+                            transitions.noOp
         }
 
 
@@ -42,25 +50,6 @@ type alias Transitions msg =
     { startNextTest : msg
     , noOp : msg
     }
-
-
-
--- SUBSCRIPTIONS
-
-
-subscriptions : Transitions msg -> Sub msg
-subscriptions transitions =
-    Browser.Events.onKeyUp <|
-        Json.Decode.map
-            (\key ->
-                case key of
-                    Key.Space ->
-                        transitions.startNextTest
-
-                    _ ->
-                        transitions.noOp
-            )
-            Key.decodeNonRepeatedKeyEvent
 
 
 
