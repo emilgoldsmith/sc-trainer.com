@@ -31,7 +31,7 @@ state { viewportSize, palette, hardwareAvailable } transitions arguments =
 type alias Transitions msg =
     { noMoveWasApplied : msg
     , expectedStateWasReached : msg
-    , resetCube : msg
+    , cubeUnrecoverable : msg
     , noOp : msg
     }
 
@@ -48,6 +48,15 @@ subscriptions transitions =
         Json.Decode.map
             (\key ->
                 case key of
+                    Key.One ->
+                        transitions.noMoveWasApplied
+
+                    Key.Two ->
+                        transitions.expectedStateWasReached
+
+                    Key.Three ->
+                        transitions.cubeUnrecoverable
+
                     _ ->
                         transitions.noOp
             )
@@ -130,7 +139,7 @@ view viewportSize palette hardwareAvailable transitions arguments =
                 , PLLTrainer.ButtonWithShortcut.viewSmall
                     hardwareAvailable
                     [ testid "unrecoverable-button", centerX ]
-                    { onPress = Just transitions.resetCube
+                    { onPress = Just transitions.cubeUnrecoverable
                     , color = palette.primary
                     , labelText = "Reset To Solved"
                     , keyboardShortcut = Key.Three
