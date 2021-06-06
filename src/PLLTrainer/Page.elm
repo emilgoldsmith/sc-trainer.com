@@ -48,11 +48,19 @@ type alias Model =
 type TrainerState
     = StartPage
     | GetReadyScreen
-    | TestRunning PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
-    | EvaluateResult PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
+    | TestRunning PLLTrainer.States.TestRunning.Model TestRunningExtraState
+    | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
     | CorrectPage
     | TypeOfWrongPage
     | WrongPage
+
+
+type alias TestRunningExtraState =
+    { startTime : Time.Posix }
+
+
+type alias EvaluateResultExtraState =
+    { result : TimeInterval, transitionsDisabled : Bool }
 
 
 init : ( Model, Cmd Msg )
@@ -85,6 +93,8 @@ type Msg
 type TransitionMsg
     = GetReadyForTest
     | StartTest StartTestData
+      -- Meant to be sent with `Nothing` as the Posix time, and
+      -- then the time is figured out internally
     | EndTest { startTime : Time.Posix } (Maybe Time.Posix)
     | EnableEvaluateResultTransitions
     | EvaluateCorrect
@@ -194,8 +204,8 @@ update shared msg model =
                         [ stateCmd
                         , Task.perform
                             (always <| TransitionMsg EnableEvaluateResultTransitions)
-                            -- 200 ms should be enough to prevent accidental further
-                            -- transitions based on some manual tests
+                            -- Based on some manual testing, 200 ms is enough to
+                            -- prevent accidental further transitions
                             (Process.sleep 200)
                         ]
                     )
@@ -290,8 +300,16 @@ states :
     ->
         { startPage : StateBuilder () () ()
         , getReadyScreen : StateBuilder () () ()
-        , testRunning : StateBuilder PLLTrainer.States.TestRunning.Msg PLLTrainer.States.TestRunning.Model { startTime : Time.Posix }
-        , evaluateResult : StateBuilder PLLTrainer.States.EvaluateResult.Msg PLLTrainer.States.EvaluateResult.Model { result : TimeInterval, transitionsDisabled : Bool }
+        , testRunning :
+            StateBuilder
+                PLLTrainer.States.TestRunning.Msg
+                PLLTrainer.States.TestRunning.Model
+                TestRunningExtraState
+        , evaluateResult :
+            StateBuilder
+                PLLTrainer.States.EvaluateResult.Msg
+                PLLTrainer.States.EvaluateResult.Model
+                EvaluateResultExtraState
         , correctPage : StateBuilder () () ()
         , typeOfWrongPage : StateBuilder () () ()
         , wrongPage : StateBuilder () () ()
