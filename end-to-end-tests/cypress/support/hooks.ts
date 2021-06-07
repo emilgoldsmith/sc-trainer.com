@@ -26,10 +26,14 @@ const defaultJavascriptModifiers: JavascriptModifier[] = [
 
 beforeEach(function () {
   localStorage.setItem("plausible_ignore", "true");
+  applyBeforeEachIntercepts();
+});
+
+export function applyBeforeEachIntercepts(): void {
   interceptHtml(...defaultHtmlModifiers);
   interceptJavascript(...defaultJavascriptModifiers);
   ensureServerNotReloading();
-});
+}
 
 export function addHtmlModifier(modifier: HtmlModifier): void {
   defaultHtmlModifiers.push(modifier);

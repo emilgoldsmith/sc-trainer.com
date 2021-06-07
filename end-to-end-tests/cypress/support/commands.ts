@@ -25,6 +25,7 @@
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
 import { getCode, getKeyCode, getKeyValue, Key } from "./keys";
+import { aufToString, pllToString } from "./pll";
 
 const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
   testId,
@@ -616,3 +617,30 @@ Cypress.Commands.add(
   "percySnapshotWithProperName",
   percySnapshotWithProperName
 );
+
+const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] = function ([
+  preAuf,
+  pll,
+  postAuf,
+]) {
+  const jsonValue = [
+    aufToString[preAuf],
+    pllToString[pll],
+    aufToString[postAuf],
+  ];
+  cy.withOverallNameLogged(
+    { displayName: "SET TEST CASE", message: JSON.stringify(jsonValue) },
+    () => {
+      cy.getCustomWindow({ log: false }).then((window) => {
+        const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+        const setCurrentTestCasePort = ports.setCurrentTestCasePort;
+        if (!setCurrentTestCasePort)
+          throw new Error(
+            "setCurrentTestCase port is not exposed for some reason"
+          );
+        setCurrentTestCasePort.send(jsonValue);
+      });
+    }
+  );
+};
+Cypress.Commands.add("setCurrentTestCase", setCurrentTestCase);
