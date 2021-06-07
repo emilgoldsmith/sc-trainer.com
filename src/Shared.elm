@@ -22,14 +22,12 @@ import ViewportSize exposing (ViewportSize)
 type alias Flags =
     { viewportSize : { width : Int, height : Int }
     , touchScreenAvailable : Bool
-    , featureFlags :
-        { -- Placeholder is just here to silence linting errors for one field in a record
-          -- as it makes sense here as feature flags will grow and shrink often.
-          -- When we make the flag a Value input though we can maybe consider when there's one
-          -- value just keeping it as a single one though
-          placeholder : Bool
-        , moreFlowWhenWrong : Bool
-        }
+    , featureFlags : FeatureFlags
+    }
+
+
+type alias FeatureFlags =
+    { displayAlgorithmPicker : Bool
     }
 
 
@@ -41,7 +39,31 @@ type alias Model =
     { viewportSize : ViewportSize
     , hardwareAvailable : HardwareAvailable
     , palette : UI.Palette
+    , featureFlags : FeatureFlags
     }
+
+
+init : Request -> Flags -> ( Model, Cmd Msg )
+init _ { viewportSize, touchScreenAvailable, featureFlags } =
+    let
+        builtViewportSize =
+            ViewportSize.build viewportSize
+    in
+    ( { viewportSize = builtViewportSize
+      , palette = UI.defaultPalette
+      , hardwareAvailable =
+            guessIfUserHasKeyboard
+                builtViewportSize
+                { touchScreen = touchScreenAvailable
+
+                -- We don't know from the beginning if there is a keyboard so we make
+                -- our guess from an assumption of no
+                , keyboard = False
+                }
+      , featureFlags = featureFlags
+      }
+    , Cmd.none
+    )
 
 
 type alias HardwareAvailable =
@@ -80,28 +102,6 @@ guessIfUserHasKeyboard viewportSize available =
 setKeyboardAvailable : HardwareAvailable -> HardwareAvailable
 setKeyboardAvailable previous =
     { previous | keyboard = True }
-
-
-init : Request -> Flags -> ( Model, Cmd Msg )
-init _ { viewportSize, touchScreenAvailable } =
-    let
-        builtViewportSize =
-            ViewportSize.build viewportSize
-    in
-    ( { viewportSize = builtViewportSize
-      , palette = UI.defaultPalette
-      , hardwareAvailable =
-            guessIfUserHasKeyboard
-                builtViewportSize
-                { touchScreen = touchScreenAvailable
-
-                -- We don't know from the beginning if there is a keyboard so we make
-                -- our guess from an assumption of no
-                , keyboard = False
-                }
-      }
-    , Cmd.none
-    )
 
 
 

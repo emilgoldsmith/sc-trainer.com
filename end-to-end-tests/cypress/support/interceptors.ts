@@ -1,13 +1,8 @@
-import {
-  addElmModelObserversAndModifiersToHtml,
-  addElmModelObserversAndModifiersToJavascript,
-  fixRandomnessSeedInJavascript,
-} from "./elm-monkey-patching";
-import { handleHtmlCypressModifications } from "./html-template-replacements";
+export type HtmlModifier = (html: { type: "html"; value: string }) => string;
 
-export function interceptHtml(
-  ...modifiers: ((previousHtml: { type: "html"; value: string }) => string)[]
-): void {
+export type JavascriptModifier = (js: { type: "js"; value: string }) => string;
+
+export function interceptHtml(...modifiers: HtmlModifier[]): void {
   cy.intercept("GET", new RegExp(`^${Cypress.config().baseUrl}`), (req) => {
     const expectsHtml =
       req.headers.accept && req.headers.accept.split(",").includes("text/html");
@@ -37,12 +32,7 @@ export function interceptHtml(
   });
 }
 
-export function interceptJavascript(
-  ...modifiers: ((previousJavascript: {
-    type: "js";
-    value: string;
-  }) => string)[]
-): void {
+export function interceptJavascript(...modifiers: JavascriptModifier[]): void {
   const jsPattern = Cypress.config().baseUrl + "/main.js";
   expect(Cypress.minimatch(Cypress.config().baseUrl + "/main.js", jsPattern)).to
     .be.true;
@@ -74,19 +64,7 @@ export function interceptJavascript(
   });
 }
 
-export function performStandardIntercepts(): void {
-  interceptHtml(
-    addElmModelObserversAndModifiersToHtml,
-    handleHtmlCypressModifications
-  );
-  interceptJavascript(
-    addElmModelObserversAndModifiersToJavascript,
-    fixRandomnessSeedInJavascript
-  );
-  ensureServerNotReloading();
-}
-
-function ensureServerNotReloading() {
+export function ensureServerNotReloading(): void {
   cy.intercept(Cypress.config().baseUrl + "/reload/reload.js", () => {
     throw new Error(
       `Reloading server most likely from ./scripts/run-hot.sh detected. \
@@ -98,4 +76,16 @@ a reload.
 `
     );
   });
+}
+
+export function createFeatureFlagSetter(
+  key: string,
+  flagValue: boolean
+): HtmlModifier {
+  return function (prevHtml) {
+    return prevHtml.value.replace(
+      new RegExp(String.raw`("${key}":)(?:true|false))`),
+      "$1" + JSON.stringify(flagValue)
+    );
+  };
 }

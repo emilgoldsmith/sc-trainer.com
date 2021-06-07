@@ -196,7 +196,7 @@ function replaceMany(template, replacements) {
 const builtIndexHtml = replaceMany(indexHtmlTemplate, [
   {
     key: "FEATURE_FLAGS",
-    value: { placeholder: false, ...featureFlagsToUse },
+    value: { ...featureFlagsToUse },
   },
   {
     key: "SENTRY_ENABLE",
