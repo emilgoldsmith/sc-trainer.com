@@ -1,9 +1,6 @@
 /// <reference types="cypress" />
 
 declare namespace Cypress {
-  import { Key } from "./keys";
-  import { SnapshotOptions } from "@percy/core";
-
   type CustomWindow = Window &
     typeof globalThis & {
       END_TO_END_TEST_HELPERS: {
@@ -82,7 +79,7 @@ declare namespace Cypress {
      * @example
      * cy.pressKey(Key.space);
      */
-    pressKey(key: Key, options?: { log?: boolean }): void;
+    pressKey(key: import("./keys").Key, options?: { log?: boolean }): void;
 
     /**
      * Holds down a key in the global scope for a "long" time before releasing it
@@ -94,7 +91,7 @@ declare namespace Cypress {
      * cy.clock();
      * cy.longPressKey(Key.space);
      */
-    longPressKey(key: Key, options?: { log?: boolean }): void;
+    longPressKey(key: import("./keys").Key, options?: { log?: boolean }): void;
 
     /**
      * Simulates something like a hand smashing down on the given keys on the keyboard
@@ -105,7 +102,7 @@ declare namespace Cypress {
      * cy.clock();
      * cy.buttonMash([Key.space, Key.l, Key.leftCtrl]);
      */
-    buttonMash(keys: Key[], options?: { log?: boolean }): void;
+    buttonMash(keys: import("./keys").Key[], options?: { log?: boolean }): void;
 
     /**
      * Simulates something like a hand smashing down on the given keys on the keyboard
@@ -117,7 +114,10 @@ declare namespace Cypress {
      * cy.clock();
      * cy.longButtonMash([Key.space, Key.l, Key.leftCtrl]);
      */
-    longButtonMash(keys: Key[], options?: { log?: boolean }): void;
+    longButtonMash(
+      keys: import("./keys").Key[],
+      options?: { log?: boolean }
+    ): void;
 
     /**
      * Get the current state of our application, do not try to modify it
@@ -199,6 +199,9 @@ declare namespace Cypress {
 
     mouseClickScreen(position: Cypress.PositionType): void;
 
-    percySnapshotWithProperName(name: string, options?: SnapshotOptions): void;
+    percySnapshotWithProperName(
+      name: string,
+      options?: import("@percy/core").SnapshotOptions
+    ): void;
   }
 }
