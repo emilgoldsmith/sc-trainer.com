@@ -1,5 +1,6 @@
 module PLLTrainer.Page exposing (Model, Msg, page)
 
+import AUF
 import Algorithm
 import Cube exposing (Cube)
 import PLL
@@ -74,7 +75,7 @@ init =
       -- until after the first getReadyScreen is done which would then
       -- possibly need a Maybe or a difficult tagged type. A placeholder
       -- seems the best option of these right now
-      , currentTestCase = PLLTrainer.TestCase.build PLLTrainer.TestCase.NoAUF PLL.Aa PLLTrainer.TestCase.NoAUF
+      , currentTestCase = PLLTrainer.TestCase.build AUF.None PLL.Aa AUF.None
       }
     , Cmd.none
     )
