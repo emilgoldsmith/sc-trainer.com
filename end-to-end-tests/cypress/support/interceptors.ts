@@ -84,7 +84,7 @@ export function createFeatureFlagSetter(
 ): HtmlModifier {
   return function (prevHtml) {
     return prevHtml.value.replace(
-      new RegExp(String.raw`("${key}":)(?:true|false))`),
+      new RegExp(String.raw`("${key}":)(?:true|false)`),
       "$1" + JSON.stringify(flagValue)
     );
   };

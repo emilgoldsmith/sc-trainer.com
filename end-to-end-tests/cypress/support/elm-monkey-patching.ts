@@ -2,10 +2,16 @@ export function addElmModelObserversAndModifiersToHtml(previousHtml: {
   type: "html";
   value: string;
 }): string {
-  return addToDocumentHead({
+  const withHeadModifications = addToDocumentHead({
     toAdd: addE2ETestHelpersToWindow,
     htmlString: previousHtml.value,
   });
+  const withAllModifications = addToEndOfElmInitScriptTag({
+    toAdd: setAReferenceToElmPorts,
+    htmlString: withHeadModifications,
+  });
+  // console.log(withAllModifications);
+  return withAllModifications;
 }
 
 export function addElmModelObserversAndModifiersToJavascript(previousJavascript: {
@@ -25,6 +31,21 @@ function addToDocumentHead({
   return htmlString.replace(
     "<head>",
     `<head><script>(${toAdd.toString()}())</script>`
+  );
+}
+
+function addToEndOfElmInitScriptTag({
+  toAdd,
+  htmlString,
+}: {
+  toAdd: () => void;
+  htmlString: string;
+}): string {
+  return htmlString.replace(
+    // We find the elm init script and then go to the end of it
+    // capturing either side of where we want to insert code
+    /(Elm\.Main\.init[\s\S]*?)(<\/script>)/,
+    `$1;(${toAdd.toString()}());$2`
   );
 }
 
@@ -276,6 +297,7 @@ function addE2ETestHelpersToWindow() {
   let modelUpdater:
     | ((newModel: Cypress.OurApplicationState) => void)
     | null = null;
+  let ports: Cypress.ElmPorts | null = null;
 
   (window as Cypress.CustomWindow).END_TO_END_TEST_HELPERS = {
     getModel() {
@@ -299,9 +321,18 @@ function addE2ETestHelpersToWindow() {
     getDocumentEventListeners() {
       return new Set(documentEventListeners.values());
     },
+    getPorts() {
+      if (ports === null) {
+        throw new Error(
+          "ports need to be set with window.END_TO_END_TEST_HELPERS.internal.setPorts() before being able to get it with getPorts"
+        );
+      }
+      return ports;
+    },
     internal: {
       setModel: (newModel) => (model = newModel),
       registerModelUpdater: (updater) => (modelUpdater = updater),
+      setPorts: (newPorts) => (ports = newPorts),
     },
   };
 
@@ -378,6 +409,16 @@ function addE2ETestHelpersToWindow() {
     intervalIds.push(id);
     return id;
   };
+}
+declare global {
+  const app: { ports: Cypress.ElmPorts | undefined };
+}
+function setAReferenceToElmPorts() {
+  if (!app || !app?.ports)
+    throw new Error("Couldn't find app.ports in this scope");
+  (window as Cypress.CustomWindow).END_TO_END_TEST_HELPERS.internal.setPorts(
+    app.ports
+  );
 }
 
 function addObserversAndModifiers(htmlString: string) {

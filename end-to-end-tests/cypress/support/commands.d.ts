@@ -1,6 +1,15 @@
 /// <reference types="cypress" />
 
 declare namespace Cypress {
+  type ElmPorts = {
+    [portName: string]:
+      | {
+          send: (value: any) => void;
+          subscribe: (callback: (messageValue: any) => void) => void;
+        }
+      | undefined;
+  };
+
   type CustomWindow = Window &
     typeof globalThis & {
       END_TO_END_TEST_HELPERS: {
@@ -17,6 +26,10 @@ declare namespace Cypress {
          */
         getDocumentEventListeners(): Set<keyof DocumentEventMap>;
         /**
+         * The Elm Ports interface for the application
+         */
+        getPorts(): ElmPorts;
+        /**
          * Only meant to be used within the javascript injection,
          * not ever within Cypress code
          */
@@ -25,6 +38,7 @@ declare namespace Cypress {
           registerModelUpdater(
             updater: (newModel: OurApplicationState) => void
           ): void;
+          setPorts(ports: ElmPorts): void;
         };
       };
     };
@@ -202,6 +216,10 @@ declare namespace Cypress {
     percySnapshotWithProperName(
       name: string,
       options?: import("@percy/core").SnapshotOptions
+    ): void;
+
+    setCurrentTestCase(
+      testCase: [import("./pll").AUF, import("./pll").PLL, import("./pll").AUF]
     ): void;
   }
 }

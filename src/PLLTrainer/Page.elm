@@ -3,6 +3,7 @@ module PLLTrainer.Page exposing (Model, Msg, page)
 import AUF
 import Algorithm
 import Cube exposing (Cube)
+import Json.Decode
 import PLL
 import PLLTrainer.State
 import PLLTrainer.States.CorrectPage
@@ -88,6 +89,7 @@ init =
 type Msg
     = TransitionMsg TransitionMsg
     | StateMsg StateMsg
+    | InternalMsg InternalMsg
     | NoOp
 
 
@@ -108,6 +110,10 @@ type TransitionMsg
 type StateMsg
     = TestRunningMsg PLLTrainer.States.TestRunning.Msg
     | EvaluateResultMsg PLLTrainer.States.EvaluateResult.Msg
+
+
+type InternalMsg
+    = TESTONLYSetTestCase (Result Json.Decode.Error TestCase)
 
 
 {-| We use this structure to make sure the test case
@@ -253,6 +259,19 @@ update shared msg model =
         StateMsg stateMsg ->
             handleStateMsgBoilerplate shared model stateMsg
 
+        InternalMsg internalMsg ->
+            case internalMsg of
+                TESTONLYSetTestCase (Ok testCase) ->
+                    ( { model | currentTestCase = testCase }, Cmd.none )
+
+                TESTONLYSetTestCase (Result.Err decodeError) ->
+                    ( model
+                    , Ports.logError
+                        ("Error in test only set test case: "
+                            ++ Json.Decode.errorToString decodeError
+                        )
+                    )
+
         NoOp ->
             ( model, Cmd.none )
 
@@ -263,8 +282,11 @@ update shared msg model =
 
 subscriptions : Shared.Model -> Model -> Sub Msg
 subscriptions shared model =
-    handleStateSubscriptionsBoilerplate shared model
-        |> PLLTrainer.Subscription.getSub
+    Sub.batch
+        [ handleStateSubscriptionsBoilerplate shared model
+            |> PLLTrainer.Subscription.getSub
+        , Ports.onTESTONLYSetTestCase (InternalMsg << TESTONLYSetTestCase)
+        ]
 
 
 

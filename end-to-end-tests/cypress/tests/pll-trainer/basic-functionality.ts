@@ -7,7 +7,7 @@ import {
 import { Element } from "support/elements";
 import { paths } from "support/paths";
 
-describe("Algorithm Trainer", function () {
+describe("PLL Trainer - Basic Functionality", function () {
   before(function () {
     pllTrainerStates.populateAll();
   });
