@@ -1,8 +1,8 @@
 {
   "staging": {
-    "moreFlowWhenWrong": true
+    "displayAlgorithmPicker": true
   },
   "production": {
-    "moreFlowWhenWrong": false
+    "displayAlgorithmPicker": false
   }
 }
