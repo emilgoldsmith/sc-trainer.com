@@ -86,7 +86,7 @@ update msg model =
 
 subscriptions : Transitions msg -> Arguments -> (Msg -> msg) -> Model -> PLLTrainer.Subscription.Subscription msg
 subscriptions transitions arguments toMsg model =
-    PLLTrainer.Subscription.BrowserEvents <|
+    PLLTrainer.Subscription.justBrowserEvents <|
         if arguments.transitionsDisabled then
             Sub.none
 

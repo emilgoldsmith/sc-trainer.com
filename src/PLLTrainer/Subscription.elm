@@ -1,4 +1,4 @@
-module PLLTrainer.Subscription exposing (Subscription(..), getSub, getTopLevelEventListeners)
+module PLLTrainer.Subscription exposing (Subscription, browserEventsAndElementAttributes, getSub, getTopLevelEventListeners, justBrowserEvents, justElementAttributes, none)
 
 import Element
 
@@ -10,6 +10,30 @@ type Subscription msg
         { browserEvents : Sub msg
         , elementAttributes : List (Element.Attribute msg)
         }
+
+
+none : Subscription msg
+none =
+    BrowserEvents Sub.none
+
+
+justBrowserEvents : Sub msg -> Subscription msg
+justBrowserEvents =
+    BrowserEvents
+
+
+justElementAttributes : List (Element.Attribute msg) -> Subscription msg
+justElementAttributes =
+    ElementAttributes
+
+
+browserEventsAndElementAttributes :
+    { browserEvents : Sub msg
+    , elementAttributes : List (Element.Attribute msg)
+    }
+    -> Subscription msg
+browserEventsAndElementAttributes =
+    BothSubscriptions
 
 
 getSub : Subscription msg -> Sub msg

@@ -77,7 +77,7 @@ update msg model =
 
 subscriptions : (Msg -> msg) -> Transitions msg -> Model -> PLLTrainer.Subscription.Subscription msg
 subscriptions toMsg transitions _ =
-    PLLTrainer.Subscription.BothSubscriptions
+    PLLTrainer.Subscription.browserEventsAndElementAttributes
         { browserEvents =
             Sub.batch
                 [ Browser.Events.onKeyDown <|
