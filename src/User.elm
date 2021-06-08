@@ -1,8 +1,9 @@
-module User exposing (User, deserialize, new, serialize)
+module User exposing (User, changePLLAlgorithm, deserialize, hasChosenPLLAlgorithmFor, new, serialize)
 
 import Algorithm exposing (Algorithm)
 import Json.Decode
 import Json.Encode
+import PLL exposing (PLL)
 
 
 type User
@@ -67,6 +68,26 @@ new =
 
 
 
+-- GETTERS AND MODIFIERS
+
+
+hasChosenPLLAlgorithmFor : PLL -> User -> Bool
+hasChosenPLLAlgorithmFor pll (User pllAlgorithms) =
+    getPLLAlgorithm pllAlgorithms pll
+        |> Maybe.map (always True)
+        |> Maybe.withDefault False
+
+
+changePLLAlgorithm : PLL -> Algorithm -> User -> User
+changePLLAlgorithm pll algorithm (User pllAlgorithms) =
+    let
+        newPllAlgorithms =
+            setPLLAlgorithm pllAlgorithms pll algorithm
+    in
+    User newPllAlgorithms
+
+
+
 -- SERIALIZATION
 -- top level (de)serialization
 
@@ -128,3 +149,145 @@ pllAlgorithmsDecoder =
         , v = Nothing
         , y = Nothing
         }
+
+
+
+-- BOILERPLATE
+
+
+getPLLAlgorithm : UsersCurrentPLLAlgorithms -> PLL -> Maybe Algorithm
+getPLLAlgorithm algorithms pll =
+    case pll of
+        PLL.H ->
+            algorithms.h
+
+        PLL.Ua ->
+            algorithms.ua
+
+        PLL.Ub ->
+            algorithms.ub
+
+        PLL.Z ->
+            algorithms.z
+
+        PLL.Aa ->
+            algorithms.aa
+
+        PLL.Ab ->
+            algorithms.ab
+
+        PLL.E ->
+            algorithms.e
+
+        PLL.F ->
+            algorithms.f
+
+        PLL.Ga ->
+            algorithms.ga
+
+        PLL.Gb ->
+            algorithms.gb
+
+        PLL.Gc ->
+            algorithms.gc
+
+        PLL.Gd ->
+            algorithms.gd
+
+        PLL.Ja ->
+            algorithms.ja
+
+        PLL.Jb ->
+            algorithms.jb
+
+        PLL.Na ->
+            algorithms.na
+
+        PLL.Nb ->
+            algorithms.nb
+
+        PLL.Ra ->
+            algorithms.ra
+
+        PLL.Rb ->
+            algorithms.rb
+
+        PLL.T ->
+            algorithms.t
+
+        PLL.V ->
+            algorithms.v
+
+        PLL.Y ->
+            algorithms.y
+
+
+setPLLAlgorithm :
+    UsersCurrentPLLAlgorithms
+    -> PLL
+    -> Algorithm
+    -> UsersCurrentPLLAlgorithms
+setPLLAlgorithm algorithms pll newAlgorithm =
+    case pll of
+        PLL.H ->
+            { algorithms | h = Just newAlgorithm }
+
+        PLL.Ua ->
+            { algorithms | ua = Just newAlgorithm }
+
+        PLL.Ub ->
+            { algorithms | ub = Just newAlgorithm }
+
+        PLL.Z ->
+            { algorithms | z = Just newAlgorithm }
+
+        PLL.Aa ->
+            { algorithms | aa = Just newAlgorithm }
+
+        PLL.Ab ->
+            { algorithms | ab = Just newAlgorithm }
+
+        PLL.E ->
+            { algorithms | e = Just newAlgorithm }
+
+        PLL.F ->
+            { algorithms | f = Just newAlgorithm }
+
+        PLL.Ga ->
+            { algorithms | ga = Just newAlgorithm }
+
+        PLL.Gb ->
+            { algorithms | gb = Just newAlgorithm }
+
+        PLL.Gc ->
+            { algorithms | gc = Just newAlgorithm }
+
+        PLL.Gd ->
+            { algorithms | gd = Just newAlgorithm }
+
+        PLL.Ja ->
+            { algorithms | ja = Just newAlgorithm }
+
+        PLL.Jb ->
+            { algorithms | jb = Just newAlgorithm }
+
+        PLL.Na ->
+            { algorithms | na = Just newAlgorithm }
+
+        PLL.Nb ->
+            { algorithms | nb = Just newAlgorithm }
+
+        PLL.Ra ->
+            { algorithms | ra = Just newAlgorithm }
+
+        PLL.Rb ->
+            { algorithms | rb = Just newAlgorithm }
+
+        PLL.T ->
+            { algorithms | t = Just newAlgorithm }
+
+        PLL.V ->
+            { algorithms | v = Just newAlgorithm }
+
+        PLL.Y ->
+            { algorithms | y = Just newAlgorithm }

@@ -1,5 +1,6 @@
 module PLLTrainer.States.PickAlgorithmPage exposing (Model, Msg, state)
 
+import Algorithm exposing (Algorithm)
 import Css exposing (testid)
 import Element exposing (..)
 import Element.Input as Input
@@ -27,7 +28,7 @@ state _ transitions toMsg =
 
 
 type alias Transitions msg =
-    { continue : msg
+    { continue : Algorithm -> msg
     }
 
 
@@ -35,14 +36,32 @@ type alias Transitions msg =
 -- INIT
 
 
-type alias Model =
-    { algorithmString : String
-    }
+type Model
+    = InputNotInteractedWith
+    | ValidAlgorithm String Algorithm
+    | InvalidAlgorithm String
 
 
 init : ( Model, Cmd msg )
 init =
-    ( { algorithmString = "" }, Cmd.none )
+    ( InputNotInteractedWith, Cmd.none )
+
+
+
+-- MODEL HELPERS
+
+
+getInputText : Model -> String
+getInputText model =
+    case model of
+        InputNotInteractedWith ->
+            ""
+
+        ValidAlgorithm text _ ->
+            text
+
+        InvalidAlgorithm text ->
+            text
 
 
 
@@ -54,10 +73,19 @@ type Msg
 
 
 update : Msg -> Model -> ( Model, Cmd msg )
-update msg model =
+update msg _ =
     case msg of
-        UpdateAlgorithmString newAlgorithmString ->
-            ( { model | algorithmString = newAlgorithmString }, Cmd.none )
+        UpdateAlgorithmString algorithmString ->
+            let
+                algorithmResult =
+                    Algorithm.fromString algorithmString
+
+                newModel =
+                    algorithmResult
+                        |> Result.map (ValidAlgorithm algorithmString)
+                        |> Result.withDefault (InvalidAlgorithm algorithmString)
+            in
+            ( newModel, Cmd.none )
 
 
 
@@ -87,10 +115,10 @@ view toMsg transitions model =
                 column []
                     [ Input.text
                         [ testid "algorithm-input"
-                        , onEnter transitions.continue
+                        , onEnter (transitions.continue Algorithm.empty)
                         ]
                         { onChange = toMsg << UpdateAlgorithmString
-                        , text = model.algorithmString
+                        , text = getInputText model
                         , placeholder = Nothing
                         , label = Input.labelAbove [] none
                         }
