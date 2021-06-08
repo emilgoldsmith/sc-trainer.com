@@ -59,6 +59,7 @@ export const pllTrainerElements = {
   }),
   pickAlgorithmPage: buildElementsCategory({
     container: "pick-algorithm-container",
+    algorithmInput: "algorithm-input",
   }),
   globals: buildGlobalsCategory({
     cube: "cube",

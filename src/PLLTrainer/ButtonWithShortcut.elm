@@ -27,6 +27,9 @@ view hardwareAvailable attributes { onPress, labelText, keyboardShortcut, color 
                 Key.Three ->
                     "3"
 
+                Key.Enter ->
+                    "Enter"
+
                 Key.OtherKey keyStr ->
                     keyStr
 
@@ -80,6 +83,9 @@ viewSmall hardwareAvailable attributes { onPress, labelText, keyboardShortcut, c
 
                 Key.Three ->
                     "3"
+
+                Key.Enter ->
+                    "Enter"
 
                 Key.OtherKey keyStr ->
                     keyStr

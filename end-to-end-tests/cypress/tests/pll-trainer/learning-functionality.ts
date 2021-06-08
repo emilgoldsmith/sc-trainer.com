@@ -15,6 +15,8 @@ describe("PLL Trainer - Learning Functionality", function () {
       cy.clock();
 
       const correctBranchCase = [AUF.none, PLL.Aa, AUF.none] as const;
+      // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
+      const correctBranchAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
       cy.setCurrentTestCase(correctBranchCase);
 
       cy.mouseClickScreen("center");
@@ -23,6 +25,12 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.evaluateResult.correctButton.get().click();
 
       pllTrainerElements.pickAlgorithmPage.assertAllShow();
+
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type(correctBranchAlgorithm + "{enter}");
+
+      pllTrainerElements.correctPage.container.assertShows();
     });
   });
 });

@@ -9,6 +9,7 @@ type Key
     | One
     | Two
     | Three
+    | Enter
     | OtherKey String
 
 
@@ -61,6 +62,9 @@ toKey keyString =
 
         "3" ->
             Three
+
+        "Enter" ->
+            Enter
 
         _ ->
             OtherKey keyString

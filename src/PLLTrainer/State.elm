@@ -29,7 +29,7 @@ static :
 static { nonRepeatedKeyUpHandler, view } =
     let
         subscription =
-            PLLTrainer.Subscription.BrowserEvents <|
+            PLLTrainer.Subscription.justBrowserEvents <|
                 Maybe.withDefault Sub.none <|
                     Maybe.map
                         (\handler ->

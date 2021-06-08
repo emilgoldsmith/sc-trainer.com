@@ -53,7 +53,7 @@ type TrainerState
     | GetReadyScreen
     | TestRunning PLLTrainer.States.TestRunning.Model TestRunningExtraState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
-    | PickAlgorithmPage
+    | PickAlgorithmPage PLLTrainer.States.PickAlgorithmPage.Model
     | CorrectPage
     | TypeOfWrongPage
     | WrongPage
@@ -103,6 +103,7 @@ type TransitionMsg
     | EndTest { startTime : Time.Posix } (Maybe Time.Posix)
     | EnableEvaluateResultTransitions
     | EvaluateCorrect
+    | AlgorithmPicked
     | EvaluateWrong
     | WrongButNoMoveApplied
     | WrongButExpectedStateWasReached
@@ -112,6 +113,7 @@ type TransitionMsg
 type StateMsg
     = TestRunningMsg PLLTrainer.States.TestRunning.Msg
     | EvaluateResultMsg PLLTrainer.States.EvaluateResult.Msg
+    | PickAlgorithmMsg PLLTrainer.States.PickAlgorithmPage.Msg
 
 
 type InternalMsg
@@ -232,8 +234,12 @@ update shared msg model =
                             ( model, Ports.logError "Unexpected enable evaluate result transitions outside of EvaluateResult state" )
 
                 EvaluateCorrect ->
+                    let
+                        ( stateModel, stateCmd ) =
+                            ((states shared model).pickAlgorithmPage ()).init
+                    in
                     if shared.featureFlags.displayAlgorithmPicker then
-                        ( { model | trainerState = PickAlgorithmPage }, Cmd.none )
+                        ( { model | trainerState = PickAlgorithmPage stateModel }, stateCmd )
 
                     else
                         ( { model | trainerState = CorrectPage }, Cmd.none )
@@ -242,6 +248,9 @@ update shared msg model =
                     ( { model | trainerState = TypeOfWrongPage }
                     , Cmd.none
                     )
+
+                AlgorithmPicked ->
+                    ( { model | trainerState = CorrectPage }, Cmd.none )
 
                 WrongButNoMoveApplied ->
                     ( { model
@@ -339,7 +348,11 @@ states :
                 PLLTrainer.States.EvaluateResult.Msg
                 PLLTrainer.States.EvaluateResult.Model
                 EvaluateResultExtraState
-        , pickAlgorithmPage : StateBuilder () () ()
+        , pickAlgorithmPage :
+            StateBuilder
+                PLLTrainer.States.PickAlgorithmPage.Msg
+                PLLTrainer.States.PickAlgorithmPage.Model
+                ()
         , correctPage : StateBuilder () () ()
         , typeOfWrongPage : StateBuilder () () ()
         , wrongPage : StateBuilder () () ()
@@ -377,7 +390,10 @@ states shared model =
                 (StateMsg << EvaluateResultMsg)
     , pickAlgorithmPage =
         always <|
-            PLLTrainer.States.PickAlgorithmPage.state shared
+            PLLTrainer.States.PickAlgorithmPage.state
+                shared
+                { continue = TransitionMsg AlgorithmPicked }
+                (StateMsg << PickAlgorithmMsg)
     , correctPage =
         always <|
             PLLTrainer.States.CorrectPage.state
@@ -452,6 +468,9 @@ stateMsgToString stateMsg =
         EvaluateResultMsg _ ->
             "EvaluateResultMsg"
 
+        PickAlgorithmMsg _ ->
+            "PickAlgorithmMsg"
+
 
 trainerStateToString : TrainerState -> String
 trainerStateToString trainerState =
@@ -474,7 +493,7 @@ trainerStateToString trainerState =
                 ++ stringFromBool transitionsDisabled
                 ++ " }"
 
-        PickAlgorithmPage ->
+        PickAlgorithmPage _ ->
             "PickAlgorithmPage"
 
         CorrectPage ->
@@ -511,8 +530,8 @@ handleStateSubscriptionsBoilerplate shared model =
         EvaluateResult stateModel arguments ->
             ((states shared model).evaluateResult arguments).subscriptions stateModel
 
-        PickAlgorithmPage ->
-            ((states shared model).pickAlgorithmPage ()).subscriptions ()
+        PickAlgorithmPage stateModel ->
+            ((states shared model).pickAlgorithmPage ()).subscriptions stateModel
 
         CorrectPage ->
             ((states shared model).correctPage ()).subscriptions ()
@@ -539,8 +558,8 @@ handleStateViewBoilerplate shared model =
         EvaluateResult stateModel arguments ->
             ((states shared model).evaluateResult arguments).view stateModel
 
-        PickAlgorithmPage ->
-            ((states shared model).pickAlgorithmPage ()).view ()
+        PickAlgorithmPage stateModel ->
+            ((states shared model).pickAlgorithmPage ()).view stateModel
 
         CorrectPage ->
             ((states shared model).correctPage ()).view ()
