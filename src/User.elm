@@ -1,6 +1,8 @@
-module User exposing (User, new)
+module User exposing (User, deserialize, new, serialize)
 
 import Algorithm exposing (Algorithm)
+import Json.Decode
+import Json.Encode
 
 
 type User
@@ -40,6 +42,70 @@ type alias UsersCurrentPLLAlgorithms =
 new : User
 new =
     User
+        { h = Nothing
+        , ua = Nothing
+        , ub = Nothing
+        , z = Nothing
+        , aa = Nothing
+        , ab = Nothing
+        , e = Nothing
+        , f = Nothing
+        , ga = Nothing
+        , gb = Nothing
+        , gc = Nothing
+        , gd = Nothing
+        , ja = Nothing
+        , jb = Nothing
+        , na = Nothing
+        , nb = Nothing
+        , ra = Nothing
+        , rb = Nothing
+        , t = Nothing
+        , v = Nothing
+        , y = Nothing
+        }
+
+
+
+-- SERIALIZATION
+-- top level (de)serialization
+
+
+serialize : User -> Json.Encode.Value
+serialize (User pllAlgorithms) =
+    Json.Encode.object
+        [ ( "usersCurrentPLLAlgorithms"
+          , serializePllAlgorithms pllAlgorithms
+          )
+        ]
+
+
+deserialize : Json.Decode.Value -> Result Json.Decode.Error User
+deserialize =
+    Json.Decode.decodeValue decoder
+
+
+decoder : Json.Decode.Decoder User
+decoder =
+    let
+        pllAlgorithms =
+            Json.Decode.field "usersCurrentPLLAlgorithms" pllAlgorithmsDecoder
+    in
+    Json.Decode.map User pllAlgorithms
+
+
+
+-- pll algorithms (de)serialization
+
+
+serializePllAlgorithms : UsersCurrentPLLAlgorithms -> Json.Encode.Value
+serializePllAlgorithms pllAlgorithms =
+    Json.Encode.list (always Json.Encode.null) []
+
+
+pllAlgorithmsDecoder : Json.Decode.Decoder UsersCurrentPLLAlgorithms
+pllAlgorithmsDecoder =
+    Json.Decode.succeed
         { h = Nothing
         , ua = Nothing
         , ub = Nothing
