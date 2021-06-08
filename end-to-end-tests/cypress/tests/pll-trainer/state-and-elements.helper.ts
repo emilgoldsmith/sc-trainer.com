@@ -57,6 +57,9 @@ export const pllTrainerElements = {
     expectedCubeStateBack: "expected-cube-state-back",
     nextButton: "next-button",
   }),
+  pickAlgorithmPage: buildElementsCategory({
+    container: "pick-algorithm-container",
+  }),
   globals: buildGlobalsCategory({
     cube: "cube",
     feedbackButton: "feedback-button",

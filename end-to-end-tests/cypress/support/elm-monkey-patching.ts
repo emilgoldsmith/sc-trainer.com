@@ -10,7 +10,6 @@ export function addElmModelObserversAndModifiersToHtml(previousHtml: {
     toAdd: setAReferenceToElmPorts,
     htmlString: withHeadModifications,
   });
-  // console.log(withAllModifications);
   return withAllModifications;
 }
 

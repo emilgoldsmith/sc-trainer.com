@@ -9,6 +9,7 @@ import PLLTrainer.State
 import PLLTrainer.States.CorrectPage
 import PLLTrainer.States.EvaluateResult
 import PLLTrainer.States.GetReadyScreen
+import PLLTrainer.States.PickAlgorithmPage
 import PLLTrainer.States.StartPage
 import PLLTrainer.States.TestRunning
 import PLLTrainer.States.TypeOfWrongPage
@@ -52,6 +53,7 @@ type TrainerState
     | GetReadyScreen
     | TestRunning PLLTrainer.States.TestRunning.Model TestRunningExtraState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
+    | PickAlgorithmPage
     | CorrectPage
     | TypeOfWrongPage
     | WrongPage
@@ -230,7 +232,11 @@ update shared msg model =
                             ( model, Ports.logError "Unexpected enable evaluate result transitions outside of EvaluateResult state" )
 
                 EvaluateCorrect ->
-                    ( { model | trainerState = CorrectPage }, Cmd.none )
+                    if shared.featureFlags.displayAlgorithmPicker then
+                        ( { model | trainerState = PickAlgorithmPage }, Cmd.none )
+
+                    else
+                        ( { model | trainerState = CorrectPage }, Cmd.none )
 
                 EvaluateWrong ->
                     ( { model | trainerState = TypeOfWrongPage }
@@ -333,6 +339,7 @@ states :
                 PLLTrainer.States.EvaluateResult.Msg
                 PLLTrainer.States.EvaluateResult.Model
                 EvaluateResultExtraState
+        , pickAlgorithmPage : StateBuilder () () ()
         , correctPage : StateBuilder () () ()
         , typeOfWrongPage : StateBuilder () () ()
         , wrongPage : StateBuilder () () ()
@@ -368,6 +375,9 @@ states shared model =
                 , transitionsDisabled = arguments.transitionsDisabled
                 }
                 (StateMsg << EvaluateResultMsg)
+    , pickAlgorithmPage =
+        always <|
+            PLLTrainer.States.PickAlgorithmPage.state shared
     , correctPage =
         always <|
             PLLTrainer.States.CorrectPage.state
@@ -464,6 +474,9 @@ trainerStateToString trainerState =
                 ++ stringFromBool transitionsDisabled
                 ++ " }"
 
+        PickAlgorithmPage ->
+            "PickAlgorithmPage"
+
         CorrectPage ->
             "CorrectPage"
 
@@ -498,6 +511,9 @@ handleStateSubscriptionsBoilerplate shared model =
         EvaluateResult stateModel arguments ->
             ((states shared model).evaluateResult arguments).subscriptions stateModel
 
+        PickAlgorithmPage ->
+            ((states shared model).pickAlgorithmPage ()).subscriptions ()
+
         CorrectPage ->
             ((states shared model).correctPage ()).subscriptions ()
 
@@ -522,6 +538,9 @@ handleStateViewBoilerplate shared model =
 
         EvaluateResult stateModel arguments ->
             ((states shared model).evaluateResult arguments).view stateModel
+
+        PickAlgorithmPage ->
+            ((states shared model).pickAlgorithmPage ()).view ()
 
         CorrectPage ->
             ((states shared model).correctPage ()).view ()
