@@ -12,6 +12,7 @@ import Browser.Events as Events
 import Json.Decode as Decode
 import Request exposing (Request)
 import UI
+import User exposing (User)
 import ViewportSize exposing (ViewportSize)
 
 
@@ -40,6 +41,7 @@ type alias Model =
     , hardwareAvailable : HardwareAvailable
     , palette : UI.Palette
     , featureFlags : FeatureFlags
+    , user : User
     }
 
 
@@ -61,6 +63,7 @@ init _ { viewportSize, touchScreenAvailable, featureFlags } =
                 , keyboard = False
                 }
       , featureFlags = featureFlags
+      , user = User.new
       }
     , Cmd.none
     )

@@ -219,7 +219,9 @@ declare namespace Cypress {
     ): void;
 
     setCurrentTestCase(
-      testCase: [import("./pll").AUF, import("./pll").PLL, import("./pll").AUF]
+      testCase: ReadOnly<
+        [import("./pll").AUF, import("./pll").PLL, import("./pll").AUF]
+      >
     ): void;
   }
 }
