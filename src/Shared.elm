@@ -2,14 +2,16 @@ module Shared exposing
     ( Flags
     , HardwareAvailable
     , Model
-    , Msg
+    , Msg(..)
     , init
     , subscriptions
     , update
     )
 
+import Algorithm exposing (Algorithm)
 import Browser.Events as Events
 import Json.Decode as Decode
+import PLL exposing (PLL)
 import Request exposing (Request)
 import UI
 import User exposing (User)
@@ -114,6 +116,7 @@ setKeyboardAvailable previous =
 type Msg
     = WindowResized Int Int
     | KeyboardWasUsed
+    | ChangePLLAlgorithm PLL Algorithm
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
@@ -135,7 +138,14 @@ updateModel msg model =
             }
 
         KeyboardWasUsed ->
-            { model | hardwareAvailable = setKeyboardAvailable model.hardwareAvailable }
+            { model
+                | hardwareAvailable = setKeyboardAvailable model.hardwareAvailable
+            }
+
+        ChangePLLAlgorithm pll algorithm ->
+            { model
+                | user = User.changePLLAlgorithm pll algorithm model.user
+            }
 
 
 

@@ -1,8 +1,9 @@
 module PLLTrainer.Page exposing (Model, Msg, page)
 
 import AUF
-import Algorithm
+import Algorithm exposing (Algorithm)
 import Cube exposing (Cube)
+import Effect exposing (Effect)
 import Json.Decode
 import PLL
 import PLLTrainer.State
@@ -24,12 +25,13 @@ import Shared
 import Task
 import Time
 import TimeInterval exposing (TimeInterval)
+import User
 import View exposing (View)
 
 
 page : Shared.Model -> Page.With Model Msg
 page shared =
-    Page.element
+    Page.advanced
         { init = init
         , update = update shared
         , view = view shared
@@ -67,7 +69,7 @@ type alias EvaluateResultExtraState =
     { result : TimeInterval, transitionsDisabled : Bool }
 
 
-init : ( Model, Cmd Msg )
+init : ( Model, Effect Msg )
 init =
     ( { trainerState = StartPage
       , expectedCubeState = Cube.solved
@@ -80,7 +82,7 @@ init =
       -- seems the best option of these right now
       , currentTestCase = PLLTrainer.TestCase.build AUF.None PLL.Aa AUF.None
       }
-    , Cmd.none
+    , Effect.none
     )
 
 
@@ -103,7 +105,7 @@ type TransitionMsg
     | EndTest { startTime : Time.Posix } (Maybe Time.Posix)
     | EnableEvaluateResultTransitions
     | EvaluateCorrect
-    | AlgorithmPicked
+    | AlgorithmPicked Algorithm
     | EvaluateWrong
     | WrongButNoMoveApplied
     | WrongButExpectedStateWasReached
@@ -130,7 +132,7 @@ type StartTestData
     | EverythingGenerated TestCase Time.Posix
 
 
-update : Shared.Model -> Msg -> Model -> ( Model, Cmd Msg )
+update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
 update shared msg model =
     case msg of
         TransitionMsg transition ->
@@ -149,21 +151,23 @@ update shared msg model =
                             Cmd.batch [ stateCmd, startTestAfterASecond ]
                     in
                     ( { model | trainerState = GetReadyScreen }
-                    , cmd
+                    , Effect.fromCmd cmd
                     )
 
                 StartTest NothingGenerated ->
                     ( model
-                    , Random.generate
-                        (TransitionMsg << StartTest << TestCaseGenerated)
-                        PLLTrainer.TestCase.generate
+                    , Effect.fromCmd <|
+                        Random.generate
+                            (TransitionMsg << StartTest << TestCaseGenerated)
+                            PLLTrainer.TestCase.generate
                     )
 
                 StartTest (TestCaseGenerated testCase) ->
                     ( model
-                    , Task.perform
-                        (TransitionMsg << StartTest << EverythingGenerated testCase)
-                        Time.now
+                    , Effect.fromCmd <|
+                        Task.perform
+                            (TransitionMsg << StartTest << EverythingGenerated testCase)
+                            Time.now
                     )
 
                 StartTest (EverythingGenerated testCase startTime) ->
@@ -178,7 +182,7 @@ update shared msg model =
                         | trainerState = TestRunning stateModel arguments
                         , currentTestCase = testCase
                       }
-                    , stateCmd
+                    , Effect.fromCmd stateCmd
                     )
 
                 EndTest arguments Nothing ->
@@ -188,7 +192,10 @@ update shared msg model =
                                 |> Cube.applyAlgorithm
                                     (PLLTrainer.TestCase.toAlg model.currentTestCase)
                       }
-                    , Task.perform (TransitionMsg << EndTest arguments << Just) Time.now
+                    , Effect.fromCmd <|
+                        Task.perform
+                            (TransitionMsg << EndTest arguments << Just)
+                            Time.now
                     )
 
                 EndTest { startTime } (Just endTime) ->
@@ -211,14 +218,15 @@ update shared msg model =
                     ( { model
                         | trainerState = EvaluateResult stateModel arguments
                       }
-                    , Cmd.batch
-                        [ stateCmd
-                        , Task.perform
-                            (always <| TransitionMsg EnableEvaluateResultTransitions)
-                            -- Based on some manual testing, 200 ms is enough to
-                            -- prevent accidental further transitions
-                            (Process.sleep 200)
-                        ]
+                    , Effect.fromCmd <|
+                        Cmd.batch
+                            [ stateCmd
+                            , Task.perform
+                                (always <| TransitionMsg EnableEvaluateResultTransitions)
+                                -- Based on some manual testing, 200 ms is enough to
+                                -- prevent accidental further transitions
+                                (Process.sleep 200)
+                            ]
                     )
 
                 EnableEvaluateResultTransitions ->
@@ -228,10 +236,13 @@ update shared msg model =
                                 newTrainerState =
                                     EvaluateResult stateModel { arguments | transitionsDisabled = False }
                             in
-                            ( { model | trainerState = newTrainerState }, Cmd.none )
+                            ( { model | trainerState = newTrainerState }, Effect.none )
 
                         _ ->
-                            ( model, Ports.logError "Unexpected enable evaluate result transitions outside of EvaluateResult state" )
+                            ( model
+                            , Effect.fromCmd <|
+                                Ports.logError "Unexpected enable evaluate result transitions outside of EvaluateResult state"
+                            )
 
                 EvaluateCorrect ->
                     let
@@ -239,18 +250,28 @@ update shared msg model =
                             ((states shared model).pickAlgorithmPage ()).init
                     in
                     if shared.featureFlags.displayAlgorithmPicker then
-                        ( { model | trainerState = PickAlgorithmPage stateModel }, stateCmd )
+                        if
+                            User.hasChosenPLLAlgorithmFor
+                                (PLLTrainer.TestCase.pll model.currentTestCase)
+                                shared.user
+                        then
+                            ( { model | trainerState = CorrectPage }, Effect.none )
+
+                        else
+                            ( { model | trainerState = PickAlgorithmPage stateModel }
+                            , Effect.fromCmd <| stateCmd
+                            )
 
                     else
-                        ( { model | trainerState = CorrectPage }, Cmd.none )
+                        ( { model | trainerState = CorrectPage }, Effect.none )
 
                 EvaluateWrong ->
                     ( { model | trainerState = TypeOfWrongPage }
-                    , Cmd.none
+                    , Effect.none
                     )
 
-                AlgorithmPicked ->
-                    ( { model | trainerState = CorrectPage }, Cmd.none )
+                AlgorithmPicked algorithm ->
+                    ( { model | trainerState = CorrectPage }, Effect.fromShared <| Shared.ChangePLLAlgorithm (PLLTrainer.TestCase.pll model.currentTestCase) algorithm )
 
                 WrongButNoMoveApplied ->
                     ( { model
@@ -262,33 +283,35 @@ update shared msg model =
                                         PLLTrainer.TestCase.toAlg model.currentTestCase
                                     )
                       }
-                    , Cmd.none
+                    , Effect.none
                     )
 
                 WrongButExpectedStateWasReached ->
-                    ( { model | trainerState = WrongPage }, Cmd.none )
+                    ( { model | trainerState = WrongPage }, Effect.none )
 
                 WrongAndUnrecoverable ->
-                    ( { model | trainerState = WrongPage, expectedCubeState = Cube.solved }, Cmd.none )
+                    ( { model | trainerState = WrongPage, expectedCubeState = Cube.solved }, Effect.none )
 
         StateMsg stateMsg ->
-            handleStateMsgBoilerplate shared model stateMsg
+            Tuple.mapSecond Effect.fromCmd <|
+                handleStateMsgBoilerplate shared model stateMsg
 
         InternalMsg internalMsg ->
             case internalMsg of
                 TESTONLYSetTestCase (Ok testCase) ->
-                    ( { model | currentTestCase = testCase }, Cmd.none )
+                    ( { model | currentTestCase = testCase }, Effect.none )
 
                 TESTONLYSetTestCase (Result.Err decodeError) ->
                     ( model
-                    , Ports.logError
-                        ("Error in test only set test case: "
-                            ++ Json.Decode.errorToString decodeError
-                        )
+                    , Effect.fromCmd <|
+                        Ports.logError
+                            ("Error in test only set test case: "
+                                ++ Json.Decode.errorToString decodeError
+                            )
                     )
 
         NoOp ->
-            ( model, Cmd.none )
+            ( model, Effect.none )
 
 
 
@@ -392,7 +415,7 @@ states shared model =
         always <|
             PLLTrainer.States.PickAlgorithmPage.state
                 shared
-                { continue = TransitionMsg AlgorithmPicked }
+                { continue = TransitionMsg << AlgorithmPicked }
                 (StateMsg << PickAlgorithmMsg)
     , correctPage =
         always <|
@@ -436,15 +459,22 @@ handleStateMsgBoilerplate shared model stateMsg =
         ( TestRunningMsg localMsg, TestRunning localModel arguments ) ->
             ((states shared model).testRunning arguments).update localMsg localModel
                 |> Tuple.mapFirst
-                    (\newTrainerState ->
-                        { model | trainerState = TestRunning newTrainerState arguments }
+                    (\newStateModel ->
+                        { model | trainerState = TestRunning newStateModel arguments }
                     )
 
         ( EvaluateResultMsg localMsg, EvaluateResult localModel arguments ) ->
             ((states shared model).evaluateResult arguments).update localMsg localModel
                 |> Tuple.mapFirst
-                    (\newTrainerState ->
-                        { model | trainerState = EvaluateResult newTrainerState arguments }
+                    (\newStateModel ->
+                        { model | trainerState = EvaluateResult newStateModel arguments }
+                    )
+
+        ( PickAlgorithmMsg localMsg, PickAlgorithmPage localModel ) ->
+            ((states shared model).pickAlgorithmPage ()).update localMsg localModel
+                |> Tuple.mapFirst
+                    (\newStateModel ->
+                        { model | trainerState = PickAlgorithmPage newStateModel }
                     )
 
         ( unexpectedStateMsg, unexpectedTrainerState ) ->

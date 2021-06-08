@@ -31,6 +31,18 @@ describe("PLL Trainer - Learning Functionality", function () {
         .type(correctBranchAlgorithm + "{enter}");
 
       pllTrainerElements.correctPage.container.assertShows();
+
+      pllTrainerElements.correctPage.nextButton.get().click();
+      pllTrainerElements.getReadyScreen.container.waitFor();
+      cy.tick(1000);
+      cy.setCurrentTestCase(correctBranchCase);
+
+      cy.mouseClickScreen("center");
+      pllTrainerElements.evaluateResult.container.waitFor();
+      cy.tick(300);
+      pllTrainerElements.evaluateResult.correctButton.get().click();
+
+      pllTrainerElements.correctPage.container.assertShows();
     });
   });
 });
