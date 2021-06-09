@@ -1,7 +1,7 @@
 import { applyDefaultIntercepts } from "support/interceptors";
 import {
   pllTrainerElements,
-  pllTrainerStates,
+  pllTrainerStatesUserDone,
 } from "./pll-trainer/state-and-elements.helper";
 
 describe("randomness", function () {
@@ -24,6 +24,6 @@ describe("randomness", function () {
 });
 
 function saveWrongStateTestCase(alias: string) {
-  pllTrainerStates.wrongPage.navigateTo();
+  pllTrainerStatesUserDone.wrongPage.navigateTo();
   pllTrainerElements.wrongPage.testCaseName.get().invoke("text").as(alias);
 }

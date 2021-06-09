@@ -21,8 +21,10 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
     private waitForStateToAppear: (options?: StateOptions) => void
   ) {}
 
-  populateCache(): void {
-    applyDefaultIntercepts();
+  populateCache(
+    interceptArgs?: Parameters<typeof applyDefaultIntercepts>[0]
+  ): void {
+    applyDefaultIntercepts(interceptArgs);
     cy.withOverallNameLogged(
       {
         displayName: "POPULATING CACHE FOR STATE",
@@ -93,7 +95,11 @@ export function buildStates<Keys extends string>(
       waitForStateToAppear: (options?: StateOptions) => void;
     };
   }
-): { [key in Keys]: StateCache } & { populateAll: () => void } {
+): { [key in Keys]: StateCache } & {
+  populateAll: (
+    interceptArgs?: Parameters<typeof applyDefaultIntercepts>[0]
+  ) => void;
+} {
   if (startPath.includes(".")) {
     throw new Error(
       "buildStates argument has to be a path not a url. It had a `.` in it which we assumed mean you accidentally put a url"
@@ -116,8 +122,10 @@ export function buildStates<Keys extends string>(
 
   return {
     ...pureStates,
-    populateAll: () => {
-      Cypress._.forEach(pureStates, (stateCache) => stateCache.populateCache());
+    populateAll: (interceptArgs) => {
+      Cypress._.forEach(pureStates, (stateCache) =>
+        stateCache.populateCache(interceptArgs)
+      );
     },
   };
 }

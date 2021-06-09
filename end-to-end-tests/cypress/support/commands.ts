@@ -644,3 +644,14 @@ const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] = f
   );
 };
 Cypress.Commands.add("setCurrentTestCase", setCurrentTestCase);
+
+const setLocalStorage: Cypress.Chainable<undefined>["setLocalStorage"] = function (
+  storageState
+) {
+  cy.clearLocalStorage().then((ls) => {
+    Cypress._.forEach(storageState, (value, key) => {
+      ls.setItem(key, JSON.stringify(value));
+    });
+  });
+};
+Cypress.Commands.add("setLocalStorage", setLocalStorage);

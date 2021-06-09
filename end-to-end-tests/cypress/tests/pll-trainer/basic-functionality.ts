@@ -1,7 +1,7 @@
 import { getKeyValue, Key } from "support/keys";
 import { installClock, setTimeTo, tick } from "support/clock";
 import {
-  pllTrainerStates,
+  pllTrainerStatesUserDone,
   pllTrainerElements,
 } from "./state-and-elements.helper";
 import { Element } from "support/elements";
@@ -10,7 +10,7 @@ import { applyDefaultIntercepts } from "support/interceptors";
 
 describe("PLL Trainer - Basic Functionality", function () {
   before(function () {
-    pllTrainerStates.populateAll();
+    pllTrainerStatesUserDone.populateAll();
   });
 
   beforeEach(function () {
@@ -20,7 +20,7 @@ describe("PLL Trainer - Basic Functionality", function () {
 
   describe("Start Page", function () {
     beforeEach(function () {
-      pllTrainerStates.startPage.restoreState();
+      pllTrainerStatesUserDone.startPage.restoreState();
     });
 
     it("has all the correct elements", function () {
@@ -84,7 +84,7 @@ describe("PLL Trainer - Basic Functionality", function () {
   describe("Test Running", function () {
     describe("Get Ready Screen", function () {
       beforeEach(function () {
-        pllTrainerStates.getReadyScreen.restoreState();
+        pllTrainerStatesUserDone.getReadyScreen.restoreState();
       });
 
       it("has all the correct elements", function () {
@@ -100,7 +100,7 @@ describe("PLL Trainer - Basic Functionality", function () {
     });
     describe("During Test", function () {
       beforeEach(function () {
-        pllTrainerStates.testRunning.restoreState();
+        pllTrainerStatesUserDone.testRunning.restoreState();
       });
 
       it("has all the correct elements", function () {
@@ -218,7 +218,9 @@ describe("PLL Trainer - Basic Functionality", function () {
                 message: "to testRunning state",
               },
               () => {
-                pllTrainerStates.testRunning.restoreState({ log: false });
+                pllTrainerStatesUserDone.testRunning.restoreState({
+                  log: false,
+                });
               }
             );
           });
@@ -257,7 +259,9 @@ describe("PLL Trainer - Basic Functionality", function () {
                 message: "to testRunning state",
               },
               () => {
-                pllTrainerStates.testRunning.restoreState({ log: false });
+                pllTrainerStatesUserDone.testRunning.restoreState({
+                  log: false,
+                });
               }
             );
           });
@@ -294,7 +298,9 @@ describe("PLL Trainer - Basic Functionality", function () {
                 message: "to testRunning state",
               },
               () => {
-                pllTrainerStates.testRunning.restoreState({ log: false });
+                pllTrainerStatesUserDone.testRunning.restoreState({
+                  log: false,
+                });
               }
             );
           });
@@ -330,7 +336,7 @@ describe("PLL Trainer - Basic Functionality", function () {
                 message: "to testRunning state",
               },
               () => {
-                pllTrainerStates.testRunning.restoreState();
+                pllTrainerStatesUserDone.testRunning.restoreState();
               }
             );
           });
@@ -414,7 +420,7 @@ describe("PLL Trainer - Basic Functionality", function () {
   describe("Evaluate Result", function () {
     describe("starting at ignoring key presses state", function () {
       beforeEach(function () {
-        pllTrainerStates.evaluateResult.restoreState();
+        pllTrainerStatesUserDone.evaluateResult.restoreState();
       });
 
       it("has all the correct elements", function () {
@@ -543,9 +549,9 @@ describe("PLL Trainer - Basic Functionality", function () {
       });
     });
 
-    describe("after ignoring key presses over", function () {
+    describe("after ignoring transitions over", function () {
       beforeEach(function () {
-        pllTrainerStates.evaluateResultAfterIgnoringKeyPresses.restoreState();
+        pllTrainerStatesUserDone.evaluateResultAfterIgnoringTransitions.restoreState();
       });
 
       describe("approves correctly", function () {
@@ -624,7 +630,7 @@ describe("PLL Trainer - Basic Functionality", function () {
   });
   describe("Correct Page", function () {
     beforeEach(function () {
-      pllTrainerStates.correctPage.restoreState();
+      pllTrainerStatesUserDone.correctPage.restoreState();
     });
 
     it("has all the correct elements", function () {
@@ -674,7 +680,7 @@ describe("PLL Trainer - Basic Functionality", function () {
 
   describe("Type Of Wrong Page", function () {
     beforeEach(function () {
-      pllTrainerStates.typeOfWrongPage.restoreState();
+      pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
     });
 
     it("has all the correct elements", function () {
@@ -685,7 +691,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       const nextCubeBackAlias = "nextCubeBack";
 
       // Go to evaluate to get the "original" cube state
-      pllTrainerStates.evaluateResultAfterIgnoringKeyPresses.restoreState();
+      pllTrainerStatesUserDone.evaluateResultAfterIgnoringTransitions.restoreState();
       cy.log("GETTING ORIGINAL CUBE HTMLS");
       getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeFront).as(
         originalCubeFrontAlias
@@ -839,7 +845,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       getCubeHtml(pllTrainerElements.startPage.cubeStartState).as(
         "solved-front"
       );
-      pllTrainerStates.typeOfWrongPage.restoreState();
+      pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
 
       pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
 
@@ -858,7 +864,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       getCubeHtml(pllTrainerElements.startPage.cubeStartState).as(
         "solved-front"
       );
-      pllTrainerStates.typeOfWrongPage.restoreState();
+      pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
 
       cy.pressKey(Key.three);
 
@@ -875,7 +881,7 @@ describe("PLL Trainer - Basic Functionality", function () {
 
   describe("Wrong Page", function () {
     beforeEach(function () {
-      pllTrainerStates.wrongPage.restoreState();
+      pllTrainerStatesUserDone.wrongPage.restoreState();
     });
 
     it("has all the correct elements", function () {
@@ -898,7 +904,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         });
 
       // Check that the test case cube is actually displaying the case that was tested
-      pllTrainerStates.testRunning.restoreState();
+      pllTrainerStatesUserDone.testRunning.restoreState();
       getCubeHtml(pllTrainerElements.testRunning.testCase).as(
         "test-case-front"
       );
@@ -960,7 +966,7 @@ function getTestRunningWithMockedTime(): number {
   // that we didn't bother investigating further.
   // Therefore we manually go to that state instead of restoring
   // in order to allow for the mocking time.
-  pllTrainerStates.startPage.restoreState();
+  pllTrainerStatesUserDone.startPage.restoreState();
   installClock();
   let curTime = 0;
   cy.pressKey(Key.space);
