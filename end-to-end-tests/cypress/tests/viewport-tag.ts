@@ -1,3 +1,4 @@
+import { applyDefaultIntercepts } from "support/interceptors";
 import { paths } from "support/paths";
 
 describe("has correct viewport properties on url:", function () {
@@ -6,6 +7,7 @@ describe("has correct viewport properties on url:", function () {
   // eslint-disable-next-line mocha/no-setup-in-describe
   pathsToTest.forEach((path) =>
     it("'" + path + "'", function () {
+      applyDefaultIntercepts();
       cy.visit(path);
       cy.get('head meta[name="viewport"][content]').then((metaElements) => {
         expect(metaElements).to.have.length(1);

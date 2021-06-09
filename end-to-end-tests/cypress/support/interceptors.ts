@@ -1,3 +1,10 @@
+import {
+  addElmModelObserversAndModifiersToHtml,
+  addElmModelObserversAndModifiersToJavascript,
+  fixRandomnessSeedInJavascript,
+} from "./elm-monkey-patching";
+import { handleHtmlCypressModifications } from "./html-template-replacements";
+
 export type HtmlModifier = (html: { type: "html"; value: string }) => string;
 
 export type JavascriptModifier = (js: { type: "js"; value: string }) => string;
@@ -88,4 +95,29 @@ export function createFeatureFlagSetter(
       "$1" + JSON.stringify(flagValue)
     );
   };
+}
+
+const defaultHtmlModifiers: HtmlModifier[] = [
+  addElmModelObserversAndModifiersToHtml,
+  handleHtmlCypressModifications,
+];
+
+const defaultJavascriptModifiers: JavascriptModifier[] = [
+  addElmModelObserversAndModifiersToJavascript,
+  fixRandomnessSeedInJavascript,
+];
+
+export function applyDefaultIntercepts({
+  extraHtmlModifiers,
+  extraJavascriptModifiers,
+}: {
+  extraHtmlModifiers?: HtmlModifier[];
+  extraJavascriptModifiers?: JavascriptModifier[];
+} = {}): void {
+  interceptHtml(...defaultHtmlModifiers, ...(extraHtmlModifiers ?? []));
+  interceptJavascript(
+    ...defaultJavascriptModifiers,
+    ...(extraJavascriptModifiers ?? [])
+  );
+  ensureServerNotReloading();
 }

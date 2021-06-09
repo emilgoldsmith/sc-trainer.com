@@ -1,7 +1,11 @@
+import { applyDefaultIntercepts } from "support/interceptors";
 import { paths } from "support/paths";
 import { pllTrainerElements } from "./pll-trainer/state-and-elements.helper";
 
 describe("Visual Tests", function () {
+  beforeEach(function () {
+    applyDefaultIntercepts();
+  });
   describe("PLL Trainer", function () {
     it("Looks right", function () {
       cy.visit(paths.pllTrainer);

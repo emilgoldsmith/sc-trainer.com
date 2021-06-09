@@ -6,6 +6,7 @@ import {
 } from "./state-and-elements.helper";
 import { Element } from "support/elements";
 import { paths } from "support/paths";
+import { applyDefaultIntercepts } from "support/interceptors";
 
 describe("PLL Trainer - Basic Functionality", function () {
   before(function () {
@@ -13,6 +14,7 @@ describe("PLL Trainer - Basic Functionality", function () {
   });
 
   beforeEach(function () {
+    applyDefaultIntercepts();
     cy.visit(paths.pllTrainer);
   });
 
