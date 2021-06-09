@@ -8,6 +8,7 @@ import {
   pllTrainerStatesNewUser,
 } from "./state-and-elements.helper";
 import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
+import { paths } from "support/paths";
 
 const extraIntercepts: Parameters<typeof applyDefaultIntercepts>[0] = {
   extraHtmlModifiers: [createFeatureFlagSetter("displayAlgorithmPicker", true)],
@@ -17,9 +18,12 @@ describe("PLL Trainer - Learning Functionality", function () {
   before(function () {
     pllTrainerStatesNewUser.populateAll(extraIntercepts);
   });
+
   beforeEach(function () {
     applyDefaultIntercepts(extraIntercepts);
+    cy.visit(paths.pllTrainer);
   });
+
   describe("Algorithm Picker", function () {
     it("displays picker exactly once first time that case is encountered", function () {
       pllTrainerStatesNewUser.testRunning.restoreState();
@@ -56,40 +60,53 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.correctPage.container.assertShows();
     });
 
-    it("doesn't display picker when user already has all algorithms picked", function () {
-      cy.setLocalStorage(allPllsPickedLocalStorage);
-      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
+    it("errors as expected", function () {
+      pllTrainerStatesNewUser.pickAlgorithmPage.restoreState();
+      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
 
-      pllTrainerElements.evaluateResult.correctButton.get().click();
-      pllTrainerElements.correctPage.container.assertShows();
+      // Shouldn't have error message on first visit
+      pllTrainerElements.pickAlgorithmPage.errorMessage.assertDoesntExist();
 
-      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
-
-      pllTrainerElements.evaluateResult.wrongButton.get().click();
-      pllTrainerElements.typeOfWrongPage.container.assertShows();
+      pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
+      pllTrainerElements.pickAlgorithmPage.errorMessage.assertShows();
     });
 
-    it("doesn't display picker if case has picked algorithm on previous visit", function () {
-      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
+    context("LocalStorage", function () {
+      it("doesn't display picker when user already has all algorithms picked", function () {
+        cy.setLocalStorage(allPllsPickedLocalStorage);
+        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
 
-      const correctBranchCase = [AUF.none, PLL.Aa, AUF.none] as const;
-      // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
-      const correctBranchAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
-      cy.setCurrentTestCase(correctBranchCase);
+        pllTrainerElements.evaluateResult.correctButton.get().click();
+        pllTrainerElements.correctPage.container.assertShows();
 
-      pllTrainerElements.evaluateResult.correctButton.get().click();
+        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
 
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type(correctBranchAlgorithm + "{enter}");
-      pllTrainerElements.correctPage.container.assertShows();
+        pllTrainerElements.evaluateResult.wrongButton.get().click();
+        pllTrainerElements.typeOfWrongPage.container.assertShows();
+      });
 
-      // Revisit, try again but now we should skip it for same case
-      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
-      cy.setCurrentTestCase(correctBranchCase);
+      it("doesn't display picker if case has picked algorithm on previous visit", function () {
+        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
 
-      pllTrainerElements.evaluateResult.correctButton.get().click();
-      pllTrainerElements.correctPage.container.assertShows();
+        const correctBranchCase = [AUF.none, PLL.Aa, AUF.none] as const;
+        // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
+        const correctBranchAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
+        cy.setCurrentTestCase(correctBranchCase);
+
+        pllTrainerElements.evaluateResult.correctButton.get().click();
+
+        pllTrainerElements.pickAlgorithmPage.algorithmInput
+          .get()
+          .type(correctBranchAlgorithm + "{enter}");
+        pllTrainerElements.correctPage.container.assertShows();
+
+        // Revisit, try again but now we should skip it for same case
+        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
+        cy.setCurrentTestCase(correctBranchCase);
+
+        pllTrainerElements.evaluateResult.correctButton.get().click();
+        pllTrainerElements.correctPage.container.assertShows();
+      });
     });
   });
 });

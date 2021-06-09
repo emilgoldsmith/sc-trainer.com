@@ -1,5 +1,9 @@
 import { Key } from "support/keys";
-import { buildElementsCategory, buildGlobalsCategory } from "support/elements";
+import {
+  buildElementsCategory,
+  buildGlobalsCategory,
+  optionalElement,
+} from "support/elements";
 import { buildStates, StateOptions } from "support/state";
 import { paths } from "support/paths";
 
@@ -60,6 +64,7 @@ export const pllTrainerElements = {
   pickAlgorithmPage: buildElementsCategory({
     container: "pick-algorithm-container",
     algorithmInput: "algorithm-input",
+    errorMessage: optionalElement("error-message"),
   }),
   globals: buildGlobalsCategory({
     cube: "cube",
@@ -269,7 +274,7 @@ export const pllTrainerStatesNewUser = buildStates<
       getState("pickAlgorithmPage");
       pllTrainerElements.pickAlgorithmPage.algorithmInput
         .get(options)
-        .type("U{enter}", options);
+        .type("U{enter}", { ...options, delay: 0 });
     },
     waitForStateToAppear: (options) => {
       pllTrainerElements.correctPage.container.waitFor(options);
