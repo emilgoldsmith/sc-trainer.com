@@ -223,5 +223,7 @@ declare namespace Cypress {
         [import("./pll").AUF, import("./pll").PLL, import("./pll").AUF]
       >
     ): void;
+
+    setLocalStorage(storageState: { [key: string]: any }): void;
   }
 }

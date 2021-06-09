@@ -1,13 +1,35 @@
-port module Ports exposing (logError, onTESTONLYSetTestCase)
+port module Ports exposing (logError, onTESTONLYSetTestCase, updateStoredUser)
 
 import AUF exposing (AUF)
 import Json.Decode
+import Json.Encode
 import List.Nonempty
 import PLL exposing (PLL)
 import PLLTrainer.TestCase exposing (TestCase)
+import User exposing (User)
+
+
+
+-- LOCAL STORAGE MANAGEMENT
+
+
+port updateStoredUserPort : Json.Encode.Value -> Cmd msg
+
+
+updateStoredUser : User -> Cmd msg
+updateStoredUser =
+    User.serialize >> updateStoredUserPort
+
+
+
+-- ERROR HANDLING
 
 
 port logError : String -> Cmd msg
+
+
+
+-- TEST ONLY PORTS
 
 
 port setCurrentTestCasePort : (Json.Decode.Value -> msg) -> Sub msg

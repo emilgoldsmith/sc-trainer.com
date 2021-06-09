@@ -10,8 +10,9 @@ module Shared exposing
 
 import Algorithm exposing (Algorithm)
 import Browser.Events as Events
-import Json.Decode as Decode
+import Json.Decode
 import PLL exposing (PLL)
+import Ports
 import Request exposing (Request)
 import UI
 import User exposing (User)
@@ -26,6 +27,7 @@ type alias Flags =
     { viewportSize : { width : Int, height : Int }
     , touchScreenAvailable : Bool
     , featureFlags : FeatureFlags
+    , storedUser : Json.Decode.Value
     }
 
 
@@ -48,7 +50,7 @@ type alias Model =
 
 
 init : Request -> Flags -> ( Model, Cmd Msg )
-init _ { viewportSize, touchScreenAvailable, featureFlags } =
+init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser } =
     let
         builtViewportSize =
             ViewportSize.build viewportSize
@@ -65,7 +67,7 @@ init _ { viewportSize, touchScreenAvailable, featureFlags } =
                 , keyboard = False
                 }
       , featureFlags = featureFlags
-      , user = User.new
+      , user = User.deserialize storedUser |> Result.withDefault User.new
       }
     , Cmd.none
     )
@@ -121,31 +123,34 @@ type Msg
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
 update _ msg model =
-    Tuple.pair (updateModel msg model) Cmd.none
-
-
-updateModel : Msg -> Model -> Model
-updateModel msg model =
     case msg of
         WindowResized width height ->
             let
                 newViewportSize =
                     ViewportSize.build { width = width, height = height }
             in
-            { model
+            ( { model
                 | hardwareAvailable = guessIfUserHasKeyboard newViewportSize model.hardwareAvailable
                 , viewportSize = newViewportSize
-            }
+              }
+            , Cmd.none
+            )
 
         KeyboardWasUsed ->
-            { model
+            ( { model
                 | hardwareAvailable = setKeyboardAvailable model.hardwareAvailable
-            }
+              }
+            , Cmd.none
+            )
 
         ChangePLLAlgorithm pll algorithm ->
-            { model
-                | user = User.changePLLAlgorithm pll algorithm model.user
-            }
+            let
+                newUser =
+                    User.changePLLAlgorithm pll algorithm model.user
+            in
+            ( { model | user = newUser }
+            , Ports.updateStoredUser model.user
+            )
 
 
 
@@ -161,8 +166,8 @@ subscriptions _ model =
 
           else
             Sub.batch
-                [ Events.onKeyDown (Decode.succeed KeyboardWasUsed)
-                , Events.onKeyPress (Decode.succeed KeyboardWasUsed)
-                , Events.onKeyUp (Decode.succeed KeyboardWasUsed)
+                [ Events.onKeyDown (Json.Decode.succeed KeyboardWasUsed)
+                , Events.onKeyPress (Json.Decode.succeed KeyboardWasUsed)
+                , Events.onKeyUp (Json.Decode.succeed KeyboardWasUsed)
                 ]
         ]

@@ -78,6 +78,7 @@
       /**
        * RENDER ELM APP
        */
+      const userKeyLocalStorage = "userPreferences";
 
       var app = Elm.Main.init({
         flags: {
@@ -86,11 +87,16 @@
             height: window.innerHeight,
           },
           touchScreenAvailable,
+          storedUser: JSON.parse(localStorage.getItem(userKeyLocalStorage)),
           featureFlags:
             /** REPLACED_WITH_FEATURE_FLAGS_START **/
             { placeholder: false },
           /** REPLACED_WITH_FEATURE_FLAGS_END **/
         },
+      });
+
+      app.ports.updateStoredUserPort.subscribe((user) => {
+        localStorage.setItem(userKeyLocalStorage, JSON.stringify(user));
       });
 
       /**
