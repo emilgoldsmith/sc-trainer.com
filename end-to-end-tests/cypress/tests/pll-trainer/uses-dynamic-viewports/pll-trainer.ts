@@ -1,3 +1,4 @@
+import { applyDefaultIntercepts } from "support/interceptors";
 import { Key } from "support/keys";
 import { paths } from "support/paths";
 import { pllTrainerElements } from "../state-and-elements.helper";
@@ -22,6 +23,9 @@ const largeViewportConfigOverride: Cypress.TestConfigOverrides = {
  */
 
 describe("Algorithm Trainer Dynamic Viewport Tests", function () {
+  beforeEach(function () {
+    applyDefaultIntercepts();
+  });
   context("touch screen", function () {
     beforeEach(function () {
       cy.visit(paths.pllTrainer, { onBeforeLoad: simulateIsTouchScreen });

@@ -1,5 +1,4 @@
-import { applyBeforeEachIntercepts } from "./hooks";
-import { performStandardIntercepts } from "./interceptors";
+import { applyDefaultIntercepts } from "./interceptors";
 
 export type StateOptions = { log?: boolean };
 export interface StateCache {
@@ -23,7 +22,7 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
   ) {}
 
   populateCache(): void {
-    applyBeforeEachIntercepts();
+    applyDefaultIntercepts();
     cy.withOverallNameLogged(
       {
         displayName: "POPULATING CACHE FOR STATE",

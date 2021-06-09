@@ -1,3 +1,4 @@
+import { applyDefaultIntercepts } from "support/interceptors";
 import {
   pllTrainerElements,
   pllTrainerStates,
@@ -5,6 +6,7 @@ import {
 
 describe("randomness", function () {
   it("is deterministic under test", function () {
+    applyDefaultIntercepts();
     saveWrongStateTestCase("first");
     saveWrongStateTestCase("second");
     saveWrongStateTestCase("third");
