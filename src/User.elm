@@ -1,8 +1,10 @@
 module User exposing (User, changePLLAlgorithm, deserialize, hasChosenPLLAlgorithmFor, new, serialize)
 
 import Algorithm exposing (Algorithm)
+import Dict
 import Json.Decode
 import Json.Encode
+import List.Nonempty
 import PLL exposing (PLL)
 
 
@@ -42,29 +44,33 @@ type alias UsersCurrentPLLAlgorithms =
 
 new : User
 new =
-    User
-        { h = Nothing
-        , ua = Nothing
-        , ub = Nothing
-        , z = Nothing
-        , aa = Nothing
-        , ab = Nothing
-        , e = Nothing
-        , f = Nothing
-        , ga = Nothing
-        , gb = Nothing
-        , gc = Nothing
-        , gd = Nothing
-        , ja = Nothing
-        , jb = Nothing
-        , na = Nothing
-        , nb = Nothing
-        , ra = Nothing
-        , rb = Nothing
-        , t = Nothing
-        , v = Nothing
-        , y = Nothing
-        }
+    User emptyPLLAlgorithms
+
+
+emptyPLLAlgorithms : UsersCurrentPLLAlgorithms
+emptyPLLAlgorithms =
+    { h = Nothing
+    , ua = Nothing
+    , ub = Nothing
+    , z = Nothing
+    , aa = Nothing
+    , ab = Nothing
+    , e = Nothing
+    , f = Nothing
+    , ga = Nothing
+    , gb = Nothing
+    , gc = Nothing
+    , gd = Nothing
+    , ja = Nothing
+    , jb = Nothing
+    , na = Nothing
+    , nb = Nothing
+    , ra = Nothing
+    , rb = Nothing
+    , t = Nothing
+    , v = Nothing
+    , y = Nothing
+    }
 
 
 
@@ -92,10 +98,20 @@ changePLLAlgorithm pll algorithm (User pllAlgorithms) =
 -- top level (de)serialization
 
 
+{-| These should optimally never be changed unless deprecating the
+feature. It will completely break backwards compatibility unless
+managed in the code somehow
+-}
+serializationKeys : { usersCurrentPLLAlgorithms : String }
+serializationKeys =
+    { usersCurrentPLLAlgorithms = "usersCurrentPLLAlgorithms"
+    }
+
+
 serialize : User -> Json.Encode.Value
 serialize (User pllAlgorithms) =
     Json.Encode.object
-        [ ( "usersCurrentPLLAlgorithms"
+        [ ( serializationKeys.usersCurrentPLLAlgorithms
           , serializePllAlgorithms pllAlgorithms
           )
         ]
@@ -110,7 +126,9 @@ decoder : Json.Decode.Decoder User
 decoder =
     let
         pllAlgorithms =
-            Json.Decode.field "usersCurrentPLLAlgorithms" pllAlgorithmsDecoder
+            Json.Decode.field
+                serializationKeys.usersCurrentPLLAlgorithms
+                pllAlgorithmsDecoder
     in
     Json.Decode.map User pllAlgorithms
 
@@ -121,34 +139,51 @@ decoder =
 
 serializePllAlgorithms : UsersCurrentPLLAlgorithms -> Json.Encode.Value
 serializePllAlgorithms pllAlgorithms =
-    Json.Encode.list (always Json.Encode.null) []
+    let
+        stringKeyValuePairs =
+            PLL.all
+                |> List.Nonempty.toList
+                |> List.filterMap
+                    (\pll ->
+                        getPLLAlgorithm pllAlgorithms pll
+                            |> Maybe.map Algorithm.toString
+                            |> Maybe.map (Tuple.pair <| PLL.getLetters pll)
+                    )
+
+        objectKeyValuePairs =
+            stringKeyValuePairs
+                |> List.map (Tuple.mapSecond Json.Encode.string)
+    in
+    Json.Encode.object objectKeyValuePairs
 
 
 pllAlgorithmsDecoder : Json.Decode.Decoder UsersCurrentPLLAlgorithms
 pllAlgorithmsDecoder =
-    Json.Decode.succeed
-        { h = Nothing
-        , ua = Nothing
-        , ub = Nothing
-        , z = Nothing
-        , aa = Nothing
-        , ab = Nothing
-        , e = Nothing
-        , f = Nothing
-        , ga = Nothing
-        , gb = Nothing
-        , gc = Nothing
-        , gd = Nothing
-        , ja = Nothing
-        , jb = Nothing
-        , na = Nothing
-        , nb = Nothing
-        , ra = Nothing
-        , rb = Nothing
-        , t = Nothing
-        , v = Nothing
-        , y = Nothing
-        }
+    let
+        dictDecoder =
+            Json.Decode.dict Json.Decode.string
+    in
+    Json.Decode.map
+        (\dict ->
+            List.Nonempty.foldl
+                (\pll algorithms ->
+                    let
+                        maybeAlgorithmString =
+                            Dict.get (PLL.getLetters pll) dict
+
+                        maybeAlgorithmResult =
+                            Maybe.map Algorithm.fromString maybeAlgorithmString
+
+                        maybeAlgorithm =
+                            Maybe.andThen Result.toMaybe maybeAlgorithmResult
+                    in
+                    Maybe.map (setPLLAlgorithm algorithms pll) maybeAlgorithm
+                        |> Maybe.withDefault algorithms
+                )
+                emptyPLLAlgorithms
+                PLL.all
+        )
+        dictDecoder
 
 
 
