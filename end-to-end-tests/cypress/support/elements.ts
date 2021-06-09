@@ -37,7 +37,7 @@ export function buildElementsCategory<keys extends string>(
     const fn = builder(testId);
     return function (...args: Parameters<ReturnType<typeof buildGetter>>) {
       return getContainer({ log: false }).then((containerElement) => {
-        let options = args[0];
+        let options = { ...args[0] };
         if (!options) {
           options = { withinSubject: containerElement };
         } else if (options.withinSubject === undefined) {
@@ -70,7 +70,7 @@ export function buildElementsCategory<keys extends string>(
       ...args: Parameters<ReturnType<typeof buildConsumableViaScrollAsserter>>
     ) {
       return getContainer({ log: false }).then((containerElement) => {
-        let options = args[1];
+        let options = { ...args[1] };
         if (!options) {
           options = { withinSubject: containerElement };
         } else if (options.withinSubject === undefined) {
