@@ -24,6 +24,6 @@ describe("randomness", function () {
 });
 
 function saveWrongStateTestCase(alias: string) {
-  pllTrainerStatesUserDone.wrongPage.navigateTo();
+  pllTrainerStatesUserDone.wrongPage.reloadAndNavigateTo();
   pllTrainerElements.wrongPage.testCaseName.get().invoke("text").as(alias);
 }

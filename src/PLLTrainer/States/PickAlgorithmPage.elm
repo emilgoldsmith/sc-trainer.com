@@ -7,6 +7,7 @@ import Element.Input as Input
 import Html.Events
 import Json.Decode
 import Key
+import PLL
 import PLLTrainer.State
 import PLLTrainer.Subscription
 import Shared
@@ -64,6 +65,19 @@ getInputText model =
             text
 
 
+getAlgorithm : Model -> Maybe Algorithm
+getAlgorithm model =
+    case model of
+        InputNotInteractedWith ->
+            Nothing
+
+        ValidAlgorithm _ algorithm ->
+            Just algorithm
+
+        InvalidAlgorithm _ ->
+            Nothing
+
+
 
 -- UPDATE
 
@@ -113,10 +127,16 @@ view toMsg transitions model =
                 ]
             <|
                 column []
-                    [ Input.text
-                        [ testid "algorithm-input"
-                        , onEnter (transitions.continue Algorithm.empty)
-                        ]
+                    [ let
+                        maybeOnEnterAttribute =
+                            getAlgorithm model
+                                |> Maybe.map (\algorithm -> [ onEnter (transitions.continue (PLL.getAlgorithm PLL.referenceAlgorithms PLL.H)) ])
+                                |> Maybe.withDefault []
+                      in
+                      Input.text
+                        (testid "algorithm-input"
+                            :: maybeOnEnterAttribute
+                        )
                         { onChange = toMsg << UpdateAlgorithmString
                         , text = getInputText model
                         , placeholder = Nothing

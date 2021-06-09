@@ -58,15 +58,38 @@ describe("PLL Trainer - Learning Functionality", function () {
 
     it("doesn't display picker when user already has all algorithms picked", function () {
       cy.setLocalStorage(allPllsPickedLocalStorage);
-      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.navigateTo();
+      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
 
       pllTrainerElements.evaluateResult.correctButton.get().click();
       pllTrainerElements.correctPage.container.assertShows();
 
-      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.navigateTo();
+      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
 
       pllTrainerElements.evaluateResult.wrongButton.get().click();
       pllTrainerElements.typeOfWrongPage.container.assertShows();
+    });
+
+    it("doesn't display picker if case has picked algorithm on previous visit", function () {
+      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
+
+      const correctBranchCase = [AUF.none, PLL.Aa, AUF.none] as const;
+      // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
+      const correctBranchAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
+      cy.setCurrentTestCase(correctBranchCase);
+
+      pllTrainerElements.evaluateResult.correctButton.get().click();
+
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type(correctBranchAlgorithm + "{enter}");
+      pllTrainerElements.correctPage.container.assertShows();
+
+      // Revisit, try again but now we should skip it for same case
+      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
+      cy.setCurrentTestCase(correctBranchCase);
+
+      pllTrainerElements.evaluateResult.correctButton.get().click();
+      pllTrainerElements.correctPage.container.assertShows();
     });
   });
 });

@@ -149,7 +149,7 @@ update _ msg model =
                     User.changePLLAlgorithm pll algorithm model.user
             in
             ( { model | user = newUser }
-            , Ports.updateStoredUser model.user
+            , Ports.updateStoredUser newUser
             )
 
 

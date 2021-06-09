@@ -4,7 +4,7 @@ export type StateOptions = { log?: boolean };
 export interface StateCache {
   populateCache(): void;
   restoreState(options?: StateOptions): void;
-  navigateTo(options?: StateOptions): void;
+  reloadAndNavigateTo(options?: StateOptions): void;
 }
 
 class StateCacheImplementation<Keys extends string> implements StateCache {
@@ -57,7 +57,7 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
     this.waitForStateToAppear(options);
   }
 
-  navigateTo(): void {
+  reloadAndNavigateTo(): void {
     cy.withOverallNameLogged(
       {
         displayName: "NAVIGATING TO",
@@ -75,7 +75,7 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
     if (this.otherCaches === undefined) {
       throw new Error("otherCaches not defined when it should be");
     }
-    this.otherCaches[key].navigateTo();
+    this.otherCaches[key].reloadAndNavigateTo();
   }
 
   setOtherCaches(caches: { [key in Keys]: StateCache }) {
