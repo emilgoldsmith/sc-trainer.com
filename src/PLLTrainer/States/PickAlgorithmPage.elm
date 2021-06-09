@@ -11,6 +11,7 @@ import PLL
 import PLLTrainer.State
 import PLLTrainer.Subscription
 import Shared
+import Task
 import View
 
 
@@ -18,9 +19,9 @@ state : Shared.Model -> Transitions msg -> (Msg -> msg) -> PLLTrainer.State.Stat
 state _ transitions toMsg =
     PLLTrainer.State.element
         { init = init
-        , update = update
+        , update = update transitions
         , subscriptions = subscriptions
-        , view = view toMsg transitions
+        , view = view toMsg
         }
 
 
@@ -40,7 +41,7 @@ type alias Transitions msg =
 type Model
     = InputNotInteractedWith
     | ValidAlgorithm String Algorithm
-    | InvalidAlgorithm String
+    | InvalidAlgorithm { text : String, errorMessage : String }
 
 
 init : ( Model, Cmd msg )
@@ -61,7 +62,7 @@ getInputText model =
         ValidAlgorithm text _ ->
             text
 
-        InvalidAlgorithm text ->
+        InvalidAlgorithm { text } ->
             text
 
 
@@ -78,16 +79,30 @@ getAlgorithm model =
             Nothing
 
 
+getError : Model -> Maybe String
+getError model =
+    case model of
+        InputNotInteractedWith ->
+            Nothing
+
+        ValidAlgorithm _ _ ->
+            Nothing
+
+        InvalidAlgorithm { errorMessage } ->
+            Just errorMessage
+
+
 
 -- UPDATE
 
 
 type Msg
     = UpdateAlgorithmString String
+    | Submit
 
 
-update : Msg -> Model -> ( Model, Cmd msg )
-update msg _ =
+update : Transitions msg -> Msg -> Model -> ( Model, Cmd msg )
+update transitions msg model =
     case msg of
         UpdateAlgorithmString algorithmString ->
             let
@@ -97,9 +112,33 @@ update msg _ =
                 newModel =
                     algorithmResult
                         |> Result.map (ValidAlgorithm algorithmString)
-                        |> Result.withDefault (InvalidAlgorithm algorithmString)
+                        |> Result.withDefault
+                            (InvalidAlgorithm
+                                { text = algorithmString
+                                , errorMessage = "error"
+                                }
+                            )
             in
             ( newModel, Cmd.none )
+
+        Submit ->
+            case model of
+                InputNotInteractedWith ->
+                    ( InvalidAlgorithm { text = "", errorMessage = "error" }
+                    , Cmd.none
+                    )
+
+                InvalidAlgorithm _ ->
+                    ( model, Cmd.none )
+
+                ValidAlgorithm _ _ ->
+                    ( model
+                    , Task.perform
+                        transitions.continue
+                        (Task.succeed
+                            (PLL.getAlgorithm PLL.referenceAlgorithms PLL.H)
+                        )
+                    )
 
 
 
@@ -115,8 +154,8 @@ subscriptions _ =
 -- VIEW
 
 
-view : (Msg -> msg) -> Transitions msg -> Model -> PLLTrainer.State.View msg
-view toMsg transitions model =
+view : (Msg -> msg) -> Model -> PLLTrainer.State.View msg
+view toMsg model =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -127,21 +166,19 @@ view toMsg transitions model =
                 ]
             <|
                 column []
-                    [ let
-                        maybeOnEnterAttribute =
-                            getAlgorithm model
-                                |> Maybe.map (\algorithm -> [ onEnter (transitions.continue (PLL.getAlgorithm PLL.referenceAlgorithms PLL.H)) ])
-                                |> Maybe.withDefault []
-                      in
-                      Input.text
-                        (testid "algorithm-input"
-                            :: maybeOnEnterAttribute
-                        )
+                    [ Input.text
+                        [ testid "algorithm-input"
+                        , onEnter (toMsg Submit)
+                        ]
                         { onChange = toMsg << UpdateAlgorithmString
                         , text = getInputText model
                         , placeholder = Nothing
                         , label = Input.labelAbove [] none
                         }
+                    , Maybe.map
+                        (\error -> el [ testid "error-message" ] <| text error)
+                        (getError model)
+                        |> Maybe.withDefault none
                     ]
     }
 

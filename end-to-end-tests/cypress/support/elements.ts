@@ -11,9 +11,35 @@ export type Element = {
   testId: string | string[];
 };
 
+type ElementMeta = {
+  optional: boolean;
+};
+
+type InternalElement = Element & { meta: ElementMeta };
+
+type ElementSpecifier =
+  | string
+  | string[]
+  | { meta: ElementMeta; testId: string };
+function getTestId(specifier: ElementSpecifier): string | string[] {
+  if (typeof specifier === "object" && "meta" in specifier) {
+    return specifier.testId;
+  }
+  return specifier;
+}
+
+function getMeta(specifier: ElementSpecifier): ElementMeta {
+  if (typeof specifier === "object" && "meta" in specifier) {
+    return specifier.meta;
+  }
+  return { optional: false };
+}
+export function optionalElement(testId: string): ElementSpecifier {
+  return { meta: { optional: true }, testId };
+}
 export function buildElementsCategory<keys extends string>(
-  testIds: { container: string | string[] } & {
-    [key in keys]: string | string[];
+  specifiers: { container: ElementSpecifier } & {
+    [key in keys]: ElementSpecifier;
   }
 ): {
   container: Element;
@@ -21,7 +47,7 @@ export function buildElementsCategory<keys extends string>(
 } & {
   [key in keys]: Element;
 } {
-  const getContainer = buildGetter(testIds.container);
+  const getContainer = buildGetter(getTestId(specifiers.container));
   function buildWithinContainer<T>(
     builder: (
       testId: string | string[]
@@ -82,8 +108,9 @@ export function buildElementsCategory<keys extends string>(
   }
 
   const elements = Cypress._.mapValues(
-    testIds,
-    (testId: string | string[], key: string) => {
+    specifiers,
+    (specifier: ElementSpecifier, key: string): InternalElement => {
+      const testId = getTestId(specifier);
       if (key === "container") {
         return buildElement(testId);
       }
@@ -105,6 +132,7 @@ export function buildElementsCategory<keys extends string>(
           testId
         ),
         testId,
+        meta: getMeta(specifier),
       };
     }
   );
@@ -112,7 +140,10 @@ export function buildElementsCategory<keys extends string>(
   return {
     ...elements,
     assertAllShow() {
-      Cypress._.forEach(elements, (elem) => elem.assertShows());
+      Cypress._.forEach(
+        elements,
+        (elem) => elem.meta.optional === false && elem.assertShows()
+      );
     },
   };
 }
@@ -127,7 +158,8 @@ export function buildGlobalsCategory<keys extends string>(
   return Cypress._.mapValues(testIds, buildElement);
 }
 
-function buildElement(testId: string | string[]): Element {
+function buildElement(specifier: ElementSpecifier): InternalElement {
+  const testId = getTestId(specifier);
   return {
     get: buildGetter(testId),
     waitFor: buildWaiter(testId),
@@ -137,6 +169,7 @@ function buildElement(testId: string | string[]): Element {
     assertConsumableViaScroll: buildConsumableViaScrollAsserter(testId),
     isContainedByWindow: buildContainedByWindow(testId),
     testId,
+    meta: getMeta(specifier),
   };
 }
 
