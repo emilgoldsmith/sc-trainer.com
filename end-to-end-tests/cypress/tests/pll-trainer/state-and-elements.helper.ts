@@ -269,7 +269,7 @@ export const pllTrainerStatesNewUser = buildStates<
       getState("pickAlgorithmPage");
       pllTrainerElements.pickAlgorithmPage.algorithmInput
         .get(options)
-        .type("{enter}", options);
+        .type("U{enter}", options);
     },
     waitForStateToAppear: (options) => {
       pllTrainerElements.correctPage.container.waitFor(options);

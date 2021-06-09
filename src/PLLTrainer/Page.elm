@@ -271,7 +271,12 @@ update shared msg model =
                     )
 
                 AlgorithmPicked algorithm ->
-                    ( { model | trainerState = CorrectPage }, Effect.fromShared <| Shared.ChangePLLAlgorithm (PLLTrainer.TestCase.pll model.currentTestCase) algorithm )
+                    ( { model | trainerState = CorrectPage }
+                    , Effect.fromShared <|
+                        Shared.ChangePLLAlgorithm
+                            (PLLTrainer.TestCase.pll model.currentTestCase)
+                            algorithm
+                    )
 
                 WrongButNoMoveApplied ->
                     ( { model
