@@ -4,6 +4,8 @@ import {
   buildGlobalsCategory,
   cubeElement,
   anyErrorMessage,
+  errorMessageElement,
+  optionalElement,
 } from "support/elements";
 import { buildStates, StateOptions } from "support/state";
 import { paths } from "support/paths";
@@ -65,9 +67,13 @@ export const pllTrainerElements = {
   pickAlgorithmPage: buildElementsCategory({
     container: "pick-algorithm-container",
     algorithmInput: "algorithm-input",
-    anyErrorMessage: anyErrorMessage({ optional: true }),
+    inputRequiredError: optionalElement(errorMessageElement("input-required")),
+    invalidTurnableError: optionalElement(
+      errorMessageElement("invalid-turnable")
+    ),
   }),
   globals: buildGlobalsCategory({
+    anyErrorMessage: anyErrorMessage(),
     feedbackButton: "feedback-button",
   }),
 };

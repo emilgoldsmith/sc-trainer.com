@@ -37,24 +37,42 @@ function getMeta(specifier: ElementSpecifier): ElementMeta {
   return { optional: false };
 }
 
-export function optionalElement(testId: string): ElementSpecifier {
-  return { meta: { optional: true }, testId };
+function getFullSpecifier(
+  specifier: ElementSpecifier
+): { meta: ElementMeta; testId: string | null } {
+  if (typeof specifier === "string") {
+    return {
+      meta: { optional: true },
+      testId: specifier,
+    };
+  }
+  return specifier;
+}
+export function optionalElement(specifier: ElementSpecifier): ElementSpecifier {
+  const fullSpecifier = getFullSpecifier(specifier);
+  return { ...fullSpecifier, meta: { ...fullSpecifier.meta, optional: true } };
 }
 
-export function cubeElement(testId: string): ElementSpecifier {
-  return { meta: { optional: false, testType: "cube" }, testId };
+export function cubeElement(specifier: ElementSpecifier): ElementSpecifier {
+  const fullSpecifier = getFullSpecifier(specifier);
+  return {
+    ...fullSpecifier,
+    meta: { ...fullSpecifier.meta, testType: "cube" },
+  };
 }
 
-export function errorMessageElement(testId: string): ElementSpecifier {
-  return { meta: { optional: false, testType: "error-message" }, testId };
+export function errorMessageElement(
+  specifier: ElementSpecifier
+): ElementSpecifier {
+  const fullSpecifier = getFullSpecifier(specifier);
+  return {
+    ...fullSpecifier,
+    meta: { ...fullSpecifier.meta, testType: "error-message" },
+  };
 }
 
-export function anyErrorMessage({
-  optional,
-}: {
-  optional: boolean;
-}): ElementSpecifier {
-  return { meta: { optional, testType: "error-message" }, testId: null };
+export function anyErrorMessage(): ElementSpecifier {
+  return { meta: { optional: false, testType: "error-message" }, testId: null };
 }
 
 export function buildElementsCategory<keys extends string>(

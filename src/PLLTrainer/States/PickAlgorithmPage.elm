@@ -44,7 +44,12 @@ type alias Transitions msg =
 type Model
     = InputNotInteractedWith
     | ValidAlgorithm String Algorithm
-    | InvalidAlgorithm { text : String, errorMessage : String }
+    | InvalidAlgorithm { text : String, error : Error }
+
+
+type Error
+    = NoInput
+    | Other
 
 
 focusOnLoadId : String
@@ -91,7 +96,7 @@ getAlgorithm model =
             Nothing
 
 
-getError : Model -> Maybe String
+getError : Model -> Maybe { testId : String, errorMessage : String }
 getError model =
     case model of
         InputNotInteractedWith ->
@@ -100,8 +105,19 @@ getError model =
         ValidAlgorithm _ _ ->
             Nothing
 
-        InvalidAlgorithm { errorMessage } ->
-            Just errorMessage
+        InvalidAlgorithm { error } ->
+            case error of
+                NoInput ->
+                    Just
+                        { testId = "input-required"
+                        , errorMessage = "Input Required"
+                        }
+
+                Other ->
+                    Just
+                        { testId = "other"
+                        , errorMessage = "error"
+                        }
 
 
 
@@ -117,6 +133,11 @@ type Msg
 update : Transitions msg -> Msg -> Model -> ( Model, Cmd msg )
 update transitions msg model =
     case msg of
+        UpdateAlgorithmString "" ->
+            ( InvalidAlgorithm { text = "", error = NoInput }
+            , Cmd.none
+            )
+
         UpdateAlgorithmString algorithmString ->
             let
                 algorithmResult =
@@ -128,7 +149,7 @@ update transitions msg model =
                         |> Result.withDefault
                             (InvalidAlgorithm
                                 { text = algorithmString
-                                , errorMessage = "error"
+                                , error = Other
                                 }
                             )
             in
@@ -137,7 +158,7 @@ update transitions msg model =
         Submit ->
             case model of
                 InputNotInteractedWith ->
-                    ( InvalidAlgorithm { text = "", errorMessage = "error" }
+                    ( InvalidAlgorithm { text = "", error = NoInput }
                     , Cmd.none
                     )
 
@@ -206,7 +227,14 @@ view toMsg model =
                         , label = Input.labelAbove [] none
                         }
                     , Maybe.map
-                        (\error -> el [ errorMessageTestType ] <| text error)
+                        (\error ->
+                            el
+                                [ errorMessageTestType
+                                , testid error.testId
+                                ]
+                            <|
+                                text error.errorMessage
+                        )
                         (getError model)
                         |> Maybe.withDefault none
                     ]
