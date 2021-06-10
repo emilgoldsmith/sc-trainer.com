@@ -1,4 +1,4 @@
-module Css exposing (htmlTestid, testid)
+module Css exposing (errorMessageTestType, htmlCubeTestType, htmlTestid, testid)
 
 import Element exposing (..)
 import Html
@@ -13,3 +13,19 @@ testid =
 htmlTestid : String -> Html.Attribute msg
 htmlTestid =
     Html.Attributes.attribute "data-testid"
+
+
+htmlCubeTestType : Html.Attribute msg
+htmlCubeTestType =
+    htmlTestType "cube"
+
+
+errorMessageTestType : Attribute msg
+errorMessageTestType =
+    htmlAttribute <|
+        htmlTestType "error-message"
+
+
+htmlTestType : String -> Html.Attribute msg
+htmlTestType =
+    Html.Attributes.attribute "data-test-type"

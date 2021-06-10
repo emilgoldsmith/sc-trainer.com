@@ -1,6 +1,6 @@
 module PLLTrainer.States.StartPage exposing (Transitions, state)
 
-import Css exposing (testid)
+import Css exposing (htmlTestid, testid)
 import Cube
 import Element exposing (..)
 import Element.Font as Font
@@ -95,12 +95,11 @@ view viewportSize palette hardwareAvailable transitions =
                         ]
                       <|
                         [ text "Orient Solved Cube Like This:" ]
-                    , el
-                        [ testid "cube-start-state"
-                        , centerX
-                        ]
-                      <|
-                        ViewCube.uFRWithLetters [] 200 Cube.solved
+                    , el [ centerX ] <|
+                        ViewCube.uFRWithLetters
+                            [ htmlTestid "cube-start-state" ]
+                            200
+                            Cube.solved
                     , PLLTrainer.ButtonWithShortcut.view
                         hardwareAvailable
                         [ testid "start-button"
