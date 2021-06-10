@@ -43,11 +43,11 @@ describe("PLL Trainer - Basic Functionality", function () {
 
     it("sizes elements reasonably", function () {
       cy.assertNoHorizontalScrollbar();
-      const containerId = pllTrainerElements.startPage.container.testId;
+      const containerId = pllTrainerElements.startPage.container.specifier;
       // This one is allowed vertical scrolling, but we want to check
       // that we can actually scroll down to see instructionsText if its missing
       pllTrainerElements.startPage.instructionsText.assertConsumableViaScroll(
-        pllTrainerElements.startPage.container.testId
+        pllTrainerElements.startPage.container.specifier
       );
       pllTrainerElements.startPage.learningResources.assertConsumableViaScroll(
         containerId
@@ -55,7 +55,9 @@ describe("PLL Trainer - Basic Functionality", function () {
       pllTrainerElements.startPage.cubeStartExplanation.assertConsumableViaScroll(
         containerId
       );
-      pllTrainerElements.globals.cube.assertConsumableViaScroll(containerId);
+      pllTrainerElements.startPage.cubeStartState.assertConsumableViaScroll(
+        containerId
+      );
       pllTrainerElements.startPage.startButton.assertConsumableViaScroll(
         containerId
       );

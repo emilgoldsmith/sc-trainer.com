@@ -61,26 +61,24 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.correctPage.container.assertShows();
     });
 
-    it("errors as expected", function () {
-      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
-
-      // Shouldn't have error message on first visit
-      pllTrainerElements.pickAlgorithmPage.errorMessage.assertDoesntExist();
-
-      pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
-      pllTrainerElements.pickAlgorithmPage.errorMessage.assertShows();
-    });
-
-    it("focuses the input element as soon as you enter the page", function () {
+    it.only("focuses input element on load and then errors as expected", function () {
       // Enter the page dynamically just in case using restoreState could mess up
       // the auto focus
       pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
       pllTrainerElements.evaluateResult.correctButton.get().click();
 
       pllTrainerElements.pickAlgorithmPage.algorithmInput.assertIsFocused();
+      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+
+      // Shouldn't have error message on load
+      pllTrainerElements.pickAlgorithmPage.anyErrorMessage.assertDoesntExist();
+
+      // Should error if pressing enter right away
+      pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
+      pllTrainerElements.pickAlgorithmPage.anyErrorMessage.assertShows();
     });
 
-    context("LocalStorage", function () {
+    context.skip("LocalStorage", function () {
       it("doesn't display picker when user already has all algorithms picked", function () {
         cy.setLocalStorage(allPllsPickedLocalStorage);
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();

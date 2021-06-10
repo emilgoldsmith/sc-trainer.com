@@ -83,8 +83,10 @@ declare namespace Cypress {
      * cy.getByTestId(["grandparent-test-id", "parent-test-id", "some-test-id"]);
      */
     getByTestId(
-      testId: string | string[],
-      options?: Parameters<Cypress.Chainable<undefined>["get"]>[1]
+      testId: string | null,
+      options?: Parameters<Cypress.Chainable<undefined>["get"]>[1] & {
+        testType?: string;
+      }
     ): Chainable<JQuery<HTMLElement>>;
 
     /**

@@ -31,15 +31,22 @@ const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
   testId,
   ...args
 ) => {
-  let selector: string;
-  if (typeof testId === "string") {
-    selector = `[data-testid=${testId}]`;
-  } else {
-    selector = testId.map((id) => `[data-testid=${id}]`).join(" ");
+  if (testId === null && args[0]?.testType === undefined) {
+    throw new Error(
+      "Can't get an element with neither testId or testType specified"
+    );
   }
-  return cy.get(selector, ...args);
+  if (args[0]?.testType !== undefined) {
+    if (testId === null) {
+      return cy.get(`[data-test-type=${args[0].testType}]`, ...args);
+    }
+    return cy.get(
+      `[data-testid=${testId}][data-test-type=${args[0].testType}]`,
+      ...args
+    );
+  }
+  return cy.get(`[data-testid=${testId}]`, ...args);
 };
-
 Cypress.Commands.add("getByTestId", getByTestId);
 
 const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (

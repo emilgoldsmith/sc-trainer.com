@@ -2,7 +2,7 @@ module PLLTrainer.States.PickAlgorithmPage exposing (Model, Msg, state)
 
 import Algorithm exposing (Algorithm)
 import Browser.Dom
-import Css exposing (testid)
+import Css exposing (errorMessageTestType, testid)
 import Element exposing (..)
 import Element.Input as Input
 import Html.Attributes
@@ -206,7 +206,7 @@ view toMsg model =
                         , label = Input.labelAbove [] none
                         }
                     , Maybe.map
-                        (\error -> el [ testid "error-message" ] <| text error)
+                        (\error -> el [ errorMessageTestType ] <| text error)
                         (getError model)
                         |> Maybe.withDefault none
                     ]

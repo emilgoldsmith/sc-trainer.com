@@ -1,7 +1,16 @@
+type TestType = "error-message" | "cube";
+
+type ElementMeta = {
+  optional: boolean;
+  testType?: TestType;
+};
+
+type ElementSpecifier = string | { meta: ElementMeta; testId: string | null };
+
 export type Element = {
   get: ReturnType<typeof buildGetter>;
   waitFor: ReturnType<typeof buildWaiter>;
-  assertShows: ReturnType<typeof buildAsserter>;
+  assertShows: ReturnType<typeof buildVisibleAsserter>;
   assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
   assertContainedByWindow: ReturnType<typeof buildContainedByWindowAsserter>;
   assertConsumableViaScroll: ReturnType<
@@ -9,35 +18,45 @@ export type Element = {
   >;
   isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
   assertIsFocused: ReturnType<typeof buildAssertIsFocused>;
-  testId: string | string[];
-};
-
-type ElementMeta = {
-  optional: boolean;
+  specifier: ElementSpecifier;
 };
 
 type InternalElement = Element & { meta: ElementMeta };
 
-type ElementSpecifier =
-  | string
-  | string[]
-  | { meta: ElementMeta; testId: string };
-function getTestId(specifier: ElementSpecifier): string | string[] {
-  if (typeof specifier === "object" && "meta" in specifier) {
+function getTestId(specifier: ElementSpecifier): string | null {
+  if (typeof specifier === "object") {
     return specifier.testId;
   }
   return specifier;
 }
 
 function getMeta(specifier: ElementSpecifier): ElementMeta {
-  if (typeof specifier === "object" && "meta" in specifier) {
+  if (typeof specifier === "object") {
     return specifier.meta;
   }
   return { optional: false };
 }
+
 export function optionalElement(testId: string): ElementSpecifier {
   return { meta: { optional: true }, testId };
 }
+
+export function cubeElement(testId: string): ElementSpecifier {
+  return { meta: { optional: false, testType: "cube" }, testId };
+}
+
+export function errorMessageElement(testId: string): ElementSpecifier {
+  return { meta: { optional: false, testType: "error-message" }, testId };
+}
+
+export function anyErrorMessage({
+  optional,
+}: {
+  optional: boolean;
+}): ElementSpecifier {
+  return { meta: { optional, testType: "error-message" }, testId: null };
+}
+
 export function buildElementsCategory<keys extends string>(
   specifiers: { container: ElementSpecifier } & {
     [key in keys]: ElementSpecifier;
@@ -48,20 +67,20 @@ export function buildElementsCategory<keys extends string>(
 } & {
   [key in keys]: Element;
 } {
-  const getContainer = buildGetter(getTestId(specifiers.container));
+  const getContainer = buildGetter(specifiers.container);
   function buildWithinContainer<T>(
     builder: (
-      testId: string | string[]
+      specifier: ElementSpecifier
     ) => (options?: {
       log?: boolean;
       withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
     }) => Cypress.Chainable<T>,
-    testId: string | string[]
+    specifier: ElementSpecifier
   ): (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) => Cypress.Chainable<T> {
-    const fn = builder(testId);
+    const fn = builder(specifier);
     return function (...args: Parameters<ReturnType<typeof buildGetter>>) {
       return getContainer({ log: false }).then((containerElement) => {
         let options = { ...args[0] };
@@ -76,23 +95,23 @@ export function buildElementsCategory<keys extends string>(
   }
   function buildWithinContainer2<T>(
     builder: (
-      testId: string | string[]
+      specifier: ElementSpecifier
     ) => (
-      scrollableContainerTestId: string | string[],
+      scrollableContainerSpecifier: ElementSpecifier,
       options?: {
         log?: boolean;
         withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
       }
     ) => Cypress.Chainable<T>,
-    testId: string | string[]
+    specifier: ElementSpecifier
   ): (
-    scrollableContainerTestId: string | string[],
+    scrollableContainerSpecifier: ElementSpecifier,
     options?: {
       log?: boolean;
       withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
     }
   ) => Cypress.Chainable<T> {
-    const fn = builder(testId);
+    const fn = builder(specifier);
     return function (
       ...args: Parameters<ReturnType<typeof buildConsumableViaScrollAsserter>>
     ) {
@@ -111,29 +130,31 @@ export function buildElementsCategory<keys extends string>(
   const elements = Cypress._.mapValues(
     specifiers,
     (specifier: ElementSpecifier, key: string): InternalElement => {
-      const testId = getTestId(specifier);
       if (key === "container") {
-        return buildElement(testId);
+        return buildElement(specifier);
       }
       return {
-        get: buildWithinContainer(buildGetter, testId),
-        waitFor: buildWithinContainer(buildWaiter, testId),
-        assertShows: buildWithinContainer(buildAsserter, testId),
-        assertDoesntExist: buildWithinContainer(buildNotExistAsserter, testId),
+        get: buildWithinContainer(buildGetter, specifier),
+        waitFor: buildWithinContainer(buildWaiter, specifier),
+        assertShows: buildWithinContainer(buildVisibleAsserter, specifier),
+        assertDoesntExist: buildWithinContainer(
+          buildNotExistAsserter,
+          specifier
+        ),
         assertContainedByWindow: buildWithinContainer(
           buildContainedByWindowAsserter,
-          testId
+          specifier
         ),
         assertConsumableViaScroll: buildWithinContainer2(
           buildConsumableViaScrollAsserter,
-          testId
+          specifier
         ),
         isContainedByWindow: buildWithinContainer(
           buildContainedByWindow,
-          testId
+          specifier
         ),
-        assertIsFocused: buildWithinContainer(buildAssertIsFocused, testId),
-        testId,
+        assertIsFocused: buildWithinContainer(buildAssertIsFocused, specifier),
+        specifier,
         meta: getMeta(specifier),
       };
     }
@@ -151,75 +172,86 @@ export function buildElementsCategory<keys extends string>(
 }
 
 export function buildGlobalsCategory<keys extends string>(
-  testIds: {
-    [key in keys]: string;
+  specifiers: {
+    [key in keys]: ElementSpecifier;
   }
 ): {
   [key in keys]: Element;
 } {
-  return Cypress._.mapValues(testIds, buildElement);
+  return Cypress._.mapValues(specifiers, buildElement);
 }
 
 function buildElement(specifier: ElementSpecifier): InternalElement {
-  const testId = getTestId(specifier);
   return {
-    get: buildGetter(testId),
-    waitFor: buildWaiter(testId),
-    assertShows: buildAsserter(testId),
-    assertDoesntExist: buildNotExistAsserter(testId),
-    assertContainedByWindow: buildContainedByWindowAsserter(testId),
-    assertConsumableViaScroll: buildConsumableViaScrollAsserter(testId),
-    isContainedByWindow: buildContainedByWindow(testId),
-    assertIsFocused: buildAssertIsFocused(testId),
-    testId,
+    get: buildGetter(specifier),
+    waitFor: buildWaiter(specifier),
+    assertShows: buildVisibleAsserter(specifier),
+    assertDoesntExist: buildNotExistAsserter(specifier),
+    assertContainedByWindow: buildContainedByWindowAsserter(specifier),
+    assertConsumableViaScroll: buildConsumableViaScrollAsserter(specifier),
+    isContainedByWindow: buildContainedByWindow(specifier),
+    assertIsFocused: buildAssertIsFocused(specifier),
+    specifier,
     meta: getMeta(specifier),
   };
 }
 
-function buildAsserter(testId: string | string[]) {
+function getSpecifier(
+  specifier: ElementSpecifier,
+  options?: {
+    log?: boolean;
+    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  }
+) {
+  return cy.getByTestId(getTestId(specifier), {
+    ...options,
+    testType: getMeta(specifier).testType,
+  });
+}
+
+function buildVisibleAsserter(specifier: ElementSpecifier) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return cy.getByTestId(testId, options).should("be.visible");
+    return getSpecifier(specifier, options).should("be.visible");
   };
 }
 
-function buildNotExistAsserter(testId: string | string[]) {
+function buildNotExistAsserter(specifier: ElementSpecifier) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return cy.getByTestId(testId, options).should("not.exist");
+    return getSpecifier(specifier, options).should("not.exist");
   };
 }
 
-function buildWaiter(testId: string | string[]) {
+function buildWaiter(specifier: ElementSpecifier) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return cy.getByTestId(testId, options);
+    return getSpecifier(specifier, options);
   };
 }
 
-function buildGetter(testId: string | string[]) {
+function buildGetter(specifier: ElementSpecifier) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return cy.getByTestId(testId, options);
+    return getSpecifier(specifier, options);
   };
 }
 
-function buildAssertIsFocused(testId: string | string[]) {
+function buildAssertIsFocused(specifier: ElementSpecifier) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
     const assertIsFocused = () =>
-      cy
-        .getByTestId(testId, { ...options, log: false })
+      getSpecifier(specifier, { ...options, log: false })
         .invoke("attr", "id")
         .then((expectedId) => {
           if (expectedId === undefined) {
@@ -238,20 +270,20 @@ function buildAssertIsFocused(testId: string | string[]) {
     return cy.withOverallNameLogged(
       {
         displayName: "ASSERT FOCUSED",
-        message: testId,
-        consoleProps: () => ({ testId }),
+        message: specifier,
+        consoleProps: () => ({ specifier }),
       },
       assertIsFocused
     );
   };
 }
 
-function buildContainedByWindow(testId: string | string[]) {
+function buildContainedByWindow(specifier: ElementSpecifier) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return cy.getByTestId(testId, options).then((instructionsElement) => {
+    return getSpecifier(specifier, options).then((instructionsElement) => {
       const instructionsTop = instructionsElement.offset()?.top;
       if (instructionsTop === undefined) {
         throw new Error("Element has no offset");
@@ -276,12 +308,12 @@ function buildContainedByWindow(testId: string | string[]) {
   };
 }
 
-function buildContainedByWindowAsserter(testId: string | string[]) {
+function buildContainedByWindowAsserter(specifier: ElementSpecifier) {
   return function (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return cy.getByTestId(testId, options).then((instructionsElement) => {
+    return getSpecifier(specifier, options).then((instructionsElement) => {
       const instructionsTop = instructionsElement.offset()?.top;
       if (instructionsTop === undefined) {
         throw new Error("Element has no offset");
@@ -310,9 +342,9 @@ function buildContainedByWindowAsserter(testId: string | string[]) {
   };
 }
 
-function buildConsumableViaScrollAsserter(testId: string | string[]) {
+function buildConsumableViaScrollAsserter(specifier: ElementSpecifier) {
   return function (
-    scrollableContainerTestId: string | string[],
+    scrollableContainerSpecifier: ElementSpecifier,
     options?: {
       log?: boolean;
       withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
@@ -322,14 +354,14 @@ function buildConsumableViaScrollAsserter(testId: string | string[]) {
       // We don't want the within here as it's usually used on the container
       // and getting the container within the container fails
       const optionsWithoutWithin = Cypress._.omit(options, "withinSubject");
-      return cy.getByTestId(scrollableContainerTestId, optionsWithoutWithin);
+      return getSpecifier(scrollableContainerSpecifier, optionsWithoutWithin);
     }
 
     function getElement() {
-      return cy.getByTestId(testId, options);
+      return getSpecifier(specifier, options);
     }
 
-    return cy.getByTestId(testId, options).then((ourElement) => {
+    return getSpecifier(specifier, options).then((ourElement) => {
       getContainer().then((container) => {
         if (getHeight(ourElement) <= getHeight(container)) {
           if (
