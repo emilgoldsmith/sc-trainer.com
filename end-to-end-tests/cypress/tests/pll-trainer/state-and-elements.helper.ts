@@ -3,7 +3,6 @@ import {
   buildElementsCategory,
   buildGlobalsCategory,
   cubeElement,
-  optionalElement,
   anyErrorMessage,
 } from "support/elements";
 import { buildStates, StateOptions } from "support/state";
