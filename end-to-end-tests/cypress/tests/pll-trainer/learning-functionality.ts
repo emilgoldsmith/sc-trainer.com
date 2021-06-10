@@ -22,6 +22,7 @@ describe("PLL Trainer - Learning Functionality", function () {
   beforeEach(function () {
     applyDefaultIntercepts(extraIntercepts);
     cy.visit(paths.pllTrainer);
+    pllTrainerStatesNewUser.pickAlgorithmPage.restoreState();
   });
 
   describe("Algorithm Picker", function () {
@@ -61,7 +62,6 @@ describe("PLL Trainer - Learning Functionality", function () {
     });
 
     it("errors as expected", function () {
-      pllTrainerStatesNewUser.pickAlgorithmPage.restoreState();
       cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
 
       // Shouldn't have error message on first visit
@@ -69,6 +69,15 @@ describe("PLL Trainer - Learning Functionality", function () {
 
       pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
       pllTrainerElements.pickAlgorithmPage.errorMessage.assertShows();
+    });
+
+    it("focuses the input element as soon as you enter the page", function () {
+      // Enter the page dynamically just in case using restoreState could mess up
+      // the auto focus
+      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
+      pllTrainerElements.evaluateResult.correctButton.get().click();
+
+      pllTrainerElements.pickAlgorithmPage.algorithmInput.assertIsFocused();
     });
 
     context("LocalStorage", function () {
