@@ -61,7 +61,7 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.correctPage.container.assertShows();
     });
 
-    it.only("focuses input element on load and then errors as expected", function () {
+    it("focuses input element on load and then errors as expected", function () {
       // Enter the page dynamically just in case using restoreState could mess up
       // the auto focus
       pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
@@ -71,14 +71,26 @@ describe("PLL Trainer - Learning Functionality", function () {
       cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
 
       // Shouldn't have error message on load
-      pllTrainerElements.pickAlgorithmPage.anyErrorMessage.assertDoesntExist();
+      pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
 
-      // Should error if pressing enter right away
+      // Should require input if pressing enter right away
       pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
-      pllTrainerElements.pickAlgorithmPage.anyErrorMessage.assertShows();
+      pllTrainerElements.pickAlgorithmPage.inputRequiredError.assertShows();
+
+      // Should no longer require input after input
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type("asdfgfda{enter}");
+      pllTrainerElements.pickAlgorithmPage.inputRequiredError.assertDoesntExist();
+
+      // Should require input again after deleting the input
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type("{selectall}{backspace}{enter}");
+      pllTrainerElements.pickAlgorithmPage.inputRequiredError.assertShows();
     });
 
-    context.skip("LocalStorage", function () {
+    context("LocalStorage", function () {
       it("doesn't display picker when user already has all algorithms picked", function () {
         cy.setLocalStorage(allPllsPickedLocalStorage);
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
