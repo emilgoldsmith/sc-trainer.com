@@ -1,15 +1,18 @@
 module PLLTrainer.States.PickAlgorithmPage exposing (Model, Msg, state)
 
 import Algorithm exposing (Algorithm)
+import Browser.Dom
 import Css exposing (testid)
 import Element exposing (..)
 import Element.Input as Input
+import Html.Attributes
 import Html.Events
 import Json.Decode
 import Key
 import PLL
 import PLLTrainer.State
 import PLLTrainer.Subscription
+import Ports
 import Shared
 import Task
 import View
@@ -18,7 +21,7 @@ import View
 state : Shared.Model -> Transitions msg -> (Msg -> msg) -> PLLTrainer.State.State msg Msg Model
 state _ transitions toMsg =
     PLLTrainer.State.element
-        { init = init
+        { init = init toMsg
         , update = update transitions
         , subscriptions = subscriptions
         , view = view toMsg
@@ -44,9 +47,18 @@ type Model
     | InvalidAlgorithm { text : String, errorMessage : String }
 
 
-init : ( Model, Cmd msg )
-init =
-    ( InputNotInteractedWith, Cmd.none )
+focusOnLoadId : String
+focusOnLoadId =
+    "focus-on-load"
+
+
+init : (Msg -> msg) -> ( Model, Cmd msg )
+init toMsg =
+    ( InputNotInteractedWith
+    , Task.attempt
+        (toMsg << FocusAttempted)
+        (Browser.Dom.focus focusOnLoadId)
+    )
 
 
 
@@ -99,6 +111,7 @@ getError model =
 type Msg
     = UpdateAlgorithmString String
     | Submit
+    | FocusAttempted (Result Browser.Dom.Error ())
 
 
 update : Transitions msg -> Msg -> Model -> ( Model, Cmd msg )
@@ -140,6 +153,22 @@ update transitions msg model =
                         )
                     )
 
+        FocusAttempted result ->
+            case result of
+                Ok _ ->
+                    ( model, Cmd.none )
+
+                Err domError ->
+                    case domError of
+                        Browser.Dom.NotFound idNotFound ->
+                            ( model
+                            , Ports.logError
+                                ("Couldn't find id `"
+                                    ++ idNotFound
+                                    ++ "` to focus on"
+                                )
+                            )
+
 
 
 -- SUBSCRIPTIONS
@@ -169,6 +198,7 @@ view toMsg model =
                     [ Input.text
                         [ testid "algorithm-input"
                         , onEnter (toMsg Submit)
+                        , htmlAttribute <| Html.Attributes.id focusOnLoadId
                         ]
                         { onChange = toMsg << UpdateAlgorithmString
                         , text = getInputText model

@@ -8,6 +8,7 @@ export type Element = {
     typeof buildConsumableViaScrollAsserter
   >;
   isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
+  assertIsFocused: ReturnType<typeof buildAssertIsFocused>;
   testId: string | string[];
 };
 
@@ -131,6 +132,7 @@ export function buildElementsCategory<keys extends string>(
           buildContainedByWindow,
           testId
         ),
+        assertIsFocused: buildWithinContainer(buildAssertIsFocused, testId),
         testId,
         meta: getMeta(specifier),
       };
@@ -168,6 +170,7 @@ function buildElement(specifier: ElementSpecifier): InternalElement {
     assertContainedByWindow: buildContainedByWindowAsserter(testId),
     assertConsumableViaScroll: buildConsumableViaScrollAsserter(testId),
     isContainedByWindow: buildContainedByWindow(testId),
+    assertIsFocused: buildAssertIsFocused(testId),
     testId,
     meta: getMeta(specifier),
   };
@@ -206,6 +209,40 @@ function buildGetter(testId: string | string[]) {
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
     return cy.getByTestId(testId, options);
+  };
+}
+
+function buildAssertIsFocused(testId: string | string[]) {
+  return function (options?: {
+    log?: boolean;
+    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  }) {
+    const assertIsFocused = () =>
+      cy
+        .getByTestId(testId, { ...options, log: false })
+        .invoke("attr", "id")
+        .then((expectedId) => {
+          if (expectedId === undefined) {
+            throw new Error(
+              "Any programatically focused element should always have an id"
+            );
+          }
+          cy.focused({ ...options, log: false })
+            .invoke("attr", "id")
+            .should("equal", expectedId);
+        });
+
+    if (options?.log === false) {
+      return assertIsFocused();
+    }
+    return cy.withOverallNameLogged(
+      {
+        displayName: "ASSERT FOCUSED",
+        message: testId,
+        consoleProps: () => ({ testId }),
+      },
+      assertIsFocused
+    );
   };
 }
 
