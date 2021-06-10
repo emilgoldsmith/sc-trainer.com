@@ -221,9 +221,11 @@ declare namespace Cypress {
     ): void;
 
     setCurrentTestCase(
-      testCase: ReadOnly<
-        [import("./pll").AUF, import("./pll").PLL, import("./pll").AUF]
-      >
+      testCase: readonly [
+        import("./pll").AUF,
+        import("./pll").PLL,
+        import("./pll").AUF
+      ]
     ): void;
 
     setLocalStorage(storageState: { [key: string]: any }): void;
