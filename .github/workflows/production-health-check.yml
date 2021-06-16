@@ -11,7 +11,6 @@ jobs:
   production-health-check:
     name: Run Production Health Check
     runs-on: ubuntu-20.04
-    needs: wait-for-docker-containers
     container:
       image: sctrainer/main:ci-chrome-v1
       # This is needed for Firefox running as described here
