@@ -6,7 +6,8 @@ on:
 permissions:
   contents: read
 
-  cypress-end-to-end-tests:
+jobs:
+  production-health-check:
     name: Run Production Health Check
     runs-on: ubuntu-20.04
     needs: wait-for-docker-containers
