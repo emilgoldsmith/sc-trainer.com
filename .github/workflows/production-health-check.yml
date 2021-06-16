@@ -1,0 +1,82 @@
+name: Production Health Check
+on:
+  schedule:
+    cron: "0 0/2 * * *"
+
+permissions:
+  contents: read
+
+  cypress-end-to-end-tests:
+    name: Run Production Health Check
+    runs-on: ubuntu-20.04
+    needs: wait-for-docker-containers
+    container:
+      image: sctrainer/main:ci-chrome-v1
+      # This is needed for Firefox running as described here
+      # https://github.com/cypress-io/github-action/issues/104
+      options: --user 1001
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Handle Yarn caching
+        uses: actions/cache@v2
+        env:
+          cache-name: yarn-cache-v1
+        with:
+          path: |
+            ~/.cache/yarn
+          key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('end-to-end-tests/**/yarn.lock')}}
+          # Note we purposefully don't specify fallback restore keys.
+          # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
+
+      - name: Handle Cypress caching
+        uses: actions/cache@v2
+        env:
+          cache-name: cypress-cache-v1
+        with:
+          path: |
+            ~/.cache/Cypress
+          key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('end-to-end-tests/**/yarn.lock')}}
+          # Note we purposefully don't specify fallback restore keys.
+          # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
+
+      - name: Install Dependencies
+        run: yarn --frozen-lockfile
+        working-directory: end-to-end-tests
+
+      - name: Log Cypress Info
+        run: npx cypress info
+        working-directory: end-to-end-tests
+
+      - name: Run Cypress Tests
+        working-directory: end-to-end-tests
+        run: >
+          ./node_modules/.bin/cypress run
+          --browser chrome
+          --config "baseUrl=https://sctrainer.com"
+          --spec "cypress/smoke-tests/**/*.ts"
+
+      - name: Upload recorded videos
+        uses: actions/upload-artifact@v2.2.3
+        if: failure()
+        continue-on-error: true
+        with:
+          name: VIDEOS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
+          path: end-to-end-tests/cypress/videos
+
+      - name: Upload recorded Screenshots
+        uses: actions/upload-artifact@v2.2.3
+        if: failure()
+        continue-on-error: true
+        with:
+          name: SCREENSHOTS-cypress-${{ matrix.platform.browser }}-${{ matrix.sizeRelevant.deviceName }}-${{ github.sha }}
+          path: end-to-end-tests/cypress/screenshots
+#
+#
+# Useful for debugging:
+# - uses: mxschmitt/action-tmate@v3
+#   with:
+#     limit-access-to-actor: true
+#     sudo: false
