@@ -58,7 +58,7 @@ aufDecoder =
                         Json.Decode.succeed auf
 
                     Err errorMessage ->
-                        Json.Decode.fail errorMessage
+                        Json.Decode.fail (AUF.debugFromStringError errorMessage)
             )
 
 
