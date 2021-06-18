@@ -38,5 +38,5 @@
   "workspaceFolder": "/home/cube-community/workspace",
   "initializeCommand": "docker build -f .devcontainer/unsafe-html-cube-devcontainer.dockerfile -t unsafe-html-cube-devcontainer:12 --build-arg NODE_VERSION=12.22.1 --build-arg YARN_VERSION=1.22.5 .devcontainer",
   "postCreateCommand": "git config core.hooksPath scripts/git-hooks",
-  "postAttachCommand": "git pull; cd end-to-end-tests && yarn && (yarn run cypress verify || yarn run cypress install)"
+  "postAttachCommand": "git pull --ff-only; cd end-to-end-tests && yarn && (yarn run cypress verify || yarn run cypress install)"
 }
