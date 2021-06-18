@@ -207,7 +207,7 @@ function fixSeedTerserMinimized(
 ) {
   /**
    * Here we are trying to match the following line:
-   * An.Random=En(Ni,zi,Ri,t((function(n,r){return i(_i,n,r)})));
+   * En.Random=An(ph,$h,e((function(n,r,t){return Qt(t)}))
    */
   const initExtractorRegex = buildRegex(
     [
@@ -233,7 +233,7 @@ function fixSeedTerserMinimized(
   );
   /**
    * Here we are trying to match the following line:
-   * O=N(Pe,function(n){return ze((r=ou(n),n=fu(N(Lc,0,1013904223)),fu(N(Lc,n.a+r>>>0,n.b))))
+   * ph=i(ee,(function(n){return Qt((r=n,t=sh(i(fh,0,1013904223)),sh(i(fh,t.a+r>>>0,t.b))))
    */
   const regex = buildRegex(
     [
@@ -243,20 +243,15 @@ function fixSeedTerserMinimized(
       String.raw`\b${initFunctionName}\b`,
       // The asignment of our function name which value is the result of a function call
       String.raw`=\w+\(`,
-      // Which has the first argument as an identifier, and the second a function with one argument that directly returns something
-      String.raw`\w+,\(function\(\w+\)\{return `,
-      // A function call where the first parameter is a temporary function closure with one argument
-      String.raw`\w+\(function\(\w+\)\{.+?\}`,
-      // The value passed to the temporary function closure
-      String.raw`\(`,
-      // We want to replace the rest from here so no more capturing
+      // Find the binary operation we know we care about by first matching the plus
+      // preceding the variable we care about
+      /.+?\+/,
       ")",
-      // get up until the end of the value passed to the closure
-      "[^)]+",
-      // Ensure a closing parenthesis shows up and capture it as we don't want to change it
-      "(",
-      String.raw`\)`,
-      ")",
+      // Then the variable we want to replace
+      /[\w.]+/,
+      // And finally we match the binary operation to ensure uniqueness of the
+      // match and capture this so we can restore it later
+      "(>>>0)",
     ],
     "g"
   );
