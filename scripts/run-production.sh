@@ -2,6 +2,16 @@
 
 set -eu
 
+
+############################################################
+# In order for this script to work place everything in the
+# top level public folder, and build-html will take care of
+# hydrating the template and moving everything over into
+# the build folder where everything will be served from.
+# The build folder is also destroyed and recreated on every
+# run so it is futile trying to change something there
+############################################################
+
 ROOT_DIRECTORY=$(dirname $0)/..
 cd $ROOT_DIRECTORY
 
