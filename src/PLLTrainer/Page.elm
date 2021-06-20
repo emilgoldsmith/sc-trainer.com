@@ -419,6 +419,7 @@ states shared model =
     , pickAlgorithmPage =
         always <|
             PLLTrainer.States.PickAlgorithmPage.state
+                { currentTestCase = model.currentTestCase }
                 shared
                 { continue = TransitionMsg << AlgorithmPicked }
                 (StateMsg << PickAlgorithmMsg)

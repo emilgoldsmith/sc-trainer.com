@@ -60,9 +60,7 @@ view viewportSize palette hardwareAvailable transitions arguments =
     , body =
         let
             testCaseCube =
-                Cube.applyAlgorithm
-                    (Algorithm.inverse <| PLLTrainer.TestCase.toAlg arguments.testCase)
-                    Cube.solved
+                PLLTrainer.TestCase.toCube arguments.testCase
         in
         View.FullScreen <|
             column

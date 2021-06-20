@@ -1,7 +1,8 @@
-module PLLTrainer.TestCase exposing (TestCase, build, generate, pll, postAuf, preAuf, toAlg)
+module PLLTrainer.TestCase exposing (TestCase, build, generate, pll, postAuf, preAuf, toAlg, toCube)
 
 import AUF exposing (AUF)
 import Algorithm
+import Cube exposing (Cube)
 import List.Nonempty
 import PLL exposing (PLL)
 import Random
@@ -21,6 +22,14 @@ toAlg (TestCase ( preauf, pll_, postauf )) =
     AUF.toAlgorithm preauf
         |> Algorithm.append (PLL.getAlgorithm PLL.referenceAlgorithms pll_)
         |> Algorithm.append (AUF.toAlgorithm postauf)
+
+
+{-| A cube that would be solved by this test case
+-}
+toCube : TestCase -> Cube
+toCube testCase =
+    Cube.solved
+        |> Cube.applyAlgorithm (Algorithm.inverse <| toAlg testCase)
 
 
 generate : Random.Generator TestCase

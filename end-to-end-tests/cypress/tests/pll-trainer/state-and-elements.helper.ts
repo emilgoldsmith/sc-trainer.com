@@ -9,6 +9,7 @@ import {
 } from "support/elements";
 import { buildStates, StateOptions } from "support/state";
 import { paths } from "support/paths";
+import { AUF, PLL } from "support/pll";
 
 export const pllTrainerElements = {
   startPage: buildElementsCategory({
@@ -99,6 +100,9 @@ export const pllTrainerElements = {
       errorMessageElement("nested-parentheses")
     ),
     invalidSymbolError: optionalElement(errorMessageElement("invalid-symbol")),
+    algorithmDoesntMatchCaseError: optionalElement(
+      errorMessageElement("algorithm-doesnt-match-case")
+    ),
   }),
   globals: buildGlobalsCategory({
     anyErrorMessage: anyErrorMessage(),
@@ -306,9 +310,12 @@ export const pllTrainerStatesNewUser = buildStates<
     name: "correctPage",
     getToThatState: (getState, options) => {
       getState("pickAlgorithmPage");
+      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+      // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
+      const AaAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
       pllTrainerElements.pickAlgorithmPage.algorithmInput
         .get(options)
-        .type("U{enter}", { ...options, delay: 0 });
+        .type(AaAlgorithm + "{enter}", { ...options, delay: 0 });
     },
     waitForStateToAppear: (options) => {
       pllTrainerElements.correctPage.container.waitFor(options);
