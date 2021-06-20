@@ -152,7 +152,7 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.correctPage.container.assertShows();
     });
 
-    it("Accepts algorithms no matter what execution angle or AUF they have", function () {
+    it("accepts algorithms no matter what execution angle or AUF they have", function () {
       allAUFs.forEach((preAUF) =>
         allAUFs.forEach((postAUF) => {
           cy.withOverallNameLogged(
@@ -204,6 +204,28 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
       // Now it should show because we submitted
       pllTrainerElements.pickAlgorithmPage.invalidTurnLengthError.assertShows();
+
+      // Now try with the button
+      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertDoesntExist();
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type("{selectall}{backspace}U U");
+      // Check error didn't show yet
+      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertDoesntExist();
+
+      pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
+      // Now it should show because we submitted
+      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertShows();
+    });
+
+    it("continues to next page on submit button click", function () {
+      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type(AaAlgorithm);
+      pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
+
+      pllTrainerElements.correctPage.container.assertShows();
     });
 
     context("LocalStorage", function () {
