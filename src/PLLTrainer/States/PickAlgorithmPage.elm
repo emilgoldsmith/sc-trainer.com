@@ -168,6 +168,10 @@ view toMsg model =
                         , label = Input.labelAbove [] none
                         }
                     , maybeViewError model.error
+                    , Input.button [ testid "submit-button" ]
+                        { onPress = Just (toMsg Submit)
+                        , label = text "hi"
+                        }
                     ]
     }
 
