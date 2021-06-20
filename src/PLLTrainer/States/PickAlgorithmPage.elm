@@ -1,4 +1,4 @@
-module PLLTrainer.States.PickAlgorithmPage exposing (Model, Msg, state)
+module PLLTrainer.States.PickAlgorithmPage exposing (Arguments, Model, Msg, state)
 
 import Algorithm exposing (Algorithm)
 import Browser.Dom
@@ -12,24 +12,30 @@ import Key
 import PLL
 import PLLTrainer.State
 import PLLTrainer.Subscription
+import PLLTrainer.TestCase
 import Ports
 import Shared
 import Task
 import View
 
 
-state : Shared.Model -> Transitions msg -> (Msg -> msg) -> PLLTrainer.State.State msg Msg Model
-state _ transitions toMsg =
+state : Arguments -> Shared.Model -> Transitions msg -> (Msg -> msg) -> PLLTrainer.State.State msg Msg Model
+state { currentTestCase } _ transitions toMsg =
     PLLTrainer.State.element
         { init = init toMsg
-        , update = update transitions
+        , update = update transitions currentTestCase
         , subscriptions = subscriptions
         , view = view toMsg
         }
 
 
 
--- TRANSITIONS
+-- ARGUMENTS AND TRANSITIONS
+
+
+type alias Arguments =
+    { currentTestCase : PLLTrainer.TestCase.TestCase
+    }
 
 
 type alias Transitions msg =
@@ -41,10 +47,15 @@ type alias Transitions msg =
 -- INIT
 
 
-type Model
-    = InputNotInteractedWith
-    | ValidAlgorithm String Algorithm
-    | InvalidAlgorithm { text : String, error : Algorithm.FromStringError }
+type alias Model =
+    { text : String
+    , error : Maybe Error
+    }
+
+
+type Error
+    = AlgorithmParsingError Algorithm.FromStringError
+    | DoesntSolveCaseError
 
 
 focusOnLoadId : String
@@ -54,7 +65,7 @@ focusOnLoadId =
 
 init : (Msg -> msg) -> ( Model, Cmd msg )
 init toMsg =
-    ( InputNotInteractedWith
+    ( { text = "", error = Nothing }
     , Task.attempt
         (toMsg << FocusAttempted)
         (Browser.Dom.focus focusOnLoadId)
@@ -62,102 +73,47 @@ init toMsg =
 
 
 
--- MODEL HELPERS
-
-
-getInputText : Model -> String
-getInputText model =
-    case model of
-        InputNotInteractedWith ->
-            ""
-
-        ValidAlgorithm text _ ->
-            text
-
-        InvalidAlgorithm { text } ->
-            text
-
-
-getAlgorithm : Model -> Maybe Algorithm
-getAlgorithm model =
-    case model of
-        InputNotInteractedWith ->
-            Nothing
-
-        ValidAlgorithm _ algorithm ->
-            Just algorithm
-
-        InvalidAlgorithm _ ->
-            Nothing
-
-
-getError : Model -> Maybe Algorithm.FromStringError
-getError model =
-    case model of
-        InputNotInteractedWith ->
-            Nothing
-
-        ValidAlgorithm _ _ ->
-            Nothing
-
-        InvalidAlgorithm { error } ->
-            Just error
-
-
-
 -- UPDATE
 
 
 type Msg
-    = UpdateAlgorithmString String
+    = UpdateText String
     | Submit
     | FocusAttempted (Result Browser.Dom.Error ())
 
 
-update : Transitions msg -> Msg -> Model -> ( Model, Cmd msg )
-update transitions msg model =
+update :
+    Transitions msg
+    -> PLLTrainer.TestCase.TestCase
+    -> Msg
+    -> Model
+    -> ( Model, Cmd msg )
+update transitions currentTestCase msg model =
     case msg of
-        UpdateAlgorithmString "" ->
-            ( InvalidAlgorithm { text = "", error = Algorithm.EmptyAlgorithm }
-            , Cmd.none
-            )
-
-        UpdateAlgorithmString algorithmString ->
-            let
-                algorithmResult =
-                    Algorithm.fromString algorithmString
-
-                newModel =
-                    case algorithmResult of
-                        Ok algorithm ->
-                            ValidAlgorithm algorithmString algorithm
-
-                        Err error ->
-                            InvalidAlgorithm
-                                { text = algorithmString
-                                , error = error
-                                }
-            in
-            ( newModel, Cmd.none )
+        UpdateText newText ->
+            ( { model | text = newText }, Cmd.none )
 
         Submit ->
-            case model of
-                InputNotInteractedWith ->
-                    ( InvalidAlgorithm { text = "", error = Algorithm.EmptyAlgorithm }
-                    , Cmd.none
-                    )
+            case Algorithm.fromString model.text of
+                Err parsingError ->
+                    ( { model | error = Just (AlgorithmParsingError parsingError) }, Cmd.none )
 
-                InvalidAlgorithm _ ->
-                    ( model, Cmd.none )
-
-                ValidAlgorithm _ _ ->
-                    ( model
-                    , Task.perform
-                        transitions.continue
-                        (Task.succeed
-                            (PLL.getAlgorithm PLL.referenceAlgorithms PLL.H)
+                Ok algorithm ->
+                    if
+                        PLL.solvedBy
+                            algorithm
+                            (PLLTrainer.TestCase.pll currentTestCase)
+                    then
+                        ( model
+                        , Task.perform
+                            transitions.continue
+                            (Task.succeed <|
+                                PLL.getAlgorithm PLL.referenceAlgorithms PLL.H
+                            )
                         )
-                    )
+
+                    else
+                        ( { model | error = Just DoesntSolveCaseError }, Cmd.none )
 
         FocusAttempted result ->
             case result of
@@ -206,23 +162,39 @@ view toMsg model =
                         , onEnter (toMsg Submit)
                         , htmlAttribute <| Html.Attributes.id focusOnLoadId
                         ]
-                        { onChange = toMsg << UpdateAlgorithmString
-                        , text = getInputText model
+                        { onChange = toMsg << UpdateText
+                        , text = model.text
                         , placeholder = Nothing
                         , label = Input.labelAbove [] none
                         }
-                    , maybeViewError (getError model)
+                    , maybeViewError model.error
                     ]
     }
 
 
-maybeViewError : Maybe Algorithm.FromStringError -> Element msg
+maybeViewError : Maybe Error -> Element msg
 maybeViewError maybeError =
     Maybe.map viewError maybeError |> Maybe.withDefault none
 
 
-viewError : Algorithm.FromStringError -> Element msg
+viewError : Error -> Element msg
 viewError error =
+    case error of
+        AlgorithmParsingError parsingError ->
+            viewParsingError parsingError
+
+        DoesntSolveCaseError ->
+            viewDoesntMatchCaseError
+
+
+viewDoesntMatchCaseError : Element msg
+viewDoesntMatchCaseError =
+    el [ testid "algorithm-doesnt-match-case", errorMessageTestType ] <|
+        text "algorithm doesn't match the case"
+
+
+viewParsingError : Algorithm.FromStringError -> Element msg
+viewParsingError error =
     case error of
         Algorithm.EmptyAlgorithm ->
             el [ testid "input-required", errorMessageTestType ] <| text "input required"
@@ -292,8 +264,16 @@ viewError error =
             <|
                 text "invalid symbol"
 
-        _ ->
-            none
+        Algorithm.SpansOverSeveralLines _ ->
+            el
+                [ errorMessageTestType
+                ]
+            <|
+                text "Congratulations! You somehow managed to make your algorithm span several lines of text which is not allowed and the input shouldn't even let you do. If you want to proceed you should undo it though :)"
+
+        Algorithm.UnexpectedError _ ->
+            el [ errorMessageTestType ] <|
+                text "Congratulations! You somehow managed to make our algorithm parser error in a way we had never expected to happen. If you're online a simple error description (with no personal data) has already been sent to the developers so hopefully this will soon be fixed, but thanks for helping find our edge cases! Until then see if you can figure out the problem with your algorithm yourself, or maybe try out writing it from scratch again"
 
 
 onEnter : msg -> Attribute msg

@@ -2,13 +2,18 @@ import {
   applyDefaultIntercepts,
   createFeatureFlagSetter,
 } from "support/interceptors";
-import { AUF, PLL } from "support/pll";
+import { allAUFs, AUF, aufToString, PLL } from "support/pll";
 import {
   pllTrainerElements,
   pllTrainerStatesNewUser,
 } from "./state-and-elements.helper";
 import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 import { paths } from "support/paths";
+
+// Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
+const AaAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
+// Taken from https://www.speedsolving.com/wiki/index.php/PLL#H_Permutation
+const HAlgorithm = "M2' U M2' U2 M2' U M2'";
 
 const extraIntercepts: Parameters<typeof applyDefaultIntercepts>[0] = {
   extraHtmlModifiers: [createFeatureFlagSetter("displayAlgorithmPicker", true)],
@@ -31,8 +36,7 @@ describe("PLL Trainer - Learning Functionality", function () {
       cy.clock();
 
       const correctBranchCase = [AUF.none, PLL.Aa, AUF.none] as const;
-      // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
-      const correctBranchAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
+      const correctBranchAlgorithm = AaAlgorithm;
       cy.setCurrentTestCase(correctBranchCase);
 
       cy.mouseClickScreen("center");
@@ -137,6 +141,69 @@ describe("PLL Trainer - Learning Functionality", function () {
       // Errors informatively when invalid symbol encountered
       clearInputTypeAndSubmit("( U B F') % D2");
       pllTrainerElements.pickAlgorithmPage.invalidSymbolError.assertShows();
+
+      // Errors informatively an algorithm that doesn't match the case is encountered
+      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+      clearInputTypeAndSubmit(HAlgorithm);
+      pllTrainerElements.pickAlgorithmPage.algorithmDoesntMatchCaseError.assertShows();
+
+      // Submits successfully when correct algorithm passed
+      clearInputTypeAndSubmit(AaAlgorithm);
+      pllTrainerElements.correctPage.container.assertShows();
+    });
+
+    it("Accepts algorithms no matter what execution angle or AUF they have", function () {
+      allAUFs.forEach((preAUF) =>
+        allAUFs.forEach((postAUF) => {
+          cy.withOverallNameLogged(
+            {
+              displayName: "TESTING WITH AUFS",
+              message:
+                "(" +
+                (aufToString[preAUF] || "none") +
+                "," +
+                (aufToString[postAUF] || "none") +
+                ")",
+            },
+            () => {
+              pllTrainerStatesNewUser.pickAlgorithmPage.restoreState({
+                log: false,
+              });
+              cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+              pllTrainerElements.pickAlgorithmPage.algorithmInput
+                .get({ log: false })
+                .type(
+                  aufToString[preAUF] +
+                    AaAlgorithm +
+                    aufToString[postAUF] +
+                    "{enter}",
+                  { log: false, delay: 0 }
+                );
+              pllTrainerElements.correctPage.container.assertShows();
+            }
+          );
+        })
+      );
+    });
+
+    it("only updates error message on submit", function () {
+      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertDoesntExist();
+      pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("U U");
+      // Check error didn't show yet
+      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertDoesntExist();
+
+      pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
+      // Now it should show because we submitted
+      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertShows();
+
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type("{selectall}{backspace}U4");
+      // It shouldn't show yet
+      pllTrainerElements.pickAlgorithmPage.invalidTurnLengthError.assertDoesntExist();
+      pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
+      // Now it should show because we submitted
+      pllTrainerElements.pickAlgorithmPage.invalidTurnLengthError.assertShows();
     });
 
     context("LocalStorage", function () {

@@ -21,3 +21,5 @@ export const pllToString: { [key in PLL]: string } = {
   [PLL.Aa]: "Aa",
   [PLL.Ab]: "Ab",
 };
+
+export const allAUFs = [AUF.none, AUF.U, AUF.U2, AUF.UPrime];

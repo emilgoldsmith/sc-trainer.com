@@ -113,7 +113,7 @@ view viewportSize testCase model =
                 ]
                 [ el [ centerX ] <|
                     ViewCube.uFRNoLetters [ htmlTestid "test-case" ] (ViewportSize.minDimension viewportSize // 2) <|
-                        (Cube.solved |> Cube.applyAlgorithm (Algorithm.inverse (PLLTrainer.TestCase.toAlg testCase)))
+                        PLLTrainer.TestCase.toCube testCase
                 , el
                     [ testid "timer"
                     , centerX
