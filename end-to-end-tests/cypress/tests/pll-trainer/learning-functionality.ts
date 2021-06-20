@@ -88,6 +88,55 @@ describe("PLL Trainer - Learning Functionality", function () {
         .get()
         .type("{selectall}{backspace}{enter}");
       pllTrainerElements.pickAlgorithmPage.inputRequiredError.assertShows();
+
+      function clearInputTypeAndSubmit(input: string): void {
+        pllTrainerElements.pickAlgorithmPage.algorithmInput
+          .get()
+          .type(`{selectall}{backspace}${input}{enter}`);
+      }
+      // Errors informatively when invalid turnable encountered
+      clearInputTypeAndSubmit("U B A");
+      pllTrainerElements.pickAlgorithmPage.invalidTurnableError.assertShows();
+
+      // Errors informatively when invalid turn length encountered
+      clearInputTypeAndSubmit("U4");
+      pllTrainerElements.pickAlgorithmPage.invalidTurnLengthError.assertShows();
+
+      // Errors informatively when repeated turnable encountered
+      clearInputTypeAndSubmit("U2U");
+      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertShows();
+
+      // Errors informatively when mixed wide move styles encountered
+      clearInputTypeAndSubmit("u B Rw");
+      pllTrainerElements.pickAlgorithmPage.wideMoveStylesMixedError.assertShows();
+
+      // Errors informatively when space between turnable and apostrophe encountered
+      clearInputTypeAndSubmit("U '");
+      pllTrainerElements.pickAlgorithmPage.TurnWouldWorkWithoutInterruptionError.assertShows();
+
+      // Errors informatively when parenthesis between turnable and apostrophe encountered
+      clearInputTypeAndSubmit("(U)'");
+      pllTrainerElements.pickAlgorithmPage.TurnWouldWorkWithoutInterruptionError.assertShows();
+
+      // Errors informatively when apostrophe on wrong side of length encountered
+      clearInputTypeAndSubmit("U'2");
+      pllTrainerElements.pickAlgorithmPage.apostropheWrongSideOfLengthError.assertShows();
+
+      // Errors informatively when unclosed parenthesis encountered
+      clearInputTypeAndSubmit("U ( B F' D2");
+      pllTrainerElements.pickAlgorithmPage.unclosedParenthesisError.assertShows();
+
+      // Errors informatively when unmatched closing parenthesis encountered
+      clearInputTypeAndSubmit("U B F' ) D2");
+      pllTrainerElements.pickAlgorithmPage.unmatchedClosingParenthesisError.assertShows();
+
+      // Errors informatively when nested parentheses encountered
+      clearInputTypeAndSubmit("( U (B F') ) D2");
+      pllTrainerElements.pickAlgorithmPage.nestedParenthesesError.assertShows();
+
+      // Errors informatively when invalid symbol encountered
+      clearInputTypeAndSubmit("( U B F') % D2");
+      pllTrainerElements.pickAlgorithmPage.invalidSymbolError.assertShows();
     });
 
     context("LocalStorage", function () {

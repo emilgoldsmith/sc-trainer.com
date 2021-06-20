@@ -71,6 +71,34 @@ export const pllTrainerElements = {
     invalidTurnableError: optionalElement(
       errorMessageElement("invalid-turnable")
     ),
+    invalidTurnLengthError: optionalElement(
+      errorMessageElement("invalid-turn-length")
+    ),
+    repeatedTurnableError: optionalElement(
+      errorMessageElement("repeated-turnable")
+    ),
+    wideMoveStylesMixedError: optionalElement(
+      errorMessageElement("wide-move-styles-mixed")
+    ),
+    TurnWouldWorkWithoutInterruptionError: optionalElement(
+      errorMessageElement("turn-would-work-without-interruption")
+    ),
+    apostropheWrongSideOfLengthError: optionalElement(
+      errorMessageElement("apostrophe-wrong-side-of-length")
+    ),
+    unclosedParenthesisError: optionalElement(
+      errorMessageElement("unclosed-parenthesis")
+    ),
+    unmatchedClosingParenthesisError: optionalElement(
+      errorMessageElement("unmatched-closing-parenthesis")
+    ),
+    emptyParenthesesError: optionalElement(
+      errorMessageElement("empty-parentheses")
+    ),
+    nestedParenthesesError: optionalElement(
+      errorMessageElement("nested-parentheses")
+    ),
+    invalidSymbolError: optionalElement(errorMessageElement("invalid-symbol")),
   }),
   globals: buildGlobalsCategory({
     anyErrorMessage: anyErrorMessage(),

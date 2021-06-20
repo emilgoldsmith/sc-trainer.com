@@ -44,12 +44,7 @@ type alias Transitions msg =
 type Model
     = InputNotInteractedWith
     | ValidAlgorithm String Algorithm
-    | InvalidAlgorithm { text : String, error : Error }
-
-
-type Error
-    = NoInput
-    | Other
+    | InvalidAlgorithm { text : String, error : Algorithm.FromStringError }
 
 
 focusOnLoadId : String
@@ -96,7 +91,7 @@ getAlgorithm model =
             Nothing
 
 
-getError : Model -> Maybe { testId : String, errorMessage : String }
+getError : Model -> Maybe Algorithm.FromStringError
 getError model =
     case model of
         InputNotInteractedWith ->
@@ -106,18 +101,7 @@ getError model =
             Nothing
 
         InvalidAlgorithm { error } ->
-            case error of
-                NoInput ->
-                    Just
-                        { testId = "input-required"
-                        , errorMessage = "Input Required"
-                        }
-
-                Other ->
-                    Just
-                        { testId = "other"
-                        , errorMessage = "error"
-                        }
+            Just error
 
 
 
@@ -134,7 +118,7 @@ update : Transitions msg -> Msg -> Model -> ( Model, Cmd msg )
 update transitions msg model =
     case msg of
         UpdateAlgorithmString "" ->
-            ( InvalidAlgorithm { text = "", error = NoInput }
+            ( InvalidAlgorithm { text = "", error = Algorithm.EmptyAlgorithm }
             , Cmd.none
             )
 
@@ -144,21 +128,22 @@ update transitions msg model =
                     Algorithm.fromString algorithmString
 
                 newModel =
-                    algorithmResult
-                        |> Result.map (ValidAlgorithm algorithmString)
-                        |> Result.withDefault
-                            (InvalidAlgorithm
+                    case algorithmResult of
+                        Ok algorithm ->
+                            ValidAlgorithm algorithmString algorithm
+
+                        Err error ->
+                            InvalidAlgorithm
                                 { text = algorithmString
-                                , error = Other
+                                , error = error
                                 }
-                            )
             in
             ( newModel, Cmd.none )
 
         Submit ->
             case model of
                 InputNotInteractedWith ->
-                    ( InvalidAlgorithm { text = "", error = NoInput }
+                    ( InvalidAlgorithm { text = "", error = Algorithm.EmptyAlgorithm }
                     , Cmd.none
                     )
 
@@ -226,19 +211,89 @@ view toMsg model =
                         , placeholder = Nothing
                         , label = Input.labelAbove [] none
                         }
-                    , Maybe.map
-                        (\error ->
-                            el
-                                [ errorMessageTestType
-                                , testid error.testId
-                                ]
-                            <|
-                                text error.errorMessage
-                        )
-                        (getError model)
-                        |> Maybe.withDefault none
+                    , maybeViewError (getError model)
                     ]
     }
+
+
+maybeViewError : Maybe Algorithm.FromStringError -> Element msg
+maybeViewError maybeError =
+    Maybe.map viewError maybeError |> Maybe.withDefault none
+
+
+viewError : Algorithm.FromStringError -> Element msg
+viewError error =
+    case error of
+        Algorithm.EmptyAlgorithm ->
+            el [ testid "input-required", errorMessageTestType ] <| text "input required"
+
+        Algorithm.InvalidTurnable _ ->
+            el [ testid "invalid-turnable", errorMessageTestType ] <| text "invalid turnable"
+
+        Algorithm.InvalidTurnLength _ ->
+            el [ testid "invalid-turn-length", errorMessageTestType ] <| text "invalid turn length"
+
+        Algorithm.RepeatedTurnable _ ->
+            el
+                [ testid "repeated-turnable", errorMessageTestType ]
+            <|
+                text "repeated turnable"
+
+        Algorithm.WideMoveStylesMixed _ ->
+            el
+                [ testid "wide-move-styles-mixed", errorMessageTestType ]
+            <|
+                text "wide move styles mixed"
+
+        Algorithm.TurnWouldWorkWithoutInterruption _ ->
+            el
+                [ testid "turn-would-work-without-interruption", errorMessageTestType ]
+            <|
+                text
+                    "turn would work without interruption"
+
+        Algorithm.ApostropheWrongSideOfLength _ ->
+            el
+                [ testid "apostrophe-wrong-side-of-length", errorMessageTestType ]
+            <|
+                text "apostrophe wrong side of length"
+
+        Algorithm.UnclosedParenthesis _ ->
+            el
+                [ testid "unclosed-parenthesis", errorMessageTestType ]
+            <|
+                text "unclosed parenthesis"
+
+        Algorithm.UnmatchedClosingParenthesis _ ->
+            el
+                [ testid "unmatched-closing-parenthesis", errorMessageTestType ]
+            <|
+                text "unmatched closing parenthesis"
+
+        Algorithm.EmptyParentheses _ ->
+            el
+                [ testid "empty-parentheses", errorMessageTestType ]
+            <|
+                text "empty parentheses"
+
+        Algorithm.NestedParentheses _ ->
+            el
+                [ testid "nested-parentheses"
+                , errorMessageTestType
+                ]
+            <|
+                text "nested parentheses"
+
+        Algorithm.InvalidSymbol _ ->
+            el
+                [ testid "invalid-symbol"
+                , errorMessageTestType
+                ]
+            <|
+                text "invalid symbol"
+
+        _ ->
+            none
 
 
 onEnter : msg -> Attribute msg
