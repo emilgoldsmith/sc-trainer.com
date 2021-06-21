@@ -10,22 +10,24 @@ import Html.Events
 import Json.Decode
 import Key
 import PLL
+import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
 import PLLTrainer.Subscription
 import PLLTrainer.TestCase
 import Ports
 import Shared
 import Task
+import UI
 import View
 
 
 state : Arguments -> Shared.Model -> Transitions msg -> (Msg -> msg) -> PLLTrainer.State.State msg Msg Model
-state { currentTestCase } _ transitions toMsg =
+state { currentTestCase } shared transitions toMsg =
     PLLTrainer.State.element
         { init = init toMsg
         , update = update transitions currentTestCase
         , subscriptions = subscriptions
-        , view = view toMsg
+        , view = view toMsg shared
         }
 
 
@@ -145,8 +147,8 @@ subscriptions _ =
 -- VIEW
 
 
-view : (Msg -> msg) -> Model -> PLLTrainer.State.View msg
-view toMsg model =
+view : (Msg -> msg) -> Shared.Model -> Model -> PLLTrainer.State.View msg
+view toMsg shared model =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -168,10 +170,15 @@ view toMsg model =
                         , label = Input.labelAbove [] none
                         }
                     , maybeViewError model.error
-                    , Input.button [ testid "submit-button" ]
+                    , PLLTrainer.ButtonWithShortcut.view
+                        shared.hardwareAvailable
+                        [ testid "submit-button" ]
                         { onPress = Just (toMsg Submit)
-                        , label = text "hi"
+                        , labelText = "hi"
+                        , color = shared.palette.primary
+                        , keyboardShortcut = Key.Enter
                         }
+                        UI.viewButton.large
                     ]
     }
 

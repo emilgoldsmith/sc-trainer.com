@@ -44,6 +44,9 @@ import {
   CODE_1,
   CODE_2,
   CODE_3,
+  VALUE_ENTER,
+  CODE_ENTER,
+  KEY_RETURN,
 } from "keycode-js";
 
 export enum Key {
@@ -63,6 +66,7 @@ export enum Key {
   leftCtrl,
   capsLock,
   shift,
+  enter,
 }
 
 export function getKeyValue(key: Key): string {
@@ -99,6 +103,8 @@ export function getKeyValue(key: Key): string {
       return VALUE_CAPS_LOCK;
     case Key.shift:
       return VALUE_SHIFT;
+    case Key.enter:
+      return VALUE_ENTER;
   }
 }
 
@@ -136,6 +142,8 @@ export function getCode(key: Key): string {
       return CODE_CAPS_LOCK;
     case Key.shift:
       return CODE_SHIFT_LEFT;
+    case Key.enter:
+      return CODE_ENTER;
   }
 }
 
@@ -173,5 +181,7 @@ export function getKeyCode(key: Key): number {
       return KEY_CAPS_LOCK;
     case Key.shift:
       return KEY_SHIFT;
+    case Key.enter:
+      return KEY_RETURN;
   }
 }
