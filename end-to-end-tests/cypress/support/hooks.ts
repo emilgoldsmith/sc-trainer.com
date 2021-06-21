@@ -3,5 +3,6 @@
 import { performStandardIntercepts } from "./interceptors";
 
 beforeEach(function () {
+  localStorage.setItem("plausible_ignore", "true");
   performStandardIntercepts();
 });
