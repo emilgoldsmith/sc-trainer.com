@@ -1,6 +1,5 @@
 module PLLTrainer.States.WrongPage exposing (Arguments, Transitions, state)
 
-import Algorithm
 import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)

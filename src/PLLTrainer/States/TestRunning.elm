@@ -1,9 +1,7 @@
 module PLLTrainer.States.TestRunning exposing (Model, Msg, state)
 
-import Algorithm
 import Browser.Events
 import Css exposing (htmlTestid, testid)
-import Cube
 import Element exposing (..)
 import Element.Font as Font
 import Html.Events
