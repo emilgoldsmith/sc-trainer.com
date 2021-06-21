@@ -27,43 +27,91 @@ describe("PLL Trainer - Learning Functionality", function () {
   beforeEach(function () {
     applyDefaultIntercepts(extraIntercepts);
     cy.visit(paths.pllTrainer);
-    pllTrainerStatesNewUser.pickAlgorithmPage.restoreState();
+    pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.restoreState();
   });
 
   describe("Algorithm Picker", function () {
-    it("displays picker exactly once first time that case is encountered", function () {
-      pllTrainerStatesNewUser.testRunning.restoreState();
-      cy.clock();
+    /* eslint-disable mocha/no-setup-in-describe */
+    [
+      {
+        caseName: "Correct Page",
+        targetContainer: pllTrainerElements.correctPage.container,
+        fromEvaluateToPickAlgorithm: () =>
+          pllTrainerElements.evaluateResult.correctButton.get().click(),
+        startNextTestButton: pllTrainerElements.correctPage.nextButton,
+      },
+      {
+        caseName: "Wrong --> No Moves Applied",
+        targetContainer: pllTrainerElements.wrongPage.container,
+        fromEvaluateToPickAlgorithm: () => {
+          pllTrainerElements.evaluateResult.wrongButton.get().click();
+          pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
+        },
+        startNextTestButton: pllTrainerElements.wrongPage.nextButton,
+      },
+      {
+        caseName: "Wrong --> Nearly There",
+        targetContainer: pllTrainerElements.wrongPage.container,
+        fromEvaluateToPickAlgorithm: () => {
+          pllTrainerElements.evaluateResult.wrongButton.get().click();
+          pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
+        },
+        startNextTestButton: pllTrainerElements.wrongPage.nextButton,
+      },
+      {
+        caseName: "Wrong --> Unrecoverable",
+        targetContainer: pllTrainerElements.wrongPage.container,
+        fromEvaluateToPickAlgorithm: () => {
+          pllTrainerElements.evaluateResult.wrongButton.get().click();
+          pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+        },
+        startNextTestButton: pllTrainerElements.wrongPage.nextButton,
+      },
+    ].forEach(
+      ({
+        caseName,
+        targetContainer,
+        fromEvaluateToPickAlgorithm,
+        startNextTestButton,
+      }) => {
+        /* eslint-enable mocha/no-setup-in-describe */
+        describe(caseName, function () {
+          it("displays picker exactly once first time that case is encountered and navigates to correct page afterwards", function () {
+            pllTrainerStatesNewUser.testRunning.restoreState();
+            cy.clock();
 
-      const correctBranchCase = [AUF.none, PLL.Aa, AUF.none] as const;
-      const correctBranchAlgorithm = AaAlgorithm;
-      cy.setCurrentTestCase(correctBranchCase);
+            const firstCase = [AUF.none, PLL.Aa, AUF.none] as const;
+            const firstCaseCorrectAlgorithm = AaAlgorithm;
+            cy.setCurrentTestCase(firstCase);
 
-      cy.mouseClickScreen("center");
-      pllTrainerElements.evaluateResult.container.waitFor();
-      cy.tick(300);
-      pllTrainerElements.evaluateResult.correctButton.get().click();
+            cy.mouseClickScreen("center");
+            pllTrainerElements.evaluateResult.container.waitFor();
+            cy.tick(300);
+            fromEvaluateToPickAlgorithm();
 
-      pllTrainerElements.pickAlgorithmPage.assertAllShow();
+            pllTrainerElements.pickAlgorithmPage.assertAllShow();
 
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type(correctBranchAlgorithm + "{enter}");
+            pllTrainerElements.pickAlgorithmPage.algorithmInput
+              .get()
+              .type(firstCaseCorrectAlgorithm + "{enter}");
 
-      pllTrainerElements.correctPage.container.assertShows();
+            targetContainer.assertShows();
 
-      pllTrainerElements.correctPage.nextButton.get().click();
-      pllTrainerElements.getReadyScreen.container.waitFor();
-      cy.tick(1000);
-      cy.setCurrentTestCase(correctBranchCase);
+            startNextTestButton.get().click();
+            pllTrainerElements.getReadyScreen.container.waitFor();
+            cy.tick(1000);
+            cy.setCurrentTestCase(firstCase);
 
-      cy.mouseClickScreen("center");
-      pllTrainerElements.evaluateResult.container.waitFor();
-      cy.tick(300);
-      pllTrainerElements.evaluateResult.correctButton.get().click();
+            cy.mouseClickScreen("center");
+            pllTrainerElements.evaluateResult.container.waitFor();
+            cy.tick(300);
+            fromEvaluateToPickAlgorithm();
 
-      pllTrainerElements.correctPage.container.assertShows();
-    });
+            targetContainer.assertShows();
+          });
+        });
+      }
+    );
 
     it("focuses input element on load and then errors as expected", function () {
       // Enter the page dynamically just in case using restoreState could mess up
@@ -166,9 +214,11 @@ describe("PLL Trainer - Learning Functionality", function () {
                 ")",
             },
             () => {
-              pllTrainerStatesNewUser.pickAlgorithmPage.restoreState({
-                log: false,
-              });
+              pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.restoreState(
+                {
+                  log: false,
+                }
+              );
               cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
               pllTrainerElements.pickAlgorithmPage.algorithmInput
                 .get({ log: false })

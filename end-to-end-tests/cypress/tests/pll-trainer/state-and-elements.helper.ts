@@ -228,7 +228,8 @@ export const pllTrainerStatesNewUser = buildStates<
   | "testRunning"
   | "evaluateResult"
   | "evaluateResultAfterIgnoringTransitions"
-  | "pickAlgorithmPage"
+  | "pickAlgorithmPageAfterCorrect"
+  | "pickAlgorithmPageAfterUnrecoverable"
   | "correctPage"
   | "typeOfWrongPage"
   | "wrongPage"
@@ -295,8 +296,8 @@ export const pllTrainerStatesNewUser = buildStates<
       cy.waitForDocumentEventListeners("keydown", "keyup");
     },
   },
-  pickAlgorithmPage: {
-    name: "pickAlgorithmPage",
+  pickAlgorithmPageAfterCorrect: {
+    name: "pickAlgorithmPageAfterCorrect",
     getToThatState: (getState, options) => {
       getState("evaluateResultAfterIgnoringTransitions");
       pllTrainerElements.evaluateResult.correctButton
@@ -310,7 +311,7 @@ export const pllTrainerStatesNewUser = buildStates<
   correctPage: {
     name: "correctPage",
     getToThatState: (getState, options) => {
-      getState("pickAlgorithmPage");
+      getState("pickAlgorithmPageAfterCorrect");
       cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
       // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
       const AaAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
@@ -334,13 +335,28 @@ export const pllTrainerStatesNewUser = buildStates<
       cy.waitForDocumentEventListeners("keyup");
     },
   },
-  wrongPage: {
-    name: "wrongPage",
+  pickAlgorithmPageAfterUnrecoverable: {
+    name: "pickAlgorithmPageAfterUnrecoverable",
     getToThatState: (getState, options) => {
       getState("typeOfWrongPage");
       pllTrainerElements.typeOfWrongPage.unrecoverableButton
         .get(options)
         .click(options);
+    },
+    waitForStateToAppear: (options) => {
+      pllTrainerElements.pickAlgorithmPage.container.waitFor(options);
+    },
+  },
+  wrongPage: {
+    name: "wrongPage",
+    getToThatState: (getState, options) => {
+      getState("pickAlgorithmPageAfterUnrecoverable");
+      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+      // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
+      const AaAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get(options)
+        .type(AaAlgorithm + "{enter}", { ...options, delay: 0 });
     },
     waitForStateToAppear: (options?: StateOptions) => {
       pllTrainerElements.wrongPage.container.waitFor(options);
