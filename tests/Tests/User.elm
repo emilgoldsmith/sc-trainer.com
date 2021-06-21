@@ -68,14 +68,14 @@ algorithmFuzzer =
         turnFuzzer =
             Fuzz.map3
                 Algorithm.Turn
-                (listToFuzzer Algorithm.allTurnables)
-                (listToFuzzer Algorithm.allTurnLengths)
-                (listToFuzzer Algorithm.allTurnDirections)
+                (nonEmptyListToFuzzer Algorithm.allTurnables)
+                (nonEmptyListToFuzzer Algorithm.allTurnLengths)
+                (nonEmptyListToFuzzer Algorithm.allTurnDirections)
 
         nonEmptyTurnList =
             Fuzz.map2 (::) turnFuzzer <| Fuzz.list turnFuzzer
     in
-    Fuzz.map Algorithm.build nonEmptyTurnList
+    Fuzz.map Algorithm.fromTurnList nonEmptyTurnList
 
 
 pllFuzzer : Fuzz.Fuzzer PLL
