@@ -1,10 +1,12 @@
 module PLLTrainer.States.PickAlgorithmPage exposing (Arguments, Model, Msg, state)
 
-import Algorithm exposing (Algorithm)
+import Algorithm exposing (Algorithm, FromStringError(..))
 import Browser.Dom
 import Css exposing (errorMessageTestType, testid)
 import Element exposing (..)
+import Element.Font as Font
 import Element.Input as Input
+import Element.Region as Region
 import Html.Attributes
 import Html.Events
 import Json.Decode
@@ -98,7 +100,23 @@ update transitions currentTestCase msg model =
         Submit ->
             case Algorithm.fromString model.text of
                 Err parsingError ->
-                    ( { model | error = Just (AlgorithmParsingError parsingError) }, Cmd.none )
+                    let
+                        command =
+                            case parsingError of
+                                UnexpectedError { inputString, errorIndex, debugInfo } ->
+                                    Ports.logError
+                                        ("Unexpected error occurred in parsing an algorithm. The debug info was `"
+                                            ++ debugInfo
+                                            ++ "` and the error occurred at index "
+                                            ++ String.fromInt errorIndex
+                                            ++ " in the following string: "
+                                            ++ inputString
+                                        )
+
+                                _ ->
+                                    Cmd.none
+                    in
+                    ( { model | error = Just (AlgorithmParsingError parsingError) }, command )
 
                 Ok algorithm ->
                     if
@@ -152,48 +170,72 @@ view toMsg shared model =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
-            el
+            column
                 [ testid "pick-algorithm-container"
                 , centerX
                 , centerY
+                , UI.spacing.large
+                , UI.paddingHorizontal.large
                 ]
-            <|
-                column []
-                    [ el [ testid "explanation-text" ] <| text "Placeholder"
-                    , Input.text
+                [ column
+                    [ testid "explanation-text"
+                    , centerX
+                    , Font.center
+                    , UI.spacing.verySmall
+                    ]
+                    [ paragraph
+                        [ UI.fontSize.veryLarge
+                        , Region.heading 1
+                        ]
+                        [ text "Pick Algorithm" ]
+                    , paragraph
+                        [ UI.fontSize.medium
+                        ]
+                        [ text "We use this to correctly identify which AUFs you need to do for each case"
+                        ]
+                    ]
+                , column
+                    [ centerX
+                    , UI.spacing.verySmall
+                    ]
+                    [ Input.text
                         [ testid "algorithm-input"
                         , onEnter (toMsg Submit)
                         , htmlAttribute <| Html.Attributes.id focusOnLoadId
+                        , centerX
                         ]
                         { onChange = toMsg << UpdateText
                         , text = model.text
                         , placeholder = Nothing
                         , label = Input.labelAbove [] none
                         }
-                    , maybeViewError model.error
-                    , PLLTrainer.ButtonWithShortcut.view
-                        shared.hardwareAvailable
-                        [ testid "submit-button" ]
-                        { onPress = Just (toMsg Submit)
-                        , labelText = "hi"
-                        , color = shared.palette.primary
-                        , keyboardShortcut = Key.Enter
-                        }
-                        UI.viewButton.large
+                    , maybeViewError shared.palette model.error
                     ]
+                , PLLTrainer.ButtonWithShortcut.view
+                    shared.hardwareAvailable
+                    [ testid "submit-button"
+                    , centerX
+                    ]
+                    { onPress = Just (toMsg Submit)
+                    , labelText = "Submit"
+                    , color = shared.palette.primary
+                    , keyboardShortcut = Key.Enter
+                    }
+                    UI.viewButton.large
+                ]
     }
 
 
-maybeViewError : Maybe Error -> Element msg
-maybeViewError maybeError =
-    Maybe.map viewError maybeError |> Maybe.withDefault none
+maybeViewError : UI.Palette -> Maybe Error -> Element msg
+maybeViewError palette maybeError =
+    Maybe.map (viewError palette) maybeError |> Maybe.withDefault none
 
 
-viewError : Error -> Element msg
-viewError error =
+viewError : UI.Palette -> Error -> Element msg
+viewError palette error =
     case error of
         AlgorithmParsingError parsingError ->
-            viewParsingError parsingError
+            viewParsingError palette parsingError
 
         DoesntSolveCaseError ->
             viewDoesntMatchCaseError
@@ -205,87 +247,195 @@ viewDoesntMatchCaseError =
         text "algorithm doesn't match the case"
 
 
-viewParsingError : Algorithm.FromStringError -> Element msg
-viewParsingError error =
+viewParsingError : UI.Palette -> Algorithm.FromStringError -> Element msg
+viewParsingError palette error =
+    let
+        sharedErrorAttributes =
+            [ errorMessageTestType
+            , Font.color palette.errorText
+            , UI.fontSize.medium
+            , UI.spacing.verySmall
+            , Font.center
+            , width fill
+            ]
+    in
     case error of
         Algorithm.EmptyAlgorithm ->
-            el [ testid "input-required", errorMessageTestType ] <| text "input required"
+            el (testid "input-required" :: sharedErrorAttributes) <| text "input required"
 
-        Algorithm.InvalidTurnable _ ->
-            el [ testid "invalid-turnable", errorMessageTestType ] <| text "invalid turnable"
-
-        Algorithm.InvalidTurnLength _ ->
-            el [ testid "invalid-turn-length", errorMessageTestType ] <| text "invalid turn length"
-
-        Algorithm.RepeatedTurnable _ ->
-            el
-                [ testid "repeated-turnable", errorMessageTestType ]
-            <|
-                text "repeated turnable"
-
-        Algorithm.WideMoveStylesMixed _ ->
-            el
-                [ testid "wide-move-styles-mixed", errorMessageTestType ]
-            <|
-                text "wide move styles mixed"
-
-        Algorithm.TurnWouldWorkWithoutInterruption _ ->
-            el
-                [ testid "turn-would-work-without-interruption", errorMessageTestType ]
-            <|
-                text
-                    "turn would work without interruption"
-
-        Algorithm.ApostropheWrongSideOfLength _ ->
-            el
-                [ testid "apostrophe-wrong-side-of-length", errorMessageTestType ]
-            <|
-                text "apostrophe wrong side of length"
-
-        Algorithm.UnclosedParenthesis _ ->
-            el
-                [ testid "unclosed-parenthesis", errorMessageTestType ]
-            <|
-                text "unclosed parenthesis"
-
-        Algorithm.UnmatchedClosingParenthesis _ ->
-            el
-                [ testid "unmatched-closing-parenthesis", errorMessageTestType ]
-            <|
-                text "unmatched closing parenthesis"
-
-        Algorithm.EmptyParentheses _ ->
-            el
-                [ testid "empty-parentheses", errorMessageTestType ]
-            <|
-                text "empty parentheses"
-
-        Algorithm.NestedParentheses _ ->
-            el
-                [ testid "nested-parentheses"
-                , errorMessageTestType
+        Algorithm.InvalidTurnable { inputString, invalidTurnable, errorIndex } ->
+            column
+                (testid "invalid-turnable" :: sharedErrorAttributes)
+                [ paragraph []
+                    [ text "The turnable "
+                    , el [ Font.bold ] <| text invalidTurnable
+                    , text " is invalid. We expected something like U, Rw, r, x or M:"
+                    ]
+                , viewUnderlinedPlaceWhereErrorOcurred
+                    inputString
+                    errorIndex
+                    (errorIndex + String.length invalidTurnable)
                 ]
-            <|
-                text "nested parentheses"
 
-        Algorithm.InvalidSymbol _ ->
-            el
-                [ testid "invalid-symbol"
-                , errorMessageTestType
+        Algorithm.InvalidTurnLength { inputString, invalidLength, errorIndex } ->
+            column
+                (testid "invalid-turn-length" :: sharedErrorAttributes)
+                [ paragraph []
+                    [ text "The turn length "
+                    , el [ Font.bold ] <| text invalidLength
+                    , text " is invalid. Only lengths allowed are 2 and 3:"
+                    ]
+                , viewUnderlinedPlaceWhereErrorOcurred
+                    inputString
+                    errorIndex
+                    (errorIndex + String.length invalidLength)
                 ]
-            <|
-                text "invalid symbol"
+
+        Algorithm.RepeatedTurnable { inputString, errorIndex } ->
+            column
+                (testid "repeated-turnable" :: sharedErrorAttributes)
+                [ paragraph []
+                    [ text "You repeated a turnable twice in a row. Try combining the two into one, such as U2 U becoming U':"
+                    ]
+                , viewUnderlinedPlaceWhereErrorOcurred
+                    inputString
+                    errorIndex
+                    (errorIndex + 1)
+                ]
+
+        Algorithm.WideMoveStylesMixed { inputString, errorIndex, invalidWideMove } ->
+            column
+                (testid "wide-move-styles-mixed" :: sharedErrorAttributes)
+                [ paragraph []
+                    [ text "You have mixed different types of wide moves. The turnable using a second style was "
+                    , el [ Font.bold ] <| text invalidWideMove
+                    , text ". To solve this pick one style and use it throughout the algorithm:"
+                    ]
+                , viewUnderlinedPlaceWhereErrorOcurred
+                    inputString
+                    errorIndex
+                    (errorIndex + String.length invalidWideMove)
+                ]
+
+        Algorithm.TurnWouldWorkWithoutInterruption { inputString, interruptionStart, interruptionEnd } ->
+            column
+                (testid "turn-would-work-without-interruption" :: sharedErrorAttributes)
+                [ paragraph []
+                    [ text "An invalid turn was found. The turn would become valid if the underlined interruption was removed:"
+                    ]
+                , viewUnderlinedPlaceWhereErrorOcurred
+                    inputString
+                    interruptionStart
+                    interruptionEnd
+                ]
+
+        Algorithm.ApostropheWrongSideOfLength { inputString, errorIndex } ->
+            column
+                (testid "apostrophe-wrong-side-of-length" :: sharedErrorAttributes)
+                [ paragraph []
+                    [ text "Turn is invalid. It would be valid if you swapped the apostrophe to the other side of the length though:"
+                    ]
+                , viewUnderlinedPlaceWhereErrorOcurred
+                    inputString
+                    errorIndex
+                    (errorIndex + 1)
+                ]
+
+        Algorithm.UnclosedParenthesis { inputString, openParenthesisIndex } ->
+            column
+                (testid "unclosed-parenthesis" :: sharedErrorAttributes)
+                [ paragraph []
+                    [ text "There is an unclosed parenthesis, add a closing parenthesis to fix this:"
+                    ]
+                , viewUnderlinedPlaceWhereErrorOcurred
+                    inputString
+                    openParenthesisIndex
+                    (openParenthesisIndex + 1)
+                ]
+
+        Algorithm.UnmatchedClosingParenthesis { inputString, errorIndex } ->
+            column
+                (testid "unmatched-closing-parenthesis" :: sharedErrorAttributes)
+                [ paragraph []
+                    [ text "There is an unmatched closing parenthesis, remove it or add an opening parenthesis to fix this:"
+                    ]
+                , viewUnderlinedPlaceWhereErrorOcurred
+                    inputString
+                    errorIndex
+                    (errorIndex + 1)
+                ]
+
+        Algorithm.EmptyParentheses { inputString, errorIndex } ->
+            column
+                (testid "empty-parentheses" :: sharedErrorAttributes)
+                [ paragraph []
+                    [ text "There were no turns inside this set of parentheses, remove the parentheses or add some turns inside to fix it:"
+                    ]
+                , viewUnderlinedPlaceWhereErrorOcurred
+                    inputString
+                    errorIndex
+                    (errorIndex + 1)
+                ]
+
+        Algorithm.NestedParentheses { inputString, errorIndex } ->
+            column
+                (testid "nested-parentheses" :: sharedErrorAttributes)
+                [ paragraph []
+                    [ text "There are nested parentheses in this algorithm which is not allowed. Remove them to fix it:"
+                    ]
+                , viewUnderlinedPlaceWhereErrorOcurred
+                    inputString
+                    errorIndex
+                    (errorIndex + 1)
+                ]
+
+        Algorithm.InvalidSymbol { inputString, errorIndex, symbol } ->
+            column
+                (testid "wide-move-styles-mixed" :: sharedErrorAttributes)
+                [ paragraph []
+                    [ text "The symbol "
+                    , el [ Font.bold ] <| text (String.fromChar symbol)
+                    , text " is never valid anywhere in an algorithm, remove it to fix this error:"
+                    ]
+                , viewUnderlinedPlaceWhereErrorOcurred
+                    inputString
+                    errorIndex
+                    (errorIndex + 1)
+                ]
 
         Algorithm.SpansOverSeveralLines _ ->
-            el
-                [ errorMessageTestType
+            paragraph sharedErrorAttributes
+                [ text "Congratulations! You somehow managed to make your algorithm span several lines of text which is not allowed and the input shouldn't even let you do. If you want to proceed you should undo it though :)"
                 ]
-            <|
-                text "Congratulations! You somehow managed to make your algorithm span several lines of text which is not allowed and the input shouldn't even let you do. If you want to proceed you should undo it though :)"
 
         Algorithm.UnexpectedError _ ->
-            el [ errorMessageTestType ] <|
-                text "Congratulations! You somehow managed to make our algorithm parser error in a way we had never expected to happen. If you're online a simple error description (with no personal data) has already been sent to the developers so hopefully this will soon be fixed, but thanks for helping find our edge cases! Until then see if you can figure out the problem with your algorithm yourself, or maybe try out writing it from scratch again"
+            paragraph sharedErrorAttributes
+                [ text "Congratulations! You somehow managed to make our algorithm parser error in a way we had never expected to happen. If you're online a simple error description (with no personal data) has already been sent to the developers so hopefully this will soon be fixed, but thanks for helping find our edge cases! Until then see if you can figure out the problem with your algorithm yourself, or maybe try out writing it from scratch again"
+                ]
+
+
+viewUnderlinedPlaceWhereErrorOcurred : String -> Int -> Int -> Element msg
+viewUnderlinedPlaceWhereErrorOcurred inputString start end =
+    let
+        beforeUnderline =
+            text (String.left start inputString)
+
+        underlinedCharacters =
+            String.toList (String.slice start end inputString)
+                |> List.map String.fromChar
+                |> List.map
+                    (\char ->
+                        el [ below (text "~") ] <|
+                            text char
+                    )
+
+        afterUnderline =
+            text (String.dropLeft end inputString)
+    in
+    row [ centerX ] <|
+        beforeUnderline
+            :: underlinedCharacters
+            ++ [ afterUnderline ]
 
 
 onEnter : msg -> Attribute msg

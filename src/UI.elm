@@ -1,4 +1,4 @@
-module UI exposing (Button, Palette, defaultPalette, fontSize, paddingAll, paddingVertical, spacing, viewButton, viewDivider, viewUnorderedList, viewWebResourceLink)
+module UI exposing (Button, Palette, defaultPalette, fontSize, paddingAll, paddingHorizontal, paddingVertical, spacing, viewButton, viewDivider, viewUnorderedList, viewWebResourceLink)
 
 -- We can't expose all of Element as it clashes with the spacing export
 
@@ -88,6 +88,7 @@ type alias Palette =
     , correct : El.Color
     , wrong : El.Color
     , black : El.Color
+    , errorText : El.Color
 
     -- Link
     , mouseOverLink : El.Color
@@ -104,6 +105,7 @@ defaultPalette =
     , correct = El.rgb255 0 128 0
     , wrong = El.rgb255 255 0 0
     , black = El.rgb255 0 0 0
+    , errorText = El.rgb255 255 0 0
 
     -- Link
     , mouseOverLink = El.rgb255 125 125 125
@@ -173,3 +175,8 @@ paddingAll =
 paddingVertical : Sizes () msg
 paddingVertical =
     buildSizes (El.paddingXY 0) paddingScale
+
+
+paddingHorizontal : Sizes () msg
+paddingHorizontal =
+    buildSizes (\xPadding -> El.paddingXY xPadding 0) paddingScale
