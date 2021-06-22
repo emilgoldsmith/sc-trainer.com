@@ -114,7 +114,7 @@ describe("PLL Trainer - Learning Functionality", function () {
       }
     );
 
-    it.only("focuses input element on load, has all the right elements and then errors as expected", function () {
+    it("focuses input element on load, has all the right elements and then errors as expected", function () {
       // Enter the page dynamically just in case using restoreState could mess up
       // the auto focus
       pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
