@@ -21,6 +21,7 @@ import Shared
 import Task
 import UI
 import View
+import WebResource
 
 
 state : Arguments -> Shared.Model -> Transitions msg -> (Msg -> msg) -> PLLTrainer.State.State msg Msg Model
@@ -167,6 +168,10 @@ subscriptions _ =
 
 view : PLLTrainer.TestCase.TestCase -> (Msg -> msg) -> Shared.Model -> Model -> PLLTrainer.State.View msg
 view currentTestCase toMsg shared model =
+    let
+        pllCase =
+            PLLTrainer.TestCase.pll currentTestCase
+    in
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -189,14 +194,11 @@ view currentTestCase toMsg shared model =
                         ]
                         [ text
                             ("Pick Algorithm For "
-                                ++ PLL.getLetters (PLLTrainer.TestCase.pll currentTestCase)
+                                ++ PLL.getLetters pllCase
                             )
                         ]
-                    , paragraph
-                        [ UI.fontSize.medium
-                        ]
-                        [ text "We use this to correctly identify which AUFs you need to do for each case"
-                        ]
+                    , paragraph [ UI.fontSize.medium ]
+                        [ text "We use this to correctly identify which AUFs you need to do for each case" ]
                     ]
                 , column
                     [ centerX
@@ -226,6 +228,20 @@ view currentTestCase toMsg shared model =
                     , keyboardShortcut = Key.Enter
                     }
                     UI.viewButton.large
+                , paragraph [ UI.fontSize.medium, Font.center ]
+                    [ text "Need some help choosing an algorithm? If you would like to explore your options check out "
+                    , UI.viewWebResourceLink
+                        [ testid "alg-db-link" ]
+                        shared.palette
+                        (WebResource.AlgDBPLL pllCase)
+                        "this AlgDb entry"
+                    , text ", if you on the other hand want to just follow the advice and guidance of an experienced cuber check out "
+                    , UI.viewWebResourceLink
+                        [ testid "expert-link" ]
+                        shared.palette
+                        (WebResource.ExpertGuidancePLL pllCase)
+                        "this link to J Perm's PLL + Fingertricks video"
+                    ]
                 ]
     }
 

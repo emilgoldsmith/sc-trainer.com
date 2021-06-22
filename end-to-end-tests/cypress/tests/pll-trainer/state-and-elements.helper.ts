@@ -70,6 +70,8 @@ export const pllTrainerElements = {
     explanationText: "explanation-text",
     algorithmInput: "algorithm-input",
     submitButton: "submit-button",
+    algDbLink: "alg-db-link",
+    expertPLLGuidanceLink: "expert-link",
     inputRequiredError: optionalElement(errorMessageElement("input-required")),
     invalidTurnableError: optionalElement(
       errorMessageElement("invalid-turnable")

@@ -15,14 +15,14 @@ import WebResource
 -- Views
 
 
-viewWebResourceLink : Palette -> WebResource.WebResource -> String -> El.Element msg
-viewWebResourceLink palette resource labelText =
+viewWebResourceLink : List (El.Attribute msg) -> Palette -> WebResource.WebResource -> String -> El.Element msg
+viewWebResourceLink attributes palette resource labelText =
     El.newTabLink
-        [ Font.underline
-        , El.mouseOver
+        ([ Font.underline
+         , El.mouseOver
             [ Font.color palette.mouseOverLink
             ]
-        , El.focused
+         , El.focused
             [ Border.shadow
                 { offset = ( 0, 0 )
                 , blur = 0
@@ -30,7 +30,9 @@ viewWebResourceLink palette resource labelText =
                 , color = palette.focusBorder
                 }
             ]
-        ]
+         ]
+            ++ attributes
+        )
         { label = El.text labelText
         , url = WebResource.getUrl resource
         }
