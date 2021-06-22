@@ -266,34 +266,35 @@ viewError palette error =
             viewParsingError palette parsingError
 
         DoesntSolveCaseError ->
-            viewDoesntMatchCaseError
+            viewDoesntMatchCaseError palette
 
 
-viewDoesntMatchCaseError : Element msg
-viewDoesntMatchCaseError =
-    el [ testid "algorithm-doesnt-match-case", errorMessageTestType ] <|
-        text "algorithm doesn't match the case"
+sharedErrorAttributes : UI.Palette -> List (Attribute msg)
+sharedErrorAttributes palette =
+    [ errorMessageTestType
+    , Font.color palette.errorText
+    , UI.fontSize.medium
+    , UI.spacing.verySmall
+    , Font.center
+    , width fill
+    ]
+
+
+viewDoesntMatchCaseError : UI.Palette -> Element msg
+viewDoesntMatchCaseError palette =
+    el (testid "algorithm-doesnt-match-case" :: sharedErrorAttributes palette) <|
+        text "The algorithm doesn't solve the case. Try double checking it from the source"
 
 
 viewParsingError : UI.Palette -> Algorithm.FromStringError -> Element msg
 viewParsingError palette error =
-    let
-        sharedErrorAttributes =
-            [ errorMessageTestType
-            , Font.color palette.errorText
-            , UI.fontSize.medium
-            , UI.spacing.verySmall
-            , Font.center
-            , width fill
-            ]
-    in
     case error of
         Algorithm.EmptyAlgorithm ->
-            el (testid "input-required" :: sharedErrorAttributes) <| text "input required"
+            el (testid "input-required" :: sharedErrorAttributes palette) <| text "input required"
 
         Algorithm.InvalidTurnable { inputString, invalidTurnable, errorIndex } ->
             column
-                (testid "invalid-turnable" :: sharedErrorAttributes)
+                (testid "invalid-turnable" :: sharedErrorAttributes palette)
                 [ paragraph []
                     [ text "The turnable "
                     , el [ Font.bold ] <| text invalidTurnable
@@ -307,7 +308,7 @@ viewParsingError palette error =
 
         Algorithm.InvalidTurnLength { inputString, invalidLength, errorIndex } ->
             column
-                (testid "invalid-turn-length" :: sharedErrorAttributes)
+                (testid "invalid-turn-length" :: sharedErrorAttributes palette)
                 [ paragraph []
                     [ text "The turn length "
                     , el [ Font.bold ] <| text invalidLength
@@ -321,7 +322,7 @@ viewParsingError palette error =
 
         Algorithm.RepeatedTurnable { inputString, errorIndex } ->
             column
-                (testid "repeated-turnable" :: sharedErrorAttributes)
+                (testid "repeated-turnable" :: sharedErrorAttributes palette)
                 [ paragraph []
                     [ text "You repeated a turnable twice in a row. Try combining the two into one, such as U2 U becoming U':"
                     ]
@@ -333,7 +334,7 @@ viewParsingError palette error =
 
         Algorithm.WideMoveStylesMixed { inputString, errorIndex, invalidWideMove } ->
             column
-                (testid "wide-move-styles-mixed" :: sharedErrorAttributes)
+                (testid "wide-move-styles-mixed" :: sharedErrorAttributes palette)
                 [ paragraph []
                     [ text "You have mixed different types of wide moves. The turnable using a second style was "
                     , el [ Font.bold ] <| text invalidWideMove
@@ -347,7 +348,7 @@ viewParsingError palette error =
 
         Algorithm.TurnWouldWorkWithoutInterruption { inputString, interruptionStart, interruptionEnd } ->
             column
-                (testid "turn-would-work-without-interruption" :: sharedErrorAttributes)
+                (testid "turn-would-work-without-interruption" :: sharedErrorAttributes palette)
                 [ paragraph []
                     [ text "An invalid turn was found. The turn would become valid if the underlined interruption was removed:"
                     ]
@@ -359,7 +360,7 @@ viewParsingError palette error =
 
         Algorithm.ApostropheWrongSideOfLength { inputString, errorIndex } ->
             column
-                (testid "apostrophe-wrong-side-of-length" :: sharedErrorAttributes)
+                (testid "apostrophe-wrong-side-of-length" :: sharedErrorAttributes palette)
                 [ paragraph []
                     [ text "Turn is invalid. It would be valid if you swapped the apostrophe to the other side of the length though:"
                     ]
@@ -371,7 +372,7 @@ viewParsingError palette error =
 
         Algorithm.UnclosedParenthesis { inputString, openParenthesisIndex } ->
             column
-                (testid "unclosed-parenthesis" :: sharedErrorAttributes)
+                (testid "unclosed-parenthesis" :: sharedErrorAttributes palette)
                 [ paragraph []
                     [ text "There is an unclosed parenthesis, add a closing parenthesis to fix this:"
                     ]
@@ -383,7 +384,7 @@ viewParsingError palette error =
 
         Algorithm.UnmatchedClosingParenthesis { inputString, errorIndex } ->
             column
-                (testid "unmatched-closing-parenthesis" :: sharedErrorAttributes)
+                (testid "unmatched-closing-parenthesis" :: sharedErrorAttributes palette)
                 [ paragraph []
                     [ text "There is an unmatched closing parenthesis, remove it or add an opening parenthesis to fix this:"
                     ]
@@ -395,7 +396,7 @@ viewParsingError palette error =
 
         Algorithm.EmptyParentheses { inputString, errorIndex } ->
             column
-                (testid "empty-parentheses" :: sharedErrorAttributes)
+                (testid "empty-parentheses" :: sharedErrorAttributes palette)
                 [ paragraph []
                     [ text "There were no turns inside this set of parentheses, remove the parentheses or add some turns inside to fix it:"
                     ]
@@ -407,7 +408,7 @@ viewParsingError palette error =
 
         Algorithm.NestedParentheses { inputString, errorIndex } ->
             column
-                (testid "nested-parentheses" :: sharedErrorAttributes)
+                (testid "nested-parentheses" :: sharedErrorAttributes palette)
                 [ paragraph []
                     [ text "There are nested parentheses in this algorithm which is not allowed. Remove them to fix it:"
                     ]
@@ -419,7 +420,7 @@ viewParsingError palette error =
 
         Algorithm.InvalidSymbol { inputString, errorIndex, symbol } ->
             column
-                (testid "invalid-symbol" :: sharedErrorAttributes)
+                (testid "invalid-symbol" :: sharedErrorAttributes palette)
                 [ paragraph []
                     [ text "The symbol "
                     , el [ Font.bold ] <| text (String.fromChar symbol)
@@ -432,12 +433,12 @@ viewParsingError palette error =
                 ]
 
         Algorithm.SpansOverSeveralLines _ ->
-            paragraph sharedErrorAttributes
+            paragraph (sharedErrorAttributes palette)
                 [ text "Congratulations! You somehow managed to make your algorithm span several lines of text which is not allowed and the input shouldn't even let you do. If you want to proceed you should undo it though :)"
                 ]
 
         Algorithm.UnexpectedError _ ->
-            paragraph sharedErrorAttributes
+            paragraph (sharedErrorAttributes palette)
                 [ text "Congratulations! You somehow managed to make our algorithm parser error in a way we had never expected to happen. If you're online a simple error description (with no personal data) has already been sent to the developers so hopefully this will soon be fixed, but thanks for helping find our edge cases! Until then see if you can figure out the problem with your algorithm yourself, or maybe try out writing it from scratch again"
                 ]
 
