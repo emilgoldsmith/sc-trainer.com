@@ -90,7 +90,7 @@ describe("PLL Trainer - Learning Functionality", function () {
             cy.tick(300);
             fromEvaluateToPickAlgorithm();
 
-            pllTrainerElements.pickAlgorithmPage.assertAllShow();
+            pllTrainerElements.pickAlgorithmPage.container.assertShows();
 
             pllTrainerElements.pickAlgorithmPage.algorithmInput
               .get()
@@ -114,14 +114,27 @@ describe("PLL Trainer - Learning Functionality", function () {
       }
     );
 
-    it("focuses input element on load and then errors as expected", function () {
+    it.only("focuses input element on load, has all the right elements and then errors as expected", function () {
       // Enter the page dynamically just in case using restoreState could mess up
       // the auto focus
       pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
       pllTrainerElements.evaluateResult.correctButton.get().click();
 
       pllTrainerElements.pickAlgorithmPage.algorithmInput.assertIsFocused();
+
       cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+      // The text should somehow communicate that the algorithm we are picking for is the Aa PLL
+      pllTrainerElements.pickAlgorithmPage.explanationText
+        .get()
+        .should("contain.text", "Aa");
+      // And should change if we change the current test case
+      cy.setCurrentTestCase([AUF.none, PLL.Ab, AUF.none]);
+      pllTrainerElements.pickAlgorithmPage.explanationText
+        .get()
+        .should("not.contain.text", "Aa");
+      pllTrainerElements.pickAlgorithmPage.explanationText
+        .get()
+        .should("contain.text", "Ab");
 
       // Shouldn't have error message on load
       pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();

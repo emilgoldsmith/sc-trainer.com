@@ -29,7 +29,7 @@ state { currentTestCase } shared transitions toMsg =
         { init = init toMsg
         , update = update transitions currentTestCase
         , subscriptions = subscriptions
-        , view = view toMsg shared
+        , view = view currentTestCase toMsg shared
         }
 
 
@@ -165,8 +165,8 @@ subscriptions _ =
 -- VIEW
 
 
-view : (Msg -> msg) -> Shared.Model -> Model -> PLLTrainer.State.View msg
-view toMsg shared model =
+view : PLLTrainer.TestCase.TestCase -> (Msg -> msg) -> Shared.Model -> Model -> PLLTrainer.State.View msg
+view currentTestCase toMsg shared model =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -187,7 +187,11 @@ view toMsg shared model =
                         [ UI.fontSize.veryLarge
                         , Region.heading 1
                         ]
-                        [ text "Pick Algorithm" ]
+                        [ text
+                            ("Pick Algorithm For "
+                                ++ PLL.getLetters (PLLTrainer.TestCase.pll currentTestCase)
+                            )
+                        ]
                     , paragraph
                         [ UI.fontSize.medium
                         ]
@@ -391,7 +395,7 @@ viewParsingError palette error =
 
         Algorithm.InvalidSymbol { inputString, errorIndex, symbol } ->
             column
-                (testid "wide-move-styles-mixed" :: sharedErrorAttributes)
+                (testid "invalid-symbol" :: sharedErrorAttributes)
                 [ paragraph []
                     [ text "The symbol "
                     , el [ Font.bold ] <| text (String.fromChar symbol)
