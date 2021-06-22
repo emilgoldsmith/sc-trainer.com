@@ -127,7 +127,36 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.pickAlgorithmPage.explanationText
         .get()
         .should("contain.text", "Aa");
-      // And should change if we change the current test case
+      // The page should have an AlgDB link to the case being picked for
+      pllTrainerElements.pickAlgorithmPage.algDbLink.get().should((link) => {
+        expect(link.prop("tagName")).to.equal("A");
+        // Assert it opens in new tab
+        expect(link.attr("target"), "target").to.equal("_blank");
+
+        expect(link.prop("href"), "href")
+          .to.be.a("string")
+          .and.contain("algdb.net")
+          .and.satisfy((href: string) => href.endsWith("/aa"), "ends with /aa");
+      });
+      // The page should have any type of expert guidance link, any further assertions
+      // would make for too brittle tests
+      pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
+        .get()
+        .should((link) => {
+          console.log(link);
+          expect(link.prop("tagName")).to.equal("A");
+          // Assert it opens in new tab
+          expect(link.attr("target"), "target").to.equal("_blank");
+        })
+        .then((link) => {
+          // Check that the link actually works
+          cy.request(link.attr("href") || "")
+            .its("status")
+            .should("be.at.least", 200)
+            .and("be.lessThan", 300);
+        });
+
+      // And the case specific parts should change if we change the current test case
       cy.setCurrentTestCase([AUF.none, PLL.Ab, AUF.none]);
       pllTrainerElements.pickAlgorithmPage.explanationText
         .get()
@@ -135,6 +164,16 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.pickAlgorithmPage.explanationText
         .get()
         .should("contain.text", "Ab");
+      pllTrainerElements.pickAlgorithmPage.algDbLink.get().should((link) => {
+        expect(link.prop("tagName")).to.equal("A");
+        // Assert it opens in new tab
+        expect(link.attr("target"), "target").to.equal("_blank");
+
+        expect(link.prop("href"), "href")
+          .to.be.a("string")
+          .and.contain("algdb.net")
+          .and.satisfy((href: string) => href.endsWith("/ab"), "ends with /ab");
+      });
 
       // Shouldn't have error message on load
       pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();

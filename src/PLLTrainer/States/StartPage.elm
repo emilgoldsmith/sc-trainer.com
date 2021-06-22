@@ -75,12 +75,12 @@ view viewportSize palette hardwareAvailable transitions =
                             [ text "Welcome!" ]
                         , paragraph []
                             [ text "This is a "
-                            , UI.viewWebResourceLink palette WebResource.PLLExplanation "PLL"
+                            , UI.viewWebResourceLink [] palette WebResource.PLLExplanation "PLL"
                             , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from "
-                            , UI.viewWebResourceLink palette WebResource.HomeGripExplanation "home grip"
+                            , UI.viewWebResourceLink [] palette WebResource.HomeGripExplanation "home grip"
                             , text
                                 ", and including recognition and pre- and post-"
-                            , UI.viewWebResourceLink palette WebResource.AUFExplanation "AUF"
+                            , UI.viewWebResourceLink [] palette WebResource.AUFExplanation "AUF"
                             , text
                                 " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
                             ]
@@ -121,13 +121,23 @@ view viewportSize palette hardwareAvailable transitions =
                         [ paragraph [ UI.fontSize.veryLarge, Region.heading 1 ] [ text "Instructions:" ]
                         , paragraph []
                             [ text "When you press the start button (or space) you will have a second to get your cube in "
-                            , UI.viewWebResourceLink palette
+                            , UI.viewWebResourceLink
+                                []
+                                palette
                                 WebResource.HomeGripExplanation
                                 "home grip"
                             , text ". Then a "
-                            , UI.viewWebResourceLink palette WebResource.PLLExplanation "PLL"
+                            , UI.viewWebResourceLink
+                                []
+                                palette
+                                WebResource.PLLExplanation
+                                "PLL"
                             , text " case will show up and the timer will start. If you successfully recognize the case apply the moves to your cube that would solve the cube on screen (including pre- and post-"
-                            , UI.viewWebResourceLink palette WebResource.AUFExplanation "AUF"
+                            , UI.viewWebResourceLink
+                                []
+                                palette
+                                WebResource.AUFExplanation
+                                "AUF"
                             , text
                                 "), and then press anything to stop the timer. If you don't recognize the case just press anything when you are sure you can't recall it. Things to press include any keyboard key, the screen and your mouse/touchpad."
                             ]
@@ -147,12 +157,18 @@ view viewportSize palette hardwareAvailable transitions =
                         [ paragraph [ UI.fontSize.veryLarge, Region.heading 1, Font.center ] [ text "Learning Resources:" ]
                         , UI.viewUnorderedList [ centerX ]
                             [ paragraph []
-                                [ UI.viewWebResourceLink palette
+                                [ UI.viewWebResourceLink
+                                    []
+                                    palette
                                     WebResource.TwoSidedPllRecognitionGuide
                                     "Two Sided PLL Recognition Guide"
                                 ]
                             , paragraph []
-                                [ UI.viewWebResourceLink palette WebResource.PLLAlgorithmsResource "Fast PLL Algorithms And Finger Tricks"
+                                [ UI.viewWebResourceLink
+                                    []
+                                    palette
+                                    WebResource.PLLAlgorithmsResource
+                                    "Fast PLL Algorithms And Finger Tricks"
                                 ]
                             , paragraph []
                                 [ text "And just generally make sure you drill you algorithms until you can do them without looking!" ]
