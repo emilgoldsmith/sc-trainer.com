@@ -63,20 +63,17 @@ describe("Algorithm Picker Visual Tests", function () {
 
     cy.percySnapshotWithProperName("PLL Trainer Pick Algorithm Page: Initial");
 
-    pllTrainerElements.pickAlgorithmPage.algorithmInput
-      .get()
-      .type("U B F2 ".repeat(20));
-
-    cy.percySnapshotWithProperName(
-      "PLL Trainer Pick Algorithm Page: Long Algorithm"
-    );
-
     function clearInputTypeAndSubmit(input: string): void {
       pllTrainerElements.pickAlgorithmPage.algorithmInput
         .get()
         .type(`{selectall}{backspace}${input}{enter}`);
     }
 
+    // Add an invalid turnable so we also have an error in the image
+    clearInputTypeAndSubmit("U B F2 A ".repeat(20));
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Long Algorithm"
+    );
     clearInputTypeAndSubmit("");
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Input Required"
