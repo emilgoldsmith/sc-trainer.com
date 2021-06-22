@@ -67,6 +67,7 @@ export const pllTrainerElements = {
   }),
   pickAlgorithmPage: buildElementsCategory({
     container: "pick-algorithm-container",
+    explanationText: "explanation-text",
     algorithmInput: "algorithm-input",
     submitButton: "submit-button",
     inputRequiredError: optionalElement(errorMessageElement("input-required")),

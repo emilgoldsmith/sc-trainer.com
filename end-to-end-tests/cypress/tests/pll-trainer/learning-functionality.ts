@@ -338,7 +338,8 @@ const largeViewportConfigOverride: Cypress.TestConfigOverrides = {
  * 5. A small touch screen after a keyboard event shows shortcuts
  */
 
-describe.only("Algorithm Picker Dynamic Viewport Tests", function () {
+// eslint-disable-next-line mocha/max-top-level-suites
+describe("Algorithm Picker Dynamic Viewport Tests", function () {
   beforeEach(function () {
     applyDefaultIntercepts(extraIntercepts);
   });
