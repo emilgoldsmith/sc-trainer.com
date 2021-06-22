@@ -175,74 +175,82 @@ view currentTestCase toMsg shared model =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
-            column
-                [ testid "pick-algorithm-container"
-                , centerX
-                , centerY
-                , UI.spacing.large
-                , UI.paddingHorizontal.large
+            el
+                [ width fill
+                , height fill
+                , scrollbarY
                 ]
-                [ column
-                    [ testid "explanation-text"
+            <|
+                column
+                    [ testid "pick-algorithm-container"
                     , centerX
-                    , Font.center
-                    , UI.spacing.verySmall
+                    , centerY
+                    , UI.spacing.large
+                    , UI.paddingAll.large
+                    , width (fill |> maximum 700)
                     ]
-                    [ paragraph
-                        [ UI.fontSize.veryLarge
-                        , Region.heading 1
+                    [ column
+                        [ testid "explanation-text"
+                        , centerX
+                        , Font.center
+                        , UI.spacing.verySmall
                         ]
-                        [ text
-                            ("Pick Algorithm For "
-                                ++ PLL.getLetters pllCase
-                            )
+                        [ paragraph
+                            [ UI.fontSize.veryLarge
+                            , Region.heading 1
+                            ]
+                            [ text
+                                ("Pick "
+                                    ++ PLL.getLetters pllCase
+                                    ++ "-Perm Algorithm"
+                                )
+                            ]
+                        , paragraph [ UI.fontSize.medium ]
+                            [ text "We use this to correctly identify which AUFs you need to do for each case" ]
                         ]
-                    , paragraph [ UI.fontSize.medium ]
-                        [ text "We use this to correctly identify which AUFs you need to do for each case" ]
-                    ]
-                , column
-                    [ centerX
-                    , UI.spacing.verySmall
-                    ]
-                    [ Input.text
-                        [ testid "algorithm-input"
-                        , onEnter (toMsg Submit)
-                        , htmlAttribute <| Html.Attributes.id focusOnLoadId
+                    , column
+                        [ centerX
+                        , UI.spacing.verySmall
+                        ]
+                        [ Input.text
+                            [ testid "algorithm-input"
+                            , onEnter (toMsg Submit)
+                            , htmlAttribute <| Html.Attributes.id focusOnLoadId
+                            , centerX
+                            ]
+                            { onChange = toMsg << UpdateText
+                            , text = model.text
+                            , placeholder = Nothing
+                            , label = Input.labelAbove [] none
+                            }
+                        , maybeViewError shared.palette model.error
+                        ]
+                    , PLLTrainer.ButtonWithShortcut.view
+                        shared.hardwareAvailable
+                        [ testid "submit-button"
                         , centerX
                         ]
-                        { onChange = toMsg << UpdateText
-                        , text = model.text
-                        , placeholder = Nothing
-                        , label = Input.labelAbove [] none
+                        { onPress = Just (toMsg Submit)
+                        , labelText = "Submit"
+                        , color = shared.palette.primary
+                        , keyboardShortcut = Key.Enter
                         }
-                    , maybeViewError shared.palette model.error
+                        UI.viewButton.large
+                    , paragraph [ UI.fontSize.medium, Font.center ]
+                        [ text "Need some help choosing an algorithm? If you would like to explore your options check out "
+                        , UI.viewWebResourceLink
+                            [ testid "alg-db-link" ]
+                            shared.palette
+                            (WebResource.AlgDBPLL pllCase)
+                            "this AlgDb entry"
+                        , text ", if you on the other hand want to just follow the advice and guidance of an experienced cuber check out "
+                        , UI.viewWebResourceLink
+                            [ testid "expert-link" ]
+                            shared.palette
+                            (WebResource.ExpertGuidancePLL pllCase)
+                            "this link to J Perm's PLL + Fingertricks video"
+                        ]
                     ]
-                , PLLTrainer.ButtonWithShortcut.view
-                    shared.hardwareAvailable
-                    [ testid "submit-button"
-                    , centerX
-                    ]
-                    { onPress = Just (toMsg Submit)
-                    , labelText = "Submit"
-                    , color = shared.palette.primary
-                    , keyboardShortcut = Key.Enter
-                    }
-                    UI.viewButton.large
-                , paragraph [ UI.fontSize.medium, Font.center ]
-                    [ text "Need some help choosing an algorithm? If you would like to explore your options check out "
-                    , UI.viewWebResourceLink
-                        [ testid "alg-db-link" ]
-                        shared.palette
-                        (WebResource.AlgDBPLL pllCase)
-                        "this AlgDb entry"
-                    , text ", if you on the other hand want to just follow the advice and guidance of an experienced cuber check out "
-                    , UI.viewWebResourceLink
-                        [ testid "expert-link" ]
-                        shared.palette
-                        (WebResource.ExpertGuidancePLL pllCase)
-                        "this link to J Perm's PLL + Fingertricks video"
-                    ]
-                ]
     }
 
 

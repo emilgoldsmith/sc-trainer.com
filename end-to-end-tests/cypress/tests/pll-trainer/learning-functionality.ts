@@ -128,16 +128,28 @@ describe("PLL Trainer - Learning Functionality", function () {
         .get()
         .should("contain.text", "Aa");
       // The page should have an AlgDB link to the case being picked for
-      pllTrainerElements.pickAlgorithmPage.algDbLink.get().should((link) => {
-        expect(link.prop("tagName")).to.equal("A");
-        // Assert it opens in new tab
-        expect(link.attr("target"), "target").to.equal("_blank");
+      pllTrainerElements.pickAlgorithmPage.algDbLink
+        .get()
+        .should((link) => {
+          expect(link.prop("tagName")).to.equal("A");
+          // Assert it opens in new tab
+          expect(link.attr("target"), "target").to.equal("_blank");
 
-        expect(link.prop("href"), "href")
-          .to.be.a("string")
-          .and.contain("algdb.net")
-          .and.satisfy((href: string) => href.endsWith("/aa"), "ends with /aa");
-      });
+          expect(link.prop("href"), "href")
+            .to.be.a("string")
+            .and.contain("algdb.net")
+            .and.satisfy(
+              (href: string) => href.endsWith("/aa"),
+              "ends with /aa"
+            );
+        })
+        .then((link) => {
+          // Check that the link actually works
+          cy.request(link.attr("href") || "")
+            .its("status")
+            .should("be.at.least", 200)
+            .and("be.lessThan", 300);
+        });
       // The page should have any type of expert guidance link, any further assertions
       // would make for too brittle tests
       pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
