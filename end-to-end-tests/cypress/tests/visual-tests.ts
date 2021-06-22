@@ -1,6 +1,12 @@
-import { applyDefaultIntercepts } from "support/interceptors";
+import {
+  applyDefaultIntercepts,
+  createFeatureFlagSetter,
+} from "support/interceptors";
 import { paths } from "support/paths";
-import { pllTrainerElements } from "./pll-trainer/state-and-elements.helper";
+import {
+  pllTrainerElements,
+  pllTrainerStatesNewUser,
+} from "./pll-trainer/state-and-elements.helper";
 
 describe("Visual Tests", function () {
   beforeEach(function () {
@@ -41,5 +47,83 @@ describe("Visual Tests", function () {
         "PLL Trainer Wrong Page (Correct + Nearly There)"
       );
     });
+  });
+});
+
+// eslint-disable-next-line mocha/max-top-level-suites
+describe("Algorithm Picker Visual Tests", function () {
+  it("looks right", function () {
+    applyDefaultIntercepts({
+      extraHtmlModifiers: [
+        createFeatureFlagSetter("displayAlgorithmPicker", true),
+      ],
+    });
+
+    pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.reloadAndNavigateTo();
+
+    cy.percySnapshotWithProperName("PLL Trainer Pick Algorithm Page: Initial");
+
+    pllTrainerElements.pickAlgorithmPage.algorithmInput
+      .get()
+      .type("U B F2 ".repeat(20));
+
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Long Algorithm"
+    );
+
+    function clearInputTypeAndSubmit(input: string): void {
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type(`{selectall}{backspace}${input}{enter}`);
+    }
+
+    clearInputTypeAndSubmit("");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Input Required"
+    );
+    clearInputTypeAndSubmit("A F R2 B'");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Invalid Turnable"
+    );
+    clearInputTypeAndSubmit("B2 R3 F l f U4");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Invalid Turn Length"
+    );
+    clearInputTypeAndSubmit("B2 R U2 U L' y");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Repeated Turnable"
+    );
+    clearInputTypeAndSubmit("F2 u B Rw L'");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Wide Move Styles Mixed"
+    );
+    clearInputTypeAndSubmit("B R2 U  ) ' F3 R' L2'");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Would Work Without Interruption"
+    );
+    clearInputTypeAndSubmit("M2 R F x U'2 y Rw F2");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Apostrophe Wrong Side Of Length"
+    );
+    clearInputTypeAndSubmit("U ( B F' D2");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Unclosed Parenthesis"
+    );
+    clearInputTypeAndSubmit("U B F' ) D2");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Unmatched Closing Parenthesis"
+    );
+    clearInputTypeAndSubmit("( U (B F') ) D2");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Nested Parentheses"
+    );
+    clearInputTypeAndSubmit("( U B F') % D2");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Invalid Symbol"
+    );
+    clearInputTypeAndSubmit("U2 R2 B");
+    cy.percySnapshotWithProperName(
+      "PLL Trainer Pick Algorithm Page: Doesn't Solve The Case"
+    );
   });
 });

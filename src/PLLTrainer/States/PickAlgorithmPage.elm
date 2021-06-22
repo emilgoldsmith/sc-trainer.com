@@ -159,7 +159,8 @@ view toMsg shared model =
                 ]
             <|
                 column []
-                    [ Input.text
+                    [ el [ testid "explanation-text" ] <| text "Placeholder"
+                    , Input.text
                         [ testid "algorithm-input"
                         , onEnter (toMsg Submit)
                         , htmlAttribute <| Html.Attributes.id focusOnLoadId
