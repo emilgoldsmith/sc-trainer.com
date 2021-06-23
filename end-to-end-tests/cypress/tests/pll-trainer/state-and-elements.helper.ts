@@ -309,7 +309,6 @@ export const pllTrainerStatesNewUser = buildStates<
     },
     waitForStateToAppear: (options) => {
       pllTrainerElements.pickAlgorithmPage.container.waitFor(options);
-      cy.waitForDocumentEventListeners("keyup");
     },
   },
   correctPage: {
@@ -350,7 +349,6 @@ export const pllTrainerStatesNewUser = buildStates<
     },
     waitForStateToAppear: (options) => {
       pllTrainerElements.pickAlgorithmPage.container.waitFor(options);
-      cy.waitForDocumentEventListeners("keyup");
     },
   },
   wrongPage: {
