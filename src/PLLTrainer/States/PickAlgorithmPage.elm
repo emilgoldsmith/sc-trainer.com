@@ -8,8 +8,6 @@ import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Html.Attributes
-import Html.Events
-import Json.Decode
 import Key
 import PLL
 import PLLTrainer.ButtonWithShortcut
@@ -214,7 +212,7 @@ view currentTestCase toMsg shared model =
                         ]
                         [ Input.text
                             [ testid "algorithm-input"
-                            , onEnter (toMsg Submit)
+                            , Key.onEnter (toMsg Submit)
                             , htmlAttribute <| Html.Attributes.id focusOnLoadId
                             , centerX
                             ]
@@ -282,15 +280,16 @@ sharedErrorAttributes palette =
 
 viewDoesntMatchCaseError : UI.Palette -> Element msg
 viewDoesntMatchCaseError palette =
-    el (testid "algorithm-doesnt-match-case" :: sharedErrorAttributes palette) <|
-        text "The algorithm doesn't solve the case. Try double checking it from the source"
+    paragraph (testid "algorithm-doesnt-match-case" :: sharedErrorAttributes palette)
+        [ text "The algorithm doesn't solve the case. Try double checking it from the source" ]
 
 
 viewParsingError : UI.Palette -> Algorithm.FromStringError -> Element msg
 viewParsingError palette error =
     case error of
         Algorithm.EmptyAlgorithm ->
-            el (testid "input-required" :: sharedErrorAttributes palette) <| text "input required"
+            paragraph (testid "input-required" :: sharedErrorAttributes palette)
+                [ text "input required" ]
 
         Algorithm.InvalidTurnable { inputString, invalidTurnable, errorIndex } ->
             column
@@ -324,8 +323,7 @@ viewParsingError palette error =
             column
                 (testid "repeated-turnable" :: sharedErrorAttributes palette)
                 [ paragraph []
-                    [ text "You repeated a turnable twice in a row. Try combining the two into one, such as U2 U becoming U':"
-                    ]
+                    [ text "You repeated a turnable twice in a row. Try combining the two into one, such as U2 U becoming U':" ]
                 , viewUnderlinedPlaceWhereErrorOcurred
                     inputString
                     errorIndex
@@ -350,8 +348,7 @@ viewParsingError palette error =
             column
                 (testid "turn-would-work-without-interruption" :: sharedErrorAttributes palette)
                 [ paragraph []
-                    [ text "An invalid turn was found. The turn would become valid if the underlined interruption was removed:"
-                    ]
+                    [ text "An invalid turn was found. The turn would become valid if the underlined interruption was removed:" ]
                 , viewUnderlinedPlaceWhereErrorOcurred
                     inputString
                     interruptionStart
@@ -362,8 +359,7 @@ viewParsingError palette error =
             column
                 (testid "apostrophe-wrong-side-of-length" :: sharedErrorAttributes palette)
                 [ paragraph []
-                    [ text "Turn is invalid. It would be valid if you swapped the apostrophe to the other side of the length though:"
-                    ]
+                    [ text "Turn is invalid. It would be valid if you swapped the apostrophe to the other side of the length though:" ]
                 , viewUnderlinedPlaceWhereErrorOcurred
                     inputString
                     errorIndex
@@ -374,8 +370,7 @@ viewParsingError palette error =
             column
                 (testid "unclosed-parenthesis" :: sharedErrorAttributes palette)
                 [ paragraph []
-                    [ text "There is an unclosed parenthesis, add a closing parenthesis to fix this:"
-                    ]
+                    [ text "There is an unclosed parenthesis, add a closing parenthesis to fix this:" ]
                 , viewUnderlinedPlaceWhereErrorOcurred
                     inputString
                     openParenthesisIndex
@@ -386,8 +381,7 @@ viewParsingError palette error =
             column
                 (testid "unmatched-closing-parenthesis" :: sharedErrorAttributes palette)
                 [ paragraph []
-                    [ text "There is an unmatched closing parenthesis, remove it or add an opening parenthesis to fix this:"
-                    ]
+                    [ text "There is an unmatched closing parenthesis, remove it or add an opening parenthesis to fix this:" ]
                 , viewUnderlinedPlaceWhereErrorOcurred
                     inputString
                     errorIndex
@@ -398,8 +392,7 @@ viewParsingError palette error =
             column
                 (testid "empty-parentheses" :: sharedErrorAttributes palette)
                 [ paragraph []
-                    [ text "There were no turns inside this set of parentheses, remove the parentheses or add some turns inside to fix it:"
-                    ]
+                    [ text "There were no turns inside this set of parentheses, remove the parentheses or add some turns inside to fix it:" ]
                 , viewUnderlinedPlaceWhereErrorOcurred
                     inputString
                     errorIndex
@@ -410,8 +403,7 @@ viewParsingError palette error =
             column
                 (testid "nested-parentheses" :: sharedErrorAttributes palette)
                 [ paragraph []
-                    [ text "There are nested parentheses in this algorithm which is not allowed. Remove them to fix it:"
-                    ]
+                    [ text "There are nested parentheses in this algorithm which is not allowed. Remove them to fix it:" ]
                 , viewUnderlinedPlaceWhereErrorOcurred
                     inputString
                     errorIndex
@@ -434,13 +426,12 @@ viewParsingError palette error =
 
         Algorithm.SpansOverSeveralLines _ ->
             paragraph (sharedErrorAttributes palette)
-                [ text "Congratulations! You somehow managed to make your algorithm span several lines of text which is not allowed and the input shouldn't even let you do. If you want to proceed you should undo it though :)"
-                ]
+                [ text "Congratulations! You somehow managed to make your algorithm span several lines of text which is not allowed and the input shouldn't even let you do. If you want to proceed you should undo it though :)" ]
 
         Algorithm.UnexpectedError _ ->
+            -- The error having been sent to our developers already occurs in the update function
             paragraph (sharedErrorAttributes palette)
-                [ text "Congratulations! You somehow managed to make our algorithm parser error in a way we had never expected to happen. If you're online a simple error description (with no personal data) has already been sent to the developers so hopefully this will soon be fixed, but thanks for helping find our edge cases! Until then see if you can figure out the problem with your algorithm yourself, or maybe try out writing it from scratch again"
-                ]
+                [ text "Congratulations! You somehow managed to make our algorithm parser error in a way we had never expected to happen. If you're online a simple error description (with no personal data) has already been sent to the developers so hopefully this will soon be fixed, but thanks for helping find our edge cases! Until then see if you can figure out the problem with your algorithm yourself, or maybe try out writing it from scratch again" ]
 
 
 viewUnderlinedPlaceWhereErrorOcurred : String -> Int -> Int -> Element msg
@@ -450,7 +441,8 @@ viewUnderlinedPlaceWhereErrorOcurred inputString start end =
             text (String.left start inputString)
 
         underlinedCharacters =
-            String.toList (String.slice start end inputString)
+            String.slice start end inputString
+                |> String.toList
                 |> List.map String.fromChar
                 |> List.map
                     (\char ->
@@ -465,20 +457,3 @@ viewUnderlinedPlaceWhereErrorOcurred inputString start end =
         beforeUnderline
             :: underlinedCharacters
             ++ [ afterUnderline ]
-
-
-onEnter : msg -> Attribute msg
-onEnter msg =
-    htmlAttribute
-        (Html.Events.on "keyup"
-            (Key.decodeNonRepeatedKeyEvent
-                |> Json.Decode.andThen
-                    (\key ->
-                        if key == Key.Enter then
-                            Json.Decode.succeed msg
-
-                        else
-                            Json.Decode.fail "Not the enter key"
-                    )
-            )
-        )

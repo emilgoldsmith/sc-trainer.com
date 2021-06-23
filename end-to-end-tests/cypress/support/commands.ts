@@ -25,7 +25,7 @@
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
 import { getCode, getKeyCode, getKeyValue, Key } from "./keys";
-import { aufToString, pllToString } from "./pll";
+import { aufToAlgorithmString, pllToPllLetters } from "./pll";
 
 const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
   testId,
@@ -631,9 +631,9 @@ const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] = f
   postAuf,
 ]) {
   const jsonValue = [
-    aufToString[preAuf],
-    pllToString[pll],
-    aufToString[postAuf],
+    aufToAlgorithmString[preAuf],
+    pllToPllLetters[pll],
+    aufToAlgorithmString[postAuf],
   ];
   cy.withOverallNameLogged(
     { displayName: "SET TEST CASE", message: JSON.stringify(jsonValue) },

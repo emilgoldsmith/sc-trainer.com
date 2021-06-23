@@ -159,31 +159,27 @@ serializePllAlgorithms pllAlgorithms =
 
 pllAlgorithmsDecoder : Json.Decode.Decoder UsersCurrentPLLAlgorithms
 pllAlgorithmsDecoder =
-    let
-        dictDecoder =
-            Json.Decode.dict Json.Decode.string
-    in
-    Json.Decode.map
-        (\dict ->
-            List.Nonempty.foldl
-                (\pll algorithms ->
-                    let
-                        maybeAlgorithmString =
-                            Dict.get (PLL.getLetters pll) dict
-
-                        maybeAlgorithmResult =
-                            Maybe.map Algorithm.fromString maybeAlgorithmString
-
-                        maybeAlgorithm =
-                            Maybe.andThen Result.toMaybe maybeAlgorithmResult
-                    in
-                    Maybe.map (setPLLAlgorithm algorithms pll) maybeAlgorithm
-                        |> Maybe.withDefault algorithms
-                )
-                emptyPLLAlgorithms
+    Json.Decode.dict Json.Decode.string
+        |> Json.Decode.map
+            (\dict ->
                 PLL.all
-        )
-        dictDecoder
+                    |> List.Nonempty.foldl
+                        (\pll algorithms ->
+                            let
+                                maybeAlgorithmString =
+                                    Dict.get (PLL.getLetters pll) dict
+
+                                maybeAlgorithmResult =
+                                    Maybe.map Algorithm.fromString maybeAlgorithmString
+
+                                maybeAlgorithm =
+                                    Maybe.andThen Result.toMaybe maybeAlgorithmResult
+                            in
+                            Maybe.map (setPLLAlgorithm algorithms pll) maybeAlgorithm
+                                |> Maybe.withDefault algorithms
+                        )
+                        emptyPLLAlgorithms
+            )
 
 
 
