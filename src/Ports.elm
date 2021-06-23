@@ -91,6 +91,6 @@ stringToPll stringValue =
             Nothing
 
         -- There shouldn't ever be several matches but in case there
-        -- just pick the first one
+        -- are we just pick the first one
         ( pll, _ ) :: _ ->
             Just pll

@@ -42,7 +42,7 @@ function getFullSpecifier(
 ): { meta: ElementMeta; testId: string | null } {
   if (typeof specifier === "string") {
     return {
-      meta: { optional: true },
+      meta: { optional: false },
       testId: specifier,
     };
   }
@@ -214,7 +214,7 @@ function buildElement(specifier: ElementSpecifier): InternalElement {
   };
 }
 
-function getSpecifier(
+function getBySpecifier(
   specifier: ElementSpecifier,
   options?: {
     log?: boolean;
@@ -232,7 +232,7 @@ function buildVisibleAsserter(specifier: ElementSpecifier) {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return getSpecifier(specifier, options).should("be.visible");
+    return getBySpecifier(specifier, options).should("be.visible");
   };
 }
 
@@ -241,7 +241,7 @@ function buildNotExistAsserter(specifier: ElementSpecifier) {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return getSpecifier(specifier, options).should("not.exist");
+    return getBySpecifier(specifier, options).should("not.exist");
   };
 }
 
@@ -250,7 +250,7 @@ function buildWaiter(specifier: ElementSpecifier) {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return getSpecifier(specifier, options);
+    return getBySpecifier(specifier, options);
   };
 }
 
@@ -259,7 +259,7 @@ function buildGetter(specifier: ElementSpecifier) {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return getSpecifier(specifier, options);
+    return getBySpecifier(specifier, options);
   };
 }
 
@@ -269,7 +269,7 @@ function buildAssertIsFocused(specifier: ElementSpecifier) {
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
     const assertIsFocused = () =>
-      getSpecifier(specifier, { ...options, log: false })
+      getBySpecifier(specifier, { ...options, log: false })
         .invoke("attr", "id")
         .then((expectedId) => {
           if (expectedId === undefined) {
@@ -301,7 +301,7 @@ function buildContainedByWindow(specifier: ElementSpecifier) {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return getSpecifier(specifier, options).then((instructionsElement) => {
+    return getBySpecifier(specifier, options).then((instructionsElement) => {
       const instructionsTop = instructionsElement.offset()?.top;
       if (instructionsTop === undefined) {
         throw new Error("Element has no offset");
@@ -331,7 +331,7 @@ function buildContainedByWindowAsserter(specifier: ElementSpecifier) {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) {
-    return getSpecifier(specifier, options).then((instructionsElement) => {
+    return getBySpecifier(specifier, options).then((instructionsElement) => {
       const instructionsTop = instructionsElement.offset()?.top;
       if (instructionsTop === undefined) {
         throw new Error("Element has no offset");
@@ -372,14 +372,14 @@ function buildConsumableViaScrollAsserter(specifier: ElementSpecifier) {
       // We don't want the within here as it's usually used on the container
       // and getting the container within the container fails
       const optionsWithoutWithin = Cypress._.omit(options, "withinSubject");
-      return getSpecifier(scrollableContainerSpecifier, optionsWithoutWithin);
+      return getBySpecifier(scrollableContainerSpecifier, optionsWithoutWithin);
     }
 
     function getElement() {
-      return getSpecifier(specifier, options);
+      return getBySpecifier(specifier, options);
     }
 
-    return getSpecifier(specifier, options).then((ourElement) => {
+    return getBySpecifier(specifier, options).then((ourElement) => {
       getContainer().then((container) => {
         if (getHeight(ourElement) <= getHeight(container)) {
           if (

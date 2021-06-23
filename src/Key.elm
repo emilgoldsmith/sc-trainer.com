@@ -1,5 +1,7 @@
-module Key exposing (Key(..), decodeNonRepeatedKeyEvent)
+module Key exposing (Key(..), decodeNonRepeatedKeyEvent, onEnter)
 
+import Element
+import Html.Events
 import Json.Decode
 
 
@@ -68,3 +70,20 @@ toKey keyString =
 
         _ ->
             OtherKey keyString
+
+
+onEnter : msg -> Element.Attribute msg
+onEnter msg =
+    Element.htmlAttribute
+        (Html.Events.on "keyup"
+            (decodeNonRepeatedKeyEvent
+                |> Json.Decode.andThen
+                    (\key ->
+                        if key == Enter then
+                            Json.Decode.succeed msg
+
+                        else
+                            Json.Decode.fail "Not the enter key"
+                    )
+            )
+        )

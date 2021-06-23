@@ -2,7 +2,9 @@ module Shared exposing
     ( Flags
     , HardwareAvailable
     , Model
-    , Msg(..)
+    , Msg
+    , PublicMsg(..)
+    , buildSharedMessage
     , init
     , subscriptions
     , update
@@ -62,8 +64,9 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser } =
                 builtViewportSize
                 { touchScreen = touchScreenAvailable
 
-                -- We don't know from the beginning if there is a keyboard so we make
-                -- our guess from an assumption of no
+                -- We don't know from the beginning if there is a keyboard so
+                -- we tell the guess function that we don't know there is one
+                -- for sure
                 , keyboard = False
                 }
       , featureFlags = featureFlags
@@ -116,41 +119,58 @@ setKeyboardAvailable previous =
 
 
 type Msg
+    = InternalMsg InternalMsg
+    | PublicMsg PublicMsg
+
+
+buildSharedMessage : PublicMsg -> Msg
+buildSharedMessage =
+    PublicMsg
+
+
+type InternalMsg
     = WindowResized Int Int
     | KeyboardWasUsed
-    | ChangePLLAlgorithm PLL Algorithm
+
+
+type PublicMsg
+    = ChangePLLAlgorithm PLL Algorithm
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
 update _ msg model =
     case msg of
-        WindowResized width height ->
-            let
-                newViewportSize =
-                    ViewportSize.build { width = width, height = height }
-            in
-            ( { model
-                | hardwareAvailable = guessIfUserHasKeyboard newViewportSize model.hardwareAvailable
-                , viewportSize = newViewportSize
-              }
-            , Cmd.none
-            )
+        InternalMsg internalMsg ->
+            case internalMsg of
+                WindowResized width height ->
+                    let
+                        newViewportSize =
+                            ViewportSize.build { width = width, height = height }
+                    in
+                    ( { model
+                        | hardwareAvailable = guessIfUserHasKeyboard newViewportSize model.hardwareAvailable
+                        , viewportSize = newViewportSize
+                      }
+                    , Cmd.none
+                    )
 
-        KeyboardWasUsed ->
-            ( { model
-                | hardwareAvailable = setKeyboardAvailable model.hardwareAvailable
-              }
-            , Cmd.none
-            )
+                KeyboardWasUsed ->
+                    ( { model
+                        | hardwareAvailable = setKeyboardAvailable model.hardwareAvailable
+                      }
+                    , Cmd.none
+                    )
 
-        ChangePLLAlgorithm pll algorithm ->
-            let
-                newUser =
-                    User.changePLLAlgorithm pll algorithm model.user
-            in
-            ( { model | user = newUser }
-            , Ports.updateStoredUser newUser
-            )
+        PublicMsg publicMsg ->
+            case publicMsg of
+                ChangePLLAlgorithm pll algorithm ->
+                    let
+                        updatedUser =
+                            User.changePLLAlgorithm pll algorithm model.user
+                    in
+                    ( { model | user = updatedUser }
+                    , Ports.updateStoredUser updatedUser
+                    )
 
 
 
@@ -159,15 +179,16 @@ update _ msg model =
 
 subscriptions : Request -> Model -> Sub Msg
 subscriptions _ model =
-    Sub.batch
-        [ Events.onResize WindowResized
-        , if model.hardwareAvailable.keyboard then
-            Sub.none
+    Sub.map InternalMsg <|
+        Sub.batch
+            [ Events.onResize WindowResized
+            , if model.hardwareAvailable.keyboard then
+                Sub.none
 
-          else
-            Sub.batch
-                [ Events.onKeyDown (Json.Decode.succeed KeyboardWasUsed)
-                , Events.onKeyPress (Json.Decode.succeed KeyboardWasUsed)
-                , Events.onKeyUp (Json.Decode.succeed KeyboardWasUsed)
-                ]
-        ]
+              else
+                Sub.batch
+                    [ Events.onKeyDown (Json.Decode.succeed KeyboardWasUsed)
+                    , Events.onKeyPress (Json.Decode.succeed KeyboardWasUsed)
+                    , Events.onKeyUp (Json.Decode.succeed KeyboardWasUsed)
+                    ]
+            ]

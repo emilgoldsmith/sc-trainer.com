@@ -9,7 +9,7 @@ import {
 } from "support/elements";
 import { buildStates, StateOptions } from "support/state";
 import { paths } from "support/paths";
-import { AUF, PLL } from "support/pll";
+import { AUF, PLL, pllToAlgorithmString } from "support/pll";
 
 export const pllTrainerElements = {
   startPage: buildElementsCategory({
@@ -173,7 +173,7 @@ export const pllTrainerStatesUserDone = buildStates<
     name: "evaluateResultAfterIgnoringTransitions",
     getToThatState: (getState, options) => {
       // We need to have time mocked from test running
-      // to programatically pass through the ignoring key presses phase
+      // to programatically pass through the ignoring transitions phase
       getState("testRunning");
       cy.clock();
       cy.pressKey(Key.space, options);
@@ -309,6 +309,7 @@ export const pllTrainerStatesNewUser = buildStates<
     },
     waitForStateToAppear: (options) => {
       pllTrainerElements.pickAlgorithmPage.container.waitFor(options);
+      cy.waitForDocumentEventListeners("keyup");
     },
   },
   correctPage: {
@@ -316,11 +317,12 @@ export const pllTrainerStatesNewUser = buildStates<
     getToThatState: (getState, options) => {
       getState("pickAlgorithmPageAfterCorrect");
       cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
-      // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
-      const AaAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
       pllTrainerElements.pickAlgorithmPage.algorithmInput
         .get(options)
-        .type(AaAlgorithm + "{enter}", { ...options, delay: 0 });
+        .type(pllToAlgorithmString[PLL.Aa] + "{enter}", {
+          ...options,
+          delay: 0,
+        });
     },
     waitForStateToAppear: (options) => {
       pllTrainerElements.correctPage.container.waitFor(options);
@@ -348,6 +350,7 @@ export const pllTrainerStatesNewUser = buildStates<
     },
     waitForStateToAppear: (options) => {
       pllTrainerElements.pickAlgorithmPage.container.waitFor(options);
+      cy.waitForDocumentEventListeners("keyup");
     },
   },
   wrongPage: {
@@ -355,11 +358,12 @@ export const pllTrainerStatesNewUser = buildStates<
     getToThatState: (getState, options) => {
       getState("pickAlgorithmPageAfterUnrecoverable");
       cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
-      // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
-      const AaAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
       pllTrainerElements.pickAlgorithmPage.algorithmInput
         .get(options)
-        .type(AaAlgorithm + "{enter}", { ...options, delay: 0 });
+        .type(pllToAlgorithmString[PLL.Aa] + "{enter}", {
+          ...options,
+          delay: 0,
+        });
     },
     waitForStateToAppear: (options?: StateOptions) => {
       pllTrainerElements.wrongPage.container.waitFor(options);

@@ -9,7 +9,7 @@ export interface StateCache {
 
 class StateCacheImplementation<Keys extends string> implements StateCache {
   private elmModel: Cypress.OurApplicationState | null = null;
-  private otherCaches?: { [key in Keys]: StateCache };
+  private otherCaches?: { [key in Keys]: StateCacheImplementation<Keys> };
 
   constructor(
     private name: string,
@@ -65,20 +65,24 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
       },
       () => {
         cy.visit(this.startPath, { log: false });
-        this.getToThatState(this.getStateByNavigate.bind(this), { log: false });
-        this.waitForStateToAppear({ log: false });
+        this.navigateFromStart();
       }
     );
+  }
+
+  navigateFromStart(): void {
+    this.getToThatState(this.getStateByNavigate.bind(this), { log: false });
+    this.waitForStateToAppear({ log: false });
   }
 
   private getStateByNavigate(key: Keys): void {
     if (this.otherCaches === undefined) {
       throw new Error("otherCaches not defined when it should be");
     }
-    this.otherCaches[key].reloadAndNavigateTo();
+    this.otherCaches[key].navigateFromStart();
   }
 
-  setOtherCaches(caches: { [key in Keys]: StateCache }) {
+  setOtherCaches(caches: { [key in Keys]: StateCacheImplementation<Keys> }) {
     this.otherCaches = caches;
   }
 }

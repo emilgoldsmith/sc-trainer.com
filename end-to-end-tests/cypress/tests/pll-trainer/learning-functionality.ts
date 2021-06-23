@@ -2,7 +2,13 @@ import {
   applyDefaultIntercepts,
   createFeatureFlagSetter,
 } from "support/interceptors";
-import { allAUFs, AUF, aufToString, PLL } from "support/pll";
+import {
+  allAUFs,
+  AUF,
+  aufToAlgorithmString,
+  PLL,
+  pllToAlgorithmString,
+} from "support/pll";
 import {
   pllTrainerElements,
   pllTrainerStatesNewUser,
@@ -10,11 +16,6 @@ import {
 import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 import { paths } from "support/paths";
 import { Key } from "support/keys";
-
-// Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
-const AaAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
-// Taken from https://www.speedsolving.com/wiki/index.php/PLL#H_Permutation
-const HAlgorithm = "M2' U M2' U2 M2' U M2'";
 
 const extraIntercepts: Parameters<typeof applyDefaultIntercepts>[0] = {
   extraHtmlModifiers: [createFeatureFlagSetter("displayAlgorithmPicker", true)],
@@ -81,9 +82,9 @@ describe("PLL Trainer - Learning Functionality", function () {
             pllTrainerStatesNewUser.testRunning.restoreState();
             cy.clock();
 
-            const firstCase = [AUF.none, PLL.Aa, AUF.none] as const;
-            const firstCaseCorrectAlgorithm = AaAlgorithm;
-            cy.setCurrentTestCase(firstCase);
+            const testCase = [AUF.none, PLL.Aa, AUF.none] as const;
+            const testCaseCorrectAlgorithm = pllToAlgorithmString[PLL.Aa];
+            cy.setCurrentTestCase(testCase);
 
             cy.mouseClickScreen("center");
             pllTrainerElements.evaluateResult.container.waitFor();
@@ -94,14 +95,15 @@ describe("PLL Trainer - Learning Functionality", function () {
 
             pllTrainerElements.pickAlgorithmPage.algorithmInput
               .get()
-              .type(firstCaseCorrectAlgorithm + "{enter}");
+              .type(testCaseCorrectAlgorithm + "{enter}");
 
             targetContainer.assertShows();
 
             startNextTestButton.get().click();
             pllTrainerElements.getReadyScreen.container.waitFor();
             cy.tick(1000);
-            cy.setCurrentTestCase(firstCase);
+            pllTrainerElements.testRunning.container.waitFor();
+            cy.setCurrentTestCase(testCase);
 
             cy.mouseClickScreen("center");
             pllTrainerElements.evaluateResult.container.waitFor();
@@ -145,7 +147,10 @@ describe("PLL Trainer - Learning Functionality", function () {
         })
         .then((link) => {
           // Check that the link actually works
-          cy.request(link.attr("href") || "")
+          cy.request(
+            link.attr("href") ||
+              "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
+          )
             .its("status")
             .should("be.at.least", 200)
             .and("be.lessThan", 300);
@@ -155,20 +160,23 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
         .get()
         .should((link) => {
-          console.log(link);
           expect(link.prop("tagName")).to.equal("A");
           // Assert it opens in new tab
           expect(link.attr("target"), "target").to.equal("_blank");
         })
         .then((link) => {
           // Check that the link actually works
-          cy.request(link.attr("href") || "")
+          cy.request(
+            link.attr("href") ||
+              "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
+          )
             .its("status")
             .should("be.at.least", 200)
             .and("be.lessThan", 300);
         });
 
-      // And the case specific parts should change if we change the current test case
+      // And the parts dependent on the current test case should
+      // change if we change the current test case
       cy.setCurrentTestCase([AUF.none, PLL.Ab, AUF.none]);
       pllTrainerElements.pickAlgorithmPage.explanationText
         .get()
@@ -257,11 +265,11 @@ describe("PLL Trainer - Learning Functionality", function () {
 
       // Errors informatively an algorithm that doesn't match the case is encountered
       cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
-      clearInputTypeAndSubmit(HAlgorithm);
+      clearInputTypeAndSubmit(pllToAlgorithmString[PLL.H]);
       pllTrainerElements.pickAlgorithmPage.algorithmDoesntMatchCaseError.assertShows();
 
       // Submits successfully when correct algorithm passed
-      clearInputTypeAndSubmit(AaAlgorithm);
+      clearInputTypeAndSubmit(pllToAlgorithmString[PLL.Aa]);
       pllTrainerElements.correctPage.container.assertShows();
     });
 
@@ -273,9 +281,9 @@ describe("PLL Trainer - Learning Functionality", function () {
               displayName: "TESTING WITH AUFS",
               message:
                 "(" +
-                (aufToString[preAUF] || "none") +
+                (aufToAlgorithmString[preAUF] || "none") +
                 "," +
-                (aufToString[postAUF] || "none") +
+                (aufToAlgorithmString[postAUF] || "none") +
                 ")",
             },
             () => {
@@ -288,9 +296,9 @@ describe("PLL Trainer - Learning Functionality", function () {
               pllTrainerElements.pickAlgorithmPage.algorithmInput
                 .get({ log: false })
                 .type(
-                  aufToString[preAUF] +
-                    AaAlgorithm +
-                    aufToString[postAUF] +
+                  aufToAlgorithmString[preAUF] +
+                    pllToAlgorithmString[PLL.Aa] +
+                    aufToAlgorithmString[postAUF] +
                     "{enter}",
                   { log: false, delay: 0 }
                 );
@@ -337,7 +345,7 @@ describe("PLL Trainer - Learning Functionality", function () {
       cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
       pllTrainerElements.pickAlgorithmPage.algorithmInput
         .get()
-        .type(AaAlgorithm);
+        .type(pllToAlgorithmString[PLL.Aa]);
       pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
 
       pllTrainerElements.correctPage.container.assertShows();
@@ -346,6 +354,8 @@ describe("PLL Trainer - Learning Functionality", function () {
     context("LocalStorage", function () {
       it("doesn't display picker when user already has all algorithms picked", function () {
         cy.setLocalStorage(allPllsPickedLocalStorage);
+        // Note we use reload here as we don't want restore to save an old state of the
+        // model that doesn't include the plls picked
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
 
         pllTrainerElements.evaluateResult.correctButton.get().click();
@@ -354,15 +364,15 @@ describe("PLL Trainer - Learning Functionality", function () {
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
 
         pllTrainerElements.evaluateResult.wrongButton.get().click();
-        pllTrainerElements.typeOfWrongPage.container.assertShows();
+        pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+        pllTrainerElements.wrongPage.container.assertShows();
       });
 
       it("doesn't display picker if case has picked algorithm on previous visit", function () {
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
 
         const correctBranchCase = [AUF.none, PLL.Aa, AUF.none] as const;
-        // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
-        const correctBranchAlgorithm = "(x) R' U R' D2 R U' R' D2 R2 (x')";
+        const correctBranchAlgorithm = pllToAlgorithmString[PLL.Aa];
         cy.setCurrentTestCase(correctBranchCase);
 
         pllTrainerElements.evaluateResult.correctButton.get().click();
@@ -378,10 +388,41 @@ describe("PLL Trainer - Learning Functionality", function () {
 
         pllTrainerElements.evaluateResult.correctButton.get().click();
         pllTrainerElements.correctPage.container.assertShows();
+
+        // ---------------------------------------------------
+        // Now we try it with a wrong route
+        // ---------------------------------------------------
+        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
+
+        const wrongBranchCase = [AUF.none, PLL.H, AUF.none] as const;
+        const wrongBranchAlgorithm = pllToAlgorithmString[PLL.H];
+        cy.setCurrentTestCase(wrongBranchCase);
+
+        pllTrainerElements.evaluateResult.wrongButton.get().click();
+        pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+
+        pllTrainerElements.pickAlgorithmPage.algorithmInput
+          .get()
+          .type(wrongBranchAlgorithm + "{enter}");
+        pllTrainerElements.wrongPage.container.assertShows();
+
+        // Revisit, try again but now we should skip it for same case
+        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
+        cy.setCurrentTestCase(wrongBranchCase);
+
+        pllTrainerElements.evaluateResult.wrongButton.get().click();
+        pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+
+        pllTrainerElements.wrongPage.container.assertShows();
       });
     });
   });
 });
+
+/**
+ * ALL THIS SHOULD BE MERGED INTO THE DYNAMIC PLL TRAINER TEST ON DEPLOYING THIS TO PRODUCTION
+ * WITHOUT THE FEATURE FLAG
+ */
 
 /** iphone-8 dimensions from https://docs.cypress.io/api/commands/viewport#Arguments */
 const smallViewportConfigOverride: Cypress.TestConfigOverrides = {

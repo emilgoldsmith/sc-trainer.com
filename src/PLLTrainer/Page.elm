@@ -392,7 +392,7 @@ update shared msg model =
                 TESTONLYSetTestCase (Ok testCase) ->
                     ( { model | currentTestCase = testCase }, Effect.none )
 
-                TESTONLYSetTestCase (Result.Err decodeError) ->
+                TESTONLYSetTestCase (Err decodeError) ->
                     ( model
                     , Effect.fromCmd <|
                         Ports.logError

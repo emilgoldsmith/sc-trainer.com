@@ -50,6 +50,10 @@ describe("Visual Tests", function () {
   });
 });
 
+/**
+ * INTEGRATE THIS ABOVE WHEN WE DEPLOY THIS TO PRODUCTION AND REMOVE
+ * THE FEATURE FLAG
+ */
 // eslint-disable-next-line mocha/max-top-level-suites
 describe("Algorithm Picker Visual Tests", function () {
   it("looks right", function () {
