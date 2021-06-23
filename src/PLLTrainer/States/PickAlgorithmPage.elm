@@ -209,6 +209,7 @@ view currentTestCase toMsg shared model =
                     , column
                         [ centerX
                         , UI.spacing.verySmall
+                        , width fill
                         ]
                         [ Input.text
                             [ testid "algorithm-input"
