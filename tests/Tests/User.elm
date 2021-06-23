@@ -74,8 +74,27 @@ algorithmFuzzer =
 
         nonEmptyTurnList =
             Fuzz.map2 (::) turnFuzzer <| Fuzz.list turnFuzzer
+
+        nonEmptyTurnListWithNoRepeats =
+            nonEmptyTurnList
+                |> Fuzz.map
+                    (List.foldl
+                        (\((Algorithm.Turn nextTurnable _ _) as nextTurn) turns ->
+                            case turns of
+                                [] ->
+                                    [ nextTurn ]
+
+                                (Algorithm.Turn previousTurnable _ _) :: _ ->
+                                    if previousTurnable == nextTurnable then
+                                        turns
+
+                                    else
+                                        nextTurn :: turns
+                        )
+                        []
+                    )
     in
-    Fuzz.map Algorithm.fromTurnList nonEmptyTurnList
+    Fuzz.map Algorithm.fromTurnList nonEmptyTurnListWithNoRepeats
 
 
 pllFuzzer : Fuzz.Fuzzer PLL
