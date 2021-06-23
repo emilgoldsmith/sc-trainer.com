@@ -18,7 +18,8 @@ jobs:
     # Also skip if there is a no-deploy tag in the commit message
     if: ${{ github.event.sender.login != 'dependabot[bot]' && ! startsWith(github.event.commits[0].message, '[no-deploy]') }}
     env:
-      SERVICE: speedcubing-trainer
+      PRODUCTION_SERVICE: speedcubing-trainer
+      STAGING_SERVICE: staging-speedcubing-trainer
       REGION: us-east4
       DOCKER_HUB_TAG: sctrainer/main:production-${{ github.sha }}
       PROJECT_ID: carbide-ether-306312
@@ -55,13 +56,24 @@ jobs:
       - name: Push Image to the Artifacts Registry
         run: docker push ${{ env.GOOGLE_TAG }}
 
-      - name: Deploy to Cloud Run
-        id: deploy
+      - name: Deploy Production to Cloud Run
+        id: deploy-production
         uses: google-github-actions/deploy-cloudrun@v0.6.0
         with:
-          service: ${{ env.SERVICE }}
+          service: ${{ env.PRODUCTION_SERVICE }}
           image: ${{ env.GOOGLE_TAG }}
           region: ${{ env.REGION }}
 
-      - name: Show Output
-        run: echo ${{ steps.deploy.outputs.url }}
+      - name: Show Production Output
+        run: echo ${{ steps.deploy-production.outputs.url }}
+
+      - name: Deploy Staging to Cloud Run
+        id: deploy-staging
+        uses: google-github-actions/deploy-cloudrun@v0.6.0
+        with:
+          service: ${{ env.STAGING_SERVICE }}
+          image: ${{ env.GOOGLE_TAG }}
+          region: ${{ env.REGION }}
+
+      - name: Show Staging Output
+        run: echo ${{ steps.deploy-staging.outputs.url }}
