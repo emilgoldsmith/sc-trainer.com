@@ -226,33 +226,7 @@ function fixSeedTerserMinimized(
   seed: number
 ) {
   /**
-   * Here we are trying to match the following line:
-   * En.Random=An(ph,$h,e((function(n,r,t){return Qt(t)}))
-   */
-  const initExtractorRegex = buildRegex(
-    [
-      // The identifier
-      String.raw`\.Random`,
-      // expecting an assignment, we don't have to care about whitespace
-      // since it's minimized
-      String.raw`=`,
-      // We pass by the function name
-      String.raw`\w+\(`,
-      // Capture that first argument which is the Random.init function name
-      String.raw`(\w+),`,
-    ],
-    "g"
-  );
-  const matches = applyGlobalRegex(
-    initExtractorRegex,
-    previousJavascript.value
-  );
-  const initFunctionName = getOrThrow(
-    1,
-    ensureSingletonListAndExtract(matches)
-  );
-  /**
-   * Here we are trying to match the following line:
+   * Here we are trying to match the lines similar to:
    * ph=i(ee,(function(n){return Qt((r=n,t=sh(i(fh,0,1013904223)),sh(i(fh,t.a+r>>>0,t.b))))
    */
   const regex = buildRegex(
@@ -260,7 +234,7 @@ function fixSeedTerserMinimized(
       // Capture the prefix for the replace. Since it's minimized code, several
       // places can use this variable name so we need a lot of context for it to be unique
       "(",
-      String.raw`\b${initFunctionName}\b`,
+      String.raw`\b\w+\b`,
       // The asignment of our function name which value is the result of a function call
       String.raw`=\w+\(`,
       // Find the binary operation we know we care about by first matching the plus
