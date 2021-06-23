@@ -231,15 +231,17 @@ function fixSeedTerserMinimized(
    */
   const regex = buildRegex(
     [
-      // Capture the prefix for the replace. Since it's minimized code, several
-      // places can use this variable name so we need a lot of context for it to be unique
+      // Capture the prefix for the replace.
       "(",
-      String.raw`\b\w+\b`,
-      // The asignment of our function name which value is the result of a function call
-      String.raw`=\w+\(`,
+      // Make it unique by adding the constant that's usually before it in the minimized
+      // code
+      "1013904223",
+      /\)\)/,
+      /.*?\(/,
+      /.*?\(/,
       // Find the binary operation we know we care about by first matching the plus
       // preceding the variable we care about
-      /.+?\+/,
+      /.*?\+/,
       ")",
       // Then the variable we want to replace
       /[\w.]+/,
