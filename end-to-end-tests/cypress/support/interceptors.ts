@@ -11,8 +11,14 @@ export type JavascriptModifier = (js: { type: "js"; value: string }) => string;
 
 export function interceptHtml(...modifiers: HtmlModifier[]): void {
   cy.intercept("GET", new RegExp(`^${Cypress.config().baseUrl}`), (req) => {
-    const expectsHtml =
-      req.headers.accept && req.headers.accept.split(",").includes("text/html");
+    const acceptHeader = req.headers.accept;
+    const acceptList =
+      typeof acceptHeader === "string"
+        ? acceptHeader.split(",")
+        : typeof acceptHeader === "object"
+        ? acceptHeader
+        : acceptHeader;
+    const expectsHtml = acceptList && acceptList.includes("text/html");
     if (!expectsHtml) return;
 
     req.reply((res) => {
