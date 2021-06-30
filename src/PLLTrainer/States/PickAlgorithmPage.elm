@@ -1,4 +1,4 @@
-module PLLTrainer.States.PickAlgorithmPage exposing (Arguments, Model, Msg, state)
+module PLLTrainer.States.PickAlgorithmPage exposing (Arguments, Model, Msg, TestCaseResult(..), state)
 
 import Algorithm exposing (Algorithm, FromStringError(..))
 import Browser.Dom
@@ -23,12 +23,12 @@ import WebResource
 
 
 state : Arguments -> Shared.Model -> Transitions msg -> (Msg -> msg) -> PLLTrainer.State.State msg Msg Model
-state { currentTestCase } shared transitions toMsg =
+state { currentTestCase, testCaseResult } shared transitions toMsg =
     PLLTrainer.State.element
         { init = init toMsg
         , update = update transitions currentTestCase
         , subscriptions = subscriptions
-        , view = view currentTestCase toMsg shared
+        , view = view currentTestCase testCaseResult toMsg shared
         }
 
 
@@ -36,8 +36,14 @@ state { currentTestCase } shared transitions toMsg =
 -- ARGUMENTS AND TRANSITIONS
 
 
+type TestCaseResult
+    = Correct
+    | Wrong
+
+
 type alias Arguments =
     { currentTestCase : PLLTrainer.TestCase.TestCase
+    , testCaseResult : TestCaseResult
     }
 
 
@@ -164,8 +170,14 @@ subscriptions _ =
 -- VIEW
 
 
-view : PLLTrainer.TestCase.TestCase -> (Msg -> msg) -> Shared.Model -> Model -> PLLTrainer.State.View msg
-view currentTestCase toMsg shared model =
+view :
+    PLLTrainer.TestCase.TestCase
+    -> TestCaseResult
+    -> (Msg -> msg)
+    -> Shared.Model
+    -> Model
+    -> PLLTrainer.State.View msg
+view currentTestCase testCaseResult toMsg shared model =
     let
         pllCase =
             PLLTrainer.TestCase.pll currentTestCase
@@ -186,6 +198,7 @@ view currentTestCase toMsg shared model =
                     , UI.spacingAll.large
                     , UI.paddingAll.large
                     , width (fill |> maximum 700)
+                    , UI.fontSize.medium
                     ]
                     [ column
                         [ testid "explanation-text"
@@ -203,8 +216,18 @@ view currentTestCase toMsg shared model =
                                     ++ "-Perm Algorithm"
                                 )
                             ]
-                        , paragraph [ UI.fontSize.medium ]
-                            [ text "We use this to correctly identify which AUFs you need to do for each case" ]
+                        , paragraph []
+                            [ case testCaseResult of
+                                Correct ->
+                                    el [ testid "correct-text" ] <|
+                                        text "Which algorithm will you use to solve this case in the future? This is most likely just the one you just used"
+
+                                Wrong ->
+                                    el [ testid "wrong-text" ] <|
+                                        text "Take some time to select which algorithm you'd like to learn for this case and practice it a bit"
+                            ]
+                        , paragraph []
+                            [ text "We use this to correctly identify which AUFs you need to do for each case so we for example can display correct statistics" ]
                         ]
                     , column
                         [ centerX
@@ -235,7 +258,9 @@ view currentTestCase toMsg shared model =
                         , keyboardShortcut = Key.Enter
                         }
                         UI.viewButton.large
-                    , paragraph [ UI.fontSize.medium, Font.center ]
+                    , paragraph
+                        [ Font.center
+                        ]
                         [ text "Need some help choosing an algorithm? If you would like to explore your options check out "
                         , UI.viewWebResourceLink
                             [ testid "alg-db-link" ]
