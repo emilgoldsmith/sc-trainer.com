@@ -273,39 +273,44 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.correctPage.container.assertShows();
     });
 
-    it("accepts algorithms no matter what execution angle or AUF they have", function () {
+    it.only("accepts algorithms no matter what execution angle or AUF they have, and which cube rotation they end on", function () {
       allAUFs.forEach((preAUF) =>
-        allAUFs.forEach((postAUF) => {
-          cy.withOverallNameLogged(
-            {
-              displayName: "TESTING WITH AUFS",
-              message:
-                "(" +
-                (aufToAlgorithmString[preAUF] || "none") +
-                "," +
-                (aufToAlgorithmString[postAUF] || "none") +
-                ")",
-            },
-            () => {
-              pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.restoreState(
-                {
-                  log: false,
-                }
-              );
-              cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
-              pllTrainerElements.pickAlgorithmPage.algorithmInput
-                .get({ log: false })
-                .type(
-                  aufToAlgorithmString[preAUF] +
-                    pllToAlgorithmString[PLL.Aa] +
-                    aufToAlgorithmString[postAUF] +
-                    "{enter}",
-                  { log: false, delay: 0 }
+        allAUFs.forEach((postAUF) =>
+          ["", "y", "x", "z"].forEach((rotation) => {
+            cy.withOverallNameLogged(
+              {
+                displayName: "TESTING WITH AUFS/ROTATION",
+                message:
+                  "(" +
+                  (aufToAlgorithmString[preAUF] || "none") +
+                  "," +
+                  (aufToAlgorithmString[postAUF] || "none") +
+                  "," +
+                  (rotation || "no rotation") +
+                  ")",
+              },
+              () => {
+                pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.restoreState(
+                  {
+                    log: false,
+                  }
                 );
-              pllTrainerElements.correctPage.container.assertShows();
-            }
-          );
-        })
+                cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+                pllTrainerElements.pickAlgorithmPage.algorithmInput
+                  .get({ log: false })
+                  .type(
+                    aufToAlgorithmString[preAUF] +
+                      pllToAlgorithmString[PLL.Aa] +
+                      aufToAlgorithmString[postAUF] +
+                      rotation +
+                      "{enter}",
+                    { log: false, delay: 0 }
+                  );
+                pllTrainerElements.correctPage.container.assertShows();
+              }
+            );
+          })
+        )
       );
     });
 
