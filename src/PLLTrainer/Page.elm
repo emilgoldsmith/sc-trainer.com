@@ -71,6 +71,7 @@ type alias EvaluateResultExtraState =
 
 type alias PickAlgorithmExtraState =
     { nextTrainerState : TrainerState
+    , testCaseResult : PLLTrainer.States.PickAlgorithmPage.TestCaseResult
     }
 
 
@@ -262,6 +263,7 @@ update shared msg model =
                             let
                                 extraState =
                                     { nextTrainerState = CorrectPage
+                                    , testCaseResult = PLLTrainer.States.PickAlgorithmPage.Correct
                                     }
 
                                 ( stateModel, stateCmd ) =
@@ -308,6 +310,7 @@ update shared msg model =
                             let
                                 extraState =
                                     { nextTrainerState = WrongPage
+                                    , testCaseResult = PLLTrainer.States.PickAlgorithmPage.Wrong
                                     }
 
                                 ( stateModel, stateCmd ) =
@@ -341,6 +344,7 @@ update shared msg model =
                             let
                                 extraState =
                                     { nextTrainerState = WrongPage
+                                    , testCaseResult = PLLTrainer.States.PickAlgorithmPage.Wrong
                                     }
 
                                 ( stateModel, stateCmd ) =
@@ -368,6 +372,7 @@ update shared msg model =
                             let
                                 extraState =
                                     { nextTrainerState = WrongPage
+                                    , testCaseResult = PLLTrainer.States.PickAlgorithmPage.Wrong
                                     }
 
                                 ( stateModel, stateCmd ) =
@@ -503,9 +508,11 @@ states shared model =
                 }
                 (StateMsg << EvaluateResultMsg)
     , pickAlgorithmPage =
-        \{ nextTrainerState } ->
+        \{ nextTrainerState, testCaseResult } ->
             PLLTrainer.States.PickAlgorithmPage.state
-                { currentTestCase = model.currentTestCase }
+                { currentTestCase = model.currentTestCase
+                , testCaseResult = testCaseResult
+                }
                 shared
                 { continue = TransitionMsg << AlgorithmPicked nextTrainerState }
                 (StateMsg << PickAlgorithmMsg)

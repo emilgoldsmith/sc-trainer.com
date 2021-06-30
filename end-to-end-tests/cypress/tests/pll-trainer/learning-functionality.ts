@@ -37,6 +37,8 @@ describe("PLL Trainer - Learning Functionality", function () {
     [
       {
         caseName: "Correct Page",
+        pickAlgorithmElementThatShouldShow:
+          pllTrainerElements.pickAlgorithmPage.correctText,
         targetContainer: pllTrainerElements.correctPage.container,
         fromEvaluateToPickAlgorithm: () =>
           pllTrainerElements.evaluateResult.correctButton.get().click(),
@@ -44,6 +46,8 @@ describe("PLL Trainer - Learning Functionality", function () {
       },
       {
         caseName: "Wrong --> No Moves Applied",
+        pickAlgorithmElementThatShouldShow:
+          pllTrainerElements.pickAlgorithmPage.wrongText,
         targetContainer: pllTrainerElements.wrongPage.container,
         fromEvaluateToPickAlgorithm: () => {
           pllTrainerElements.evaluateResult.wrongButton.get().click();
@@ -53,6 +57,8 @@ describe("PLL Trainer - Learning Functionality", function () {
       },
       {
         caseName: "Wrong --> Nearly There",
+        pickAlgorithmElementThatShouldShow:
+          pllTrainerElements.pickAlgorithmPage.wrongText,
         targetContainer: pllTrainerElements.wrongPage.container,
         fromEvaluateToPickAlgorithm: () => {
           pllTrainerElements.evaluateResult.wrongButton.get().click();
@@ -62,6 +68,8 @@ describe("PLL Trainer - Learning Functionality", function () {
       },
       {
         caseName: "Wrong --> Unrecoverable",
+        pickAlgorithmElementThatShouldShow:
+          pllTrainerElements.pickAlgorithmPage.wrongText,
         targetContainer: pllTrainerElements.wrongPage.container,
         fromEvaluateToPickAlgorithm: () => {
           pllTrainerElements.evaluateResult.wrongButton.get().click();
@@ -72,6 +80,7 @@ describe("PLL Trainer - Learning Functionality", function () {
     ].forEach(
       ({
         caseName,
+        pickAlgorithmElementThatShouldShow,
         targetContainer,
         fromEvaluateToPickAlgorithm,
         startNextTestButton,
@@ -92,6 +101,7 @@ describe("PLL Trainer - Learning Functionality", function () {
             fromEvaluateToPickAlgorithm();
 
             pllTrainerElements.pickAlgorithmPage.container.assertShows();
+            pickAlgorithmElementThatShouldShow.assertShows();
 
             pllTrainerElements.pickAlgorithmPage.algorithmInput
               .get()

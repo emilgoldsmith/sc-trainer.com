@@ -68,6 +68,8 @@ export const pllTrainerElements = {
   pickAlgorithmPage: buildElementsCategory({
     container: "pick-algorithm-container",
     explanationText: "explanation-text",
+    correctText: optionalElement("correct-text"),
+    wrongText: optionalElement("wrong-text"),
     algorithmInput: "algorithm-input",
     submitButton: "submit-button",
     algDbLink: "alg-db-link",
@@ -308,7 +310,7 @@ export const pllTrainerStatesNewUser = buildStates<
         .click(options);
     },
     waitForStateToAppear: (options) => {
-      pllTrainerElements.pickAlgorithmPage.container.waitFor(options);
+      pllTrainerElements.pickAlgorithmPage.correctText.waitFor(options);
     },
   },
   correctPage: {
@@ -348,7 +350,7 @@ export const pllTrainerStatesNewUser = buildStates<
         .click(options);
     },
     waitForStateToAppear: (options) => {
-      pllTrainerElements.pickAlgorithmPage.container.waitFor(options);
+      pllTrainerElements.pickAlgorithmPage.wrongText.waitFor(options);
     },
   },
   wrongPage: {
