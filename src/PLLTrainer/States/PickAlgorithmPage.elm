@@ -183,7 +183,7 @@ view currentTestCase toMsg shared model =
                     [ testid "pick-algorithm-container"
                     , centerX
                     , centerY
-                    , UI.spacing.large
+                    , UI.spacingAll.large
                     , UI.paddingAll.large
                     , width (fill |> maximum 700)
                     ]
@@ -191,7 +191,7 @@ view currentTestCase toMsg shared model =
                         [ testid "explanation-text"
                         , centerX
                         , Font.center
-                        , UI.spacing.verySmall
+                        , UI.spacingAll.verySmall
                         ]
                         [ paragraph
                             [ UI.fontSize.veryLarge
@@ -208,7 +208,7 @@ view currentTestCase toMsg shared model =
                         ]
                     , column
                         [ centerX
-                        , UI.spacing.verySmall
+                        , UI.spacingAll.verySmall
                         , width fill
                         ]
                         [ Input.text
@@ -273,7 +273,7 @@ sharedErrorAttributes palette =
     [ errorMessageTestType
     , Font.color palette.errorText
     , UI.fontSize.medium
-    , UI.spacing.verySmall
+    , UI.spacingAll.verySmall
     , Font.center
     , width fill
     ]
@@ -438,8 +438,16 @@ viewParsingError palette error =
 viewUnderlinedPlaceWhereErrorOcurred : String -> Int -> Int -> Element msg
 viewUnderlinedPlaceWhereErrorOcurred inputString start end =
     let
+        -- We purposefully split them into lists of text so that
+        -- the wrapped row can do its thing, which it can't with
+        -- a piece of pre-formatted text. And trying things like
+        -- htmlAttribute white-space: pre-wrap doesn't play well
+        -- with the Elm UI internals
         beforeUnderline =
-            text (String.left start inputString)
+            String.left start inputString
+                |> String.toList
+                |> List.map String.fromChar
+                |> List.map text
 
         underlinedCharacters =
             String.slice start end inputString
@@ -452,9 +460,16 @@ viewUnderlinedPlaceWhereErrorOcurred inputString start end =
                     )
 
         afterUnderline =
-            text (String.dropLeft end inputString)
+            String.dropLeft end inputString
+                |> String.toList
+                |> List.map String.fromChar
+                |> List.map text
     in
-    row [ centerX ] <|
+    wrappedRow
+        [ centerX
+        , UI.spacingVertical.small
+        ]
+    <|
         beforeUnderline
-            :: underlinedCharacters
-            ++ [ afterUnderline ]
+            ++ underlinedCharacters
+            ++ afterUnderline

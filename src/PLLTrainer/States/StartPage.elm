@@ -59,7 +59,7 @@ view viewportSize palette hardwareAvailable transitions =
                 ]
             <|
                 column
-                    [ UI.spacing.small
+                    [ UI.spacingAll.small
                     , centerX
                     , width (fill |> maximum (ViewportSize.width viewportSize * 3 // 4))
                     , UI.paddingVertical.veryLarge
@@ -69,7 +69,7 @@ view viewportSize palette hardwareAvailable transitions =
                         [ testid "welcome-text"
                         , Font.center
                         , centerX
-                        , UI.spacing.small
+                        , UI.spacingAll.small
                         ]
                         [ paragraph [ UI.fontSize.veryLarge, Region.heading 1 ]
                             [ text "Welcome!" ]
@@ -116,7 +116,7 @@ view viewportSize palette hardwareAvailable transitions =
                         [ testid "instructions-text"
                         , Font.center
                         , centerX
-                        , UI.spacing.small
+                        , UI.spacingAll.small
                         ]
                         [ paragraph [ UI.fontSize.veryLarge, Region.heading 1 ] [ text "Instructions:" ]
                         , paragraph []
@@ -152,7 +152,7 @@ view viewportSize palette hardwareAvailable transitions =
                     , column
                         [ testid "learning-resources"
                         , centerX
-                        , UI.spacing.small
+                        , UI.spacingAll.small
                         ]
                         [ paragraph [ UI.fontSize.veryLarge, Region.heading 1, Font.center ] [ text "Learning Resources:" ]
                         , UI.viewUnorderedList [ centerX ]

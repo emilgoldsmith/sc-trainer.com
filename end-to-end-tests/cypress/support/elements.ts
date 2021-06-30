@@ -13,8 +13,11 @@ export type Element = {
   assertShows: ReturnType<typeof buildVisibleAsserter>;
   assertDoesntExist: ReturnType<typeof buildNotExistAsserter>;
   assertContainedByWindow: ReturnType<typeof buildContainedByWindowAsserter>;
-  assertConsumableViaScroll: ReturnType<
-    typeof buildConsumableViaScrollAsserter
+  assertConsumableViaVerticalScroll: ReturnType<
+    typeof buildConsumableViaVerticalScrollAsserter
+  >;
+  assertConsumableViaHorizontalScroll: ReturnType<
+    typeof buildConsumableViaHorizontalScrollAsserter
   >;
   isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
   assertIsFocused: ReturnType<typeof buildAssertIsFocused>;
@@ -131,7 +134,9 @@ export function buildElementsCategory<keys extends string>(
   ) => Cypress.Chainable<T> {
     const fn = builder(specifier);
     return function (
-      ...args: Parameters<ReturnType<typeof buildConsumableViaScrollAsserter>>
+      ...args: Parameters<
+        ReturnType<typeof buildConsumableViaVerticalScrollAsserter>
+      >
     ) {
       return getContainer({ log: false }).then((containerElement) => {
         let options = { ...args[1] };
@@ -163,8 +168,12 @@ export function buildElementsCategory<keys extends string>(
           buildContainedByWindowAsserter,
           specifier
         ),
-        assertConsumableViaScroll: buildWithinContainer2(
-          buildConsumableViaScrollAsserter,
+        assertConsumableViaVerticalScroll: buildWithinContainer2(
+          buildConsumableViaVerticalScrollAsserter,
+          specifier
+        ),
+        assertConsumableViaHorizontalScroll: buildWithinContainer2(
+          buildConsumableViaHorizontalScrollAsserter,
           specifier
         ),
         isContainedByWindow: buildWithinContainer(
@@ -206,7 +215,12 @@ function buildElement(specifier: ElementSpecifier): InternalElement {
     assertShows: buildVisibleAsserter(specifier),
     assertDoesntExist: buildNotExistAsserter(specifier),
     assertContainedByWindow: buildContainedByWindowAsserter(specifier),
-    assertConsumableViaScroll: buildConsumableViaScrollAsserter(specifier),
+    assertConsumableViaVerticalScroll: buildConsumableViaVerticalScrollAsserter(
+      specifier
+    ),
+    assertConsumableViaHorizontalScroll: buildConsumableViaHorizontalScrollAsserter(
+      specifier
+    ),
     isContainedByWindow: buildContainedByWindow(specifier),
     assertIsFocused: buildAssertIsFocused(specifier),
     specifier,
@@ -360,7 +374,7 @@ function buildContainedByWindowAsserter(specifier: ElementSpecifier) {
   };
 }
 
-function buildConsumableViaScrollAsserter(specifier: ElementSpecifier) {
+function buildConsumableViaVerticalScrollAsserter(specifier: ElementSpecifier) {
   return function (
     scrollableContainerSpecifier: ElementSpecifier,
     options?: {
@@ -425,6 +439,73 @@ function buildConsumableViaScrollAsserter(specifier: ElementSpecifier) {
     });
   };
 }
+function buildConsumableViaHorizontalScrollAsserter(
+  specifier: ElementSpecifier
+) {
+  return function (
+    scrollableContainerSpecifier: ElementSpecifier,
+    options?: {
+      log?: boolean;
+      withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+    }
+  ) {
+    function getContainer() {
+      // We don't want the within here as it's usually used on the container
+      // and getting the container within the container fails
+      const optionsWithoutWithin = Cypress._.omit(options, "withinSubject");
+      return getBySpecifier(scrollableContainerSpecifier, optionsWithoutWithin);
+    }
+
+    function getElement() {
+      return getBySpecifier(specifier, options);
+    }
+
+    return getElement().then((ourElement) => {
+      getContainer().then((container) => {
+        if (getWidth(ourElement) <= getWidth(container)) {
+          if (
+            getLeft(ourElement) >= getLeft(container) &&
+            getRight(ourElement) <= getRight(container)
+          ) {
+            cy.wrap(undefined, { log: false }).should(() => {
+              expect(
+                getLeft(ourElement),
+                "element shouldn't overflow to the left of container"
+              ).to.be.at.least(getLeft(container));
+              expect(
+                getRight(ourElement),
+                "element shouldn't overflow to the right of container"
+              ).to.be.at.most(getRight(container));
+            });
+          } else {
+            getElement()
+              .scrollIntoView()
+              .should(() => {
+                expect(
+                  getLeft(ourElement),
+                  "element shouldn't overflow to the left of container"
+                ).to.be.at.least(getLeft(container));
+                expect(
+                  getRight(ourElement),
+                  "element shouldn't overflow to the right of container"
+                ).to.be.at.most(getRight(container));
+              });
+          }
+        } else {
+          getElement().scrollIntoView().should("be.visible");
+          getContainer().scrollTo("top");
+          cy.wrap(undefined, { log: false }).should(() => {
+            expect(getLeft(ourElement)).to.be.at.least(getLeft(container));
+          });
+          getContainer().scrollTo("bottom");
+          cy.wrap(undefined, { log: false }).should(() => {
+            expect(getRight(ourElement)).to.be.at.most(getRight(container));
+          });
+        }
+      });
+    });
+  };
+}
 function getTop(elem: JQuery<HTMLElement>) {
   const top = elem.offset()?.top;
   if (top === undefined) {
@@ -441,4 +522,21 @@ function getHeight(elem: JQuery<HTMLElement>) {
 }
 function getBottom(elem: JQuery<HTMLElement>) {
   return getTop(elem) + getHeight(elem);
+}
+function getLeft(elem: JQuery<HTMLElement>) {
+  const left = elem.offset()?.left;
+  if (left === undefined) {
+    throw new Error("Element has no offset");
+  }
+  return Math.round(left);
+}
+function getWidth(elem: JQuery<HTMLElement>) {
+  const width = elem.outerWidth();
+  if (width === undefined) {
+    throw new Error("Element has no height");
+  }
+  return Math.round(width);
+}
+function getRight(elem: JQuery<HTMLElement>) {
+  return getLeft(elem) + getWidth(elem);
 }

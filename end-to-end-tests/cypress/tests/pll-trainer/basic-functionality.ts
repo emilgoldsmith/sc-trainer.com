@@ -46,19 +46,19 @@ describe("PLL Trainer - Basic Functionality", function () {
       const containerId = pllTrainerElements.startPage.container.specifier;
       // This one is allowed vertical scrolling, but we want to check
       // that we can actually scroll down to see instructionsText if its missing
-      pllTrainerElements.startPage.instructionsText.assertConsumableViaScroll(
+      pllTrainerElements.startPage.instructionsText.assertConsumableViaVerticalScroll(
         pllTrainerElements.startPage.container.specifier
       );
-      pllTrainerElements.startPage.learningResources.assertConsumableViaScroll(
+      pllTrainerElements.startPage.learningResources.assertConsumableViaVerticalScroll(
         containerId
       );
-      pllTrainerElements.startPage.cubeStartExplanation.assertConsumableViaScroll(
+      pllTrainerElements.startPage.cubeStartExplanation.assertConsumableViaVerticalScroll(
         containerId
       );
-      pllTrainerElements.startPage.cubeStartState.assertConsumableViaScroll(
+      pllTrainerElements.startPage.cubeStartState.assertConsumableViaVerticalScroll(
         containerId
       );
-      pllTrainerElements.startPage.startButton.assertConsumableViaScroll(
+      pllTrainerElements.startPage.startButton.assertConsumableViaVerticalScroll(
         containerId
       );
     });
