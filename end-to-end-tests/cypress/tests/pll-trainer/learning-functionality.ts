@@ -116,6 +116,16 @@ describe("PLL Trainer - Learning Functionality", function () {
       }
     );
 
+    it("looks right", function () {
+      pllTrainerElements.pickAlgorithmPage.assertAllShow();
+      // Produce a very long error and assert it still displays
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type("U B F2 A ".repeat(20) + "{enter}");
+      pllTrainerElements.pickAlgorithmPage.invalidTurnableError.assertShows();
+      cy.assertNoHorizontalScrollbar();
+    });
+
     it("focuses input element on load, has all the right elements and then errors as expected", function () {
       // Enter the page dynamically just in case using restoreState could mess up
       // the auto focus
@@ -273,7 +283,7 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.correctPage.container.assertShows();
     });
 
-    it.only("accepts algorithms no matter what execution angle or AUF they have, and which cube rotation they end on", function () {
+    it("accepts algorithms no matter what execution angle or AUF they have, and which cube rotation they end on", function () {
       allAUFs.forEach((preAUF) =>
         allAUFs.forEach((postAUF) =>
           ["", "y", "x", "z"].forEach((rotation) => {
@@ -295,12 +305,12 @@ describe("PLL Trainer - Learning Functionality", function () {
                     log: false,
                   }
                 );
-                cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+                cy.setCurrentTestCase([AUF.none, PLL.H, AUF.none]);
                 pllTrainerElements.pickAlgorithmPage.algorithmInput
                   .get({ log: false })
                   .type(
                     aufToAlgorithmString[preAUF] +
-                      pllToAlgorithmString[PLL.Aa] +
+                      pllToAlgorithmString[PLL.H] +
                       aufToAlgorithmString[postAUF] +
                       rotation +
                       "{enter}",
