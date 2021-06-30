@@ -11,13 +11,7 @@ import {
   applyDefaultIntercepts,
   createFeatureFlagSetter,
 } from "support/interceptors";
-import {
-  AUF,
-  aufToAlgorithmString,
-  PLL,
-  pllToAlgorithmString,
-  pllToPllLetters,
-} from "support/pll";
+import { AUF, aufToAlgorithmString, PLL, pllToPllLetters } from "support/pll";
 
 describe("PLL Trainer - Basic Functionality", function () {
   before(function () {
@@ -1131,7 +1125,7 @@ const extraIntercepts: Parameters<typeof applyDefaultIntercepts>[0] = {
 };
 
 // eslint-disable-next-line mocha/max-top-level-suites
-describe.only("Wrong Page - Behind Feature Flag", function () {
+describe("Wrong Page - Behind Feature Flag", function () {
   it("has the right correct answer text", function () {
     applyDefaultIntercepts(extraIntercepts);
     pllTrainerStatesNewUser.wrongPage.reloadAndNavigateTo();
