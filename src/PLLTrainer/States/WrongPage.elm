@@ -1,5 +1,6 @@
 module PLLTrainer.States.WrongPage exposing (Arguments, Transitions, state)
 
+import AUF
 import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
@@ -74,10 +75,32 @@ view viewportSize palette hardwareAvailable transitions arguments =
                     , testid "test-case-name"
                     ]
                   <|
+                    let
+                        preAufString =
+                            AUF.toString (PLLTrainer.TestCase.preAuf arguments.testCase)
+
+                        postAufString =
+                            AUF.toString (PLLTrainer.TestCase.postAuf arguments.testCase)
+                    in
                     text
                         ("The Correct Answer Was "
+                            ++ (if String.isEmpty preAufString then
+                                    ""
+
+                                else
+                                    preAufString ++ " "
+                               )
+                            ++ "["
                             ++ PLL.getLetters (PLLTrainer.TestCase.pll arguments.testCase)
-                            ++ "-perm:"
+                            ++ "-perm]"
+                            ++ (if String.isEmpty postAufString then
+                                    ""
+
+                                else
+                                    " "
+                                        ++ postAufString
+                               )
+                            ++ ":"
                         )
                 , row
                     [ centerX
