@@ -3,10 +3,21 @@ import { installClock, setTimeTo, tick } from "support/clock";
 import {
   pllTrainerStatesUserDone,
   pllTrainerElements,
+  pllTrainerStatesNewUser,
 } from "./state-and-elements.helper";
 import { Element } from "support/elements";
 import { paths } from "support/paths";
-import { applyDefaultIntercepts } from "support/interceptors";
+import {
+  applyDefaultIntercepts,
+  createFeatureFlagSetter,
+} from "support/interceptors";
+import {
+  AUF,
+  aufToAlgorithmString,
+  PLL,
+  pllToAlgorithmString,
+  pllToPllLetters,
+} from "support/pll";
 
 describe("PLL Trainer - Basic Functionality", function () {
   before(function () {
@@ -642,16 +653,27 @@ describe("PLL Trainer - Basic Functionality", function () {
         .parent()
         .within(() => {
           // It should be a link going to a google form
-          cy.get("a").should((linkElement) => {
-            expect(linkElement.prop("href"), "href")
-              .to.be.a("string")
-              .and.satisfy(
-                (href: string) => href.startsWith("https://forms.gle/"),
-                "starts with https://forms.gle/"
-              );
-            // Asserts it opens in new tab
-            expect(linkElement.attr("target"), "target").to.equal("_blank");
-          });
+          cy.get("a")
+            .should((linkElement) => {
+              expect(linkElement.prop("href"), "href")
+                .to.be.a("string")
+                .and.satisfy(
+                  (href: string) => href.startsWith("https://forms.gle/"),
+                  "starts with https://forms.gle/"
+                );
+              // Asserts it opens in new tab
+              expect(linkElement.attr("target"), "target").to.equal("_blank");
+            })
+            .then((link) => {
+              // Check that the link actually works
+              cy.request(
+                link.attr("href") ||
+                  "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
+              )
+                .its("status")
+                .should("be.at.least", 200)
+                .and("be.lessThan", 300);
+            });
         });
     });
 
@@ -1102,4 +1124,52 @@ function assertCubeMatchesBackOfAlias(alias: string, element: Element): void {
       ).to.be.true;
     });
   });
+}
+
+const extraIntercepts: Parameters<typeof applyDefaultIntercepts>[0] = {
+  extraHtmlModifiers: [createFeatureFlagSetter("displayAlgorithmPicker", true)],
+};
+
+// eslint-disable-next-line mocha/max-top-level-suites
+describe.only("Wrong Page - Behind Feature Flag", function () {
+  it("has the right correct answer text", function () {
+    applyDefaultIntercepts(extraIntercepts);
+    pllTrainerStatesNewUser.wrongPage.reloadAndNavigateTo();
+
+    // Verify U and U2 display correctly
+    const firstTestCase = [AUF.U, PLL.Aa, AUF.U2] as const;
+    cy.setCurrentTestCase(firstTestCase);
+    pllTrainerElements.wrongPage.testCaseName
+      .get()
+      .invoke("text")
+      .should("match", testCaseToWrongPageRegex(firstTestCase));
+
+    // Verify U' and nothing display correctly, while also trying a different PLL
+    const secondTestCase = [AUF.UPrime, PLL.Ab, AUF.none] as const;
+    cy.setCurrentTestCase(secondTestCase);
+    pllTrainerElements.wrongPage.testCaseName
+      .get()
+      .invoke("text")
+      .should("match", testCaseToWrongPageRegex(secondTestCase));
+
+    // Verify no AUFs displays correctly and also trying a third PLL
+    const thirdTestCase = [AUF.none, PLL.H, AUF.none] as const;
+    cy.setCurrentTestCase(thirdTestCase);
+    pllTrainerElements.wrongPage.testCaseName
+      .get()
+      .invoke("text")
+      .should("match", testCaseToWrongPageRegex(thirdTestCase));
+  });
+});
+
+function testCaseToWrongPageRegex(testCase: readonly [AUF, PLL, AUF]): RegExp {
+  const firstAufString = aufToAlgorithmString[testCase[0]];
+  const secondAufString = aufToAlgorithmString[testCase[2]];
+  return new RegExp(
+    [
+      firstAufString && String.raw`\b${firstAufString}\s+`,
+      String.raw`[^\b]*${pllToPllLetters[testCase[1]]}[^\b]*`,
+      secondAufString && String.raw`\s+${secondAufString}\b`,
+    ].join("")
+  );
 }
