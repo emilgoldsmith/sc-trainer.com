@@ -16,9 +16,9 @@ describe("Visual Tests", function () {
     it("Looks right", function () {
       cy.visit(paths.pllTrainer);
       cy.clock();
-      pllTrainerElements.startPage.container.waitFor();
+      pllTrainerElements.newUserStartPage.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer Start Page");
-      pllTrainerElements.startPage.startButton.get().click();
+      pllTrainerElements.newUserStartPage.startButton.get().click();
       pllTrainerElements.getReadyScreen.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer Get Ready Screen");
       cy.tick(1000);
@@ -73,56 +73,73 @@ describe("Algorithm Picker Visual Tests", function () {
         .type(`{selectall}{backspace}${input}{enter}`);
     }
 
+    /**
+     * It's important that we add in the waitFors for the errors as otherwise
+     * the snapshot can snapshot a wrong error in some instances
+     */
     // Add an invalid turnable so we also have an error in the image
     clearInputTypeAndSubmit("U B F2 A ".repeat(20));
+    pllTrainerElements.pickAlgorithmPage.invalidTurnableError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Long Algorithm"
     );
     clearInputTypeAndSubmit("");
+    pllTrainerElements.pickAlgorithmPage.inputRequiredError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Input Required"
     );
     clearInputTypeAndSubmit("A F R2 B'");
+    pllTrainerElements.pickAlgorithmPage.invalidTurnableError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Invalid Turnable"
     );
     clearInputTypeAndSubmit("B2 R3 F l f U4");
+    pllTrainerElements.pickAlgorithmPage.invalidTurnLengthError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Invalid Turn Length"
     );
     clearInputTypeAndSubmit("B2 R U2 U L' y");
+    pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Repeated Turnable"
     );
     clearInputTypeAndSubmit("F2 u B Rw L'");
+    pllTrainerElements.pickAlgorithmPage.wideMoveStylesMixedError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Wide Move Styles Mixed"
     );
-    clearInputTypeAndSubmit("B R2 U  ) ' F3 R' L2'");
+    clearInputTypeAndSubmit("B ( R2 U  ) ' F3 R' L2'");
+    pllTrainerElements.pickAlgorithmPage.turnWouldWorkWithoutInterruptionError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Would Work Without Interruption"
     );
     clearInputTypeAndSubmit("M2 R F x U'2 y Rw F2");
+    pllTrainerElements.pickAlgorithmPage.apostropheWrongSideOfLengthError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Apostrophe Wrong Side Of Length"
     );
     clearInputTypeAndSubmit("U ( B F' D2");
+    pllTrainerElements.pickAlgorithmPage.unclosedParenthesisError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Unclosed Parenthesis"
     );
     clearInputTypeAndSubmit("U B F' ) D2");
+    pllTrainerElements.pickAlgorithmPage.unmatchedClosingParenthesisError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Unmatched Closing Parenthesis"
     );
     clearInputTypeAndSubmit("( U (B F') ) D2");
+    pllTrainerElements.pickAlgorithmPage.nestedParenthesesError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Nested Parentheses"
     );
     clearInputTypeAndSubmit("( U B F') % D2");
+    pllTrainerElements.pickAlgorithmPage.invalidSymbolError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Invalid Symbol"
     );
     clearInputTypeAndSubmit("U2 R2 B");
+    pllTrainerElements.pickAlgorithmPage.algorithmDoesntMatchCaseError.waitFor();
     cy.percySnapshotWithProperName(
       "PLL Trainer Pick Algorithm Page: Doesn't Solve The Case"
     );

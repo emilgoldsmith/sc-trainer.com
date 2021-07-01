@@ -95,8 +95,8 @@ function checkWhetherShortcutsDisplay(
   matcher: "match" | "not.match",
   method: "useKeyboard" | "useMouseAndButtons"
 ) {
-  pllTrainerElements.startPage.container.waitFor();
-  pllTrainerElements.startPage.startButton
+  pllTrainerElements.newUserStartPage.container.waitFor();
+  pllTrainerElements.newUserStartPage.startButton
     .get()
     .invoke("text")
     .should(matcher, buildShortcutRegex("Space"));
@@ -105,7 +105,7 @@ function checkWhetherShortcutsDisplay(
     // Note this also checks the space shortcut actually works as the label implies
     cy.pressKey(Key.space);
   } else {
-    pllTrainerElements.startPage.startButton.get().click();
+    pllTrainerElements.newUserStartPage.startButton.get().click();
   }
   pllTrainerElements.getReadyScreen.container.waitFor();
   cy.tick(1000);

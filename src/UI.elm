@@ -1,4 +1,4 @@
-module UI exposing (Button, Palette, defaultPalette, fontSize, paddingAll, paddingHorizontal, paddingVertical, spacingAll, spacingVertical, viewButton, viewDivider, viewUnorderedList, viewWebResourceLink)
+module UI exposing (Button, Palette, defaultPalette, fontSize, paddingAll, paddingHorizontal, paddingVertical, spacingAll, spacingVertical, viewButton, viewDivider, viewOrderedList, viewUnorderedList, viewWebResourceLink)
 
 -- We can't expose all of Element as it clashes with the spacing export
 
@@ -76,6 +76,21 @@ viewUnorderedList attributes listItemContents =
     let
         listItems =
             List.map (\content -> El.row [ spacingAll.verySmall ] [ El.text "-", content ]) listItemContents
+    in
+    El.column (spacingAll.small :: attributes) listItems
+
+
+viewOrderedList : List (El.Attribute msg) -> List (El.Element msg) -> El.Element msg
+viewOrderedList attributes listItemContents =
+    let
+        listItems =
+            List.indexedMap
+                (\index content ->
+                    El.row
+                        [ spacingAll.verySmall ]
+                        [ El.text (String.fromInt (index + 1)), content ]
+                )
+                listItemContents
     in
     El.column (spacingAll.small :: attributes) listItems
 

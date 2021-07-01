@@ -18,7 +18,8 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
       getState: (key: Keys) => void,
       options?: StateOptions
     ) => void,
-    private waitForStateToAppear: (options?: StateOptions) => void
+    private waitForStateToAppear: (options?: StateOptions) => void,
+    private localStorage?: { [key: string]: unknown }
   ) {}
 
   populateCache(
@@ -31,6 +32,7 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
         message: this.name,
       },
       (consolePropsSetter) => {
+        if (this.localStorage) cy.setLocalStorage(this.localStorage);
         cy.visit(this.startPath, { log: false });
         this.getToThatState(this.getStateByRestore.bind(this), { log: false });
         this.waitForStateToAppear({ log: false });
@@ -38,6 +40,7 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
           this.elmModel = elmModel;
           consolePropsSetter({ "Elm Model": elmModel });
         });
+        cy.clearLocalStorage();
       }
     );
   }
@@ -53,6 +56,7 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
       throw new Error(
         `Attempted to restore the ${this.name} state before cache was populated`
       );
+    if (this.localStorage) cy.setLocalStorage(this.localStorage);
     cy.setApplicationState(this.elmModel, this.name, options);
     this.waitForStateToAppear(options);
   }
@@ -64,6 +68,7 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
         message: this.name,
       },
       () => {
+        if (this.localStorage) cy.setLocalStorage(this.localStorage);
         cy.visit(this.startPath, { log: false });
         this.navigateFromStart();
       }
@@ -88,7 +93,13 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
 }
 
 export function buildStates<Keys extends string>(
-  startPath: string,
+  {
+    startPath,
+    localStorage,
+  }: {
+    startPath: string;
+    localStorage?: { [key: string]: unknown };
+  },
   states: {
     [key in Keys]: {
       name: string;
@@ -116,7 +127,8 @@ export function buildStates<Keys extends string>(
         args.name,
         startPath,
         args.getToThatState,
-        args.waitForStateToAppear
+        args.waitForStateToAppear,
+        localStorage
       )
   );
 

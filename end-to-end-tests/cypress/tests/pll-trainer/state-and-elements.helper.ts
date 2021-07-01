@@ -10,11 +10,25 @@ import {
 import { buildStates, StateOptions } from "support/state";
 import { paths } from "support/paths";
 import { AUF, PLL, pllToAlgorithmString } from "support/pll";
+import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 
 export const pllTrainerElements = {
-  startPage: buildElementsCategory({
+  newUserStartPage: buildElementsCategory({
     container: "start-page-container",
     welcomeText: "welcome-text",
+    cubeStartExplanation: "cube-start-explanation",
+    cubeStartState: cubeElement("cube-start-state"),
+    startButton: "start-button",
+    instructionsText: "instructions-text",
+    learningResources: "learning-resources",
+  }),
+  recurringUserStartPage: buildElementsCategory({
+    container: "start-page-container",
+    numCasesTried: "num-cases-tried",
+    numCasesNotYetTried: "num-cases-not-yet-tried",
+    worstThreeCases: "worst-three-cases",
+    averageTime: "average-time",
+    averageTPS: "average-tps",
     cubeStartExplanation: "cube-start-explanation",
     cubeStartState: cubeElement("cube-start-state"),
     startButton: "start-button",
@@ -87,7 +101,7 @@ export const pllTrainerElements = {
     wideMoveStylesMixedError: optionalElement(
       errorMessageElement("wide-move-styles-mixed")
     ),
-    TurnWouldWorkWithoutInterruptionError: optionalElement(
+    turnWouldWorkWithoutInterruptionError: optionalElement(
       errorMessageElement("turn-would-work-without-interruption")
     ),
     apostropheWrongSideOfLengthError: optionalElement(
@@ -125,12 +139,12 @@ export const pllTrainerStatesUserDone = buildStates<
   | "correctPage"
   | "typeOfWrongPage"
   | "wrongPage"
->(paths.pllTrainer, {
+>({ startPath: paths.pllTrainer, localStorage: allPllsPickedLocalStorage }, {
   startPage: {
     name: "startPage",
     getToThatState: () => {},
     waitForStateToAppear: (options) => {
-      pllTrainerElements.startPage.container.waitFor(options);
+      pllTrainerElements.recurringUserStartPage.container.waitFor(options);
       cy.waitForDocumentEventListeners("keyup");
     },
   },
@@ -138,7 +152,9 @@ export const pllTrainerStatesUserDone = buildStates<
     name: "getReadyScreen",
     getToThatState: (getState, options) => {
       getState("startPage");
-      pllTrainerElements.startPage.startButton.get(options).click(options);
+      pllTrainerElements.recurringUserStartPage.startButton
+        .get(options)
+        .click(options);
     },
     waitForStateToAppear: (options) => {
       pllTrainerElements.getReadyScreen.container.waitFor(options);
@@ -151,7 +167,9 @@ export const pllTrainerStatesUserDone = buildStates<
       // to programatically pass through the get ready page
       getState("startPage");
       cy.clock();
-      pllTrainerElements.startPage.startButton.get(options).click(options);
+      pllTrainerElements.newUserStartPage.startButton
+        .get(options)
+        .click(options);
       pllTrainerElements.getReadyScreen.container.waitFor(options);
       cy.tick(1000, options);
       cy.clock().then((clock) => clock.restore());
@@ -238,12 +256,12 @@ export const pllTrainerStatesNewUser = buildStates<
   | "correctPage"
   | "typeOfWrongPage"
   | "wrongPage"
->(paths.pllTrainer, {
+>({ startPath: paths.pllTrainer }, {
   startPage: {
     name: "startPage",
     getToThatState: () => {},
     waitForStateToAppear: (options) => {
-      pllTrainerElements.startPage.container.waitFor(options);
+      pllTrainerElements.newUserStartPage.container.waitFor(options);
       cy.waitForDocumentEventListeners("keyup");
     },
   },
@@ -251,7 +269,9 @@ export const pllTrainerStatesNewUser = buildStates<
     name: "getReadyScreen",
     getToThatState: (getState, options) => {
       getState("startPage");
-      pllTrainerElements.startPage.startButton.get(options).click(options);
+      pllTrainerElements.newUserStartPage.startButton
+        .get(options)
+        .click(options);
     },
     waitForStateToAppear: (options) => {
       pllTrainerElements.getReadyScreen.container.waitFor(options);
@@ -264,7 +284,9 @@ export const pllTrainerStatesNewUser = buildStates<
       // to programatically pass through the get ready page
       getState("startPage");
       cy.clock();
-      pllTrainerElements.startPage.startButton.get(options).click(options);
+      pllTrainerElements.newUserStartPage.startButton
+        .get(options)
+        .click(options);
       pllTrainerElements.getReadyScreen.container.waitFor(options);
       cy.tick(1000, options);
       cy.clock().then((clock) => clock.restore());
