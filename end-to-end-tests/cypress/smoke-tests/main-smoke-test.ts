@@ -6,6 +6,6 @@ describe("Main Smoke Test", function () {
     // We run this in staging and production and we don't want it to count into the statistics and dirty them
     localStorage.setItem("plausible_ignore", "true");
     cy.visit(paths.pllTrainer);
-    pllTrainerElements.startPage.container.assertShows();
+    pllTrainerElements.newUserStartPage.container.assertShows();
   });
 });

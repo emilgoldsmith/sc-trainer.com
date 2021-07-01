@@ -10,6 +10,7 @@ import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
 import Shared
 import UI
+import User exposing (User)
 import View
 import ViewCube
 import ViewportSize exposing (ViewportSize)
@@ -17,9 +18,15 @@ import WebResource
 
 
 state : Shared.Model -> Transitions msg -> PLLTrainer.State.State msg () ()
-state { viewportSize, palette, hardwareAvailable } transitions =
+state shared transitions =
     PLLTrainer.State.static
-        { view = view viewportSize palette hardwareAvailable transitions
+        { view =
+            view
+                shared.viewportSize
+                shared.palette
+                shared.hardwareAvailable
+                shared.user
+                transitions
         , nonRepeatedKeyUpHandler =
             Just <|
                 \key ->
@@ -45,8 +52,14 @@ type alias Transitions msg =
 -- VIEW
 
 
-view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> PLLTrainer.State.View msg
-view viewportSize palette hardwareAvailable transitions =
+view :
+    ViewportSize
+    -> UI.Palette
+    -> Shared.HardwareAvailable
+    -> User
+    -> Transitions msg
+    -> PLLTrainer.State.View msg
+view viewportSize palette hardwareAvailable user transitions =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -65,26 +78,39 @@ view viewportSize palette hardwareAvailable transitions =
                     , UI.paddingVertical.veryLarge
                     ]
                 <|
-                    [ column
-                        [ testid "welcome-text"
-                        , Font.center
-                        , centerX
-                        , UI.spacingAll.small
-                        ]
-                        [ paragraph [ UI.fontSize.veryLarge, Region.heading 1 ]
-                            [ text "Welcome!" ]
-                        , paragraph []
-                            [ text "This is a "
-                            , UI.viewWebResourceLink [] palette WebResource.PLLExplanation "PLL"
-                            , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from "
-                            , UI.viewWebResourceLink [] palette WebResource.HomeGripExplanation "home grip"
-                            , text
-                                ", and including recognition and pre- and post-"
-                            , UI.viewWebResourceLink [] palette WebResource.AUFExplanation "AUF"
-                            , text
-                                " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
+                    [ if user == User.new then
+                        column
+                            [ testid "welcome-text"
+                            , Font.center
+                            , centerX
+                            , UI.spacingAll.small
                             ]
-                        ]
+                            [ paragraph [ UI.fontSize.veryLarge, Region.heading 1 ]
+                                [ text "Welcome!" ]
+                            , paragraph []
+                                [ text "This is a "
+                                , UI.viewWebResourceLink [] palette WebResource.PLLExplanation "PLL"
+                                , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from "
+                                , UI.viewWebResourceLink [] palette WebResource.HomeGripExplanation "home grip"
+                                , text
+                                    ", and including recognition and pre- and post-"
+                                , UI.viewWebResourceLink [] palette WebResource.AUFExplanation "AUF"
+                                , text
+                                    " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
+                                ]
+                            ]
+
+                      else
+                        column
+                            []
+                            [ row [ testid "num-cases-tried" ] [ text "Cases Tried: ", text "0" ]
+                            , row [ testid "num-cases-not-yet-tried" ] [ text "Cases Not Yet Tried: ", text "0" ]
+                            , UI.viewOrderedList [ testid "worst-three-cases" ]
+                                [ text "placeholder"
+                                ]
+                            , row [ testid "average-time" ] [ text "Cases Not Yet Tried: ", text "0" ]
+                            , row [ testid "average-tps" ] [ text "Cases Not Yet Tried: ", text "0" ]
+                            ]
                     , UI.viewDivider palette
                     , paragraph
                         [ UI.fontSize.veryLarge

@@ -32,6 +32,78 @@ describe("PLL Trainer - Learning Functionality", function () {
     pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.restoreState();
   });
 
+  describe("New User Start Page", function () {
+    beforeEach(function () {
+      pllTrainerStatesNewUser.startPage.restoreState();
+    });
+
+    it("has all the correct elements", function () {
+      // These elements should all display without scrolling
+      pllTrainerElements.newUserStartPage.welcomeText.assertShows();
+      pllTrainerElements.newUserStartPage.welcomeText.assertContainedByWindow();
+      // These ones we accept possibly having to scroll for so just check it exists
+      // We check it's visibility including scroll in the element sizing
+      pllTrainerElements.newUserStartPage.cubeStartExplanation
+        .get()
+        .should("exist");
+      pllTrainerElements.newUserStartPage.cubeStartState.get().should("exist");
+      pllTrainerElements.newUserStartPage.startButton.get().should("exist");
+      pllTrainerElements.newUserStartPage.instructionsText
+        .get()
+        .should("exist");
+      pllTrainerElements.newUserStartPage.learningResources
+        .get()
+        .should("exist");
+
+      // A smoke test that we have added some links for the cubing terms
+      pllTrainerElements.newUserStartPage.container.get().within(() => {
+        cy.get("a").should("have.length.above", 0);
+      });
+    });
+
+    it("sizes elements reasonably", function () {
+      cy.assertNoHorizontalScrollbar();
+      const containerId =
+        pllTrainerElements.newUserStartPage.container.specifier;
+      // This one is allowed vertical scrolling, but we want to check
+      // that we can actually scroll down to see instructionsText if its missing
+      pllTrainerElements.newUserStartPage.instructionsText.assertConsumableViaVerticalScroll(
+        pllTrainerElements.newUserStartPage.container.specifier
+      );
+      pllTrainerElements.newUserStartPage.learningResources.assertConsumableViaVerticalScroll(
+        containerId
+      );
+      pllTrainerElements.newUserStartPage.cubeStartExplanation.assertConsumableViaVerticalScroll(
+        containerId
+      );
+      pllTrainerElements.newUserStartPage.cubeStartState.assertConsumableViaVerticalScroll(
+        containerId
+      );
+      pllTrainerElements.newUserStartPage.startButton.assertConsumableViaVerticalScroll(
+        containerId
+      );
+    });
+
+    it("starts test when pressing space", function () {
+      cy.pressKey(Key.space);
+      pllTrainerElements.testRunning.container.assertShows();
+    });
+
+    it("starts when pressing the begin button", function () {
+      pllTrainerElements.newUserStartPage.startButton.get().click();
+      pllTrainerElements.getReadyScreen.container.assertShows();
+    });
+
+    it("doesn't start test when pressing any other keys", function () {
+      cy.pressKey(Key.a);
+      pllTrainerElements.newUserStartPage.container.assertShows();
+      cy.pressKey(Key.x);
+      pllTrainerElements.newUserStartPage.container.assertShows();
+      cy.pressKey(Key.capsLock);
+      pllTrainerElements.newUserStartPage.container.assertShows();
+    });
+  });
+
   describe("Algorithm Picker", function () {
     /* eslint-disable mocha/no-setup-in-describe */
     [
@@ -257,11 +329,11 @@ describe("PLL Trainer - Learning Functionality", function () {
 
       // Errors informatively when space between turnable and apostrophe encountered
       clearInputTypeAndSubmit("U '");
-      pllTrainerElements.pickAlgorithmPage.TurnWouldWorkWithoutInterruptionError.assertShows();
+      pllTrainerElements.pickAlgorithmPage.turnWouldWorkWithoutInterruptionError.assertShows();
 
       // Errors informatively when parenthesis between turnable and apostrophe encountered
       clearInputTypeAndSubmit("(U)'");
-      pllTrainerElements.pickAlgorithmPage.TurnWouldWorkWithoutInterruptionError.assertShows();
+      pllTrainerElements.pickAlgorithmPage.turnWouldWorkWithoutInterruptionError.assertShows();
 
       // Errors informatively when apostrophe on wrong side of length encountered
       clearInputTypeAndSubmit("U'2");
@@ -542,7 +614,7 @@ function checkWhetherShortcutsDisplay(
   matcher: "match" | "not.match",
   method: "useKeyboard" | "useMouseAndButtons"
 ) {
-  pllTrainerElements.startPage.startButton.get().click();
+  pllTrainerElements.newUserStartPage.startButton.get().click();
   pllTrainerElements.getReadyScreen.container.waitFor();
   cy.tick(1000);
   pllTrainerElements.testRunning.container.waitFor();
