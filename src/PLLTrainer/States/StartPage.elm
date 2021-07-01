@@ -145,7 +145,7 @@ view viewportSize palette hardwareAvailable transitions =
                             [ text "You will then be displayed how the cube should look if you applied the correct moves. Click the button labelled correct or wrong depending on whether your cube matches the one on screen, and if you got it correct, simply continue to the next case without any change to your cube!"
                             ]
                         , paragraph []
-                            [ text "If you got it wrong you will have to solve the cube to reset it before being able to continue to the next case. Don't worry, you will be instructed through all this by the application."
+                            [ text "If you got it wrong the application will help you decide if you need to solve the cube to reset it before being able to continue to the next case, avoiding it where possible."
                             ]
                         ]
                     , UI.viewDivider palette
