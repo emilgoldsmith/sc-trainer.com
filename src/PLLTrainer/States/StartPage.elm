@@ -10,10 +10,10 @@ import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
 import Shared
 import UI
-import User exposing (User)
+import User
 import View
 import ViewCube
-import ViewportSize exposing (ViewportSize)
+import ViewportSize
 import WebResource
 
 
@@ -22,10 +22,7 @@ state shared transitions =
     PLLTrainer.State.static
         { view =
             view
-                shared.viewportSize
-                shared.palette
-                shared.hardwareAvailable
-                shared.user
+                shared
                 transitions
         , nonRepeatedKeyUpHandler =
             Just <|
@@ -53,13 +50,10 @@ type alias Transitions msg =
 
 
 view :
-    ViewportSize
-    -> UI.Palette
-    -> Shared.HardwareAvailable
-    -> User
+    Shared.Model
     -> Transitions msg
     -> PLLTrainer.State.View msg
-view viewportSize palette hardwareAvailable user transitions =
+view shared transitions =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -74,11 +68,11 @@ view viewportSize palette hardwareAvailable user transitions =
                 column
                     [ UI.spacingAll.small
                     , centerX
-                    , width (fill |> maximum (ViewportSize.width viewportSize * 3 // 4))
+                    , width (fill |> maximum (ViewportSize.width shared.viewportSize * 3 // 4))
                     , UI.paddingVertical.veryLarge
                     ]
                 <|
-                    [ if user == User.new then
+                    [ if not shared.featureFlags.displayAlgorithmPicker || shared.user == User.new then
                         column
                             [ testid "welcome-text"
                             , Font.center
@@ -89,12 +83,12 @@ view viewportSize palette hardwareAvailable user transitions =
                                 [ text "Welcome!" ]
                             , paragraph []
                                 [ text "This is a "
-                                , UI.viewWebResourceLink [] palette WebResource.PLLExplanation "PLL"
+                                , UI.viewWebResourceLink [] shared.palette WebResource.PLLExplanation "PLL"
                                 , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from "
-                                , UI.viewWebResourceLink [] palette WebResource.HomeGripExplanation "home grip"
+                                , UI.viewWebResourceLink [] shared.palette WebResource.HomeGripExplanation "home grip"
                                 , text
                                     ", and including recognition and pre- and post-"
-                                , UI.viewWebResourceLink [] palette WebResource.AUFExplanation "AUF"
+                                , UI.viewWebResourceLink [] shared.palette WebResource.AUFExplanation "AUF"
                                 , text
                                     " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
                                 ]
@@ -111,7 +105,7 @@ view viewportSize palette hardwareAvailable user transitions =
                             , row [ testid "average-time" ] [ text "Cases Not Yet Tried: ", text "0" ]
                             , row [ testid "average-tps" ] [ text "Cases Not Yet Tried: ", text "0" ]
                             ]
-                    , UI.viewDivider palette
+                    , UI.viewDivider shared.palette
                     , paragraph
                         [ UI.fontSize.veryLarge
                         , centerX
@@ -127,17 +121,17 @@ view viewportSize palette hardwareAvailable user transitions =
                             200
                             Cube.solved
                     , PLLTrainer.ButtonWithShortcut.view
-                        hardwareAvailable
+                        shared.hardwareAvailable
                         [ testid "start-button"
                         , centerX
                         ]
                         { onPress = Just transitions.startTest
                         , labelText = "Start"
-                        , color = palette.primary
+                        , color = shared.palette.primary
                         , keyboardShortcut = Key.Space
                         }
                         UI.viewButton.large
-                    , UI.viewDivider palette
+                    , UI.viewDivider shared.palette
                     , column
                         [ testid "instructions-text"
                         , Font.center
@@ -149,19 +143,19 @@ view viewportSize palette hardwareAvailable user transitions =
                             [ text "When you press the start button (or space) you will have a second to get your cube in "
                             , UI.viewWebResourceLink
                                 []
-                                palette
+                                shared.palette
                                 WebResource.HomeGripExplanation
                                 "home grip"
                             , text ". Then a "
                             , UI.viewWebResourceLink
                                 []
-                                palette
+                                shared.palette
                                 WebResource.PLLExplanation
                                 "PLL"
                             , text " case will show up and the timer will start. If you successfully recognize the case apply the moves to your cube that would solve the cube on screen (including pre- and post-"
                             , UI.viewWebResourceLink
                                 []
-                                palette
+                                shared.palette
                                 WebResource.AUFExplanation
                                 "AUF"
                             , text
@@ -174,7 +168,7 @@ view viewportSize palette hardwareAvailable user transitions =
                             [ text "If you got it wrong the application will help you decide if you need to solve the cube to reset it before being able to continue to the next case, avoiding it where possible."
                             ]
                         ]
-                    , UI.viewDivider palette
+                    , UI.viewDivider shared.palette
                     , column
                         [ testid "learning-resources"
                         , centerX
@@ -185,14 +179,14 @@ view viewportSize palette hardwareAvailable user transitions =
                             [ paragraph []
                                 [ UI.viewWebResourceLink
                                     []
-                                    palette
+                                    shared.palette
                                     WebResource.TwoSidedPllRecognitionGuide
                                     "Two Sided PLL Recognition Guide"
                                 ]
                             , paragraph []
                                 [ UI.viewWebResourceLink
                                     []
-                                    palette
+                                    shared.palette
                                     WebResource.PLLAlgorithmsResource
                                     "Fast PLL Algorithms And Finger Tricks"
                                 ]

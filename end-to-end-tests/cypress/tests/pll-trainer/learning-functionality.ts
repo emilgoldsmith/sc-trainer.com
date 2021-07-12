@@ -448,8 +448,8 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.correctPage.container.assertShows();
     });
 
-    context("LocalStorage", function () {
-      it("doesn't display picker when user already has all algorithms picked", function () {
+    context("Persistence", function () {
+      it("doesn't display picker when user already has all algorithms picked in local storage", function () {
         cy.setLocalStorage(allPllsPickedLocalStorage);
         // Note we use reload here as we don't want restore to save an old state of the
         // model that doesn't include the plls picked
