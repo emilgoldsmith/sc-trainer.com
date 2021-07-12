@@ -10,7 +10,7 @@ import {
 import { buildStates, StateOptions } from "support/state";
 import { paths } from "support/paths";
 import { AUF, PLL, pllToAlgorithmString } from "support/pll";
-import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
+import allPllsAttemptedLocalStorage from "fixtures/local-storage/all-plls-attempted.json";
 
 export const pllTrainerElements = {
   newUserStartPage: buildElementsCategory({
@@ -139,7 +139,7 @@ export const pllTrainerStatesUserDone = buildStates<
   | "correctPage"
   | "typeOfWrongPage"
   | "wrongPage"
->({ startPath: paths.pllTrainer, localStorage: allPllsPickedLocalStorage }, {
+>({ startPath: paths.pllTrainer, localStorage: allPllsAttemptedLocalStorage }, {
   startPage: {
     name: "startPage",
     getToThatState: () => {},

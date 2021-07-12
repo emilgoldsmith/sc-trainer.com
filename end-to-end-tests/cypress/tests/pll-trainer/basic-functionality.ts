@@ -1136,7 +1136,7 @@ describe("Behind Feature Flag", function () {
   before(function () {
     pllTrainerStatesUserDone.populateAll(extraIntercepts);
   });
-  describe.only("Start Page", function () {
+  describe("Start Page", function () {
     beforeEach(function () {
       pllTrainerStatesUserDone.startPage.restoreState();
     });
