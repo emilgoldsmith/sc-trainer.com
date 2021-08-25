@@ -103,9 +103,18 @@ export function createFeatureFlagSetter(
   };
 }
 
+export const removeAnalyticsScripts: HtmlModifier = (prevHtml) =>
+  prevHtml.value
+    .replace("\n", " ")
+    .replace(
+      /<script[^>]*src="[^"]*https:\/\/plausible\.io[^"]*"[^>]*>.*?<\/script>/,
+      ""
+    );
+
 const defaultHtmlModifiers: HtmlModifier[] = [
   addElmModelObserversAndModifiersToHtml,
   handleHtmlCypressModifications,
+  removeAnalyticsScripts,
 ];
 
 const defaultJavascriptModifiers: JavascriptModifier[] = [
