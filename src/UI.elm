@@ -88,7 +88,7 @@ viewOrderedList attributes listItemContents =
                 (\index content ->
                     El.row
                         [ spacingAll.verySmall ]
-                        [ El.text (String.fromInt (index + 1)), content ]
+                        [ El.text (String.fromInt (index + 1) ++ "."), content ]
                 )
                 listItemContents
     in

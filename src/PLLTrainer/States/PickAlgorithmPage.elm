@@ -1,4 +1,4 @@
-module PLLTrainer.States.PickAlgorithmPage exposing (Arguments, Model, Msg, TestCaseResult(..), state)
+module PLLTrainer.States.PickAlgorithmPage exposing (Arguments, Model, Msg, state)
 
 import Algorithm exposing (Algorithm, FromStringError(..))
 import Browser.Dom
@@ -18,6 +18,7 @@ import Ports
 import Shared
 import Task
 import UI
+import User
 import View
 import WebResource
 
@@ -36,14 +37,9 @@ state { currentTestCase, testCaseResult } shared transitions toMsg =
 -- ARGUMENTS AND TRANSITIONS
 
 
-type TestCaseResult
-    = Correct
-    | Wrong
-
-
 type alias Arguments =
     { currentTestCase : PLLTrainer.TestCase.TestCase
-    , testCaseResult : TestCaseResult
+    , testCaseResult : User.TestResult
     }
 
 
@@ -172,12 +168,12 @@ subscriptions _ =
 
 view :
     PLLTrainer.TestCase.TestCase
-    -> TestCaseResult
+    -> User.TestResult
     -> (Msg -> msg)
     -> Shared.Model
     -> Model
     -> PLLTrainer.State.View msg
-view currentTestCase testCaseResult toMsg shared model =
+view currentTestCase testResult toMsg shared model =
     let
         pllCase =
             PLLTrainer.TestCase.pll currentTestCase
@@ -217,12 +213,12 @@ view currentTestCase testCaseResult toMsg shared model =
                                 )
                             ]
                         , paragraph []
-                            [ case testCaseResult of
-                                Correct ->
+                            [ case testResult of
+                                User.Correct _ ->
                                     el [ testid "correct-text" ] <|
                                         text "Which algorithm will you use to solve this case in the future? This is most likely the one you just used"
 
-                                Wrong ->
+                                User.Wrong _ ->
                                     el [ testid "wrong-text" ] <|
                                         text "Take some time to select which algorithm you'd like to learn for this case and practice it a bit"
                             ]

@@ -11,7 +11,14 @@ import {
   applyDefaultIntercepts,
   createFeatureFlagSetter,
 } from "support/interceptors";
-import { AUF, aufToAlgorithmString, PLL, pllToPllLetters } from "support/pll";
+import {
+  AUF,
+  aufToAlgorithmString,
+  PLL,
+  pllToAlgorithmString,
+  pllToPllLetters,
+} from "support/pll";
+import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 
 describe("PLL Trainer - Basic Functionality", function () {
   before(function () {
@@ -866,7 +873,7 @@ describe("PLL Trainer - Basic Functionality", function () {
     });
 
     it("navigates to 'wrong page' displaying a solved cube when unrecoverable button clicked", function () {
-      cy.visit(paths.homePage1);
+      cy.visit(paths.pllTrainer);
       getCubeHtml(pllTrainerElements.newUserStartPage.cubeStartState).as(
         "solved-front"
       );
@@ -885,7 +892,7 @@ describe("PLL Trainer - Basic Functionality", function () {
     });
 
     it("navigates to 'wrong page' displaying a solved cube when '3' is pressed", function () {
-      cy.visit(paths.homePage1);
+      cy.visit(paths.pllTrainer);
       getCubeHtml(pllTrainerElements.newUserStartPage.cubeStartState).as(
         "solved-front"
       );
@@ -1136,88 +1143,219 @@ describe("Behind Feature Flag", function () {
   before(function () {
     pllTrainerStatesUserDone.populateAll(extraIntercepts);
   });
-  describe("Start Page", function () {
-    beforeEach(function () {
-      pllTrainerStatesUserDone.startPage.restoreState();
-    });
 
-    it("has all the correct elements", function () {
-      // These elements should all display without scrolling
-      [
-        pllTrainerElements.recurringUserStartPage.numCasesTried,
-        pllTrainerElements.recurringUserStartPage.numCasesNotYetTried,
-        pllTrainerElements.recurringUserStartPage.worstThreeCases,
-        pllTrainerElements.recurringUserStartPage.averageTPS,
-        pllTrainerElements.recurringUserStartPage.averageTime,
-      ].forEach((x) => {
-        x.assertShows();
-        x.assertContainedByWindow();
+  beforeEach(function () {
+    applyDefaultIntercepts(extraIntercepts);
+  });
+
+  describe.only("Start Page", function () {
+    context("for a done user", function () {
+      beforeEach(function () {
+        pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
       });
-      // These ones we accept possibly having to scroll for so just check it exists
-      // We check it's visibility including scroll in the element sizing
-      pllTrainerElements.recurringUserStartPage.cubeStartExplanation
-        .get()
-        .should("exist");
-      pllTrainerElements.recurringUserStartPage.cubeStartState
-        .get()
-        .should("exist");
-      pllTrainerElements.recurringUserStartPage.startButton
-        .get()
-        .should("exist");
-      pllTrainerElements.recurringUserStartPage.instructionsText
-        .get()
-        .should("exist");
-      pllTrainerElements.recurringUserStartPage.learningResources
-        .get()
-        .should("exist");
+      it("has all the correct elements when displaying statistics", function () {
+        // These elements should all display without scrolling
+        [
+          pllTrainerElements.recurringUserStartPage.numCasesTried,
+          pllTrainerElements.recurringUserStartPage.numCasesNotYetTried,
+          pllTrainerElements.recurringUserStartPage.worstThreeCases,
+          pllTrainerElements.recurringUserStartPage.averageTPS,
+          pllTrainerElements.recurringUserStartPage.averageTime,
+          pllTrainerElements.recurringUserStartPage
+            .statisticsShortcomingsExplanation,
+        ].forEach((x) => {
+          x.assertShows();
+          x.assertContainedByWindow();
+        });
+        // These ones we accept possibly having to scroll for so just check it exists
+        // We check it's visibility including scroll in the element sizing
+        pllTrainerElements.recurringUserStartPage.cubeStartExplanation
+          .get()
+          .should("exist");
+        pllTrainerElements.recurringUserStartPage.cubeStartState
+          .get()
+          .should("exist");
+        pllTrainerElements.recurringUserStartPage.startButton
+          .get()
+          .should("exist");
+        pllTrainerElements.recurringUserStartPage.instructionsText
+          .get()
+          .should("exist");
+        pllTrainerElements.recurringUserStartPage.learningResources
+          .get()
+          .should("exist");
 
-      // A smoke test that we have added some links for the cubing terms
-      pllTrainerElements.recurringUserStartPage.container.get().within(() => {
-        cy.get("a").should("have.length.above", 0);
+        // A smoke test that we have added some links for the cubing terms
+        pllTrainerElements.recurringUserStartPage.container.get().within(() => {
+          cy.get("a").should("have.length.above", 0);
+        });
+      });
+
+      it("sizes elements reasonably when displaying statistics", function () {
+        cy.assertNoHorizontalScrollbar();
+        const containerSpecifier =
+          pllTrainerElements.recurringUserStartPage.container.specifier;
+        // This one is allowed vertical scrolling, but we want to check
+        // that we can actually scroll down to see instructionsText if its missing
+        pllTrainerElements.recurringUserStartPage.instructionsText.assertConsumableViaVerticalScroll(
+          pllTrainerElements.recurringUserStartPage.container.specifier
+        );
+        pllTrainerElements.recurringUserStartPage.learningResources.assertConsumableViaVerticalScroll(
+          containerSpecifier
+        );
+        pllTrainerElements.recurringUserStartPage.cubeStartExplanation.assertConsumableViaVerticalScroll(
+          containerSpecifier
+        );
+        pllTrainerElements.recurringUserStartPage.cubeStartState.assertConsumableViaVerticalScroll(
+          containerSpecifier
+        );
+        pllTrainerElements.recurringUserStartPage.startButton.assertConsumableViaVerticalScroll(
+          containerSpecifier
+        );
+      });
+
+      it("starts test when pressing space", function () {
+        cy.pressKey(Key.space);
+        pllTrainerElements.testRunning.container.assertShows();
+      });
+
+      it("starts when pressing the begin button", function () {
+        pllTrainerElements.recurringUserStartPage.startButton.get().click();
+        pllTrainerElements.getReadyScreen.container.assertShows();
+      });
+
+      it("doesn't start test when pressing any other keys", function () {
+        cy.pressKey(Key.a);
+        pllTrainerElements.recurringUserStartPage.container.assertShows();
+        cy.pressKey(Key.x);
+        pllTrainerElements.recurringUserStartPage.container.assertShows();
+        cy.pressKey(Key.capsLock);
+        pllTrainerElements.recurringUserStartPage.container.assertShows();
       });
     });
-
-    it("sizes elements reasonably", function () {
-      cy.assertNoHorizontalScrollbar();
-      const containerSpecifier =
-        pllTrainerElements.recurringUserStartPage.container.specifier;
-      // This one is allowed vertical scrolling, but we want to check
-      // that we can actually scroll down to see instructionsText if its missing
-      pllTrainerElements.recurringUserStartPage.instructionsText.assertConsumableViaVerticalScroll(
-        pllTrainerElements.recurringUserStartPage.container.specifier
-      );
-      pllTrainerElements.recurringUserStartPage.learningResources.assertConsumableViaVerticalScroll(
-        containerSpecifier
-      );
-      pllTrainerElements.recurringUserStartPage.cubeStartExplanation.assertConsumableViaVerticalScroll(
-        containerSpecifier
-      );
-      pllTrainerElements.recurringUserStartPage.cubeStartState.assertConsumableViaVerticalScroll(
-        containerSpecifier
-      );
-      pllTrainerElements.recurringUserStartPage.startButton.assertConsumableViaVerticalScroll(
-        containerSpecifier
-      );
+    it("doesn't display statistics when local storage only has picked but not attempted plls", function () {
+      cy.setLocalStorage(allPllsPickedLocalStorage);
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.newUserStartPage.welcomeText.assertShows();
+      pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
     });
 
-    it("starts test when pressing space", function () {
+    it("displays welcome text on first visit, and after nearly completed but cancelled test, but not after completing a test fully", function () {
+      // Assert no statistics on first visit
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.newUserStartPage.welcomeText.assertShows();
+      pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
+
+      // Nearly finish a test
+      pllTrainerStatesNewUser.pickAlgorithmPageAfterUnrecoverable.reloadAndNavigateTo();
+
+      // Assert still no statistics
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.newUserStartPage.welcomeText.assertShows();
+      pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
+
+      // Finish a test
+      pllTrainerStatesNewUser.correctPage.reloadAndNavigateTo();
+
+      // Assert statistics now show
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.recurringUserStartPage.averageTime.assertShows();
+      pllTrainerElements.newUserStartPage.welcomeText.assertDoesntExist();
+    });
+
+    it("it displays first 1, then 2, then 3, and then 3 results in worst cases for the first 4 algorithms encountered", function () {
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.newUserStartPage.container.waitFor();
+      // Ensure it starts off with no elements
+      pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
+
+      completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Aa, {
+        firstEncounterWithThisPLL: true,
+      });
+      assertListHasLength(1);
+
+      completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Ab, {
+        firstEncounterWithThisPLL: true,
+      });
+      assertListHasLength(2);
+
+      completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.H, {
+        firstEncounterWithThisPLL: true,
+      });
+      assertListHasLength(3);
+
+      completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Ga, {
+        firstEncounterWithThisPLL: true,
+      });
+      assertListHasLength(3);
+
+      function assertListHasLength(length: number): void {
+        cy.visit(paths.pllTrainer);
+        pllTrainerElements.recurringUserStartPage.worstCaseListItem
+          .get()
+          .should("have.length", length);
+      }
+    });
+
+    it.only("displays the correct averages ordered correctly", function () {
+      completePLLTestInMilliseconds(1500, PLL.Aa, {
+        firstEncounterWithThisPLL: true,
+      });
+      assertAveragesDescendingOrder([1.5]);
+      completePLLTestInMilliseconds(2000, PLL.Aa, {
+        firstEncounterWithThisPLL: false,
+      });
+      assertAveragesDescendingOrder([1.75]);
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        firstEncounterWithThisPLL: false,
+      });
+      assertAveragesDescendingOrder([1.5]);
+      completePLLTestInMilliseconds(2000, PLL.H, {
+        firstEncounterWithThisPLL: true,
+      });
+      assertAveragesDescendingOrder([2, 1.5]);
+      // TODO: Assert on the PLL string and maybe also on TPS and on the global numbers
+      function assertAveragesDescendingOrder(averages: number[]): void {
+        cy.visit(paths.pllTrainer);
+        pllTrainerElements.recurringUserStartPage.worstCaseListItem
+          .get()
+          .should("have.length", averages.length)
+          .and((elements) => {
+            elements.each((index, elem) => {
+              const text = Cypress.$(elem).text();
+              expect(text).to.include(
+                (averages[index]?.toFixed(2) ||
+                  "something it would never match") + "s"
+              );
+            });
+          });
+      }
+    });
+    function completePLLTestInMilliseconds(
+      milliseconds: number,
+      pll: PLL,
+      { firstEncounterWithThisPLL }: { firstEncounterWithThisPLL: boolean }
+    ): void {
+      cy.visit(paths.pllTrainer);
+      cy.clock();
+      pllTrainerElements.newUserStartPage.startButton.get().click();
+      pllTrainerElements.getReadyScreen.container.waitFor();
+      cy.tick(1000);
+      pllTrainerElements.testRunning.container.waitFor();
+      cy.setCurrentTestCase([AUF.none, pll, AUF.none]);
+      cy.tick(milliseconds);
       cy.pressKey(Key.space);
-      pllTrainerElements.testRunning.container.assertShows();
-    });
-
-    it("starts when pressing the begin button", function () {
-      pllTrainerElements.recurringUserStartPage.startButton.get().click();
-      pllTrainerElements.getReadyScreen.container.assertShows();
-    });
-
-    it("doesn't start test when pressing any other keys", function () {
-      cy.pressKey(Key.a);
-      pllTrainerElements.recurringUserStartPage.container.assertShows();
-      cy.pressKey(Key.x);
-      pllTrainerElements.recurringUserStartPage.container.assertShows();
-      cy.pressKey(Key.capsLock);
-      pllTrainerElements.recurringUserStartPage.container.assertShows();
-    });
+      pllTrainerElements.evaluateResult.container.waitFor();
+      cy.tick(500);
+      cy.clock().then((clock) => clock.restore());
+      pllTrainerElements.evaluateResult.correctButton.get().click();
+      if (firstEncounterWithThisPLL) {
+        pllTrainerElements.pickAlgorithmPage.algorithmInput
+          .get()
+          .type(pllToAlgorithmString[pll] + "{enter}");
+      }
+      pllTrainerElements.correctPage.container.waitFor();
+    }
   });
   describe("Wrong Page", function () {
     it("has the right correct answer text", function () {
