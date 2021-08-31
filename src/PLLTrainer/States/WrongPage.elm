@@ -77,10 +77,10 @@ view viewportSize palette hardwareAvailable transitions arguments =
                   <|
                     let
                         preAufString =
-                            AUF.toString (PLLTrainer.TestCase.preAuf arguments.testCase)
+                            AUF.toString (PLLTrainer.TestCase.preAUF arguments.testCase)
 
                         postAufString =
-                            AUF.toString (PLLTrainer.TestCase.postAuf arguments.testCase)
+                            AUF.toString (PLLTrainer.TestCase.postAUF arguments.testCase)
                     in
                     text
                         ("The Correct Answer Was "

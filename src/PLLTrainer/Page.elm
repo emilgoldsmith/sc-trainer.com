@@ -5,7 +5,7 @@ import Algorithm exposing (Algorithm)
 import Cube exposing (Cube)
 import Effect exposing (Effect)
 import Json.Decode
-import PLL
+import PLL exposing (PLL)
 import PLLTrainer.State
 import PLLTrainer.States.CorrectPage
 import PLLTrainer.States.EvaluateResult
@@ -25,7 +25,7 @@ import Shared
 import Task
 import Time
 import TimeInterval exposing (TimeInterval)
-import User
+import User exposing (User)
 import View exposing (View)
 
 
@@ -57,7 +57,7 @@ type TrainerState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
     | PickAlgorithmPage PLLTrainer.States.PickAlgorithmPage.Model PickAlgorithmExtraState
     | CorrectPage
-    | TypeOfWrongPage
+    | TypeOfWrongPage TypeOfWrongExtraState
     | WrongPage
 
 
@@ -66,12 +66,16 @@ type alias TestRunningExtraState =
 
 
 type alias EvaluateResultExtraState =
-    { result : TimeInterval, transitionsDisabled : Bool }
+    { testStartTime : Time.Posix, result : TimeInterval, transitionsDisabled : Bool }
+
+
+type alias TypeOfWrongExtraState =
+    { testStartTime : Time.Posix }
 
 
 type alias PickAlgorithmExtraState =
     { nextTrainerState : TrainerState
-    , testCaseResult : PLLTrainer.States.PickAlgorithmPage.TestCaseResult
+    , testResult : User.TestResult
     }
 
 
@@ -106,16 +110,16 @@ type Msg
 type TransitionMsg
     = GetReadyForTest
     | StartTest StartTestData
-      -- Meant to be sent with `Nothing` as the Posix time, and
-      -- then the time is figured out internally
+      -- Meant to be sent with `Nothing` as the final Posix time, and
+      -- then the end time is figured out internally
     | EndTest { startTime : Time.Posix } (Maybe Time.Posix)
     | EnableEvaluateResultTransitions
-    | EvaluateCorrect
-    | AlgorithmPicked TrainerState Algorithm
-    | EvaluateWrong
-    | WrongButNoMoveApplied
-    | WrongButExpectedStateWasReached
-    | WrongAndUnrecoverable
+    | EvaluateCorrect { testStartTime : Time.Posix, result : TimeInterval }
+    | AlgorithmPicked TrainerState User.TestResult Algorithm
+    | EvaluateWrong { testStartTime : Time.Posix }
+    | WrongButNoMoveApplied { testStartTime : Time.Posix }
+    | WrongButExpectedStateWasReached { testStartTime : Time.Posix }
+    | WrongAndUnrecoverable { testStartTime : Time.Posix }
 
 
 type StateMsg
@@ -207,7 +211,8 @@ update shared msg model =
                 EndTest { startTime } (Just endTime) ->
                     let
                         arguments =
-                            { result =
+                            { testStartTime = startTime
+                            , result =
                                 TimeInterval.betweenTimestamps
                                     { start = startTime
                                     , end = endTime
@@ -250,20 +255,35 @@ update shared msg model =
                                 Ports.logError "Unexpected enable evaluate result transitions outside of EvaluateResult state"
                             )
 
-                EvaluateCorrect ->
+                EvaluateCorrect { testStartTime, result } ->
                     if shared.featureFlags.displayAlgorithmPicker then
+                        let
+                            testResult =
+                                User.Correct
+                                    { timestamp = testStartTime
+                                    , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
+                                    , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
+                                    , resultInMilliseconds = TimeInterval.asMilliseconds result
+                                    }
+                        in
                         if
                             User.hasChosenPLLAlgorithmFor
                                 (PLLTrainer.TestCase.pll model.currentTestCase)
                                 shared.user
                         then
-                            ( { model | trainerState = CorrectPage }, Effect.none )
+                            ( { model | trainerState = CorrectPage }
+                            , Effect.fromShared <|
+                                Shared.ModifyUser <|
+                                    recordPLLTestResultWithErrorHandling
+                                        (PLLTrainer.TestCase.pll model.currentTestCase)
+                                        testResult
+                            )
 
                         else
                             let
                                 extraState =
                                     { nextTrainerState = CorrectPage
-                                    , testCaseResult = PLLTrainer.States.PickAlgorithmPage.Correct
+                                    , testResult = testResult
                                     }
 
                                 ( stateModel, stateCmd ) =
@@ -276,20 +296,25 @@ update shared msg model =
                     else
                         ( { model | trainerState = CorrectPage }, Effect.none )
 
-                EvaluateWrong ->
-                    ( { model | trainerState = TypeOfWrongPage }
+                EvaluateWrong arguments ->
+                    ( { model | trainerState = TypeOfWrongPage arguments }
                     , Effect.none
                     )
 
-                AlgorithmPicked nextTrainerState algorithm ->
+                AlgorithmPicked nextTrainerState testResult algorithm ->
                     ( { model | trainerState = nextTrainerState }
                     , Effect.fromShared <|
-                        Shared.ChangePLLAlgorithm
-                            (PLLTrainer.TestCase.pll model.currentTestCase)
-                            algorithm
+                        Shared.ModifyUser
+                            (User.changePLLAlgorithm
+                                (PLLTrainer.TestCase.pll model.currentTestCase)
+                                algorithm
+                                >> recordPLLTestResultWithErrorHandling
+                                    (PLLTrainer.TestCase.pll model.currentTestCase)
+                                    testResult
+                            )
                     )
 
-                WrongButNoMoveApplied ->
+                WrongButNoMoveApplied { testStartTime } ->
                     let
                         newCubeState =
                             model.expectedCubeState
@@ -299,6 +324,14 @@ update shared msg model =
                                     )
                     in
                     if shared.featureFlags.displayAlgorithmPicker then
+                        let
+                            testResult =
+                                User.Wrong
+                                    { timestamp = testStartTime
+                                    , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
+                                    , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
+                                    }
+                        in
                         if
                             User.hasChosenPLLAlgorithmFor
                                 (PLLTrainer.TestCase.pll model.currentTestCase)
@@ -310,7 +343,7 @@ update shared msg model =
                             let
                                 extraState =
                                     { nextTrainerState = WrongPage
-                                    , testCaseResult = PLLTrainer.States.PickAlgorithmPage.Wrong
+                                    , testResult = testResult
                                     }
 
                                 ( stateModel, stateCmd ) =
@@ -331,8 +364,16 @@ update shared msg model =
                         , Effect.none
                         )
 
-                WrongButExpectedStateWasReached ->
+                WrongButExpectedStateWasReached { testStartTime } ->
                     if shared.featureFlags.displayAlgorithmPicker then
+                        let
+                            testResult =
+                                User.Wrong
+                                    { timestamp = testStartTime
+                                    , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
+                                    , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
+                                    }
+                        in
                         if
                             User.hasChosenPLLAlgorithmFor
                                 (PLLTrainer.TestCase.pll model.currentTestCase)
@@ -344,7 +385,7 @@ update shared msg model =
                             let
                                 extraState =
                                     { nextTrainerState = WrongPage
-                                    , testCaseResult = PLLTrainer.States.PickAlgorithmPage.Wrong
+                                    , testResult = testResult
                                     }
 
                                 ( stateModel, stateCmd ) =
@@ -359,8 +400,16 @@ update shared msg model =
                     else
                         ( { model | trainerState = WrongPage }, Effect.none )
 
-                WrongAndUnrecoverable ->
+                WrongAndUnrecoverable { testStartTime } ->
                     if shared.featureFlags.displayAlgorithmPicker then
+                        let
+                            testResult =
+                                User.Wrong
+                                    { timestamp = testStartTime
+                                    , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
+                                    , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
+                                    }
+                        in
                         if
                             User.hasChosenPLLAlgorithmFor
                                 (PLLTrainer.TestCase.pll model.currentTestCase)
@@ -372,7 +421,7 @@ update shared msg model =
                             let
                                 extraState =
                                     { nextTrainerState = WrongPage
-                                    , testCaseResult = PLLTrainer.States.PickAlgorithmPage.Wrong
+                                    , testResult = testResult
                                     }
 
                                 ( stateModel, stateCmd ) =
@@ -408,6 +457,28 @@ update shared msg model =
 
         NoOp ->
             ( model, Effect.none )
+
+
+recordPLLTestResultWithErrorHandling : PLL -> User.TestResult -> User -> ( User, Maybe { errorMessage : String } )
+recordPLLTestResultWithErrorHandling pll testResult user =
+    case
+        User.recordPLLTestResult
+            pll
+            testResult
+            user
+    of
+        Ok newUser ->
+            ( newUser, Nothing )
+
+        Err error ->
+            case error of
+                User.NoAlgorithmPickedYet ->
+                    ( user
+                    , Just
+                        { errorMessage =
+                            "You can't record a result before an algorithm has been picked"
+                        }
+                    )
 
 
 
@@ -473,7 +544,7 @@ states :
                 PLLTrainer.States.PickAlgorithmPage.Model
                 PickAlgorithmExtraState
         , correctPage : StateBuilder () () ()
-        , typeOfWrongPage : StateBuilder () () ()
+        , typeOfWrongPage : StateBuilder () () TypeOfWrongExtraState
         , wrongPage : StateBuilder () () ()
         }
 states shared model =
@@ -498,8 +569,12 @@ states shared model =
         \arguments ->
             PLLTrainer.States.EvaluateResult.state
                 shared
-                { evaluateCorrect = TransitionMsg EvaluateCorrect
-                , evaluateWrong = TransitionMsg EvaluateWrong
+                { evaluateCorrect =
+                    TransitionMsg
+                        (EvaluateCorrect
+                            { testStartTime = arguments.testStartTime, result = arguments.result }
+                        )
+                , evaluateWrong = TransitionMsg (EvaluateWrong { testStartTime = arguments.testStartTime })
                 , noOp = NoOp
                 }
                 { expectedCubeState = model.expectedCubeState
@@ -508,13 +583,13 @@ states shared model =
                 }
                 (StateMsg << EvaluateResultMsg)
     , pickAlgorithmPage =
-        \{ nextTrainerState, testCaseResult } ->
+        \{ nextTrainerState, testResult } ->
             PLLTrainer.States.PickAlgorithmPage.state
                 { currentTestCase = model.currentTestCase
-                , testCaseResult = testCaseResult
+                , testCaseResult = testResult
                 }
                 shared
-                { continue = TransitionMsg << AlgorithmPicked nextTrainerState }
+                { continue = TransitionMsg << AlgorithmPicked nextTrainerState testResult }
                 (StateMsg << PickAlgorithmMsg)
     , correctPage =
         always <|
@@ -524,12 +599,12 @@ states shared model =
                 , noOp = NoOp
                 }
     , typeOfWrongPage =
-        \_ ->
+        \arguments ->
             PLLTrainer.States.TypeOfWrongPage.state
                 shared
-                { noMoveWasApplied = TransitionMsg WrongButNoMoveApplied
-                , expectedStateWasReached = TransitionMsg WrongButExpectedStateWasReached
-                , cubeUnrecoverable = TransitionMsg WrongAndUnrecoverable
+                { noMoveWasApplied = TransitionMsg (WrongButNoMoveApplied { testStartTime = arguments.testStartTime })
+                , expectedStateWasReached = TransitionMsg (WrongButExpectedStateWasReached { testStartTime = arguments.testStartTime })
+                , cubeUnrecoverable = TransitionMsg (WrongAndUnrecoverable { testStartTime = arguments.testStartTime })
                 , noOp = NoOp
                 }
                 { expectedCubeState = model.expectedCubeState
@@ -628,7 +703,7 @@ trainerStateToString trainerState =
         CorrectPage ->
             "CorrectPage"
 
-        TypeOfWrongPage ->
+        TypeOfWrongPage _ ->
             "TypeOfWrongPage"
 
         WrongPage ->
@@ -665,8 +740,8 @@ handleStateSubscriptionsBoilerplate shared model =
         CorrectPage ->
             ((states shared model).correctPage ()).subscriptions ()
 
-        TypeOfWrongPage ->
-            ((states shared model).typeOfWrongPage ()).subscriptions ()
+        TypeOfWrongPage arguments ->
+            ((states shared model).typeOfWrongPage arguments).subscriptions ()
 
         WrongPage ->
             ((states shared model).wrongPage ()).subscriptions ()
@@ -693,8 +768,8 @@ handleStateViewBoilerplate shared model =
         CorrectPage ->
             ((states shared model).correctPage ()).view ()
 
-        TypeOfWrongPage ->
-            ((states shared model).typeOfWrongPage ()).view ()
+        TypeOfWrongPage arguments ->
+            ((states shared model).typeOfWrongPage arguments).view ()
 
         WrongPage ->
             ((states shared model).wrongPage ()).view ()

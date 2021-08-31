@@ -134,7 +134,7 @@ type InternalMsg
 
 
 type PublicMsg
-    = ChangePLLAlgorithm PLL Algorithm
+    = ModifyUser (User -> ( User, Maybe { errorMessage : String } ))
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
@@ -163,14 +163,19 @@ update _ msg model =
 
         PublicMsg publicMsg ->
             case publicMsg of
-                ChangePLLAlgorithm pll algorithm ->
-                    let
-                        updatedUser =
-                            User.changePLLAlgorithm pll algorithm model.user
-                    in
-                    ( { model | user = updatedUser }
-                    , Ports.updateStoredUser updatedUser
-                    )
+                ModifyUser getNewUser ->
+                    getNewUser model.user
+                        |> Tuple.mapFirst
+                            (\user -> { model | user = user })
+                        |> Tuple.mapSecond
+                            (Maybe.map (.errorMessage >> Ports.logError)
+                                >> Maybe.withDefault Cmd.none
+                            )
+                        |> (\( newModel, cmd ) ->
+                                ( newModel
+                                , Cmd.batch [ cmd, Ports.updateStoredUser newModel.user ]
+                                )
+                           )
 
 
 

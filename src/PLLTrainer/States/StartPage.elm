@@ -9,6 +9,7 @@ import Key
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
 import Shared
+import TimeInterval exposing (TimeInterval)
 import UI
 import User
 import View
@@ -72,39 +73,11 @@ view shared transitions =
                     , UI.paddingVertical.veryLarge
                     ]
                 <|
-                    [ if not shared.featureFlags.displayAlgorithmPicker || shared.user == User.new then
-                        column
-                            [ testid "welcome-text"
-                            , Font.center
-                            , centerX
-                            , UI.spacingAll.small
-                            ]
-                            [ paragraph [ UI.fontSize.veryLarge, Region.heading 1 ]
-                                [ text "Welcome!" ]
-                            , paragraph []
-                                [ text "This is a "
-                                , UI.viewWebResourceLink [] shared.palette WebResource.PLLExplanation "PLL"
-                                , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from "
-                                , UI.viewWebResourceLink [] shared.palette WebResource.HomeGripExplanation "home grip"
-                                , text
-                                    ", and including recognition and pre- and post-"
-                                , UI.viewWebResourceLink [] shared.palette WebResource.AUFExplanation "AUF"
-                                , text
-                                    " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
-                                ]
-                            ]
+                    [ if shared.featureFlags.displayAlgorithmPicker && User.hasAttemptedAPLLTestCase shared.user then
+                        recurringUserStatistics shared
 
                       else
-                        column
-                            []
-                            [ row [ testid "num-cases-tried" ] [ text "Cases Tried: ", text "0" ]
-                            , row [ testid "num-cases-not-yet-tried" ] [ text "Cases Not Yet Tried: ", text "0" ]
-                            , UI.viewOrderedList [ testid "worst-three-cases" ]
-                                [ text "placeholder"
-                                ]
-                            , row [ testid "average-time" ] [ text "Cases Not Yet Tried: ", text "0" ]
-                            , row [ testid "average-tps" ] [ text "Cases Not Yet Tried: ", text "0" ]
-                            ]
+                        newUserWelcome shared
                     , UI.viewDivider shared.palette
                     , paragraph
                         [ UI.fontSize.veryLarge
@@ -196,3 +169,50 @@ view shared transitions =
                         ]
                     ]
     }
+
+
+recurringUserStatistics : Shared.Model -> Element msg
+recurringUserStatistics shared =
+    column
+        []
+        [ row [ testid "num-cases-tried" ] [ text "Cases Tried: ", text "0" ]
+        , row [ testid "num-cases-not-yet-tried" ] [ text "Cases Not Yet Tried: ", text "0" ]
+        , UI.viewOrderedList [ testid "worst-three-cases" ] <|
+            (User.pllStatistics shared.user
+                |> List.take 3
+                |> List.map TimeInterval.fromFloat
+                |> List.map
+                    (TimeInterval.displayTwoDecimals
+                        >> (\s -> s ++ "s")
+                        >> text
+                        >> el [ testid "worst-case-list-item" ]
+                    )
+            )
+        , row [ testid "average-time" ] [ text "Cases Not Yet Tried: ", text "0" ]
+        , row [ testid "average-tps" ] [ text "Cases Not Yet Tried: ", text "0" ]
+        , paragraph [ testid "statistics-shortcomings-explanation" ] [ text "The stats suck" ]
+        ]
+
+
+newUserWelcome : Shared.Model -> Element msg
+newUserWelcome shared =
+    column
+        [ testid "welcome-text"
+        , Font.center
+        , centerX
+        , UI.spacingAll.small
+        ]
+        [ paragraph [ UI.fontSize.veryLarge, Region.heading 1 ]
+            [ text "Welcome!" ]
+        , paragraph []
+            [ text "This is a "
+            , UI.viewWebResourceLink [] shared.palette WebResource.PLLExplanation "PLL"
+            , text " trainer which attempts to remove both the manual scrambling to create more flow, and to make practice closer to real life by timing from "
+            , UI.viewWebResourceLink [] shared.palette WebResource.HomeGripExplanation "home grip"
+            , text
+                ", and including recognition and pre- and post-"
+            , UI.viewWebResourceLink [] shared.palette WebResource.AUFExplanation "AUF"
+            , text
+                " in timing. Many improvements including intelligently displaying your weakest cases to enhance learning are planned!"
+            ]
+        ]

@@ -1,4 +1,4 @@
-module PLLTrainer.TestCase exposing (TestCase, build, generate, pll, postAuf, preAuf, toAlg, toCube)
+module PLLTrainer.TestCase exposing (TestCase, build, generate, pll, postAUF, preAUF, toAlg, toCube)
 
 import AUF exposing (AUF)
 import Algorithm
@@ -41,8 +41,8 @@ generate =
             (List.Nonempty.sample AUF.all)
 
 
-preAuf : TestCase -> AUF
-preAuf (TestCase ( x, _, _ )) =
+preAUF : TestCase -> AUF
+preAUF (TestCase ( x, _, _ )) =
     x
 
 
@@ -51,6 +51,6 @@ pll (TestCase ( _, x, _ )) =
     x
 
 
-postAuf : TestCase -> AUF
-postAuf (TestCase ( _, _, x )) =
+postAUF : TestCase -> AUF
+postAUF (TestCase ( _, _, x )) =
     x
