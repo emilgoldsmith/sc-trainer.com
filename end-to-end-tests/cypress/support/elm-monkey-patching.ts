@@ -63,7 +63,7 @@ export function fixRandomnessSeedInJavascript(
       return fixer(previousJavascript, seed);
     } catch (e) {
       if (e instanceof Error) errors.push(e);
-      else if (typeof e === 'string') errors.push(new Error(e));
+      else if (typeof e === "string") errors.push(new Error(e));
       else errors.push(new Error(JSON.stringify(e)));
     }
   }
@@ -107,13 +107,13 @@ function fixSeedUnminimized(
    *
    *
    * var $elm$random$Random$init = A2(
-   * 	$elm$core$Task$andThen,
-   * 	function (time) {
-   * 		return $elm$core$Task$succeed(
-   * 			$elm$random$Random$initialSeed(
-   * 				$elm$time$Time$posixToMillis(time)));
-   * 	},
-   * 	$elm$time$Time$now);
+   *    $elm$core$Task$andThen,
+   *    function (time) {
+   *            return $elm$core$Task$succeed(
+   *                    $elm$random$Random$initialSeed(
+   *                            $elm$time$Time$posixToMillis(time)));
+   *    },
+   *    $elm$time$Time$now);
    */
   const regex = buildRegex(
     [
