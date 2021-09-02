@@ -1,16 +1,16 @@
 module Tests.User exposing (helperTests, serializationTests)
 
-import AUF exposing (AUF)
-import Algorithm exposing (Algorithm)
+import AUF
+import Algorithm
 import Expect
 import Fuzz
+import Fuzz.Extra
 import Json.Decode
 import Json.Encode
-import List.Nonempty
-import PLL exposing (PLL)
+import PLL
 import Test exposing (..)
 import Time
-import User exposing (User)
+import User
 
 
 helperTests : Test
@@ -22,13 +22,13 @@ helperTests =
                     User.new
                         |> User.hasAttemptedAPLLTestCase
                         |> Expect.false "a new user has not attempted a pll test case"
-            , fuzz pllFuzzer "should return false for a user that only picked algorithms but didn't yet attempt a test case" <|
+            , fuzz Fuzz.Extra.pll "should return false for a user that only picked algorithms but didn't yet attempt a test case" <|
                 \pll ->
                     User.new
                         |> User.changePLLAlgorithm pll Algorithm.empty
                         |> User.hasAttemptedAPLLTestCase
                         |> Expect.false "user only picked algorithms didn't attempt a case yet"
-            , fuzz pllFuzzer "should return true when given there is a recorded test for a pll" <|
+            , fuzz Fuzz.Extra.pll "should return true when given there is a recorded test for a pll" <|
                 \pll ->
                     User.new
                         |> User.changePLLAlgorithm pll Algorithm.empty
@@ -44,7 +44,47 @@ helperTests =
                         |> Expect.equal (Ok True)
             ]
         , describe "pllStatistics"
-            [ test "passes simple test case" <|
+            [ test "passes simple test case with 4 attempts" <|
+                \_ ->
+                    let
+                        algorithmLength =
+                            PLL.getAlgorithm PLL.referenceAlgorithms PLL.Aa
+                                |> Algorithm.toTurnList
+                                |> List.length
+                    in
+                    User.new
+                        |> User.changePLLAlgorithm
+                            PLL.Aa
+                            (PLL.getAlgorithm PLL.referenceAlgorithms PLL.Aa)
+                        |> User.recordPLLTestResult
+                            PLL.Aa
+                            (correctResult 500)
+                        |> Result.andThen
+                            (User.recordPLLTestResult
+                                PLL.Aa
+                                (correctResult 2000)
+                            )
+                        |> Result.andThen
+                            (User.recordPLLTestResult
+                                PLL.Aa
+                                (correctResult 6000)
+                            )
+                        -- We add a fourth one here to ensure only the first three are averaged
+                        |> Result.andThen
+                            (User.recordPLLTestResult
+                                PLL.Aa
+                                (correctResult 1000)
+                            )
+                        |> Result.map User.pllStatistics
+                        |> Result.withDefault []
+                        |> Expect.equal
+                            [ User.CaseLearnedStatistics
+                                { lastThreeAverageMs = 3000
+                                , lastThreeAverageTPS = toFloat algorithmLength / 3
+                                , pll = PLL.Aa
+                                }
+                            ]
+            , test "passes a test with a failure in it" <|
                 \_ ->
                     User.new
                         |> User.changePLLAlgorithm
@@ -52,7 +92,7 @@ helperTests =
                             (PLL.getAlgorithm PLL.referenceAlgorithms PLL.Aa)
                         |> User.recordPLLTestResult
                             PLL.Aa
-                            (correctResult 1000)
+                            wrongResult
                         |> Result.andThen
                             (User.recordPLLTestResult
                                 PLL.Aa
@@ -65,9 +105,54 @@ helperTests =
                             )
                         |> Result.map User.pllStatistics
                         |> Result.withDefault []
-                        |> Expect.all
-                            [ List.length >> Expect.equal 1
-                            , List.sum >> Expect.within (Expect.Absolute 0.0000001) (1000 + 2 * (1000 / 3))
+                        |> Expect.equal
+                            [ User.CaseNotLearnedStatistics PLL.Aa ]
+            , test "orders cases correctly" <|
+                \_ ->
+                    User.new
+                        |> User.changePLLAlgorithm
+                            PLL.Ab
+                            (PLL.getAlgorithm PLL.referenceAlgorithms PLL.Ab)
+                        |> User.changePLLAlgorithm
+                            PLL.Na
+                            (PLL.getAlgorithm PLL.referenceAlgorithms PLL.Na)
+                        |> User.changePLLAlgorithm
+                            PLL.Nb
+                            (PLL.getAlgorithm PLL.referenceAlgorithms PLL.Nb)
+                        |> User.recordPLLTestResult
+                            PLL.Na
+                            (correctResult 2200)
+                        |> Result.andThen
+                            (User.recordPLLTestResult
+                                PLL.Ab
+                                (correctResult 2000)
+                            )
+                        |> Result.andThen
+                            (User.recordPLLTestResult
+                                PLL.Nb
+                                wrongResult
+                            )
+                        |> Result.map User.pllStatistics
+                        |> Result.withDefault []
+                        |> User.orderByWorstCaseFirst
+                        |> List.map
+                            (\statistics ->
+                                case statistics of
+                                    User.CaseLearnedStatistics { pll } ->
+                                        { learned = True, pll = pll }
+
+                                    User.CaseNotLearnedStatistics pll ->
+                                        { learned = False, pll = pll }
+                            )
+                        |> Expect.equal
+                            [ { learned = False, pll = PLL.Nb }
+
+                            -- We have Ab before Na here because we expect the ordering
+                            -- to be based on TPS and even though Na is slower than Ab
+                            -- it is a much shorter algorithm so the skill level seems to be
+                            -- higher for Na than it is for Ab
+                            , { learned = True, pll = PLL.Ab }
+                            , { learned = True, pll = PLL.Na }
                             ]
             ]
         ]
@@ -83,10 +168,19 @@ correctResult resultInMilliseconds =
         }
 
 
+wrongResult : User.TestResult
+wrongResult =
+    User.Wrong
+        { timestamp = Time.millisToPosix 0
+        , preAUF = AUF.None
+        , postAUF = AUF.None
+        }
+
+
 serializationTests : Test
 serializationTests =
     describe "serialization"
-        [ fuzz userFuzzer "serializing a user followed by deserializing produces the original user" <|
+        [ fuzz Fuzz.Extra.user "serializing a user followed by deserializing produces the original user" <|
             \user ->
                 user
                     |> User.serialize
@@ -174,127 +268,3 @@ serializationTests =
             --         Expect.pass
             ]
         ]
-
-
-userFuzzer : Fuzz.Fuzzer User
-userFuzzer =
-    let
-        changePLLOperations =
-            Fuzz.list (Fuzz.tuple ( pllFuzzer, algorithmFuzzer ))
-                |> Fuzz.map
-                    (List.map
-                        (\( pll, algorithm ) ->
-                            User.changePLLAlgorithm pll algorithm
-                        )
-                    )
-
-        recordResultOperations =
-            Fuzz.list (Fuzz.tuple ( pllFuzzer, resultFuzzer ))
-                |> Fuzz.map
-                    (List.map
-                        (\( pll, result ) ->
-                            User.recordPLLTestResult pll result
-                        )
-                    )
-    in
-    Fuzz.map2
-        (\changePLL recordResult ->
-            List.foldl
-                (\operation user -> operation user)
-                User.new
-                changePLL
-                |> (\initialUser ->
-                        List.foldl
-                            (\operation user -> operation user |> Result.withDefault user)
-                            initialUser
-                            recordResult
-                   )
-        )
-        changePLLOperations
-        recordResultOperations
-
-
-resultFuzzer : Fuzz.Fuzzer User.TestResult
-resultFuzzer =
-    Fuzz.map5
-        (\correct resultInMilliseconds timestamp preAUF postAUF ->
-            if correct then
-                User.Correct
-                    { timestamp = timestamp
-                    , preAUF = preAUF
-                    , postAUF = postAUF
-                    , resultInMilliseconds = resultInMilliseconds
-                    }
-
-            else
-                User.Wrong
-                    { timestamp = timestamp
-                    , preAUF = preAUF
-                    , postAUF = postAUF
-                    }
-        )
-        Fuzz.bool
-        (Fuzz.intRange 0 15000)
-        posixFuzzer
-        aufFuzzer
-        aufFuzzer
-
-
-posixFuzzer : Fuzz.Fuzzer Time.Posix
-posixFuzzer =
-    Fuzz.int |> Fuzz.map Time.millisToPosix
-
-
-algorithmFuzzer : Fuzz.Fuzzer Algorithm
-algorithmFuzzer =
-    let
-        turnFuzzer =
-            Fuzz.map3
-                Algorithm.Turn
-                (nonEmptyListToFuzzer Algorithm.allTurnables)
-                (nonEmptyListToFuzzer Algorithm.allTurnLengths)
-                (nonEmptyListToFuzzer Algorithm.allTurnDirections)
-
-        nonEmptyTurnList =
-            Fuzz.map2 (::) turnFuzzer <| Fuzz.list turnFuzzer
-
-        nonEmptyTurnListWithNoRepeats =
-            nonEmptyTurnList
-                |> Fuzz.map
-                    (List.foldl
-                        (\((Algorithm.Turn nextTurnable _ _) as nextTurn) turns ->
-                            case turns of
-                                [] ->
-                                    [ nextTurn ]
-
-                                (Algorithm.Turn previousTurnable _ _) :: _ ->
-                                    if previousTurnable == nextTurnable then
-                                        turns
-
-                                    else
-                                        nextTurn :: turns
-                        )
-                        []
-                    )
-    in
-    Fuzz.map Algorithm.fromTurnList nonEmptyTurnListWithNoRepeats
-
-
-pllFuzzer : Fuzz.Fuzzer PLL
-pllFuzzer =
-    nonEmptyListToFuzzer PLL.all
-
-
-aufFuzzer : Fuzz.Fuzzer AUF
-aufFuzzer =
-    nonEmptyListToFuzzer AUF.all
-
-
-nonEmptyListToFuzzer : List.Nonempty.Nonempty a -> Fuzz.Fuzzer a
-nonEmptyListToFuzzer =
-    List.Nonempty.toList >> listToFuzzer
-
-
-listToFuzzer : List a -> Fuzz.Fuzzer a
-listToFuzzer list =
-    Fuzz.oneOf <| List.map Fuzz.constant list

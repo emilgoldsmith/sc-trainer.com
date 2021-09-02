@@ -1271,21 +1271,29 @@ describe("Behind Feature Flag", function () {
 
       completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Aa, {
         firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: true,
       });
       assertListHasLength(1);
 
       completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Ab, {
         firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: true,
       });
       assertListHasLength(2);
 
       completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.H, {
         firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: true,
       });
       assertListHasLength(3);
 
       completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Ga, {
         firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: true,
       });
       assertListHasLength(3);
 
@@ -1297,36 +1305,188 @@ describe("Behind Feature Flag", function () {
       }
     });
 
-    it.only("displays the correct averages ordered correctly", function () {
+    it("displays the correct averages ordered correctly", function () {
+      // Taken from the pllToAlgorithmString map
+      // TODO: Filter out rotations so that's not counted
+      const AaAlgorithmLength = 11;
+      const HAlgorithmLength = 7;
       completePLLTestInMilliseconds(1500, PLL.Aa, {
         firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: true,
       });
-      assertAveragesDescendingOrder([1.5]);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            averageTime: 1.5,
+            averageTPS: AaAlgorithmLength / 1.5,
+            pll: PLL.Aa,
+          },
+        ],
+      });
       completePLLTestInMilliseconds(2000, PLL.Aa, {
         firstEncounterWithThisPLL: false,
+        aufs: [],
+        correct: true,
       });
-      assertAveragesDescendingOrder([1.75]);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            averageTime: 1.75,
+            averageTPS: AaAlgorithmLength / 1.75,
+            pll: PLL.Aa,
+          },
+        ],
+      });
       completePLLTestInMilliseconds(1000, PLL.Aa, {
         firstEncounterWithThisPLL: false,
+        aufs: [],
+        correct: true,
       });
-      assertAveragesDescendingOrder([1.5]);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            averageTime: 1.5,
+            averageTPS: AaAlgorithmLength / 1.5,
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      // Ensure with a fourth attempt that only the most recent 3 attempts
+      // are taken into account
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        firstEncounterWithThisPLL: false,
+        aufs: [],
+        correct: true,
+      });
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            averageTime: 4 / 3,
+            averageTPS: AaAlgorithmLength / (4 / 3),
+            pll: PLL.Aa,
+          },
+        ],
+      });
       completePLLTestInMilliseconds(2000, PLL.H, {
         firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: true,
       });
-      assertAveragesDescendingOrder([2, 1.5]);
-      // TODO: Assert on the PLL string and maybe also on TPS and on the global numbers
-      function assertAveragesDescendingOrder(averages: number[]): void {
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          { averageTime: 2, averageTPS: HAlgorithmLength / 2, pll: PLL.H },
+          {
+            averageTime: 4 / 3,
+            averageTPS: AaAlgorithmLength / (4 / 3),
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      // Test that DNFs work as we want them to
+      completePLLTestInMilliseconds(2000, PLL.Aa, {
+        firstEncounterWithThisPLL: false,
+        aufs: [AUF.U2, AUF.UPrime],
+        correct: false,
+      });
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            pll: PLL.Aa,
+            dnf: true,
+          },
+          { averageTime: 2, averageTPS: HAlgorithmLength / 2, pll: PLL.H },
+        ],
+      });
+      completePLLTestInMilliseconds(2000, PLL.Aa, {
+        firstEncounterWithThisPLL: false,
+        aufs: [AUF.U2, AUF.UPrime],
+        correct: true,
+      });
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            pll: PLL.Aa,
+            dnf: true,
+          },
+          { averageTime: 2, averageTPS: HAlgorithmLength / 2, pll: PLL.H },
+        ],
+      });
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        firstEncounterWithThisPLL: false,
+        aufs: [AUF.U2, AUF.UPrime],
+        correct: true,
+      });
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            pll: PLL.Aa,
+            dnf: true,
+          },
+          { averageTime: 2, averageTPS: HAlgorithmLength / 2, pll: PLL.H },
+        ],
+      });
+      completePLLTestInMilliseconds(3000, PLL.Aa, {
+        firstEncounterWithThisPLL: false,
+        aufs: [AUF.U2, AUF.UPrime],
+        correct: true,
+      });
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          { averageTime: 2, averageTPS: HAlgorithmLength / 2, pll: PLL.H },
+          {
+            averageTime: 2,
+            averageTPS: AaAlgorithmLength / 2,
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      function assertCorrectStatistics({
+        worstCasesFromWorstToBetter,
+      }: {
+        worstCasesFromWorstToBetter: (
+          | {
+              averageTime: number;
+              averageTPS: number;
+              pll: PLL;
+              dnf?: undefined;
+            }
+          | { pll: PLL; dnf: true }
+        )[];
+      }): void {
         cy.visit(paths.pllTrainer);
         pllTrainerElements.recurringUserStartPage.worstCaseListItem
           .get()
-          .should("have.length", averages.length)
+          .should("have.length", worstCasesFromWorstToBetter.length)
           .and((elements) => {
             elements.each((index, elem) => {
               const text = Cypress.$(elem).text();
-              expect(text).to.include(
-                (averages[index]?.toFixed(2) ||
-                  "something it would never match") + "s"
-              );
+              const caseInfo = worstCasesFromWorstToBetter[index];
+              if (caseInfo === undefined) {
+                expect.fail(
+                  "Unexpected wrong index when lengths should be the same"
+                );
+              }
+              if (caseInfo.dnf !== true) {
+                expect(text)
+                  .to.match(
+                    new RegExp(
+                      "\\b" + pllToPllLetters[caseInfo.pll] + "-perm\\b"
+                    )
+                  )
+                  .and.match(
+                    new RegExp("\\b" + caseInfo.averageTime.toFixed(2) + "s\\b")
+                  )
+                  .and.match(
+                    new RegExp(
+                      "\\b" + caseInfo.averageTPS.toFixed(2) + "\\s?TPS\\b"
+                    )
+                  );
+              } else {
+                expect(text).to.equal(
+                  pllToPllLetters[caseInfo.pll] + "-perm: DNF"
+                );
+              }
             });
           });
       }
@@ -1334,28 +1494,73 @@ describe("Behind Feature Flag", function () {
     function completePLLTestInMilliseconds(
       milliseconds: number,
       pll: PLL,
-      { firstEncounterWithThisPLL }: { firstEncounterWithThisPLL: boolean }
+      {
+        firstEncounterWithThisPLL,
+        aufs,
+        correct,
+      }: {
+        firstEncounterWithThisPLL: boolean;
+        aufs: [AUF, AUF] | [];
+        correct: boolean;
+      }
     ): void {
+      const [preAUF, postAUF] = [aufs[0] || AUF.none, aufs[1] || AUF.none];
       cy.visit(paths.pllTrainer);
       cy.clock();
       pllTrainerElements.newUserStartPage.startButton.get().click();
       pllTrainerElements.getReadyScreen.container.waitFor();
       cy.tick(1000);
       pllTrainerElements.testRunning.container.waitFor();
-      cy.setCurrentTestCase([AUF.none, pll, AUF.none]);
+      cy.setCurrentTestCase([preAUF, pll, postAUF]);
       cy.tick(milliseconds);
       cy.pressKey(Key.space);
       pllTrainerElements.evaluateResult.container.waitFor();
       cy.tick(500);
       cy.clock().then((clock) => clock.restore());
-      pllTrainerElements.evaluateResult.correctButton.get().click();
+      if (correct) {
+        pllTrainerElements.evaluateResult.correctButton.get().click();
+      } else {
+        pllTrainerElements.evaluateResult.wrongButton.get().click();
+        pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+      }
       if (firstEncounterWithThisPLL) {
         pllTrainerElements.pickAlgorithmPage.algorithmInput
           .get()
           .type(pllToAlgorithmString[pll] + "{enter}");
       }
-      pllTrainerElements.correctPage.container.waitFor();
+      if (correct) pllTrainerElements.correctPage.container.waitFor();
+      else pllTrainerElements.wrongPage.container.waitFor();
     }
+    it("correctly ignores y rotations at beginning and end of algorithm", function () {
+      pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.reloadAndNavigateTo();
+      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type(pllToAlgorithmString[PLL.Aa] + "{enter}");
+      pllTrainerElements.correctPage.container.waitFor();
+      cy.visit(paths.pllTrainer);
+      const unmodifiedAlias = "unmodified";
+      pllTrainerElements.recurringUserStartPage.worstCaseListItem
+        .get()
+        .invoke("text")
+        .as(unmodifiedAlias);
+
+      cy.clearLocalStorage();
+      pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.reloadAndNavigateTo();
+      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type("y' " + pllToAlgorithmString[PLL.Aa] + " y2{enter}");
+      pllTrainerElements.correctPage.container.waitFor();
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.recurringUserStartPage.worstCaseListItem
+        .get()
+        .invoke("text")
+        .should(function (this: Mocha.Context, modified) {
+          // eslint-disable-next-line no-invalid-this
+          expect(modified).to.equal(this[unmodifiedAlias]);
+        });
+    });
   });
   describe("Wrong Page", function () {
     it("has the right correct answer text", function () {

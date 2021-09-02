@@ -6,10 +6,11 @@ import Element exposing (..)
 import Element.Font as Font
 import Element.Region as Region
 import Key
+import PLL
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
+import Round
 import Shared
-import TimeInterval exposing (TimeInterval)
 import UI
 import User
 import View
@@ -179,13 +180,25 @@ recurringUserStatistics shared =
         , row [ testid "num-cases-not-yet-tried" ] [ text "Cases Not Yet Tried: ", text "0" ]
         , UI.viewOrderedList [ testid "worst-three-cases" ] <|
             (User.pllStatistics shared.user
+                |> User.orderByWorstCaseFirst
                 |> List.take 3
-                |> List.map TimeInterval.fromFloat
                 |> List.map
-                    (TimeInterval.displayTwoDecimals
-                        >> (\s -> s ++ "s")
-                        >> text
-                        >> el [ testid "worst-case-list-item" ]
+                    (\statistics ->
+                        (case statistics of
+                            User.CaseLearnedStatistics { lastThreeAverageMs, lastThreeAverageTPS, pll } ->
+                                PLL.getLetters pll
+                                    ++ "-perm: "
+                                    ++ Round.round 2 (lastThreeAverageMs / 1000)
+                                    ++ "s "
+                                    ++ Round.round 2 lastThreeAverageTPS
+                                    ++ "TPS"
+
+                            User.CaseNotLearnedStatistics pll ->
+                                PLL.getLetters pll
+                                    ++ "-perm: DNF"
+                        )
+                            |> text
+                            |> el [ testid "worst-case-list-item" ]
                     )
             )
         , row [ testid "average-time" ] [ text "Cases Not Yet Tried: ", text "0" ]
