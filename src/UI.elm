@@ -1,4 +1,4 @@
-module UI exposing (Button, Palette, defaultPalette, fontSize, paddingAll, paddingHorizontal, paddingVertical, spacingAll, spacingVertical, viewButton, viewDivider, viewOrderedList, viewUnorderedList, viewWebResourceLink)
+module UI exposing (Button, Palette, defaultPalette, fontSize, formatMilliseconds, formatTPS, paddingAll, paddingHorizontal, paddingVertical, spacingAll, spacingVertical, viewButton, viewDivider, viewOrderedList, viewUnorderedList, viewWebResourceLink)
 
 -- We can't expose all of Element as it clashes with the spacing export
 
@@ -8,7 +8,22 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Round
 import WebResource
+
+
+
+-- Number Formatting
+
+
+formatTPS : Float -> String
+formatTPS tps =
+    Round.round 2 tps ++ "TPS"
+
+
+formatMilliseconds : Float -> String
+formatMilliseconds ms =
+    Round.round 2 (ms / 1000) ++ "s"
 
 
 

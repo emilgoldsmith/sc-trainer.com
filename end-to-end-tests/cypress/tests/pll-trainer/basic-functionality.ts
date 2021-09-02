@@ -1491,6 +1491,128 @@ describe("Behind Feature Flag", function () {
           });
       }
     });
+    it("displays the global statistics correctly", function () {
+      // Taken from pllToAlgorithmString
+      const AaAlgorithmLength = 11;
+      const GaAlgorithmLength = 15;
+      const totalPLLCases = 21;
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.newUserStartPage.container.waitFor();
+      pllTrainerElements.recurringUserStartPage.numCasesTried.assertDoesntExist();
+      pllTrainerElements.recurringUserStartPage.numCasesNotYetTried.assertDoesntExist();
+      pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
+      pllTrainerElements.recurringUserStartPage.averageTPS.assertDoesntExist();
+
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: true,
+      });
+      assertCorrectGlobalStatistics({
+        numTried: 1,
+        validLastThreeAverages: [1000],
+        validLastThreeTPSes: [AaAlgorithmLength / 1],
+      });
+
+      completePLLTestInMilliseconds(2000, PLL.Ab, {
+        firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: false,
+      });
+      // Still counts a try even though it's incorrect.
+      // But doesn't change the global averages
+      assertCorrectGlobalStatistics({
+        numTried: 2,
+        validLastThreeAverages: [1000],
+        validLastThreeTPSes: [AaAlgorithmLength / 1],
+      });
+
+      completePLLTestInMilliseconds(2000, PLL.Ga, {
+        firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: true,
+      });
+      // And counts a third one after an incorrect
+      // And now changes the global averages
+      assertCorrectGlobalStatistics({
+        numTried: 3,
+        validLastThreeAverages: [1000, 2000],
+        validLastThreeTPSes: [AaAlgorithmLength / 1, GaAlgorithmLength / 2],
+      });
+
+      completePLLTestInMilliseconds(1000, PLL.Ga, {
+        firstEncounterWithThisPLL: false,
+        aufs: [],
+        correct: true,
+      });
+      // And doesn't count a repeat of one we tried before in numTried
+      // but does modify one of the averages
+      assertCorrectGlobalStatistics({
+        numTried: 3,
+        validLastThreeAverages: [1000, 1500],
+        validLastThreeTPSes: [AaAlgorithmLength / 1, GaAlgorithmLength / 1.5],
+      });
+
+      // Now we make sure that it only counts the last three by going up
+      // to 4 tests on Ga
+
+      completePLLTestInMilliseconds(2000, PLL.Ga, {
+        firstEncounterWithThisPLL: false,
+        aufs: [],
+        correct: true,
+      });
+      // And doesn't count a repeat of one we tried before in numTried
+      // but does modify one of the averages
+      assertCorrectGlobalStatistics({
+        numTried: 3,
+        validLastThreeAverages: [1000, (5 / 3) * 1000],
+        validLastThreeTPSes: [
+          AaAlgorithmLength / 1,
+          GaAlgorithmLength / (5 / 3),
+        ],
+      });
+
+      completePLLTestInMilliseconds(3000, PLL.Ga, {
+        firstEncounterWithThisPLL: false,
+        aufs: [],
+        correct: true,
+      });
+      // And doesn't count a repeat of one we tried before in numTried
+      // but does modify one of the averages
+      assertCorrectGlobalStatistics({
+        numTried: 3,
+        validLastThreeAverages: [1000, 2000],
+        validLastThreeTPSes: [AaAlgorithmLength / 1, GaAlgorithmLength / 2],
+      });
+
+      function assertCorrectGlobalStatistics({
+        numTried,
+        validLastThreeAverages,
+        validLastThreeTPSes,
+      }: {
+        numTried: number;
+        validLastThreeAverages: number[];
+        validLastThreeTPSes: number[];
+      }): void {
+        const average = (l: number[]) => l.reduce((a, b) => a + b) / l.length;
+        const globalTimeAverage = average(validLastThreeAverages) / 1000;
+        const globalTPSAverage = average(validLastThreeTPSes);
+        const numNotYetTried = totalPLLCases - numTried;
+        cy.visit(paths.pllTrainer);
+        pllTrainerElements.recurringUserStartPage.numCasesTried
+          .get()
+          .should("include.text", ": " + numTried.toString());
+        pllTrainerElements.recurringUserStartPage.numCasesNotYetTried
+          .get()
+          .should("include.text", ": " + numNotYetTried.toString());
+        pllTrainerElements.recurringUserStartPage.averageTime
+          .get()
+          .should("include.text", ": " + globalTimeAverage.toFixed(2) + "s");
+        pllTrainerElements.recurringUserStartPage.averageTPS
+          .get()
+          .should("include.text", ": " + globalTPSAverage.toFixed(2) + "TPS");
+      }
+    });
     function completePLLTestInMilliseconds(
       milliseconds: number,
       pll: PLL,
