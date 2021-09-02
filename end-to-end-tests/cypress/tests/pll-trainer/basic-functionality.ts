@@ -1148,7 +1148,7 @@ describe("Behind Feature Flag", function () {
     applyDefaultIntercepts(extraIntercepts);
   });
 
-  describe.only("Start Page", function () {
+  describe("Start Page", function () {
     context("for a done user", function () {
       beforeEach(function () {
         pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
