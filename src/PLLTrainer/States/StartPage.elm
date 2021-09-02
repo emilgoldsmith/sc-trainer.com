@@ -6,6 +6,7 @@ import Element exposing (..)
 import Element.Font as Font
 import Element.Region as Region
 import Key
+import List.Nonempty
 import PLL
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
@@ -174,12 +175,42 @@ view shared transitions =
 
 recurringUserStatistics : Shared.Model -> Element msg
 recurringUserStatistics shared =
+    let
+        allStatistics =
+            User.pllStatistics shared.user
+
+        ( averageTimeMs, averageTPS ) =
+            allStatistics
+                |> List.filterMap
+                    (\statistics ->
+                        case statistics of
+                            User.CaseLearnedStatistics { lastThreeAverageMs, lastThreeAverageTPS } ->
+                                Just ( lastThreeAverageMs, lastThreeAverageTPS )
+
+                            User.CaseNotLearnedStatistics _ ->
+                                Nothing
+                    )
+                |> List.unzip
+                |> (\( times, tpses ) ->
+                        let
+                            length =
+                                toFloat (List.length times)
+                        in
+                        ( List.sum times / length, List.sum tpses / length )
+                   )
+    in
     column
         []
-        [ row [ testid "num-cases-tried" ] [ text "Cases Tried: ", text "0" ]
-        , row [ testid "num-cases-not-yet-tried" ] [ text "Cases Not Yet Tried: ", text "0" ]
+        [ row [ testid "num-cases-tried" ]
+            [ text "Cases Tried: "
+            , text <| String.fromInt <| List.length allStatistics
+            ]
+        , row [ testid "num-cases-not-yet-tried" ]
+            [ text "Cases Not Yet Tried: "
+            , text <| String.fromInt <| List.Nonempty.length PLL.all - List.length allStatistics
+            ]
         , UI.viewOrderedList [ testid "worst-three-cases" ] <|
-            (User.pllStatistics shared.user
+            (allStatistics
                 |> User.orderByWorstCaseFirst
                 |> List.take 3
                 |> List.map
@@ -188,10 +219,9 @@ recurringUserStatistics shared =
                             User.CaseLearnedStatistics { lastThreeAverageMs, lastThreeAverageTPS, pll } ->
                                 PLL.getLetters pll
                                     ++ "-perm: "
-                                    ++ Round.round 2 (lastThreeAverageMs / 1000)
-                                    ++ "s "
-                                    ++ Round.round 2 lastThreeAverageTPS
-                                    ++ "TPS"
+                                    ++ UI.formatMilliseconds lastThreeAverageMs
+                                    ++ " "
+                                    ++ UI.formatTPS lastThreeAverageTPS
 
                             User.CaseNotLearnedStatistics pll ->
                                 PLL.getLetters pll
@@ -201,8 +231,8 @@ recurringUserStatistics shared =
                             |> el [ testid "worst-case-list-item" ]
                     )
             )
-        , row [ testid "average-time" ] [ text "Cases Not Yet Tried: ", text "0" ]
-        , row [ testid "average-tps" ] [ text "Cases Not Yet Tried: ", text "0" ]
+        , row [ testid "average-tps" ] [ text "Average TPS: ", text <| UI.formatTPS averageTPS ]
+        , row [ testid "average-time" ] [ text "Average Time: ", text <| UI.formatMilliseconds averageTimeMs ]
         , paragraph [ testid "statistics-shortcomings-explanation" ] [ text "The stats suck" ]
         ]
 
