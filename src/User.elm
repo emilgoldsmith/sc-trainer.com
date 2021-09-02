@@ -1,7 +1,8 @@
-module User exposing (RecordResultError(..), TestResult(..), User, changePLLAlgorithm, deserialize, hasAttemptedAPLLTestCase, hasChosenPLLAlgorithmFor, new, pllStatistics, recordPLLTestResult, serialize)
+module User exposing (CaseStatistics(..), RecordResultError(..), TestResult(..), User, changePLLAlgorithm, deserialize, hasAttemptedAPLLTestCase, hasChosenPLLAlgorithmFor, new, orderByWorstCaseFirst, pllStatistics, recordPLLTestResult, serialize)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
+import Algorithm.Extra
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -117,24 +118,115 @@ changePLLAlgorithm pll algorithm (User pllData) =
     User newPLLData
 
 
-pllStatistics : User -> List Float
+type CaseStatistics
+    = CaseLearnedStatistics
+        { lastThreeAverageMs : Float
+        , lastThreeAverageTPS : Float
+        , pll : PLL
+        }
+    | CaseNotLearnedStatistics PLL
+
+
+pllStatistics :
+    User
+    -> List CaseStatistics
 pllStatistics (User pllData) =
     PLL.all
         |> List.Nonempty.toList
-        |> List.filterMap (\pll -> getPLLResults pll pllData)
-        |> List.map
-            (List.filterMap
-                (\result ->
-                    case result of
-                        Correct { resultInMilliseconds } ->
-                            Just resultInMilliseconds
-
-                        Wrong _ ->
-                            Nothing
-                )
+        |> List.filterMap
+            (\pll ->
+                getPLLData pll pllData
+                    |> Maybe.map
+                        (\( algorithm, results ) ->
+                            ( results
+                            , ( pll, algorithm )
+                            )
+                        )
             )
-        |> List.map (List.map toFloat)
-        |> List.map average
+        |> List.map (Tuple.mapFirst computeAverageOfLastThree)
+        |> List.map
+            (\( maybeAvg, ( pll, algorithm ) ) ->
+                maybeAvg
+                    |> Maybe.map
+                        (\avg ->
+                            CaseLearnedStatistics
+                                { lastThreeAverageMs = avg
+                                , lastThreeAverageTPS =
+                                    Algorithm.Extra.complexityAdjustedTPS
+                                        { milliseconds = avg }
+                                        algorithm
+                                , pll = pll
+                                }
+                        )
+                    |> Maybe.withDefault (CaseNotLearnedStatistics pll)
+            )
+
+
+orderByWorstCaseFirst : List CaseStatistics -> List CaseStatistics
+orderByWorstCaseFirst =
+    List.sortWith
+        (\a b ->
+            case ( a, b ) of
+                ( CaseNotLearnedStatistics _, CaseNotLearnedStatistics _ ) ->
+                    EQ
+
+                ( CaseNotLearnedStatistics _, _ ) ->
+                    LT
+
+                ( _, CaseNotLearnedStatistics _ ) ->
+                    GT
+
+                ( CaseLearnedStatistics argsA, CaseLearnedStatistics argsB ) ->
+                    let
+                        primaryComparison =
+                            -- For TPS lower is worse
+                            compare argsA.lastThreeAverageTPS argsB.lastThreeAverageTPS
+
+                        secondaryComparison =
+                            compare argsA.lastThreeAverageMs argsB.lastThreeAverageMs
+                                -- For total time higher is worse so we invert order
+                                |> invertOrder
+                    in
+                    if primaryComparison == EQ then
+                        secondaryComparison
+
+                    else
+                        primaryComparison
+        )
+
+
+invertOrder : Order -> Order
+invertOrder comp =
+    case comp of
+        EQ ->
+            EQ
+
+        LT ->
+            GT
+
+        GT ->
+            LT
+
+
+computeAverageOfLastThree : List TestResult -> Maybe Float
+computeAverageOfLastThree results =
+    results
+        |> List.take 3
+        |> List.foldl
+            (\result ->
+                Maybe.andThen
+                    (\allMs ->
+                        case result of
+                            Correct { resultInMilliseconds } ->
+                                Just (resultInMilliseconds :: allMs)
+
+                            Wrong _ ->
+                                Nothing
+                    )
+            )
+            (Just [])
+        |> Maybe.map (List.map toFloat)
+        |> Maybe.map average
 
 
 average : List Float -> Float

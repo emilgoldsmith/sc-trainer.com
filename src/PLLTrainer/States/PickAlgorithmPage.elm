@@ -128,9 +128,7 @@ update transitions currentTestCase msg model =
                         ( model
                         , Task.perform
                             transitions.continue
-                            (Task.succeed <|
-                                PLL.getAlgorithm PLL.referenceAlgorithms PLL.H
-                            )
+                            (Task.succeed algorithm)
                         )
 
                     else

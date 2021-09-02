@@ -1,4 +1,4 @@
-module TimeInterval exposing (TimeInterval, asMilliseconds, betweenTimestamps, displayOneDecimal, displayTwoDecimals, fromFloat, increment, toString, zero)
+module TimeInterval exposing (TimeInterval, asMilliseconds, betweenTimestamps, displayOneDecimal, displayTwoDecimals, increment, toString, zero)
 
 import Time
 
@@ -29,12 +29,7 @@ asMilliseconds (TimeInterval milliseconds) =
 
 betweenTimestamps : { start : Time.Posix, end : Time.Posix } -> TimeInterval
 betweenTimestamps { start, end } =
-    fromFloat <| toFloat <| Time.posixToMillis end - Time.posixToMillis start
-
-
-fromFloat : Float -> TimeInterval
-fromFloat =
-    TimeInterval
+    TimeInterval <| toFloat <| Time.posixToMillis end - Time.posixToMillis start
 
 
 increment : Float -> TimeInterval -> TimeInterval
@@ -66,7 +61,9 @@ displayTwoDecimals interval =
             (parseTimeUnits interval).milliseconds
 
         centiseconds =
-            milliseconds // 10
+            toFloat milliseconds
+                / 10
+                |> round
 
         precedingZeroes =
             if centiseconds < 10 then

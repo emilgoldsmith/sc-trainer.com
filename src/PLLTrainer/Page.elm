@@ -298,7 +298,24 @@ update shared msg model =
 
                 EvaluateWrong arguments ->
                     ( { model | trainerState = TypeOfWrongPage arguments }
-                    , Effect.none
+                    , if
+                        User.hasChosenPLLAlgorithmFor
+                            (PLLTrainer.TestCase.pll model.currentTestCase)
+                            shared.user
+                      then
+                        Effect.fromShared <|
+                            Shared.ModifyUser <|
+                                recordPLLTestResultWithErrorHandling
+                                    (PLLTrainer.TestCase.pll model.currentTestCase)
+                                    (User.Wrong
+                                        { timestamp = arguments.testStartTime
+                                        , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
+                                        , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
+                                        }
+                                    )
+
+                      else
+                        Effect.none
                     )
 
                 AlgorithmPicked nextTrainerState testResult algorithm ->
