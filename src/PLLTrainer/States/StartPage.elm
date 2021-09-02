@@ -10,7 +10,6 @@ import List.Nonempty
 import PLL
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
-import Round
 import Shared
 import UI
 import User

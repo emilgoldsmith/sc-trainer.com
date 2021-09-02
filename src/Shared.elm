@@ -10,10 +10,8 @@ module Shared exposing
     , update
     )
 
-import Algorithm exposing (Algorithm)
 import Browser.Events as Events
 import Json.Decode
-import PLL exposing (PLL)
 import Ports
 import Request exposing (Request)
 import UI
