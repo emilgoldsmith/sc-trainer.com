@@ -109,7 +109,8 @@ export const removeAnalyticsScripts: HtmlModifier = (prevHtml) =>
     .replace(
       /<script[^>]*src="[^"]*https:\/\/plausible\.io[^"]*"[^>]*>.*?<\/script>/,
       ""
-    );
+    )
+    .replace(/<script[^>]*src="[^"]*\/sentry.js"[^>]*>.*?<\/script>/, "");
 
 const defaultHtmlModifiers: HtmlModifier[] = [
   addElmModelObserversAndModifiersToHtml,
