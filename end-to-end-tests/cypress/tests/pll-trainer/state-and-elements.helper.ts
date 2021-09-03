@@ -169,7 +169,7 @@ export const pllTrainerStatesUserDone = buildStates<
       // to programatically pass through the get ready page
       getState("startPage");
       cy.clock();
-      pllTrainerElements.newUserStartPage.startButton
+      pllTrainerElements.recurringUserStartPage.startButton
         .get(options)
         .click(options);
       pllTrainerElements.getReadyScreen.container.waitFor(options);

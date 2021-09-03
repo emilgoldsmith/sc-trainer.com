@@ -107,8 +107,8 @@ viewOrderedList attributes listItemContents =
             List.indexedMap
                 (\index content ->
                     El.row
-                        [ spacingAll.verySmall ]
-                        [ El.text (String.fromInt (index + 1) ++ "."), content ]
+                        [ spacingHorizontal.verySmall ]
+                        [ El.text (String.fromInt (index + 1) ++ "."), El.paragraph [] [ content ] ]
                 )
                 listItemContents
     in

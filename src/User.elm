@@ -313,11 +313,9 @@ decoder =
                 pllAlgorithmsDecoder
 
         pllResults =
-            Json.Decode.map (Maybe.withDefault Dict.empty) <|
-                Json.Decode.maybe <|
-                    Json.Decode.field
-                        serializationKeys.usersPLLResults
-                        pllResultsDecoder
+            Json.Decode.field
+                serializationKeys.usersPLLResults
+                pllResultsDecoder
     in
     pllUserDataDecoder pllAlgorithms pllResults
         |> Json.Decode.map User
@@ -413,7 +411,7 @@ pllUserDataDecoder =
         (\algorithms results ->
             PLL.all
                 |> List.Nonempty.foldl
-                    (\pll pllData ->
+                    (\pll previousPLLData ->
                         let
                             maybeAlgorithm =
                                 Dict.get (PLL.getLetters pll) algorithms
@@ -422,13 +420,13 @@ pllUserDataDecoder =
                                 Dict.get (PLL.getLetters pll) results
                                     |> Maybe.withDefault []
 
-                            maybePLLData =
+                            maybeUpdatedData =
                                 Maybe.map (\x -> ( x, testResults )) maybeAlgorithm
                         in
                         Maybe.map
-                            (\newData -> setPLLData pll newData pllData)
-                            maybePLLData
-                            |> Maybe.withDefault pllData
+                            (\updatedData -> setPLLData pll updatedData previousPLLData)
+                            maybeUpdatedData
+                            |> Maybe.withDefault previousPLLData
                     )
                     emptyPLLData
         )
@@ -437,19 +435,21 @@ pllUserDataDecoder =
 pllAlgorithmsDecoder : Json.Decode.Decoder (Dict String Algorithm)
 pllAlgorithmsDecoder =
     Json.Decode.dict Json.Decode.string
+        -- Non Critical To Do: Log an error here somehow instead of just silently swallowing invalid
+        -- algorithms in local storage?
         |> Json.Decode.map (dictFilterMap (Algorithm.fromString >> Result.toMaybe))
 
 
 dictFilterMap : (a -> Maybe b) -> Dict comparable a -> Dict comparable b
 dictFilterMap fn =
     Dict.foldl
-        (\key value newDict ->
+        (\key value curDict ->
             case fn value of
                 Nothing ->
-                    newDict
+                    curDict
 
                 Just x ->
-                    Dict.insert key x newDict
+                    Dict.insert key x curDict
         )
         Dict.empty
 
@@ -490,12 +490,12 @@ testResultDecoder =
                 in
                 if correct then
                     Json.Decode.map4
-                        (\a b c d ->
+                        (\timestamp_ preAUF_ postAUF_ resultInMilliseconds_ ->
                             Correct
-                                { timestamp = a
-                                , preAUF = b
-                                , postAUF = c
-                                , resultInMilliseconds = d
+                                { timestamp = timestamp_
+                                , preAUF = preAUF_
+                                , postAUF = postAUF_
+                                , resultInMilliseconds = resultInMilliseconds_
                                 }
                         )
                         timestamp
@@ -505,11 +505,11 @@ testResultDecoder =
 
                 else
                     Json.Decode.map3
-                        (\a b c ->
+                        (\timestamp_ preAUF_ postAUF_ ->
                             Wrong
-                                { timestamp = a
-                                , preAUF = b
-                                , postAUF = c
+                                { timestamp = timestamp_
+                                , preAUF = preAUF_
+                                , postAUF = postAUF_
                                 }
                         )
                         timestamp
@@ -629,67 +629,67 @@ addPLLResult pll result data =
 
 
 setPLLData : PLL -> ( Algorithm, List TestResult ) -> PLLUserData -> PLLUserData
-setPLLData pll newAlgorithm algorithms =
+setPLLData pll newData data =
     case pll of
         PLL.H ->
-            { algorithms | h = Just newAlgorithm }
+            { data | h = Just newData }
 
         PLL.Ua ->
-            { algorithms | ua = Just newAlgorithm }
+            { data | ua = Just newData }
 
         PLL.Ub ->
-            { algorithms | ub = Just newAlgorithm }
+            { data | ub = Just newData }
 
         PLL.Z ->
-            { algorithms | z = Just newAlgorithm }
+            { data | z = Just newData }
 
         PLL.Aa ->
-            { algorithms | aa = Just newAlgorithm }
+            { data | aa = Just newData }
 
         PLL.Ab ->
-            { algorithms | ab = Just newAlgorithm }
+            { data | ab = Just newData }
 
         PLL.E ->
-            { algorithms | e = Just newAlgorithm }
+            { data | e = Just newData }
 
         PLL.F ->
-            { algorithms | f = Just newAlgorithm }
+            { data | f = Just newData }
 
         PLL.Ga ->
-            { algorithms | ga = Just newAlgorithm }
+            { data | ga = Just newData }
 
         PLL.Gb ->
-            { algorithms | gb = Just newAlgorithm }
+            { data | gb = Just newData }
 
         PLL.Gc ->
-            { algorithms | gc = Just newAlgorithm }
+            { data | gc = Just newData }
 
         PLL.Gd ->
-            { algorithms | gd = Just newAlgorithm }
+            { data | gd = Just newData }
 
         PLL.Ja ->
-            { algorithms | ja = Just newAlgorithm }
+            { data | ja = Just newData }
 
         PLL.Jb ->
-            { algorithms | jb = Just newAlgorithm }
+            { data | jb = Just newData }
 
         PLL.Na ->
-            { algorithms | na = Just newAlgorithm }
+            { data | na = Just newData }
 
         PLL.Nb ->
-            { algorithms | nb = Just newAlgorithm }
+            { data | nb = Just newData }
 
         PLL.Ra ->
-            { algorithms | ra = Just newAlgorithm }
+            { data | ra = Just newData }
 
         PLL.Rb ->
-            { algorithms | rb = Just newAlgorithm }
+            { data | rb = Just newData }
 
         PLL.T ->
-            { algorithms | t = Just newAlgorithm }
+            { data | t = Just newData }
 
         PLL.V ->
-            { algorithms | v = Just newAlgorithm }
+            { data | v = Just newData }
 
         PLL.Y ->
-            { algorithms | y = Just newAlgorithm }
+            { data | y = Just newData }

@@ -16,7 +16,7 @@ catpsTests =
                 Algorithm.Extra.complexityAdjustedTPS { milliseconds = milliseconds } algorithm
                     |> Expect.within (Expect.Absolute 0.0000000001)
                         (Algorithm.Extra.complexity algorithm / (milliseconds / 1000))
-        , fuzz Fuzz.Extra.algorithmWithoutTPSIgnoredMoves "same algorithm executed in slower time should give lower catps" <|
+        , fuzz Fuzz.Extra.algorithmWithoutTPSIgnoredTurns "same algorithm executed in slower time should give lower catps" <|
             \algorithm ->
                 Algorithm.Extra.complexityAdjustedTPS { milliseconds = 2000 } algorithm
                     |> Expect.lessThan
@@ -34,11 +34,8 @@ complexityTests =
           <|
             \algorithm ( length1, direction1 ) ( length2, direction2 ) ->
                 let
-                    referenceAlgorithm =
-                        algorithm
-
                     withYRotationsAlgorithm =
-                        referenceAlgorithm
+                        algorithm
                             |> Algorithm.append
                                 (Algorithm.fromTurnList [ Algorithm.Turn Algorithm.Y length1 direction1 ])
                             |> (\alg ->
@@ -59,7 +56,7 @@ complexityTests =
                 Algorithm.Extra.complexity withTurnAdded
                     |> Expect.greaterThan
                         (Algorithm.Extra.complexity algorithm)
-        , test "Satisfies the reference of 1 complexity, which is a U turn" <|
+        , test "Satisfies the complexity baseline, which is that a U turn is 1 complexity" <|
             \_ ->
                 Algorithm.Extra.complexity
                     (Algorithm.fromTurnList

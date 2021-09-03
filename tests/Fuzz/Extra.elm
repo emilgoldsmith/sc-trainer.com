@@ -1,4 +1,4 @@
-module Fuzz.Extra exposing (algorithm, algorithmWithoutTPSIgnoredMoves, auf, pll, posix, result, turnDirection, turnFuzzer, turnLength, turnable, user)
+module Fuzz.Extra exposing (algorithm, algorithmWithoutTPSIgnoredTurns, auf, pll, posix, testResult, turnDirection, turnFuzzer, turnLength, turnable, user)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
@@ -13,22 +13,10 @@ user : Fuzz.Fuzzer User
 user =
     let
         changePLLOperations =
-            Fuzz.list (Fuzz.tuple ( pll, algorithm ))
-                |> Fuzz.map
-                    (List.map
-                        (\( pll_, algorithm_ ) ->
-                            User.changePLLAlgorithm pll_ algorithm_
-                        )
-                    )
+            Fuzz.list <| Fuzz.map2 User.changePLLAlgorithm pll algorithm
 
         recordResultOperations =
-            Fuzz.list (Fuzz.tuple ( pll, result ))
-                |> Fuzz.map
-                    (List.map
-                        (\( pll_, result_ ) ->
-                            User.recordPLLTestResult pll_ result_
-                        )
-                    )
+            Fuzz.list <| Fuzz.map2 User.recordPLLTestResult pll testResult
     in
     Fuzz.map2
         (\changePLL recordResult ->
@@ -80,67 +68,56 @@ algorithm =
     Fuzz.map Algorithm.fromTurnList nonEmptyTurnListWithNoRepeats
 
 
-algorithmWithoutTPSIgnoredMoves : Fuzz.Fuzzer Algorithm
-algorithmWithoutTPSIgnoredMoves =
-    let
-        turnablesWithoutYRotations =
-            List.Nonempty.filter ((/=) Algorithm.Y)
-                (List.Nonempty.head Algorithm.allTurnables)
-                Algorithm.allTurnables
+algorithmWithoutTPSIgnoredTurns : Fuzz.Fuzzer Algorithm
+algorithmWithoutTPSIgnoredTurns =
+    Fuzz.map2
+        (\originalAlgorithm backupAlgorithm ->
+            originalAlgorithm
+                |> Algorithm.toTurnList
+                |> List.filter (not << isYRotation)
+                |> Algorithm.fromTurnList
+                |> (\filtered ->
+                        if filtered == Algorithm.empty then
+                            backupAlgorithm
 
-        customTurnFuzzer =
-            Fuzz.map3
-                Algorithm.Turn
-                (nonEmptyListToFuzzer turnablesWithoutYRotations)
-                turnLength
-                turnDirection
-
-        nonEmptyTurnList =
-            Fuzz.map2 (::) customTurnFuzzer <| Fuzz.list customTurnFuzzer
-
-        nonEmptyTurnListWithNoRepeats =
-            nonEmptyTurnList
-                |> Fuzz.map
-                    (List.foldl
-                        (\((Algorithm.Turn nextTurnable _ _) as nextTurn) turns ->
-                            case turns of
-                                [] ->
-                                    [ nextTurn ]
-
-                                (Algorithm.Turn previousTurnable _ _) :: _ ->
-                                    if previousTurnable == nextTurnable then
-                                        turns
-
-                                    else
-                                        nextTurn :: turns
-                        )
-                        []
-                    )
-    in
-    Fuzz.map Algorithm.fromTurnList nonEmptyTurnListWithNoRepeats
+                        else
+                            filtered
+                   )
+        )
+        algorithm
+        (Algorithm.allTurns
+            |> List.Nonempty.filter (not << isYRotation) (Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise)
+            |> nonEmptyListToFuzzer
+            |> Fuzz.map (List.singleton >> Algorithm.fromTurnList)
+        )
 
 
-result : Fuzz.Fuzzer User.TestResult
-result =
+isYRotation : Algorithm.Turn -> Bool
+isYRotation (Algorithm.Turn turnable_ _ _) =
+    turnable_ == Algorithm.Y
+
+
+testResult : Fuzz.Fuzzer User.TestResult
+testResult =
     Fuzz.map5
-        (\correct resultInMilliseconds timestamp preAUF postAUF ->
+        (\correct resultInMilliseconds timestamp auf1 auf2 ->
             if correct then
                 User.Correct
                     { timestamp = timestamp
-                    , preAUF = preAUF
-                    , postAUF = postAUF
+                    , preAUF = auf1
+                    , postAUF = auf2
                     , resultInMilliseconds = resultInMilliseconds
                     }
 
             else
                 User.Wrong
                     { timestamp = timestamp
-                    , preAUF = preAUF
-                    , postAUF = postAUF
+                    , preAUF = auf1
+                    , postAUF = auf2
                     }
         )
         Fuzz.bool
-        (Fuzz.intRange 0 15000)
+        (Fuzz.intRange 1 15000)
         posix
         auf
         auf

@@ -161,6 +161,8 @@ describe("Algorithm Picker Visual Tests", function () {
       aufs: [],
       correct: true,
     });
+    cy.visit(paths.pllTrainer);
+    pllTrainerElements.recurringUserStartPage.container.waitFor();
     cy.percySnapshotWithProperName("PLL Trainer Recurring User Start Page");
   });
 });

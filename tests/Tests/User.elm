@@ -28,18 +28,13 @@ helperTests =
                         |> User.changePLLAlgorithm pll Algorithm.empty
                         |> User.hasAttemptedAPLLTestCase
                         |> Expect.false "user only picked algorithms didn't attempt a case yet"
-            , fuzz Fuzz.Extra.pll "should return true when given there is a recorded test for a pll" <|
+            , fuzz Fuzz.Extra.pll "should return true when there is a recorded test for a pll" <|
                 \pll ->
                     User.new
                         |> User.changePLLAlgorithm pll Algorithm.empty
                         |> User.recordPLLTestResult
                             pll
-                            (User.Wrong
-                                { timestamp = Time.millisToPosix 123456
-                                , preAUF = AUF.None
-                                , postAUF = AUF.None
-                                }
-                            )
+                            wrongResult
                         |> Result.map User.hasAttemptedAPLLTestCase
                         |> Expect.equal (Ok True)
             ]
@@ -47,15 +42,13 @@ helperTests =
             [ test "passes simple test case with 4 attempts" <|
                 \_ ->
                     let
-                        algorithmLength =
+                        algorithm =
                             PLL.getAlgorithm PLL.referenceAlgorithms PLL.Aa
-                                |> Algorithm.toTurnList
-                                |> List.length
                     in
                     User.new
                         |> User.changePLLAlgorithm
                             PLL.Aa
-                            (PLL.getAlgorithm PLL.referenceAlgorithms PLL.Aa)
+                            algorithm
                         |> User.recordPLLTestResult
                             PLL.Aa
                             (correctResult 500)
@@ -80,7 +73,7 @@ helperTests =
                         |> Expect.equal
                             [ User.CaseLearnedStatistics
                                 { lastThreeAverageMs = 3000
-                                , lastThreeAverageTPS = toFloat algorithmLength / 3
+                                , lastThreeAverageTPS = toFloat (List.length <| Algorithm.toTurnList algorithm) / 3
                                 , pll = PLL.Aa
                                 }
                             ]
