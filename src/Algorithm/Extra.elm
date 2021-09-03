@@ -1,10 +1,19 @@
-module Algorithm.Extra exposing (complexityAdjustedTPS)
+module Algorithm.Extra exposing (complexity, complexityAdjustedTPS)
 
 import Algorithm exposing (Algorithm)
 
 
 complexityAdjustedTPS : { milliseconds : Float } -> Algorithm -> Float
 complexityAdjustedTPS { milliseconds } algorithm =
+    let
+        seconds =
+            milliseconds / 1000
+    in
+    complexity algorithm / seconds
+
+
+complexity : Algorithm -> Float
+complexity algorithm =
     let
         withYRotationsTrimmed =
             algorithm
@@ -14,16 +23,11 @@ complexityAdjustedTPS { milliseconds } algorithm =
                 |> dropWhile isYRotation
                 |> List.reverse
                 |> Algorithm.fromTurnList
-
-        algorithmLength =
-            withYRotationsTrimmed
-                |> Algorithm.toTurnList
-                |> List.length
-
-        seconds =
-            milliseconds / 1000
     in
-    toFloat algorithmLength / seconds
+    withYRotationsTrimmed
+        |> Algorithm.toTurnList
+        |> List.length
+        |> toFloat
 
 
 isYRotation : Algorithm.Turn -> Bool
