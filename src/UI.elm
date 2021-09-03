@@ -1,4 +1,4 @@
-module UI exposing (Button, Palette, defaultPalette, fontSize, formatMilliseconds, formatTPS, paddingAll, paddingHorizontal, paddingVertical, spacingAll, spacingVertical, viewButton, viewDivider, viewOrderedList, viewUnorderedList, viewWebResourceLink)
+module UI exposing (Button, Palette, defaultPalette, fontSize, formatFloatTwoDecimals, formatMilliseconds, formatTPS, paddingAll, paddingHorizontal, paddingVertical, spacingAll, spacingHorizontal, spacingVertical, viewButton, viewDivider, viewOrderedList, viewUnorderedList, viewWebResourceLink)
 
 -- We can't expose all of Element as it clashes with the spacing export
 
@@ -18,12 +18,17 @@ import WebResource
 
 formatTPS : Float -> String
 formatTPS tps =
-    Round.round 2 tps ++ "TPS"
+    formatFloatTwoDecimals tps ++ "TPS"
 
 
 formatMilliseconds : Float -> String
 formatMilliseconds ms =
-    Round.round 2 (ms / 1000) ++ "s"
+    formatFloatTwoDecimals (ms / 1000) ++ "s"
+
+
+formatFloatTwoDecimals : Float -> String
+formatFloatTwoDecimals =
+    Round.round 2
 
 
 
@@ -107,7 +112,7 @@ viewOrderedList attributes listItemContents =
                 )
                 listItemContents
     in
-    El.column (spacingAll.small :: attributes) listItems
+    El.column attributes listItems
 
 
 
@@ -152,7 +157,8 @@ defaultPalette =
 
 
 type alias Sizes decorative msg =
-    { verySmall : El.Attr decorative msg
+    { extremelySmall : El.Attr decorative msg
+    , verySmall : El.Attr decorative msg
     , small : El.Attr decorative msg
     , medium : El.Attr decorative msg
     , large : El.Attr decorative msg
@@ -166,7 +172,8 @@ type alias Scale =
 
 buildSizes : (Int -> El.Attr decorative msg) -> Scale -> Sizes decorative msg
 buildSizes buildAttribute scale =
-    { verySmall = buildAttribute <| scale -2
+    { extremelySmall = buildAttribute <| scale -3
+    , verySmall = buildAttribute <| scale -2
     , small = buildAttribute <| scale -1
     , medium = buildAttribute <| scale 1
     , large = buildAttribute <| scale 2
@@ -197,6 +204,11 @@ spacingAll =
 spacingVertical : Sizes () msg
 spacingVertical =
     buildSizes (El.spacingXY 0) spaceScale
+
+
+spacingHorizontal : Sizes () msg
+spacingHorizontal =
+    buildSizes (\space -> El.spacingXY space 0) spaceScale
 
 
 paddingScale : Int -> Int

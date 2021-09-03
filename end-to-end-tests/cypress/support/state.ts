@@ -61,7 +61,7 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
     this.waitForStateToAppear(options);
   }
 
-  reloadAndNavigateTo(): void {
+  reloadAndNavigateTo(options?: StateOptions): void {
     cy.withOverallNameLogged(
       {
         displayName: "NAVIGATING TO",
@@ -70,13 +70,13 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
       () => {
         if (this.localStorage) cy.setLocalStorage(this.localStorage);
         cy.visit(this.startPath, { log: false });
-        this.navigateFromStart();
+        this.navigateFromStart(options);
       }
     );
   }
 
-  navigateFromStart(): void {
-    this.getToThatState(this.getStateByNavigate.bind(this), { log: false });
+  navigateFromStart(options?: StateOptions): void {
+    this.getToThatState(this.getStateByNavigate.bind(this), options);
     this.waitForStateToAppear({ log: false });
   }
 

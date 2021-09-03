@@ -199,16 +199,22 @@ recurringUserStatistics shared =
                    )
     in
     column
-        []
-        [ row [ testid "num-cases-tried" ]
-            [ text "Cases Tried: "
-            , text <| String.fromInt <| List.length allStatistics
+        [ width (fill |> maximum 600), Font.center, UI.spacingVertical.extremelySmall, centerX ]
+        [ paragraph [ Region.heading 1, UI.fontSize.veryLarge ] [ text "Statistics:" ]
+        , UI.viewDivider shared.palette
+        , wrappedRow [ width fill, UI.spacingHorizontal.extremelySmall ]
+            [ paragraph [ testid "num-cases-tried" ]
+                [ text "Cases Tried: "
+                , text <| String.fromInt <| List.length allStatistics
+                ]
+            , paragraph [ testid "num-cases-not-yet-tried" ]
+                [ text "Cases Not Yet Tried: "
+                , text <| String.fromInt <| List.Nonempty.length PLL.all - List.length allStatistics
+                ]
             ]
-        , row [ testid "num-cases-not-yet-tried" ]
-            [ text "Cases Not Yet Tried: "
-            , text <| String.fromInt <| List.Nonempty.length PLL.all - List.length allStatistics
-            ]
-        , UI.viewOrderedList [ testid "worst-three-cases" ] <|
+        , UI.viewDivider shared.palette
+        , paragraph [] [ text "Cases most in need of practice by last three attempts:" ]
+        , UI.viewOrderedList [ testid "worst-three-cases", centerX, UI.spacingVertical.extremelySmall ] <|
             (allStatistics
                 |> User.orderByWorstCaseFirst
                 |> List.take 3
@@ -218,9 +224,10 @@ recurringUserStatistics shared =
                             User.CaseLearnedStatistics { lastThreeAverageMs, lastThreeAverageTPS, pll } ->
                                 PLL.getLetters pll
                                     ++ "-perm: "
-                                    ++ UI.formatMilliseconds lastThreeAverageMs
-                                    ++ " "
                                     ++ UI.formatTPS lastThreeAverageTPS
+                                    ++ " ("
+                                    ++ UI.formatMilliseconds lastThreeAverageMs
+                                    ++ ")"
 
                             User.CaseNotLearnedStatistics pll ->
                                 PLL.getLetters pll
@@ -230,9 +237,14 @@ recurringUserStatistics shared =
                             |> el [ testid "worst-case-list-item" ]
                     )
             )
-        , row [ testid "average-tps" ] [ text "Average TPS: ", text <| UI.formatTPS averageTPS ]
-        , row [ testid "average-time" ] [ text "Average Time: ", text <| UI.formatMilliseconds averageTimeMs ]
-        , paragraph [ testid "statistics-shortcomings-explanation" ] [ text "The stats suck" ]
+        , UI.viewDivider shared.palette
+        , paragraph [] [ text "Overall:" ]
+        , wrappedRow [ width fill, UI.spacingHorizontal.extremelySmall ]
+            [ paragraph [ testid "average-tps" ] [ text "Average TPS: ", text <| UI.formatFloatTwoDecimals averageTPS ]
+            , paragraph [ testid "average-time" ] [ text "Average Time: ", text <| UI.formatMilliseconds averageTimeMs ]
+            ]
+        , UI.viewDivider shared.palette
+        , paragraph [ testid "statistics-shortcomings-explanation" ] [ el [ Font.bold ] <| text "Disclaimer: ", text "These statistics still leave a lot to be wanted. They are not yet comprehensive, and are for example also biased towards longer algorithms scoring better in TPS as recognition time is included. We aspire for much better statistics in the future but this will do for a start as it is non-trivial to improve." ]
         ]
 
 
