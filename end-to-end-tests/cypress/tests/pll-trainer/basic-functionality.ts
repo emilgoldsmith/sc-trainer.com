@@ -1161,14 +1161,15 @@ describe("Behind Feature Flag", function () {
           pllTrainerElements.recurringUserStartPage.worstThreeCases,
           pllTrainerElements.recurringUserStartPage.averageTPS,
           pllTrainerElements.recurringUserStartPage.averageTime,
-          pllTrainerElements.recurringUserStartPage
-            .statisticsShortcomingsExplanation,
         ].forEach((x) => {
           x.assertShows();
           x.assertContainedByWindow();
         });
         // These ones we accept possibly having to scroll for so just check it exists
         // We check it's visibility including scroll in the element sizing
+        pllTrainerElements.recurringUserStartPage.statisticsShortcomingsExplanation
+          .get()
+          .should("exist");
         pllTrainerElements.recurringUserStartPage.cubeStartExplanation
           .get()
           .should("exist");
@@ -1195,10 +1196,11 @@ describe("Behind Feature Flag", function () {
         cy.assertNoHorizontalScrollbar();
         const containerSpecifier =
           pllTrainerElements.recurringUserStartPage.container.specifier;
-        // This one is allowed vertical scrolling, but we want to check
-        // that we can actually scroll down to see instructionsText if its missing
+        pllTrainerElements.recurringUserStartPage.statisticsShortcomingsExplanation.assertConsumableViaVerticalScroll(
+          containerSpecifier
+        );
         pllTrainerElements.recurringUserStartPage.instructionsText.assertConsumableViaVerticalScroll(
-          pllTrainerElements.recurringUserStartPage.container.specifier
+          containerSpecifier
         );
         pllTrainerElements.recurringUserStartPage.learningResources.assertConsumableViaVerticalScroll(
           containerSpecifier
@@ -1610,7 +1612,7 @@ describe("Behind Feature Flag", function () {
           .should("include.text", ": " + globalTimeAverage.toFixed(2) + "s");
         pllTrainerElements.recurringUserStartPage.averageTPS
           .get()
-          .should("include.text", ": " + globalTPSAverage.toFixed(2) + "TPS");
+          .should("include.text", ": " + globalTPSAverage.toFixed(2));
       }
     });
     function completePLLTestInMilliseconds(
