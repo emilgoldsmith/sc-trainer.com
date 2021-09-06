@@ -166,18 +166,17 @@ computeAveragesOfLastThree ( results, algorithm ) =
         |> List.foldl
             (\result ->
                 Maybe.andThen
-                    (\allMs ->
+                    (\timeAndTpses ->
                         case result of
                             Correct { resultInMilliseconds, preAUF, postAUF } ->
-                                Just
-                                    (( resultInMilliseconds
-                                     , Algorithm.Extra.complexityAdjustedTPS
+                                Just <|
+                                    ( resultInMilliseconds
+                                    , Algorithm.Extra.complexityAdjustedTPS
                                         { milliseconds = resultInMilliseconds }
                                         ( preAUF, postAUF )
                                         algorithm
-                                     )
-                                        :: allMs
                                     )
+                                        :: timeAndTpses
 
                             Wrong _ ->
                                 Nothing
