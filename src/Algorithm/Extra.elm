@@ -1,19 +1,20 @@
 module Algorithm.Extra exposing (complexity, complexityAdjustedTPS)
 
+import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
 
 
-complexityAdjustedTPS : { milliseconds : Float } -> Algorithm -> Float
-complexityAdjustedTPS { milliseconds } algorithm =
+complexityAdjustedTPS : { milliseconds : Int } -> ( AUF, AUF ) -> Algorithm -> Float
+complexityAdjustedTPS { milliseconds } aufs algorithm =
     let
         seconds =
-            milliseconds / 1000
+            toFloat milliseconds / 1000
     in
-    complexity algorithm / seconds
+    complexity aufs algorithm / seconds
 
 
-complexity : Algorithm -> Float
-complexity algorithm =
+complexity : ( AUF, AUF ) -> Algorithm -> Float
+complexity ( preAUF, postAUF ) algorithm =
     let
         withYRotationsTrimmed =
             algorithm
@@ -25,6 +26,8 @@ complexity algorithm =
                 |> Algorithm.fromTurnList
     in
     withYRotationsTrimmed
+        |> Algorithm.append (AUF.toAlgorithm preAUF)
+        |> Algorithm.reverseAppend (AUF.toAlgorithm postAUF)
         |> Algorithm.toTurnList
         |> List.length
         |> toFloat
