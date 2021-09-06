@@ -1,6 +1,6 @@
 module Tests.User exposing (helperTests, serializationTests)
 
-import AUF
+import AUF exposing (AUF)
 import Algorithm
 import Expect
 import Fuzz
@@ -34,7 +34,7 @@ helperTests =
                         |> User.changePLLAlgorithm pll Algorithm.empty
                         |> User.recordPLLTestResult
                             pll
-                            wrongResult
+                            (wrongResult ( AUF.Halfway, AUF.CounterClockwise ))
                         |> Result.map User.hasAttemptedAPLLTestCase
                         |> Expect.equal (Ok True)
             ]
@@ -51,29 +51,46 @@ helperTests =
                             algorithm
                         |> User.recordPLLTestResult
                             PLL.Aa
-                            (correctResult 500)
+                            (correctResult 500 ( AUF.Clockwise, AUF.None ))
                         |> Result.andThen
                             (User.recordPLLTestResult
                                 PLL.Aa
-                                (correctResult 2000)
+                                (correctResult 2000 ( AUF.None, AUF.Clockwise ))
                             )
                         |> Result.andThen
                             (User.recordPLLTestResult
                                 PLL.Aa
-                                (correctResult 6000)
+                                (correctResult 6000 ( AUF.None, AUF.None ))
                             )
-                        -- We add a fourth one here to ensure only the first three are averaged
+                        -- We add a fourth one here to ensure only the three most recent tests are averaged
                         |> Result.andThen
                             (User.recordPLLTestResult
                                 PLL.Aa
-                                (correctResult 1000)
+                                (correctResult 1000 ( AUF.Halfway, AUF.CounterClockwise ))
                             )
                         |> Result.map User.pllStatistics
                         |> Result.withDefault []
                         |> Expect.equal
                             [ User.CaseLearnedStatistics
                                 { lastThreeAverageMs = 3000
-                                , lastThreeAverageTPS = toFloat (List.length <| Algorithm.toTurnList algorithm) / 3
+                                , lastThreeAverageTPS =
+                                    let
+                                        length =
+                                            toFloat (List.length <| Algorithm.toTurnList algorithm)
+
+                                        -- The additions are the extra moves from the AUFs, and the
+                                        -- denominator is the result time from above divided by 1000 to
+                                        -- convert it to seconds
+                                        first =
+                                            (length + 1) / 2
+
+                                        second =
+                                            length / 6
+
+                                        third =
+                                            (length + 2) / 1
+                                    in
+                                    (first + second + third) / 3
                                 , pll = PLL.Aa
                                 }
                             ]
@@ -85,16 +102,16 @@ helperTests =
                             (PLL.getAlgorithm PLL.referenceAlgorithms PLL.Aa)
                         |> User.recordPLLTestResult
                             PLL.Aa
-                            wrongResult
+                            (wrongResult ( AUF.Clockwise, AUF.Halfway ))
                         |> Result.andThen
                             (User.recordPLLTestResult
                                 PLL.Aa
-                                (correctResult 2000)
+                                (correctResult 2000 ( AUF.CounterClockwise, AUF.None ))
                             )
                         |> Result.andThen
                             (User.recordPLLTestResult
                                 PLL.Aa
-                                (correctResult 2000)
+                                (correctResult 2000 ( AUF.None, AUF.Halfway ))
                             )
                         |> Result.map User.pllStatistics
                         |> Result.withDefault []
@@ -114,16 +131,16 @@ helperTests =
                             (PLL.getAlgorithm PLL.referenceAlgorithms PLL.Nb)
                         |> User.recordPLLTestResult
                             PLL.Na
-                            (correctResult 2200)
+                            (correctResult 2200 ( AUF.None, AUF.None ))
                         |> Result.andThen
                             (User.recordPLLTestResult
                                 PLL.Ab
-                                (correctResult 2000)
+                                (correctResult 2000 ( AUF.None, AUF.None ))
                             )
                         |> Result.andThen
                             (User.recordPLLTestResult
                                 PLL.Nb
-                                wrongResult
+                                (wrongResult ( AUF.None, AUF.None ))
                             )
                         |> Result.map User.pllStatistics
                         |> Result.withDefault []
@@ -151,22 +168,22 @@ helperTests =
         ]
 
 
-correctResult : Int -> User.TestResult
-correctResult resultInMilliseconds =
+correctResult : Int -> ( AUF, AUF ) -> User.TestResult
+correctResult resultInMilliseconds ( preAUF, postAUF ) =
     User.Correct
         { timestamp = Time.millisToPosix 0
-        , preAUF = AUF.None
-        , postAUF = AUF.None
+        , preAUF = preAUF
+        , postAUF = postAUF
         , resultInMilliseconds = resultInMilliseconds
         }
 
 
-wrongResult : User.TestResult
-wrongResult =
+wrongResult : ( AUF, AUF ) -> User.TestResult
+wrongResult ( preAUF, postAUF ) =
     User.Wrong
         { timestamp = Time.millisToPosix 0
-        , preAUF = AUF.None
-        , postAUF = AUF.None
+        , preAUF = preAUF
+        , postAUF = postAUF
         }
 
 

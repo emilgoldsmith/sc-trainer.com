@@ -1313,42 +1313,50 @@ describe("Behind Feature Flag", function () {
       const HAlgorithmLength = 7;
       completePLLTestInMilliseconds(1500, PLL.Aa, {
         firstEncounterWithThisPLL: true,
+        // Try with no AUFs
         aufs: [],
         correct: true,
       });
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            averageTimeMs: 1500,
-            averageTPS: AaAlgorithmLength / 1.5,
+            lastThreeResults: [{ timeMs: 1500, turns: AaAlgorithmLength }],
             pll: PLL.Aa,
           },
         ],
       });
       completePLLTestInMilliseconds(2000, PLL.Aa, {
         firstEncounterWithThisPLL: false,
-        aufs: [],
+        // Try with a preAUF
+        aufs: [AUF.U, AUF.none],
         correct: true,
       });
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            averageTimeMs: 1750,
-            averageTPS: AaAlgorithmLength / 1.75,
+            lastThreeResults: [
+              { timeMs: 1500, turns: AaAlgorithmLength },
+              // The addition is for the extra AUF turn
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+            ],
             pll: PLL.Aa,
           },
         ],
       });
       completePLLTestInMilliseconds(1000, PLL.Aa, {
         firstEncounterWithThisPLL: false,
-        aufs: [],
+        // Try with a postAUF
+        aufs: [AUF.none, AUF.U2],
         correct: true,
       });
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            averageTimeMs: 1500,
-            averageTPS: AaAlgorithmLength / 1.5,
+            lastThreeResults: [
+              { timeMs: 1500, turns: AaAlgorithmLength },
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength + 1 },
+            ],
             pll: PLL.Aa,
           },
         ],
@@ -1357,29 +1365,39 @@ describe("Behind Feature Flag", function () {
       // are taken into account
       completePLLTestInMilliseconds(1000, PLL.Aa, {
         firstEncounterWithThisPLL: false,
-        aufs: [],
+        // Try with both AUFs
+        aufs: [AUF.UPrime, AUF.U],
         correct: true,
       });
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            averageTimeMs: (4 / 3) * 1000,
-            averageTPS: AaAlgorithmLength / (4 / 3),
+            lastThreeResults: [
+              { timeMs: 1000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength + 2 },
+            ],
             pll: PLL.Aa,
           },
         ],
       });
       completePLLTestInMilliseconds(2000, PLL.H, {
         firstEncounterWithThisPLL: true,
-        aufs: [],
+        aufs: [AUF.UPrime, AUF.U2],
         correct: true,
       });
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
-          { averageTimeMs: 2000, averageTPS: HAlgorithmLength / 2, pll: PLL.H },
           {
-            averageTimeMs: (4 / 3) * 1000,
-            averageTPS: AaAlgorithmLength / (4 / 3),
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 2 }],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 1000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength + 2 },
+            ],
             pll: PLL.Aa,
           },
         ],
@@ -1396,12 +1414,15 @@ describe("Behind Feature Flag", function () {
             pll: PLL.Aa,
             dnf: true,
           },
-          { averageTimeMs: 2000, averageTPS: HAlgorithmLength / 2, pll: PLL.H },
+          {
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 2 }],
+            pll: PLL.H,
+          },
         ],
       });
       completePLLTestInMilliseconds(2000, PLL.Aa, {
         firstEncounterWithThisPLL: false,
-        aufs: [AUF.U2, AUF.UPrime],
+        aufs: [AUF.U2, AUF.none],
         correct: true,
       });
       assertCorrectStatistics({
@@ -1410,12 +1431,15 @@ describe("Behind Feature Flag", function () {
             pll: PLL.Aa,
             dnf: true,
           },
-          { averageTimeMs: 2000, averageTPS: HAlgorithmLength / 2, pll: PLL.H },
+          {
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 2 }],
+            pll: PLL.H,
+          },
         ],
       });
       completePLLTestInMilliseconds(1000, PLL.Aa, {
         firstEncounterWithThisPLL: false,
-        aufs: [AUF.U2, AUF.UPrime],
+        aufs: [AUF.none, AUF.none],
         correct: true,
       });
       assertCorrectStatistics({
@@ -1424,20 +1448,29 @@ describe("Behind Feature Flag", function () {
             pll: PLL.Aa,
             dnf: true,
           },
-          { averageTimeMs: 2000, averageTPS: HAlgorithmLength / 2, pll: PLL.H },
+          {
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 2 }],
+            pll: PLL.H,
+          },
         ],
       });
       completePLLTestInMilliseconds(3000, PLL.Aa, {
         firstEncounterWithThisPLL: false,
-        aufs: [AUF.U2, AUF.UPrime],
+        aufs: [AUF.U, AUF.UPrime],
         correct: true,
       });
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
-          { averageTimeMs: 2000, averageTPS: HAlgorithmLength / 2, pll: PLL.H },
           {
-            averageTimeMs: 2000,
-            averageTPS: AaAlgorithmLength / 2,
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 2 }],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
             pll: PLL.Aa,
           },
         ],
@@ -1447,8 +1480,7 @@ describe("Behind Feature Flag", function () {
       }: {
         worstCasesFromWorstToBetter: (
           | {
-              averageTimeMs: number;
-              averageTPS: number;
+              lastThreeResults: { timeMs: number; turns: number }[];
               pll: PLL;
               dnf?: undefined;
             }
@@ -1469,6 +1501,9 @@ describe("Behind Feature Flag", function () {
                 );
               }
               if (caseInfo.dnf !== true) {
+                const { averageTimeMs, averageTPS } = computeAverages(
+                  caseInfo.lastThreeResults
+                );
                 expect(text)
                   .to.match(
                     new RegExp(
@@ -1477,15 +1512,11 @@ describe("Behind Feature Flag", function () {
                   )
                   .and.match(
                     new RegExp(
-                      "\\b" +
-                        (caseInfo.averageTimeMs / 1000).toFixed(2) +
-                        "s\\b"
+                      "\\b" + (averageTimeMs / 1000).toFixed(2) + "s\\b"
                     )
                   )
                   .and.match(
-                    new RegExp(
-                      "\\b" + caseInfo.averageTPS.toFixed(2) + "\\s?TPS\\b"
-                    )
+                    new RegExp("\\b" + averageTPS.toFixed(2) + "\\s?TPS\\b")
                   );
               } else {
                 expect(text).to.equal(
@@ -1510,13 +1541,14 @@ describe("Behind Feature Flag", function () {
 
       completePLLTestInMilliseconds(1000, PLL.Aa, {
         firstEncounterWithThisPLL: true,
-        aufs: [],
+        aufs: [AUF.UPrime, AUF.none],
         correct: true,
       });
       assertCorrectGlobalStatistics({
         numTried: 1,
-        validLastThreeAverages: [1000],
-        validLastThreeTPSes: [AaAlgorithmLength / 1],
+        casesWithLastThreeCasesValid: [
+          [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
+        ],
       });
 
       completePLLTestInMilliseconds(2000, PLL.Ab, {
@@ -1528,21 +1560,24 @@ describe("Behind Feature Flag", function () {
       // But doesn't change the global averages
       assertCorrectGlobalStatistics({
         numTried: 2,
-        validLastThreeAverages: [1000],
-        validLastThreeTPSes: [AaAlgorithmLength / 1],
+        casesWithLastThreeCasesValid: [
+          [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
+        ],
       });
 
       completePLLTestInMilliseconds(2000, PLL.Ga, {
         firstEncounterWithThisPLL: true,
-        aufs: [],
+        aufs: [AUF.U2, AUF.U],
         correct: true,
       });
       // And counts a third one after an incorrect
       // And now changes the global averages
       assertCorrectGlobalStatistics({
         numTried: 3,
-        validLastThreeAverages: [1000, 2000],
-        validLastThreeTPSes: [AaAlgorithmLength / 1, GaAlgorithmLength / 2],
+        casesWithLastThreeCasesValid: [
+          [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
+          [{ timeMs: 2000, turns: GaAlgorithmLength + 2 }],
+        ],
       });
 
       completePLLTestInMilliseconds(1000, PLL.Ga, {
@@ -1554,40 +1589,54 @@ describe("Behind Feature Flag", function () {
       // but does modify one of the averages
       assertCorrectGlobalStatistics({
         numTried: 3,
-        validLastThreeAverages: [1000, 1500],
-        validLastThreeTPSes: [AaAlgorithmLength / 1, GaAlgorithmLength / 1.5],
+        casesWithLastThreeCasesValid: [
+          [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
+          [
+            { timeMs: 2000, turns: GaAlgorithmLength + 2 },
+            { timeMs: 1000, turns: GaAlgorithmLength },
+          ],
+        ],
       });
 
       // Now we make sure that it only counts the last three by going up
       // to 4 tests on Ga
       completePLLTestInMilliseconds(2000, PLL.Ga, {
         firstEncounterWithThisPLL: false,
-        aufs: [],
+        aufs: [AUF.none, AUF.U],
         correct: true,
       });
       completePLLTestInMilliseconds(3000, PLL.Ga, {
         firstEncounterWithThisPLL: false,
-        aufs: [],
+        aufs: [AUF.UPrime, AUF.U2],
         correct: true,
       });
       assertCorrectGlobalStatistics({
         numTried: 3,
-        validLastThreeAverages: [1000, 2000],
-        validLastThreeTPSes: [AaAlgorithmLength / 1, GaAlgorithmLength / 2],
+        casesWithLastThreeCasesValid: [
+          [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
+          [
+            { timeMs: 1000, turns: GaAlgorithmLength },
+            { timeMs: 2000, turns: GaAlgorithmLength + 1 },
+            { timeMs: 3000, turns: GaAlgorithmLength + 2 },
+          ],
+        ],
       });
 
       function assertCorrectGlobalStatistics({
         numTried,
-        validLastThreeAverages,
-        validLastThreeTPSes,
+        casesWithLastThreeCasesValid,
       }: {
         numTried: number;
-        validLastThreeAverages: number[];
-        validLastThreeTPSes: number[];
+        casesWithLastThreeCasesValid: { timeMs: number; turns: number }[][];
       }): void {
-        const average = (l: number[]) => l.reduce((a, b) => a + b) / l.length;
-        const globalTimeAverageSeconds = average(validLastThreeAverages) / 1000;
-        const globalTPSAverage = average(validLastThreeTPSes);
+        const eachCasePrecomputed = casesWithLastThreeCasesValid.map(
+          computeAverages
+        );
+        const globalTimeAverageSeconds =
+          average(eachCasePrecomputed.map((x) => x.averageTimeMs)) / 1000;
+        const globalTPSAverage = average(
+          eachCasePrecomputed.map((x) => x.averageTPS)
+        );
         const numNotYetTried = totalPLLCases - numTried;
         cy.visit(paths.pllTrainer);
         pllTrainerElements.recurringUserStartPage.numCasesTried
@@ -1647,10 +1696,24 @@ describe("Behind Feature Flag", function () {
       if (correct) pllTrainerElements.correctPage.container.waitFor();
       else pllTrainerElements.wrongPage.container.waitFor();
     }
+    function computeAverages(
+      lastThreeResults: { timeMs: number; turns: number }[]
+    ): { averageTimeMs: number; averageTPS: number } {
+      return {
+        averageTimeMs: average(lastThreeResults.map((x) => x.timeMs)),
+        averageTPS: average(
+          lastThreeResults.map(({ timeMs, turns }) => turns / (timeMs / 1000))
+        ),
+      };
+    }
+    function average(l: number[]) {
+      return l.reduce((a, b) => a + b) / l.length;
+    }
     it("correctly ignores y rotations at beginning and end of algorithm as this can be dealt with through AUFs", function () {
-      pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.reloadAndNavigateTo();
-      const testCase = [AUF.none, PLL.Aa, AUF.none] as const;
+      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
+      const testCase = [AUF.U2, PLL.Aa, AUF.UPrime] as const;
       cy.setCurrentTestCase(testCase);
+      pllTrainerElements.evaluateResult.correctButton.get().click();
       pllTrainerElements.pickAlgorithmPage.algorithmInput
         .get()
         .type(pllToAlgorithmString[PLL.Aa] + "{enter}");
@@ -1663,8 +1726,9 @@ describe("Behind Feature Flag", function () {
         .as(unmodifiedAlias);
 
       cy.clearLocalStorage();
-      pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.reloadAndNavigateTo();
+      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
       cy.setCurrentTestCase(testCase);
+      pllTrainerElements.evaluateResult.correctButton.get().click();
       pllTrainerElements.pickAlgorithmPage.algorithmInput
         .get()
         .type("y' " + pllToAlgorithmString[PLL.Aa] + " y2{enter}");

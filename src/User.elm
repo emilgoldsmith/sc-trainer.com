@@ -138,28 +138,68 @@ pllStatistics (User pllData) =
                 getPLLData pll pllData
                     |> Maybe.map
                         (\( algorithm, results ) ->
-                            ( results
-                            , ( pll, algorithm )
+                            ( ( results, algorithm )
+                            , pll
                             )
                         )
             )
-        |> List.map (Tuple.mapFirst computeAverageOfLastThree)
+        |> List.map (Tuple.mapFirst computeAveragesOfLastThree)
         |> List.map
-            (\( maybeAvg, ( pll, algorithm ) ) ->
-                maybeAvg
+            (\( maybeAverages, pll ) ->
+                maybeAverages
                     |> Maybe.map
-                        (\avg ->
+                        (\{ timeMs, tps } ->
                             CaseLearnedStatistics
-                                { lastThreeAverageMs = avg
-                                , lastThreeAverageTPS =
-                                    Algorithm.Extra.complexityAdjustedTPS
-                                        { milliseconds = avg }
-                                        algorithm
+                                { lastThreeAverageMs = timeMs
+                                , lastThreeAverageTPS = tps
                                 , pll = pll
                                 }
                         )
                     |> Maybe.withDefault (CaseNotLearnedStatistics pll)
             )
+
+
+computeAveragesOfLastThree : ( List TestResult, Algorithm ) -> Maybe { timeMs : Float, tps : Float }
+computeAveragesOfLastThree ( results, algorithm ) =
+    results
+        |> List.take 3
+        |> List.foldl
+            (\result ->
+                Maybe.andThen
+                    (\allMs ->
+                        case result of
+                            Correct { resultInMilliseconds, preAUF, postAUF } ->
+                                Just
+                                    (( resultInMilliseconds
+                                     , Algorithm.Extra.complexityAdjustedTPS
+                                        { milliseconds = resultInMilliseconds }
+                                        ( preAUF, postAUF )
+                                        algorithm
+                                     )
+                                        :: allMs
+                                    )
+
+                            Wrong _ ->
+                                Nothing
+                    )
+            )
+            (Just [])
+        |> Maybe.map List.unzip
+        |> Maybe.map (\( timeMs, tps ) -> { timeMs = averageInts timeMs, tps = average tps })
+
+
+averageInts : List Int -> Float
+averageInts =
+    List.map toFloat >> average
+
+
+average : List Float -> Float
+average list =
+    if List.isEmpty list then
+        0
+
+    else
+        List.sum list / toFloat (List.length list)
 
 
 orderByWorstCaseFirst : List CaseStatistics -> List CaseStatistics
@@ -206,36 +246,6 @@ invertOrder comp =
 
         GT ->
             LT
-
-
-computeAverageOfLastThree : List TestResult -> Maybe Float
-computeAverageOfLastThree results =
-    results
-        |> List.take 3
-        |> List.foldl
-            (\result ->
-                Maybe.andThen
-                    (\allMs ->
-                        case result of
-                            Correct { resultInMilliseconds } ->
-                                Just (resultInMilliseconds :: allMs)
-
-                            Wrong _ ->
-                                Nothing
-                    )
-            )
-            (Just [])
-        |> Maybe.map (List.map toFloat)
-        |> Maybe.map average
-
-
-average : List Float -> Float
-average list =
-    if List.isEmpty list then
-        0
-
-    else
-        List.sum list / toFloat (List.length list)
 
 
 type RecordResultError
@@ -435,7 +445,7 @@ pllUserDataDecoder =
 pllAlgorithmsDecoder : Json.Decode.Decoder (Dict String Algorithm)
 pllAlgorithmsDecoder =
     Json.Decode.dict Json.Decode.string
-        -- Non Critical To Do: Log an error here somehow instead of just silently swallowing invalid
+        -- TODO: Log an error here somehow instead of just silently swallowing invalid
         -- algorithms in local storage?
         |> Json.Decode.map (dictFilterMap (Algorithm.fromString >> Result.toMaybe))
 
