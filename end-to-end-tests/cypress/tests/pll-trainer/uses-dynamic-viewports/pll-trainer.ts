@@ -174,10 +174,12 @@ function checkWhetherShortcutsDisplay(
     [pllTrainerElements.typeOfWrongPage.nearlyThereButton, "2", Key.two],
     [pllTrainerElements.typeOfWrongPage.unrecoverableButton, "3", Key.three],
   ] as const).forEach(([element, shortcutText, key]) => {
-    cy.get("@" + typeOfWrongStateAlias).then((state) => {
+    cy.getAliases(typeOfWrongStateAlias).then((state) => {
+      if (!isOurApplicationState(state)) {
+        throw new Error("Expected an application state variable here");
+      }
       cy.setApplicationState(
-        // TODO: If Cypress types become inclusive of aliases remove these type casts
-        (state as unknown) as Cypress.OurApplicationState,
+        state as Cypress.OurApplicationState,
         "type of wrong"
       );
     });
@@ -212,6 +214,18 @@ function checkWhetherShortcutsDisplay(
     pllTrainerElements.wrongPage.nextButton.get().click();
   }
   pllTrainerElements.getReadyScreen.container.waitFor();
+}
+
+function isOurApplicationState(
+  possibleState: unknown
+): possibleState is Cypress.OurApplicationState {
+  return (
+    typeof possibleState === "object" &&
+    possibleState !== null &&
+    "identifierToMakeItUnique" in possibleState &&
+    (possibleState as Cypress.OurApplicationState).identifierToMakeItUnique ===
+      "ourApplicationState"
+  );
 }
 
 function buildShortcutRegex(shortcutText: string): RegExp {

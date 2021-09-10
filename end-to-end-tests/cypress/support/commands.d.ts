@@ -90,6 +90,13 @@ declare namespace Cypress {
     ): Chainable<JQuery<HTMLElement>>;
 
     /**
+     * Get one or more aliases that were created with the .as() command.
+     * You don't need to prefix it with @ here as you do with cy.get()
+     */
+    getAliases(alias: string): Chainable<unknown>;
+    getAliases(alias: string[]): Chainable<unknown[]>;
+
+    /**
      * Presses a key in the "global scope", not focusing on any specific node
      *
      * @example
