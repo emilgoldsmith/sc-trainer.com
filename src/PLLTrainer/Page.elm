@@ -1,6 +1,7 @@
 module PLLTrainer.Page exposing (Model, Msg, page)
 
 import AUF
+import AUF.Extra
 import Algorithm exposing (Algorithm)
 import Cube exposing (Cube)
 import Effect exposing (Effect)
@@ -322,17 +323,42 @@ update shared msg model =
                     )
 
                 AlgorithmPicked nextTrainerState testResult algorithm ->
-                    ( { model | trainerState = nextTrainerState }
-                    , Effect.fromShared <|
-                        Shared.ModifyUser
-                            (User.changePLLAlgorithm
-                                (PLLTrainer.TestCase.pll model.currentTestCase)
-                                algorithm
-                                >> recordPLLTestResultWithErrorHandling
-                                    (PLLTrainer.TestCase.pll model.currentTestCase)
-                                    testResult
+                    case
+                        AUF.Extra.detectAUFs
+                            { toMatchTo = PLLTrainer.TestCase.toAlg shared.user model.currentTestCase
+                            , toDetectFor = algorithm
+                            }
+                    of
+                        Err AUF.Extra.NoAUFsMakeThemMatch ->
+                            ( model, Effect.fromCmd <| Ports.logError "the algorithm picked didn't match the case" )
+
+                        Ok ( correctedPreAUF, correctedPostAUF ) ->
+                            let
+                                correctedTestCase =
+                                    PLLTrainer.TestCase.build
+                                        correctedPreAUF
+                                        (PLLTrainer.TestCase.pll model.currentTestCase)
+                                        correctedPostAUF
+
+                                correctedTestResult =
+                                    case testResult of
+                                        User.Correct arguments ->
+                                            User.Correct { arguments | preAUF = correctedPreAUF, postAUF = correctedPostAUF }
+
+                                        User.Wrong arguments ->
+                                            User.Wrong { arguments | preAUF = correctedPreAUF, postAUF = correctedPostAUF }
+                            in
+                            ( { model | currentTestCase = correctedTestCase, trainerState = nextTrainerState }
+                            , Effect.fromShared <|
+                                Shared.ModifyUser
+                                    (User.changePLLAlgorithm
+                                        (PLLTrainer.TestCase.pll correctedTestCase)
+                                        algorithm
+                                        >> recordPLLTestResultWithErrorHandling
+                                            (PLLTrainer.TestCase.pll correctedTestCase)
+                                            correctedTestResult
+                                    )
                             )
-                    )
 
                 WrongButNoMoveApplied { testResult } ->
                     let

@@ -1761,7 +1761,7 @@ describe("Behind Feature Flag", function () {
         });
     });
 
-    it.only("doesn't display the same cube for same case with algorithms that require different AUFs", function () {
+    it("doesn't display the same cube for same case with algorithms that require different AUFs", function () {
       const pll = PLL.Ua;
       const aufs = [AUF.none, AUF.none] as const;
       const FIRST_CUBE_ALIAS = "first-cube";
@@ -1821,7 +1821,7 @@ describe("Behind Feature Flag", function () {
       }
     });
 
-    it.only("correctly calculates the TPS of the first attempt on a case, even though we don't know which AUF was used until the algorithm is input", function () {
+    it("correctly calculates the TPS of the first attempt on a case, even though we don't know which AUF was used until the algorithm is input", function () {
       const testResultTime = 1000;
       const pll = PLL.Ua;
       const internalInitialAUFs = [AUF.none, AUF.none] as const;
@@ -1845,15 +1845,7 @@ describe("Behind Feature Flag", function () {
       });
       cy.getAliases(ACTUAL_AUF_ALIAS)
         .then((aufsBeforeTypeAssertion) => {
-          if (
-            !Array.isArray(aufsBeforeTypeAssertion) ||
-            aufsBeforeTypeAssertion.length !== 2 ||
-            !isAUF(aufsBeforeTypeAssertion[0]) ||
-            !isAUF(aufsBeforeTypeAssertion[1])
-          ) {
-            throw new Error("Invalid AUFs in ACTUAL_AUF_ALIAS");
-          }
-          const actualAUFs = aufsBeforeTypeAssertion as [AUF, AUF];
+          const actualAUFs = assertIsAUFTuple(aufsBeforeTypeAssertion);
           cy.clearLocalStorage();
           completePLLTestInMilliseconds(1000, pll, {
             firstEncounterWithThisPLL: true,
@@ -1901,10 +1893,16 @@ describe("Behind Feature Flag", function () {
         .get()
         .invoke("text")
         .then((testCase) => {
-          const matches = /(U['2]?)\s*\[\w+-perm\]\s*(U['2]?)/.exec(
+          const matches = /(U['2]?)?\s*\[[[a-zA-Z]+-perm\]\s*(U['2]?)?/.exec(
             testCase
-          ) ?? [undefined, undefined];
-          const aufs = matches.map((maybeText) => {
+          );
+          let aufStrings: (string | undefined)[];
+          if (matches === null) {
+            aufStrings = [undefined, undefined];
+          } else {
+            aufStrings = matches.slice(1);
+          }
+          const aufs = aufStrings.map((maybeText) => {
             switch (maybeText) {
               case "U":
                 return AUF.U;
@@ -1957,6 +1955,18 @@ describe("Behind Feature Flag", function () {
     });
   });
 });
+
+function assertIsAUFTuple(possibleAUFTuple: unknown): [AUF, AUF] {
+  if (
+    !Array.isArray(possibleAUFTuple) ||
+    possibleAUFTuple.length !== 2 ||
+    !isAUF(possibleAUFTuple[0]) ||
+    !isAUF(possibleAUFTuple[1])
+  ) {
+    throw new Error("Invalid AUFs in ACTUAL_AUF_ALIAS");
+  }
+  return possibleAUFTuple as [AUF, AUF];
+}
 
 function testCaseToWrongPageRegex(testCase: readonly [AUF, PLL, AUF]): RegExp {
   const firstAufString = aufToAlgorithmString[testCase[0]];
