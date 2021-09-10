@@ -1,4 +1,4 @@
-module User exposing (CaseStatistics(..), RecordResultError(..), TestResult(..), User, changePLLAlgorithm, deserialize, hasAttemptedAPLLTestCase, hasChosenPLLAlgorithmFor, new, orderByWorstCaseFirst, pllStatistics, recordPLLTestResult, serialize)
+module User exposing (CaseStatistics(..), RecordResultError(..), TestResult(..), User, changePLLAlgorithm, deserialize, getPLLAlgorithm, hasAttemptedAPLLTestCase, hasChosenPLLAlgorithmFor, new, orderByWorstCaseFirst, pllStatistics, recordPLLTestResult, serialize)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
@@ -95,8 +95,8 @@ emptyPLLData =
 
 
 hasChosenPLLAlgorithmFor : PLL -> User -> Bool
-hasChosenPLLAlgorithmFor pll (User pllData) =
-    getPLLAlgorithm pll pllData
+hasChosenPLLAlgorithmFor pll user =
+    getPLLAlgorithm pll user
         |> Maybe.map (always True)
         |> Maybe.withDefault False
 
@@ -107,6 +107,11 @@ hasAttemptedAPLLTestCase (User pllData) =
         |> List.Nonempty.toList
         |> List.filterMap (\pll -> getPLLResults pll pllData)
         |> List.any (List.isEmpty >> not)
+
+
+getPLLAlgorithm : PLL -> User -> Maybe Algorithm
+getPLLAlgorithm pll (User pllData) =
+    getPLLAlgorithm_ pll pllData
 
 
 changePLLAlgorithm : PLL -> Algorithm -> User -> User
@@ -342,7 +347,7 @@ serializePLLAlgorithms pllData =
                 |> List.Nonempty.toList
                 |> List.filterMap
                     (\pll ->
-                        getPLLAlgorithm pll pllData
+                        getPLLAlgorithm_ pll pllData
                             |> Maybe.map Algorithm.toString
                             |> Maybe.map (Tuple.pair <| PLL.getLetters pll)
                     )
@@ -531,8 +536,8 @@ testResultDecoder =
 -- BOILERPLATE
 
 
-getPLLAlgorithm : PLL -> PLLUserData -> Maybe Algorithm
-getPLLAlgorithm pll data =
+getPLLAlgorithm_ : PLL -> PLLUserData -> Maybe Algorithm
+getPLLAlgorithm_ pll data =
     Maybe.map Tuple.first (getPLLData pll data)
 
 

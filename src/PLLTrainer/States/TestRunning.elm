@@ -12,6 +12,7 @@ import PLLTrainer.Subscription
 import PLLTrainer.TestCase exposing (TestCase)
 import Shared
 import TimeInterval exposing (TimeInterval)
+import User exposing (User)
 import View
 import ViewCube
 import ViewportSize exposing (ViewportSize)
@@ -23,10 +24,10 @@ state :
     -> (Msg -> msg)
     -> Transitions msg
     -> PLLTrainer.State.State msg Msg Model
-state { viewportSize } testCase toMsg transitions =
+state { viewportSize, user } testCase toMsg transitions =
     PLLTrainer.State.element
         { init = init
-        , view = view viewportSize testCase
+        , view = view viewportSize testCase user
         , update = update
         , subscriptions = subscriptions toMsg transitions
         }
@@ -98,8 +99,8 @@ subscriptions toMsg transitions _ =
 -- VIEW
 
 
-view : ViewportSize -> TestCase -> Model -> PLLTrainer.State.View msg
-view viewportSize testCase model =
+view : ViewportSize -> TestCase -> User -> Model -> PLLTrainer.State.View msg
+view viewportSize testCase user model =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -111,7 +112,7 @@ view viewportSize testCase model =
                 ]
                 [ el [ centerX ] <|
                     ViewCube.uFRNoLetters [ htmlTestid "test-case" ] (ViewportSize.minDimension viewportSize // 2) <|
-                        PLLTrainer.TestCase.toCube testCase
+                        PLLTrainer.TestCase.toCube user testCase
                 , el
                     [ testid "timer"
                     , centerX

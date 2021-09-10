@@ -6,6 +6,7 @@ import Cube exposing (Cube)
 import List.Nonempty
 import PLL exposing (PLL)
 import Random
+import User exposing (User)
 
 
 type TestCase
@@ -17,19 +18,24 @@ build preauf pll_ postauf =
     TestCase ( preauf, pll_, postauf )
 
 
-toAlg : TestCase -> Algorithm.Algorithm
-toAlg (TestCase ( preauf, pll_, postauf )) =
-    AUF.toAlgorithm preauf
-        |> Algorithm.append (PLL.getAlgorithm PLL.referenceAlgorithms pll_)
-        |> Algorithm.append (AUF.toAlgorithm postauf)
+toAlg : User -> TestCase -> Algorithm.Algorithm
+toAlg user (TestCase ( preAUF_, pll_, postAUF_ )) =
+    let
+        baseAlgorithm =
+            User.getPLLAlgorithm pll_ user
+                |> Maybe.withDefault (PLL.getAlgorithm PLL.referenceAlgorithms pll_)
+    in
+    baseAlgorithm
+        |> Algorithm.append (AUF.toAlgorithm preAUF_)
+        |> Algorithm.reverseAppend (AUF.toAlgorithm postAUF_)
 
 
 {-| A cube that would be solved by this test case
 -}
-toCube : TestCase -> Cube
-toCube testCase =
+toCube : User -> TestCase -> Cube
+toCube user testCase =
     Cube.solved
-        |> Cube.applyAlgorithm (Algorithm.inverse <| toAlg testCase)
+        |> Cube.applyAlgorithm (Algorithm.inverse <| toAlg user testCase)
 
 
 generate : Random.Generator TestCase

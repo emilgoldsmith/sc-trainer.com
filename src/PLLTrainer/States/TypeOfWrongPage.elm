@@ -13,13 +13,13 @@ import Shared
 import UI
 import View
 import ViewCube
-import ViewportSize exposing (ViewportSize)
+import ViewportSize
 
 
 state : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.State msg () ()
-state { viewportSize, palette, hardwareAvailable } transitions arguments =
+state shared transitions arguments =
     PLLTrainer.State.static
-        { view = view viewportSize palette hardwareAvailable transitions arguments
+        { view = view shared transitions arguments
         , nonRepeatedKeyUpHandler =
             Just <|
                 \key ->
@@ -60,14 +60,14 @@ type alias Transitions msg =
 -- VIEW
 
 
-view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
-view viewportSize palette hardwareAvailable transitions arguments =
+view : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
+view { user, viewportSize, palette, hardwareAvailable } transitions arguments =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
             let
                 noMovesCube =
-                    arguments.expectedCubeState |> Cube.applyAlgorithm (Algorithm.inverse <| PLLTrainer.TestCase.toAlg arguments.testCase)
+                    arguments.expectedCubeState |> Cube.applyAlgorithm (Algorithm.inverse <| PLLTrainer.TestCase.toAlg user arguments.testCase)
 
                 nearlyThereCube =
                     arguments.expectedCubeState

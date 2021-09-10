@@ -15,13 +15,13 @@ import Shared
 import UI
 import View
 import ViewCube
-import ViewportSize exposing (ViewportSize)
+import ViewportSize
 
 
 state : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.State msg () ()
-state { viewportSize, palette, hardwareAvailable } transitions arguments =
+state shared transitions arguments =
     PLLTrainer.State.static
-        { view = view viewportSize palette hardwareAvailable transitions arguments
+        { view = view shared transitions arguments
         , nonRepeatedKeyUpHandler =
             Just <|
                 \key ->
@@ -54,13 +54,13 @@ type alias Transitions msg =
 -- VIEW
 
 
-view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
-view viewportSize palette hardwareAvailable transitions arguments =
+view : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
+view { palette, viewportSize, hardwareAvailable, user } transitions arguments =
     { overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
     , body =
         let
             testCaseCube =
-                PLLTrainer.TestCase.toCube arguments.testCase
+                PLLTrainer.TestCase.toCube user arguments.testCase
         in
         View.FullScreen <|
             column
