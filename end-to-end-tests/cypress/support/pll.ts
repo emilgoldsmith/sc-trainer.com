@@ -5,10 +5,15 @@ export enum AUF {
   UPrime,
 }
 
+export function isAUF(possibleAUF: unknown): possibleAUF is AUF {
+  return [AUF.none, AUF.U, AUF.U2, AUF.UPrime].includes(possibleAUF as number);
+}
+
 export enum PLL {
   Aa,
   Ab,
   H,
+  Ua,
   Ga,
 }
 
@@ -23,6 +28,7 @@ export const pllToPllLetters: { [key in PLL]: string } = {
   [PLL.Aa]: "Aa",
   [PLL.Ab]: "Ab",
   [PLL.H]: "H",
+  [PLL.Ua]: "Ua",
   [PLL.Ga]: "Ga",
 };
 
@@ -33,6 +39,8 @@ export const pllToAlgorithmString: { [key in PLL]: string } = {
   [PLL.Ab]: "(x) R D' R U2 R' D R U2 R2 (x')",
   // Taken from https://www.speedsolving.com/wiki/index.php/PLL#H_Permutation
   [PLL.H]: "M2' U M2' U2 M2' U M2'",
+  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#U_Permutation_:_a
+  [PLL.Ua]: "R2 U' R' U' R U R U R U' R",
   // Taken from https://www.speedsolving.com/wiki/index.php/PLL#G_Permutation_:_a
   [PLL.Ga]: "(y) R2 U (R' U R' U') R U' R2 (D U' R' U) R D'",
 };

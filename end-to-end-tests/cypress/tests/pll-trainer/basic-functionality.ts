@@ -14,6 +14,7 @@ import {
 import {
   AUF,
   aufToAlgorithmString,
+  isAUF,
   PLL,
   pllToAlgorithmString,
   pllToPllLetters,
@@ -1659,25 +1660,37 @@ describe("Behind Feature Flag", function () {
     function completePLLTestInMilliseconds(
       milliseconds: number,
       pll: PLL,
-      {
+      params: {
+        firstEncounterWithThisPLL: boolean;
+        aufs: readonly [AUF, AUF] | readonly [];
+        overrideDefaultAlgorithm?: string;
+        startPageCallback?: () => void;
+        testRunningCallback?: () => void;
+      } & (
+        | { correct: true }
+        | { correct: false; wrongPageCallback?: () => void }
+      )
+    ): void {
+      const {
         firstEncounterWithThisPLL,
         aufs,
         correct,
-      }: {
-        firstEncounterWithThisPLL: boolean;
-        aufs: [AUF, AUF] | [];
-        correct: boolean;
-      }
-    ): void {
+        overrideDefaultAlgorithm,
+        startPageCallback,
+        testRunningCallback,
+      } = params;
       const [preAUF, postAUF] = [aufs[0] || AUF.none, aufs[1] || AUF.none];
       cy.visit(paths.pllTrainer);
       cy.clock();
+      pllTrainerElements.newUserStartPage.container.waitFor();
+      startPageCallback?.();
       pllTrainerElements.newUserStartPage.startButton.get().click();
       pllTrainerElements.getReadyScreen.container.waitFor();
       cy.tick(1000);
       pllTrainerElements.testRunning.container.waitFor();
       cy.setCurrentTestCase([preAUF, pll, postAUF]);
       cy.tick(milliseconds);
+      testRunningCallback?.();
       cy.pressKey(Key.space);
       pllTrainerElements.evaluateResult.container.waitFor();
       cy.tick(500);
@@ -1691,10 +1704,15 @@ describe("Behind Feature Flag", function () {
       if (firstEncounterWithThisPLL) {
         pllTrainerElements.pickAlgorithmPage.algorithmInput
           .get()
-          .type(pllToAlgorithmString[pll] + "{enter}");
+          .type(
+            (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
+          );
       }
       if (correct) pllTrainerElements.correctPage.container.waitFor();
-      else pllTrainerElements.wrongPage.container.waitFor();
+      else {
+        pllTrainerElements.wrongPage.container.waitFor();
+        params.wrongPageCallback?.();
+      }
     }
     function computeAverages(
       lastThreeResults: { timeMs: number; turns: number }[]
@@ -1742,6 +1760,171 @@ describe("Behind Feature Flag", function () {
           expect(modified).to.equal(this[unmodifiedAlias]);
         });
     });
+
+    it.only("doesn't display the same cube for same case with algorithms that require different AUFs", function () {
+      const pll = PLL.Ua;
+      const aufs = [AUF.none, AUF.none] as const;
+      const FIRST_CUBE_ALIAS = "first-cube";
+      const SECOND_CUBE_ALIAS = "second-cube";
+      const firstAlgorithm = "R2 U' R' U' R U R U R U' R";
+      const secondAlgorithm = "R2 U' R2 S R2 S' U R2";
+
+      runTest({ algorithm: firstAlgorithm, firstEncounterWithThisPLL: true });
+      // We only record on the second attempt because on the first on the app still doesn't know which algorithm
+      // you use so it wouldn't make a difference which one we use
+      runTest({
+        algorithm: firstAlgorithm,
+        firstEncounterWithThisPLL: false,
+        cubeAlias: FIRST_CUBE_ALIAS,
+      });
+
+      cy.clearLocalStorage();
+
+      runTest({ algorithm: secondAlgorithm, firstEncounterWithThisPLL: true });
+      runTest({
+        algorithm: secondAlgorithm,
+        firstEncounterWithThisPLL: false,
+        cubeAlias: SECOND_CUBE_ALIAS,
+      });
+
+      cy.getAliases([FIRST_CUBE_ALIAS, SECOND_CUBE_ALIAS]).should(
+        ([firstCube, secondCube]) => {
+          expect(
+            firstCube === secondCube,
+            "These algorithms should have different AUFs required"
+          ).to.be.false;
+        }
+      );
+
+      function runTest({
+        algorithm,
+        cubeAlias,
+        firstEncounterWithThisPLL,
+      }: {
+        algorithm: string;
+        cubeAlias?: string;
+        firstEncounterWithThisPLL: boolean;
+      }) {
+        completePLLTestInMilliseconds(1000, pll, {
+          firstEncounterWithThisPLL,
+          aufs,
+          correct: true,
+          overrideDefaultAlgorithm: algorithm,
+          testRunningCallback:
+            cubeAlias === undefined
+              ? undefined
+              : () =>
+                  getCubeHtml(pllTrainerElements.testRunning.testCase).as(
+                    cubeAlias
+                  ),
+        });
+      }
+    });
+
+    it.only("correctly calculates the TPS of the first attempt on a case, even though we don't know which AUF was used until the algorithm is input", function () {
+      const testResultTime = 1000;
+      const pll = PLL.Ua;
+      const internalInitialAUFs = [AUF.none, AUF.none] as const;
+      // const algorithm = "R2 U' R' U' R U R U R U' R";
+      const algorithm = "R2 U' R2 S R2 S' U R2";
+      const CUBE_BEFORE_ALIAS = "cube-before-picked";
+      const STATS_BEFORE_ALIAS = "stats-before-picked";
+      const CUBE_AFTER_ALIAS = "cube-after-picked";
+      const STATS_AFTER_ALIAS = "stats-after-picked";
+      const ACTUAL_AUF_ALIAS = "actual-auf";
+      completePLLTestInMilliseconds(testResultTime, pll, {
+        firstEncounterWithThisPLL: true,
+        aufs: internalInitialAUFs,
+        correct: false,
+        overrideDefaultAlgorithm: algorithm,
+        testRunningCallback: () =>
+          getCubeHtml(pllTrainerElements.testRunning.testCase).as(
+            CUBE_BEFORE_ALIAS
+          ),
+        wrongPageCallback: () => parseAUFsFromWrongPage().as(ACTUAL_AUF_ALIAS),
+      });
+      cy.getAliases(ACTUAL_AUF_ALIAS)
+        .then((aufsBeforeTypeAssertion) => {
+          if (
+            !Array.isArray(aufsBeforeTypeAssertion) ||
+            aufsBeforeTypeAssertion.length !== 2 ||
+            !isAUF(aufsBeforeTypeAssertion[0]) ||
+            !isAUF(aufsBeforeTypeAssertion[1])
+          ) {
+            throw new Error("Invalid AUFs in ACTUAL_AUF_ALIAS");
+          }
+          const actualAUFs = aufsBeforeTypeAssertion as [AUF, AUF];
+          cy.clearLocalStorage();
+          completePLLTestInMilliseconds(1000, pll, {
+            firstEncounterWithThisPLL: true,
+            aufs: internalInitialAUFs,
+            correct: true,
+            overrideDefaultAlgorithm: algorithm,
+          });
+          completePLLTestInMilliseconds(testResultTime, pll, {
+            firstEncounterWithThisPLL: false,
+            aufs: actualAUFs,
+            correct: true,
+            overrideDefaultAlgorithm: algorithm,
+            startPageCallback: () =>
+              pllTrainerElements.recurringUserStartPage.worstCaseListItem
+                .get()
+                .invoke("text")
+                .as(STATS_BEFORE_ALIAS),
+            testRunningCallback: () =>
+              getCubeHtml(pllTrainerElements.testRunning.testCase).as(
+                CUBE_AFTER_ALIAS
+              ),
+          });
+          cy.visit(paths.pllTrainer);
+          pllTrainerElements.recurringUserStartPage.worstCaseListItem
+            .get()
+            .invoke("text")
+            .as(STATS_AFTER_ALIAS);
+          return cy.getAliases([
+            CUBE_BEFORE_ALIAS,
+            STATS_BEFORE_ALIAS,
+            CUBE_AFTER_ALIAS,
+            STATS_AFTER_ALIAS,
+          ]);
+        })
+        .should(([cubeBefore, statsBefore, cubeAfter, statsAfter]) => {
+          expect(cubeBefore === cubeAfter, "cubes should be the same").to.be
+            .true;
+          expect(statsBefore).to.deep.equal(statsAfter);
+        });
+    });
+    function parseAUFsFromWrongPage(): Cypress.Chainable<[AUF, AUF]> {
+      // This is preeeetttyyy brittle sadly, so if someone finds a better way to accomplish
+      // this testing go for it!
+      return pllTrainerElements.wrongPage.testCaseName
+        .get()
+        .invoke("text")
+        .then((testCase) => {
+          const matches = /(U['2]?)\s*\[\w+-perm\]\s*(U['2]?)/.exec(
+            testCase
+          ) ?? [undefined, undefined];
+          const aufs = matches.map((maybeText) => {
+            switch (maybeText) {
+              case "U":
+                return AUF.U;
+              case "U2":
+                return AUF.U2;
+              case "U'":
+                return AUF.UPrime;
+              default:
+                return AUF.none;
+            }
+          });
+          if (aufs.length !== 2) {
+            throw new Error(
+              "There must be exactly 2 elements in the aufs tuple. There instead were " +
+                aufs.length.toString()
+            );
+          }
+          return aufs as [AUF, AUF];
+        });
+    }
   });
   describe("Wrong Page", function () {
     it("has the right correct answer text", function () {

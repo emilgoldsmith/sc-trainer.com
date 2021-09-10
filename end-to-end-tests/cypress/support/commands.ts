@@ -678,6 +678,10 @@ const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] = f
           );
         setCurrentTestCasePort.send(jsonValue);
       });
+      // Force us to wait for a render loop as otherwise the update won't
+      // necessarily render for commands made right after
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(0);
     }
   );
 };
