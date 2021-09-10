@@ -1066,7 +1066,7 @@ function removeAnySVGs(html: string): string {
 
 function assertCubeMatchesAlias(alias: string, element: Element): void {
   getCubeHtml(element).should((actualHtml) => {
-    cy.get("@" + alias).then((wronglyTypedArg) => {
+    cy.getAliases(alias).then((wronglyTypedArg) => {
       if (typeof wronglyTypedArg !== "string") {
         throw new Error("html alias was not a string. Alias name was " + alias);
       }
@@ -1104,7 +1104,7 @@ function assertCubeMatchesAlias(alias: string, element: Element): void {
  */
 function assertCubeMatchesBackOfAlias(alias: string, element: Element): void {
   getCubeHtml(element).should((actualBacksideHtml) => {
-    cy.get("@" + alias).then((wronglyTypedArg) => {
+    cy.getAliases(alias).then((wronglyTypedArg) => {
       if (typeof wronglyTypedArg !== "string") {
         throw new Error("html alias was not a string. Alias name was " + alias);
       }

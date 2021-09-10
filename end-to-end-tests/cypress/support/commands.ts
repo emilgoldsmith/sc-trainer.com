@@ -49,6 +49,37 @@ const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
 };
 Cypress.Commands.add("getByTestId", getByTestId);
 
+/** Sadly don't seem to be able to use the typing trick for an overloaded
+ * function
+ */
+const getAliases = (
+  alias: string | string[]
+): Cypress.Chainable<unknown> | Cypress.Chainable<unknown[]> => {
+  if (typeof alias === "string") {
+    const fullyQualifiedAlias = alias.startsWith("@") ? alias : "@" + alias;
+    return cy.get(fullyQualifiedAlias);
+  }
+  const fullyQualifiedAliases = alias.map((previousAlias) =>
+    previousAlias.startsWith("@") ? previousAlias : "@" + previousAlias
+  );
+  return recurseGetAlias([], fullyQualifiedAliases);
+};
+Cypress.Commands.add("getAliases", getAliases);
+
+function recurseGetAlias(
+  elements: unknown[],
+  remainingFullyQualifiedAliases: string[]
+): Cypress.Chainable<JQuery<unknown[]>> {
+  const [nextAlias, ...newRemaining] = remainingFullyQualifiedAliases;
+  if (nextAlias !== undefined) {
+    return cy
+      .get(nextAlias)
+      .then((nextElement) =>
+        recurseGetAlias([...elements, nextElement], newRemaining)
+      );
+  }
+  return cy.wrap(Cypress.$(elements));
+}
 const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (
   key,
   options
