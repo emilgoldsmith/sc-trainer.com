@@ -200,7 +200,7 @@ update shared msg model =
                         | expectedCubeState =
                             model.expectedCubeState
                                 |> Cube.applyAlgorithm
-                                    (PLLTrainer.TestCase.toAlg model.currentTestCase)
+                                    (PLLTrainer.TestCase.toAlg shared.user model.currentTestCase)
                       }
                     , Effect.fromCmd <|
                         Task.perform
@@ -340,7 +340,7 @@ update shared msg model =
                             model.expectedCubeState
                                 |> Cube.applyAlgorithm
                                     (Algorithm.inverse <|
-                                        PLLTrainer.TestCase.toAlg model.currentTestCase
+                                        PLLTrainer.TestCase.toAlg shared.user model.currentTestCase
                                     )
                     in
                     if shared.featureFlags.displayAlgorithmPicker then
