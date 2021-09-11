@@ -1390,7 +1390,9 @@ describe("Behind Feature Flag", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 2 }],
+            // Only +1 because H perm is fully symmetrical
+            // TODO: Do proper tests for symmetric cases
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 1 }],
             pll: PLL.H,
           },
           {
@@ -1416,7 +1418,7 @@ describe("Behind Feature Flag", function () {
             dnf: true,
           },
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 2 }],
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 1 }],
             pll: PLL.H,
           },
         ],
@@ -1433,7 +1435,7 @@ describe("Behind Feature Flag", function () {
             dnf: true,
           },
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 2 }],
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 1 }],
             pll: PLL.H,
           },
         ],
@@ -1450,7 +1452,7 @@ describe("Behind Feature Flag", function () {
             dnf: true,
           },
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 2 }],
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 1 }],
             pll: PLL.H,
           },
         ],
@@ -1463,7 +1465,7 @@ describe("Behind Feature Flag", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 2 }],
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 1 }],
             pll: PLL.H,
           },
           {
@@ -1568,6 +1570,8 @@ describe("Behind Feature Flag", function () {
 
       completePLLTestInMilliseconds(2000, PLL.Ga, {
         firstEncounterWithThisPLL: true,
+        // TODO: This corresponds to no AUFs for first case as we can't really set
+        // aufs on the first attempt, we should really fix that
         aufs: [AUF.U2, AUF.U],
         correct: true,
       });
@@ -1577,7 +1581,7 @@ describe("Behind Feature Flag", function () {
         numTried: 3,
         casesWithLastThreeCasesValid: [
           [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
-          [{ timeMs: 2000, turns: GaAlgorithmLength + 2 }],
+          [{ timeMs: 2000, turns: GaAlgorithmLength }],
         ],
       });
 
@@ -1593,7 +1597,7 @@ describe("Behind Feature Flag", function () {
         casesWithLastThreeCasesValid: [
           [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
           [
-            { timeMs: 2000, turns: GaAlgorithmLength + 2 },
+            { timeMs: 2000, turns: GaAlgorithmLength },
             { timeMs: 1000, turns: GaAlgorithmLength },
           ],
         ],

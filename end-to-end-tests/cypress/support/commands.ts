@@ -366,7 +366,7 @@ const getApplicationState: Cypress.Chainable<undefined>["getApplicationState"] =
     {
       name: "getApplicationState",
       displayName: "GET APPLICATION STATE",
-      message: name === undefined ? "current" : `current ${name} state`,
+      message: name === undefined ? "current" : `current "${name}" state`,
       consoleProps: () => ({ name }),
     },
     handleGettingApplicationState

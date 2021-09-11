@@ -176,12 +176,10 @@ function checkWhetherShortcutsDisplay(
   ] as const).forEach(([element, shortcutText, key]) => {
     cy.getAliases(typeOfWrongStateAlias).then((state) => {
       if (!isOurApplicationState(state)) {
+        console.log(JSON.stringify(state));
         throw new Error("Expected an application state variable here");
       }
-      cy.setApplicationState(
-        state as Cypress.OurApplicationState,
-        "type of wrong"
-      );
+      cy.setApplicationState(state, "type of wrong");
     });
     pllTrainerElements.typeOfWrongPage.container.waitFor();
 
@@ -219,13 +217,9 @@ function checkWhetherShortcutsDisplay(
 function isOurApplicationState(
   possibleState: unknown
 ): possibleState is Cypress.OurApplicationState {
-  return (
-    typeof possibleState === "object" &&
-    possibleState !== null &&
-    "identifierToMakeItUnique" in possibleState &&
-    (possibleState as Cypress.OurApplicationState).identifierToMakeItUnique ===
-      "ourApplicationState"
-  );
+  // We don't really know much else about the state for sure than this sadly.
+  // Remember you can't use the unique identifier in the type as that's a fake type
+  return typeof possibleState === "object" && possibleState !== null;
 }
 
 function buildShortcutRegex(shortcutText: string): RegExp {
