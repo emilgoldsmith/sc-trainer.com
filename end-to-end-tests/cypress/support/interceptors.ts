@@ -110,7 +110,13 @@ export const removeAnalyticsScripts: HtmlModifier = (prevHtml) =>
       /<script[^>]*src="[^"]*https:\/\/plausible\.io[^"]*"[^>]*>.*?<\/script>/,
       ""
     )
-    .replace(/<script[^>]*src="[^"]*\/sentry.js"[^>]*>.*?<\/script>/, "");
+    .replace(/<script[^>]*src="[^"]*\/sentry.js"[^>]*>.*?<\/script>/, "")
+    .replace(/\bSentry\.init\b/, "(() => {})")
+    .replace(
+      /\bSentry.captureMessage\b/,
+      "((...args) => {throw new Error(JSON.stringify(args));})"
+    )
+    .replace(/\bnew Sentry[a-zA-Z.]+\b/, "(() => {return {};})");
 
 const defaultHtmlModifiers: HtmlModifier[] = [
   addElmModelObserversAndModifiersToHtml,
