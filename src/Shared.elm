@@ -12,6 +12,7 @@ module Shared exposing
 
 import Browser.Events as Events
 import Json.Decode
+import Key
 import Ports
 import Request exposing (Request)
 import UI
@@ -129,6 +130,7 @@ buildSharedMessage =
 type InternalMsg
     = WindowResized Int Int
     | KeyboardWasUsed
+    | NoOp
 
 
 type PublicMsg
@@ -158,6 +160,9 @@ update _ msg model =
                       }
                     , Cmd.none
                     )
+
+                NoOp ->
+                    ( model, Cmd.none )
 
         PublicMsg publicMsg ->
             case publicMsg of
@@ -190,8 +195,35 @@ subscriptions _ model =
 
               else
                 Sub.batch
-                    [ Events.onKeyDown (Json.Decode.succeed KeyboardWasUsed)
-                    , Events.onKeyPress (Json.Decode.succeed KeyboardWasUsed)
-                    , Events.onKeyUp (Json.Decode.succeed KeyboardWasUsed)
+                    [ Events.onKeyDown <|
+                        Json.Decode.map
+                            (\target ->
+                                if target == "INPUT" then
+                                    NoOp
+
+                                else
+                                    KeyboardWasUsed
+                            )
+                            Key.decodeKeyEventTargetNodeName
+                    , Events.onKeyPress <|
+                        Json.Decode.map
+                            (\target ->
+                                if target == "INPUT" then
+                                    NoOp
+
+                                else
+                                    KeyboardWasUsed
+                            )
+                            Key.decodeKeyEventTargetNodeName
+                    , Events.onKeyUp <|
+                        Json.Decode.map
+                            (\target ->
+                                if target == "INPUT" then
+                                    NoOp
+
+                                else
+                                    KeyboardWasUsed
+                            )
+                            Key.decodeKeyEventTargetNodeName
                     ]
             ]
