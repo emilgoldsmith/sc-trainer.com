@@ -1774,8 +1774,8 @@ describe("Behind Feature Flag", function () {
       const secondAlgorithm = "R2 U' R2 S R2 S' U R2";
 
       runTest({ algorithm: firstAlgorithm, firstEncounterWithThisPLL: true });
-      // We only record on the second attempt because on the first on the app still doesn't know which algorithm
-      // you use so it wouldn't make a difference which one we use
+      // We only record on the second attempt because on the first attempt the app still doesn't
+      // know which algorithm you use so it wouldn't make a difference making the test meaningless
       runTest({
         algorithm: firstAlgorithm,
         firstEncounterWithThisPLL: false,
@@ -1851,7 +1851,7 @@ describe("Behind Feature Flag", function () {
         .then((aufsBeforeTypeAssertion) => {
           const actualAUFs = assertIsAUFTuple(aufsBeforeTypeAssertion);
           cy.clearLocalStorage();
-          completePLLTestInMilliseconds(1000, pll, {
+          completePLLTestInMilliseconds(testResultTime, pll, {
             firstEncounterWithThisPLL: true,
             aufs: internalInitialAUFs,
             correct: true,
@@ -1900,12 +1900,10 @@ describe("Behind Feature Flag", function () {
           const matches = /(U['2]?)?\s*\[[[a-zA-Z]+-perm\]\s*(U['2]?)?/.exec(
             testCase
           );
-          let aufStrings: (string | undefined)[];
           if (matches === null) {
-            aufStrings = [undefined, undefined];
-          } else {
-            aufStrings = matches.slice(1);
+            throw new Error("Seems our brittle auf parsing broke :(");
           }
+          const aufStrings: (string | undefined)[] = matches.slice(1);
           const aufs = aufStrings.map((maybeText) => {
             switch (maybeText) {
               case "U":
