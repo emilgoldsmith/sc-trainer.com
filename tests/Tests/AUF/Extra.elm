@@ -38,7 +38,7 @@ detectAUFsTests =
                                 )
                 in
                 resultingAlgorithm
-                    |> Result.map (Cube.algorithmResultsAreEquivalentIndependentOfFinalRotation algorithmToMatch)
+                    |> Result.map (Cube.algorithmResultsAreEquivalent algorithmToMatch)
                     |> Result.map (Expect.true "The algorithm built using detect should be equivalent to the one we're matching")
                     |> Result.withDefault (Expect.fail "No possible AUFs detected when some should have been found")
         , fuzzWith { runs = 5 } Fuzz.Extra.algorithm "no matches are found for algorithms that are not equivalent no matter the AUF between them" <|
@@ -54,5 +54,5 @@ detectAUFsTests =
                                 )
                 in
                 AUF.Extra.detectAUFs { toMatchTo = definitelyNotMatchingAlgorithm, toDetectFor = algorithm }
-                    |> Expect.err
+                    |> Expect.equal (Err AUF.Extra.NoAUFsMakeThemMatch)
         ]

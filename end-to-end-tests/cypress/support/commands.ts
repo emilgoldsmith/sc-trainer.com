@@ -69,7 +69,7 @@ Cypress.Commands.add("getAliases", getAliases);
 function recurseGetAlias(
   elements: unknown[],
   remainingFullyQualifiedAliases: string[]
-): Cypress.Chainable<JQuery<unknown[]>> {
+): Cypress.Chainable<unknown[]> {
   const [nextAlias, ...newRemaining] = remainingFullyQualifiedAliases;
   if (nextAlias !== undefined) {
     return cy
@@ -78,7 +78,7 @@ function recurseGetAlias(
         recurseGetAlias([...elements, nextElement], newRemaining)
       );
   }
-  return cy.wrap(Cypress.$(elements));
+  return cy.wrap(elements);
 }
 const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (
   key,

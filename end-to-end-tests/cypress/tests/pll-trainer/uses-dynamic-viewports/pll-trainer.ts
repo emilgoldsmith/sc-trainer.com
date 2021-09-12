@@ -166,35 +166,28 @@ function checkWhetherShortcutsDisplay(
   pllTrainerElements.typeOfWrongPage.container.waitFor();
 
   // For easy return here to check all the branches
-  const typeOfWrongStateAlias = "type-of-wrong-state";
-  cy.getApplicationState("type of wrong").as(typeOfWrongStateAlias);
+  cy.getApplicationState("type of wrong").then((typeOfWrongState) => {
+    ([
+      [pllTrainerElements.typeOfWrongPage.noMoveButton, "1", Key.one],
+      [pllTrainerElements.typeOfWrongPage.nearlyThereButton, "2", Key.two],
+      [pllTrainerElements.typeOfWrongPage.unrecoverableButton, "3", Key.three],
+    ] as const).forEach(([element, shortcutText, key]) => {
+      cy.setApplicationState(typeOfWrongState, "type of wrong");
+      pllTrainerElements.typeOfWrongPage.container.waitFor();
 
-  ([
-    [pllTrainerElements.typeOfWrongPage.noMoveButton, "1", Key.one],
-    [pllTrainerElements.typeOfWrongPage.nearlyThereButton, "2", Key.two],
-    [pllTrainerElements.typeOfWrongPage.unrecoverableButton, "3", Key.three],
-  ] as const).forEach(([element, shortcutText, key]) => {
-    cy.getAliases(typeOfWrongStateAlias).then((state) => {
-      if (!isOurApplicationState(state)) {
-        console.log(JSON.stringify(state));
-        throw new Error("Expected an application state variable here");
+      element
+        .get()
+        .invoke("text")
+        .should(matcher, buildShortcutRegex(shortcutText));
+      if (method === "useKeyboard") {
+        // Note this also checks the given shortcut actually works as the label implies
+        cy.pressKey(key);
+      } else {
+        element.get().click();
       }
-      cy.setApplicationState(state, "type of wrong");
+      // Just making sure the navigation works as intended simply, it's more thoroughly checked in the main test
+      pllTrainerElements.wrongPage.container.assertShows();
     });
-    pllTrainerElements.typeOfWrongPage.container.waitFor();
-
-    element
-      .get()
-      .invoke("text")
-      .should(matcher, buildShortcutRegex(shortcutText));
-    if (method === "useKeyboard") {
-      // Note this also checks the given shortcut actually works as the label implies
-      cy.pressKey(key);
-    } else {
-      element.get().click();
-    }
-    // Just making sure the navigation works as intended simply, it's more thoroughly checked in the main test
-    pllTrainerElements.wrongPage.container.assertShows();
   });
 
   // And then we test wrong page works as intended too
@@ -212,14 +205,6 @@ function checkWhetherShortcutsDisplay(
     pllTrainerElements.wrongPage.nextButton.get().click();
   }
   pllTrainerElements.getReadyScreen.container.waitFor();
-}
-
-function isOurApplicationState(
-  possibleState: unknown
-): possibleState is Cypress.OurApplicationState {
-  // We don't really know much else about the state for sure than this sadly.
-  // Remember you can't use the unique identifier in the type as that's a fake type
-  return typeof possibleState === "object" && possibleState !== null;
 }
 
 function buildShortcutRegex(shortcutText: string): RegExp {
