@@ -31,7 +31,7 @@ jobs:
         uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.7
         with:
           wait-interval-seconds: 30
-          wait-max-seconds: 500
+          wait-max-seconds: 1000
           workflows: |
             ci.yml
             build-and-push-docker-containers.yml
