@@ -194,36 +194,20 @@ subscriptions _ model =
                 Sub.none
 
               else
-                Sub.batch
-                    [ Events.onKeyDown <|
-                        Json.Decode.map
-                            (\target ->
-                                if target == "INPUT" then
-                                    NoOp
+                Sub.batch <|
+                    ([ Events.onKeyDown, Events.onKeyPress, Events.onKeyUp ]
+                        |> List.map
+                            (\x ->
+                                x <|
+                                    Json.Decode.map
+                                        (\target ->
+                                            if target == "INPUT" then
+                                                NoOp
 
-                                else
-                                    KeyboardWasUsed
+                                            else
+                                                KeyboardWasUsed
+                                        )
+                                        Key.decodeKeyEventTargetNodeName
                             )
-                            Key.decodeKeyEventTargetNodeName
-                    , Events.onKeyPress <|
-                        Json.Decode.map
-                            (\target ->
-                                if target == "INPUT" then
-                                    NoOp
-
-                                else
-                                    KeyboardWasUsed
-                            )
-                            Key.decodeKeyEventTargetNodeName
-                    , Events.onKeyUp <|
-                        Json.Decode.map
-                            (\target ->
-                                if target == "INPUT" then
-                                    NoOp
-
-                                else
-                                    KeyboardWasUsed
-                            )
-                            Key.decodeKeyEventTargetNodeName
-                    ]
+                    )
             ]
