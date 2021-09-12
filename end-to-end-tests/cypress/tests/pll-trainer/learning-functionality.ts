@@ -622,6 +622,14 @@ function checkWhetherShortcutsDisplay(
   pllTrainerElements.evaluateResult.container.waitFor();
   cy.tick(300);
   pllTrainerElements.evaluateResult.correctButton.get().click();
+  cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+  // Note that we type before we check the shortcut text.
+  // This ensures we check the case of a mobile keyboard
+  // appearing for the input element and triggering
+  // global keyboard detection which it shouldn't
+  pllTrainerElements.pickAlgorithmPage.algorithmInput
+    .get()
+    .type(pllToAlgorithmString[PLL.Aa]);
   pllTrainerElements.pickAlgorithmPage.submitButton
     .get()
     .invoke("text")
@@ -632,6 +640,7 @@ function checkWhetherShortcutsDisplay(
   } else {
     pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
   }
+  pllTrainerElements.correctPage.container.waitFor();
 }
 
 function buildShortcutRegex(shortcutText: string): RegExp {

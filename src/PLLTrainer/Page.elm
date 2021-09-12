@@ -611,7 +611,9 @@ states shared model =
                 , testCaseResult = testResult
                 }
                 shared
-                { continue = TransitionMsg << AlgorithmPicked nextTrainerState testResult }
+                { continue = TransitionMsg << AlgorithmPicked nextTrainerState testResult
+                , noOp = NoOp
+                }
                 (StateMsg << PickAlgorithmMsg)
     , correctPage =
         always <|

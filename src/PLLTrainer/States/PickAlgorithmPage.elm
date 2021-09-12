@@ -2,12 +2,14 @@ module PLLTrainer.States.PickAlgorithmPage exposing (Arguments, Model, Msg, stat
 
 import Algorithm exposing (Algorithm, FromStringError(..))
 import Browser.Dom
+import Browser.Events
 import Css exposing (errorMessageTestType, testid)
 import Element exposing (..)
 import Element.Font as Font
 import Element.Input as Input
 import Element.Region as Region
 import Html.Attributes
+import Json.Decode
 import Key
 import PLL
 import PLLTrainer.ButtonWithShortcut
@@ -28,7 +30,7 @@ state { currentTestCase, testCaseResult } shared transitions toMsg =
     PLLTrainer.State.element
         { init = init toMsg
         , update = update transitions currentTestCase
-        , subscriptions = subscriptions
+        , subscriptions = subscriptions toMsg transitions
         , view = view currentTestCase testCaseResult toMsg shared
         }
 
@@ -45,6 +47,7 @@ type alias Arguments =
 
 type alias Transitions msg =
     { continue : Algorithm -> msg
+    , noOp : msg
     }
 
 
@@ -155,9 +158,19 @@ update transitions currentTestCase msg model =
 -- SUBSCRIPTIONS
 
 
-subscriptions : Model -> PLLTrainer.Subscription.Subscription msg
-subscriptions _ =
-    PLLTrainer.Subscription.none
+subscriptions : (Msg -> msg) -> Transitions msg -> Model -> PLLTrainer.Subscription.Subscription msg
+subscriptions toMsg transitions _ =
+    PLLTrainer.Subscription.onlyBrowserEvents <|
+        Browser.Events.onKeyUp <|
+            Json.Decode.map
+                (\key ->
+                    if key == Key.Enter then
+                        toMsg Submit
+
+                    else
+                        transitions.noOp
+                )
+                Key.decodeNonRepeatedKeyEvent
 
 
 
@@ -230,7 +243,6 @@ view currentTestCase testResult toMsg shared model =
                         ]
                         [ Input.text
                             [ testid "algorithm-input"
-                            , Key.onEnter (toMsg Submit)
                             , htmlAttribute <| Html.Attributes.id focusOnLoadId
                             , centerX
                             ]

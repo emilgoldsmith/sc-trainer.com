@@ -1,4 +1,4 @@
-module Key exposing (Key(..), decodeNonRepeatedKeyEvent, onEnter)
+module Key exposing (Key(..), decodeKeyEventTargetNodeName, decodeNonRepeatedKeyEvent, onEnter)
 
 import Element
 import Html.Events
@@ -42,6 +42,11 @@ decodeKey =
 decodeKeyRepeat : Json.Decode.Decoder Bool
 decodeKeyRepeat =
     Json.Decode.field "repeat" Json.Decode.bool
+
+
+decodeKeyEventTargetNodeName : Json.Decode.Decoder String
+decodeKeyEventTargetNodeName =
+    Json.Decode.at [ "target", "nodeName" ] Json.Decode.string
 
 
 toKey : String -> Key
