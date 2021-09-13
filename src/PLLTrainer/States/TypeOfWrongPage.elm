@@ -98,13 +98,19 @@ view { user, viewportSize, palette, hardwareAvailable } transitions arguments =
                 [ paragraph [ centerX, Font.center, Font.bold, Font.size headerSize ] [ text "Choose the case that fits your cube state:" ]
                 , paragraph [ testid "no-move-explanation", centerX, Font.center ] [ text "1. I didn't apply any moves to the cube" ]
                 , row [ centerX ]
-                    [ ViewCube.uFRWithLetters
+                    [ ViewCube.view
                         [ htmlTestid "no-move-cube-state-front" ]
-                        cubeSize
+                        { pixelSize = cubeSize
+                        , displayAngle = Cube.ufrDisplayAngle
+                        , annotateFaces = True
+                        }
                         noMovesCube
-                    , ViewCube.uBLWithLetters
+                    , ViewCube.view
                         [ htmlTestid "no-move-cube-state-back" ]
-                        cubeSize
+                        { pixelSize = cubeSize
+                        , displayAngle = Cube.ublDisplayAngle
+                        , annotateFaces = True
+                        }
                         noMovesCube
                     ]
                 , PLLTrainer.ButtonWithShortcut.viewSmall
@@ -116,13 +122,19 @@ view { user, viewportSize, palette, hardwareAvailable } transitions arguments =
                     [ text "2. I can get to the expected state. I for example just got the AUF wrong"
                     ]
                 , row [ centerX ]
-                    [ ViewCube.uFRWithLetters
+                    [ ViewCube.view
                         [ htmlTestid "nearly-there-cube-state-front" ]
-                        cubeSize
+                        { pixelSize = cubeSize
+                        , displayAngle = Cube.ufrDisplayAngle
+                        , annotateFaces = True
+                        }
                         nearlyThereCube
-                    , ViewCube.uBLWithLetters
+                    , ViewCube.view
                         [ htmlTestid "nearly-there-cube-state-back" ]
-                        cubeSize
+                        { pixelSize = cubeSize
+                        , displayAngle = Cube.ublDisplayAngle
+                        , annotateFaces = True
+                        }
                         nearlyThereCube
                     ]
                 , PLLTrainer.ButtonWithShortcut.viewSmall

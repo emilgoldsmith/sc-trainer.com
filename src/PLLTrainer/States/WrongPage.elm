@@ -105,11 +105,17 @@ view { palette, viewportSize, hardwareAvailable, user } transitions arguments =
                 , row
                     [ centerX
                     ]
-                    [ ViewCube.uFRWithLetters [ htmlTestid "test-case-front" ]
-                        (ViewportSize.minDimension viewportSize // 4)
+                    [ ViewCube.view [ htmlTestid "test-case-front" ]
+                        { pixelSize = ViewportSize.minDimension viewportSize // 4
+                        , displayAngle = Cube.ufrDisplayAngle
+                        , annotateFaces = True
+                        }
                         testCaseCube
-                    , ViewCube.uBLWithLetters [ htmlTestid "test-case-back" ]
-                        (ViewportSize.minDimension viewportSize // 4)
+                    , ViewCube.view [ htmlTestid "test-case-back" ]
+                        { pixelSize = ViewportSize.minDimension viewportSize // 4
+                        , displayAngle = Cube.ublDisplayAngle
+                        , annotateFaces = True
+                        }
                         testCaseCube
                     ]
                 , paragraph
@@ -122,8 +128,20 @@ view { palette, viewportSize, hardwareAvailable, user } transitions arguments =
                 , row
                     [ centerX
                     ]
-                    [ ViewCube.uFRWithLetters [ htmlTestid "expected-cube-state-front" ] (ViewportSize.minDimension viewportSize // 4) arguments.expectedCubeState
-                    , ViewCube.uBLWithLetters [ htmlTestid "expected-cube-state-back" ] (ViewportSize.minDimension viewportSize // 4) arguments.expectedCubeState
+                    [ ViewCube.view
+                        [ htmlTestid "expected-cube-state-front" ]
+                        { pixelSize = ViewportSize.minDimension viewportSize // 4
+                        , displayAngle = Cube.ufrDisplayAngle
+                        , annotateFaces = True
+                        }
+                        arguments.expectedCubeState
+                    , ViewCube.view
+                        [ htmlTestid "expected-cube-state-back" ]
+                        { pixelSize = ViewportSize.minDimension viewportSize // 4
+                        , displayAngle = Cube.ublDisplayAngle
+                        , annotateFaces = True
+                        }
+                        arguments.expectedCubeState
                     ]
                 , PLLTrainer.ButtonWithShortcut.view
                     hardwareAvailable

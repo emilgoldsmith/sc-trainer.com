@@ -2,6 +2,7 @@ module PLLTrainer.States.TestRunning exposing (Model, Msg, state)
 
 import Browser.Events
 import Css exposing (htmlTestid, testid)
+import Cube
 import Element exposing (..)
 import Element.Font as Font
 import Html.Events
@@ -111,7 +112,12 @@ view viewportSize testCase user model =
                 , spacing (ViewportSize.minDimension viewportSize // 10)
                 ]
                 [ el [ centerX ] <|
-                    ViewCube.uFRNoLetters [ htmlTestid "test-case" ] (ViewportSize.minDimension viewportSize // 2) <|
+                    ViewCube.view [ htmlTestid "test-case" ]
+                        { pixelSize = ViewportSize.minDimension viewportSize // 2
+                        , displayAngle = Cube.ufrDisplayAngle
+                        , annotateFaces = False
+                        }
+                    <|
                         PLLTrainer.TestCase.toCube user testCase
                 , el
                     [ testid "timer"
