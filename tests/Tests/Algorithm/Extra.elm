@@ -48,14 +48,12 @@ complexityTests =
             \( algorithm, aufs ) ( length1, direction1 ) ( length2, direction2 ) ->
                 let
                     withYRotationsAlgorithm =
-                        algorithm
-                            |> Algorithm.append
-                                (Algorithm.fromTurnList [ Algorithm.Turn Algorithm.Y length1 direction1 ])
-                            |> (\alg ->
-                                    Algorithm.append
-                                        alg
-                                        (Algorithm.fromTurnList [ Algorithm.Turn Algorithm.Y length2 direction2 ])
-                               )
+                        Algorithm.append
+                            (Algorithm.fromTurnList [ Algorithm.Turn Algorithm.Y length1 direction1 ])
+                        <|
+                            Algorithm.append
+                                algorithm
+                                (Algorithm.fromTurnList [ Algorithm.Turn Algorithm.Y length2 direction2 ])
                 in
                 Algorithm.Extra.complexityAdjustedTPS { milliseconds = 1000 } aufs withYRotationsAlgorithm
                     |> Expect.within (Expect.Absolute 0.0000001)
@@ -67,7 +65,9 @@ complexityTests =
             \algorithm aufs ->
                 let
                     withTurnAdded =
-                        Algorithm.append algorithm (Algorithm.fromTurnList [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
+                        Algorithm.append
+                            algorithm
+                            (Algorithm.fromTurnList [ Algorithm.Turn Algorithm.U Algorithm.Halfway Algorithm.Clockwise ])
                 in
                 Algorithm.Extra.complexity aufs withTurnAdded
                     |> Expect.greaterThan

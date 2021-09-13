@@ -14,7 +14,7 @@ complexityAdjustedTPS { milliseconds } aufs algorithm =
 
 
 complexity : ( AUF, AUF ) -> Algorithm -> Float
-complexity ( preAUF, postAUF ) algorithm =
+complexity aufs algorithm =
     let
         withYRotationsTrimmed =
             algorithm
@@ -26,8 +26,7 @@ complexity ( preAUF, postAUF ) algorithm =
                 |> Algorithm.fromTurnList
     in
     withYRotationsTrimmed
-        |> Algorithm.append (AUF.toAlgorithm preAUF)
-        |> Algorithm.reverseAppend (AUF.toAlgorithm postAUF)
+        |> AUF.addToAlgorithm aufs
         |> Algorithm.toTurnList
         |> List.length
         |> toFloat

@@ -28,7 +28,7 @@ detectAUFs { toMatchTo, toDetectFor } =
                 (\aufs ->
                     Cube.algorithmResultsAreEquivalentIndependentOfFinalRotation
                         toMatchTo
-                        (addToAlgorithm aufs toDetectFor)
+                        (AUF.addToAlgorithm aufs toDetectFor)
                 )
                 allAUFPairs
     in
@@ -38,9 +38,3 @@ detectAUFs { toMatchTo, toDetectFor } =
 
         x :: _ ->
             Ok x
-
-
-addToAlgorithm : ( AUF, AUF ) -> Algorithm -> Algorithm
-addToAlgorithm ( preAUF, postAUF ) =
-    Algorithm.append (AUF.toAlgorithm preAUF)
-        >> Algorithm.reverseAppend (AUF.toAlgorithm postAUF)

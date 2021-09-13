@@ -14,27 +14,24 @@ detectAUFsTests : Test
 detectAUFsTests =
     describe "detectAUFs"
         [ fuzzWith { runs = 5 } (Fuzz.tuple3 ( Fuzz.Extra.algorithm, Fuzz.Extra.algorithm, Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf ) )) "correctly detects aufs on the same algorithm with an identity sequence appended to it" <|
-            \( algorithm, algorithmForIdentity, ( preAUF, postAUF ) ) ->
+            \( algorithm, algorithmForIdentity, aufs ) ->
                 let
                     identitySequence =
                         Algorithm.append algorithmForIdentity (Algorithm.inverse algorithmForIdentity)
 
                     algorithmToMatch =
-                        algorithm
-                            |> Algorithm.append (AUF.toAlgorithm preAUF)
-                            |> Algorithm.reverseAppend identitySequence
-                            |> Algorithm.reverseAppend (AUF.toAlgorithm postAUF)
+                        Algorithm.append algorithm identitySequence
+                            |> AUF.addToAlgorithm aufs
 
-                    detectedAUFs =
+                    detectedAUFsResult =
                         AUF.Extra.detectAUFs { toMatchTo = algorithmToMatch, toDetectFor = algorithm }
 
                     resultingAlgorithm =
-                        detectedAUFs
+                        detectedAUFsResult
                             |> Result.map
-                                (\( detectedPreAUF, detectedPostAUF ) ->
+                                (\detectedAUFs ->
                                     algorithm
-                                        |> Algorithm.append (AUF.toAlgorithm detectedPreAUF)
-                                        |> Algorithm.reverseAppend (AUF.toAlgorithm detectedPostAUF)
+                                        |> AUF.addToAlgorithm detectedAUFs
                                 )
                 in
                 resultingAlgorithm
