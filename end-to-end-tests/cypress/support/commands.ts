@@ -49,37 +49,50 @@ const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
 };
 Cypress.Commands.add("getByTestId", getByTestId);
 
-/** Sadly don't seem to be able to use the typing trick for an overloaded
- * function
- */
-const getAliases = (
-  alias: string | string[]
-): Cypress.Chainable<unknown> | Cypress.Chainable<unknown[]> => {
-  if (typeof alias === "string") {
-    const fullyQualifiedAlias = alias.startsWith("@") ? alias : "@" + alias;
-    return cy.get(fullyQualifiedAlias);
-  }
-  const fullyQualifiedAliases = alias.map((previousAlias) =>
-    previousAlias.startsWith("@") ? previousAlias : "@" + previousAlias
-  );
-  return recurseGetAlias([], fullyQualifiedAliases);
+const getAliases: Cypress.Chainable<undefined>["getAliases"] = function <
+  Aliases extends Record<string, unknown>
+>(this: Aliases) {
+  /**
+   * The aliases in Cypress live on the Mocha Context which is passed around as `this`
+   * so that's what we return with a lot of ugly linting ignores
+   */
+  // eslint-disable-next-line no-invalid-this
+  return cy.wrap(this);
 };
 Cypress.Commands.add("getAliases", getAliases);
 
-function recurseGetAlias(
-  elements: unknown[],
-  remainingFullyQualifiedAliases: string[]
-): Cypress.Chainable<unknown[]> {
-  const [nextAlias, ...newRemaining] = remainingFullyQualifiedAliases;
-  if (nextAlias !== undefined) {
-    return cy
-      .get(nextAlias)
-      .then((nextElement) =>
-        recurseGetAlias([...elements, nextElement], newRemaining)
-      );
-  }
-  return cy.wrap(elements);
-}
+const getSingleAlias: Cypress.Chainable<undefined>["getSingleAlias"] = function <
+  Aliases extends Record<string, unknown>,
+  Key extends keyof Aliases
+>(alias: Key) {
+  return (
+    cy
+      .getAliases<Aliases>()
+      // Sadly it seems best thing to do here is also to just type cast
+      // it should hopefully work though and it's pretty simple code!
+      .then((aliases) => aliases[alias]) as Cypress.Chainable<
+      Aliases[Key] | undefined
+    >
+  );
+};
+Cypress.Commands.add("getSingleAlias", getSingleAlias);
+
+Cypress.Commands.overwrite("as", () => {
+  throw new Error(
+    "Do not use this command. Instead use the custom typed command .setAlias"
+  );
+});
+
+const setAlias = function (
+  this: Record<string, unknown>,
+  subject: unknown,
+  alias: string
+) {
+  // eslint-disable-next-line no-invalid-this
+  this[alias] = subject;
+};
+Cypress.Commands.add("setAlias", { prevSubject: true }, setAlias);
+
 const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (
   key,
   options

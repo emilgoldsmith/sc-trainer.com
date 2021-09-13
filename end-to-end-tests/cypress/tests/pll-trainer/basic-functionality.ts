@@ -717,21 +717,23 @@ describe("PLL Trainer - Basic Functionality", function () {
     });
 
     it("has all the correct elements", function () {
-      // LOTS OF SETUP HERE
-      const originalCubeFrontAlias = "originalCubeFront";
-      const originalCubeBackAlias = "originalCubeBack";
-      const nextCubeFrontAlias = "nextCubeFront";
-      const nextCubeBackAlias = "nextCubeBack";
-
+      type Aliases = {
+        originalCubeFront: string;
+        originalCubeBack: string;
+        nextCubeFront: string;
+        nextCubeBack: string;
+      };
       // Go to evaluate to get the "original" cube state
       pllTrainerStatesUserDone.evaluateResultAfterIgnoringTransitions.restoreState();
       cy.log("GETTING ORIGINAL CUBE HTMLS");
-      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeFront).as(
-        originalCubeFrontAlias
-      );
-      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeBack).as(
-        originalCubeBackAlias
-      );
+      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeFront).setAlias<
+        Aliases,
+        "originalCubeFront"
+      >("originalCubeFront");
+      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeBack).setAlias<
+        Aliases,
+        "originalCubeBack"
+      >("originalCubeBack");
       // Run another test case
       pllTrainerElements.evaluateResult.correctButton.get().click();
       cy.clock();
@@ -742,12 +744,14 @@ describe("PLL Trainer - Basic Functionality", function () {
       cy.mouseClickScreen("center");
       // We're back at Evaluate Result
       cy.log("GETTING NEXT CUBE HTMLS");
-      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeFront).as(
-        nextCubeFrontAlias
-      );
-      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeBack).as(
-        nextCubeBackAlias
-      );
+      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeFront).setAlias<
+        Aliases,
+        "nextCubeFront"
+      >("nextCubeFront");
+      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeBack).setAlias<
+        Aliases,
+        "nextCubeBack"
+      >("nextCubeBack");
       // Navigate to Type Of Wrong for the tests
       cy.tick(500);
       pllTrainerElements.evaluateResult.wrongButton.get().click();
@@ -760,22 +764,22 @@ describe("PLL Trainer - Basic Functionality", function () {
       // Check all the cubes look right
 
       // The cube for 'no moves applied' should be the same state as the previous/original expected cube state
-      assertCubeMatchesAlias(
-        originalCubeFrontAlias,
+      assertCubeMatchesAlias<Aliases, "originalCubeFront">(
+        "originalCubeFront",
         pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
       );
-      assertCubeMatchesAlias(
-        originalCubeBackAlias,
+      assertCubeMatchesAlias<Aliases, "originalCubeBack">(
+        "originalCubeBack",
         pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
       );
       // The cube for 'nearly there' should look like the expected state if you had
       // solved the case correctly
-      assertCubeMatchesAlias(
-        nextCubeFrontAlias,
+      assertCubeMatchesAlias<Aliases, "nextCubeFront">(
+        "nextCubeFront",
         pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
       );
-      assertCubeMatchesAlias(
-        nextCubeBackAlias,
+      assertCubeMatchesAlias<Aliases, "nextCubeBack">(
+        "nextCubeBack",
         pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateBack
       );
     });
@@ -794,119 +798,143 @@ describe("PLL Trainer - Basic Functionality", function () {
     });
 
     it("navigates to 'wrong page' displaying the cube displayed under no moves button when it's clicked", function () {
-      getCubeHtml(pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront).as(
-        "front"
-      );
-      getCubeHtml(pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack).as(
-        "back"
-      );
+      type Aliases = {
+        front: string;
+        back: string;
+      };
+      getCubeHtml(
+        pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
+      ).setAlias<Aliases, "front">("front");
+      getCubeHtml(
+        pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
+      ).setAlias<Aliases, "back">("back");
 
       pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
 
-      assertCubeMatchesAlias(
+      assertCubeMatchesAlias<Aliases, "front">(
         "front",
         pllTrainerElements.wrongPage.expectedCubeStateFront
       );
-      assertCubeMatchesAlias(
+      assertCubeMatchesAlias<Aliases, "back">(
         "back",
         pllTrainerElements.wrongPage.expectedCubeStateBack
       );
     });
 
     it("navigates to 'wrong page' displaying the cube displayed under no moves button when '1' is pressed", function () {
-      getCubeHtml(pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront).as(
-        "front"
-      );
-      getCubeHtml(pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack).as(
-        "back"
-      );
+      type Aliases = {
+        front: string;
+        back: string;
+      };
+      getCubeHtml(
+        pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
+      ).setAlias<Aliases, "front">("front");
+      getCubeHtml(
+        pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
+      ).setAlias<Aliases, "back">("back");
 
       cy.pressKey(Key.one);
 
-      assertCubeMatchesAlias(
+      assertCubeMatchesAlias<Aliases, "front">(
         "front",
         pllTrainerElements.wrongPage.expectedCubeStateFront
       );
-      assertCubeMatchesAlias(
+      assertCubeMatchesAlias<Aliases, "back">(
         "back",
         pllTrainerElements.wrongPage.expectedCubeStateBack
       );
     });
 
     it("navigates to 'wrong page' displaying the cube displayed under nearly there button when it's clicked", function () {
+      type Aliases = {
+        front: string;
+        back: string;
+      };
       getCubeHtml(
         pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
-      ).as("front");
+      ).setAlias<Aliases, "front">("front");
       getCubeHtml(
         pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateBack
-      ).as("back");
+      ).setAlias<Aliases, "back">("back");
 
       pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
 
-      assertCubeMatchesAlias(
+      assertCubeMatchesAlias<Aliases, "front">(
         "front",
         pllTrainerElements.wrongPage.expectedCubeStateFront
       );
-      assertCubeMatchesAlias(
+      assertCubeMatchesAlias<Aliases, "back">(
         "back",
         pllTrainerElements.wrongPage.expectedCubeStateBack
       );
     });
 
     it("navigates to 'wrong page' displaying the cube displayed under nearly there button when '2' is pressed", function () {
+      type Aliases = {
+        front: string;
+        back: string;
+      };
       getCubeHtml(
         pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
-      ).as("front");
+      ).setAlias<Aliases, "front">("front");
       getCubeHtml(
         pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateBack
-      ).as("back");
+      ).setAlias<Aliases, "back">("back");
 
       cy.pressKey(Key.two);
 
-      assertCubeMatchesAlias(
+      assertCubeMatchesAlias<Aliases, "front">(
         "front",
         pllTrainerElements.wrongPage.expectedCubeStateFront
       );
-      assertCubeMatchesAlias(
+      assertCubeMatchesAlias<Aliases, "back">(
         "back",
         pllTrainerElements.wrongPage.expectedCubeStateBack
       );
     });
 
     it("navigates to 'wrong page' displaying a solved cube when unrecoverable button clicked", function () {
+      type Aliases = {
+        solvedFront: string;
+      };
       cy.visit(paths.pllTrainer);
-      getCubeHtml(pllTrainerElements.newUserStartPage.cubeStartState).as(
-        "solved-front"
-      );
+      getCubeHtml(pllTrainerElements.newUserStartPage.cubeStartState).setAlias<
+        Aliases,
+        "solvedFront"
+      >("solvedFront");
       pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
 
       pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
 
-      assertCubeMatchesAlias(
-        "solved-front",
+      assertCubeMatchesAlias<Aliases, "solvedFront">(
+        "solvedFront",
         pllTrainerElements.wrongPage.expectedCubeStateFront
       );
-      assertCubeMatchesBackOfAlias(
-        "solved-front",
+      assertCubeMatchesBackOfAlias<Aliases, "solvedFront">(
+        "solvedFront",
         pllTrainerElements.wrongPage.expectedCubeStateBack
       );
     });
 
     it("navigates to 'wrong page' displaying a solved cube when '3' is pressed", function () {
+      type Aliases = {
+        solvedFront: string;
+      };
       cy.visit(paths.pllTrainer);
-      getCubeHtml(pllTrainerElements.newUserStartPage.cubeStartState).as(
-        "solved-front"
-      );
+      getCubeHtml(pllTrainerElements.newUserStartPage.cubeStartState).setAlias<
+        Aliases,
+        "solvedFront"
+      >("solvedFront");
       pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
 
       cy.pressKey(Key.three);
 
-      assertCubeMatchesAlias(
-        "solved-front",
+      assertCubeMatchesAlias<Aliases, "solvedFront">(
+        "solvedFront",
         pllTrainerElements.wrongPage.expectedCubeStateFront
       );
-      assertCubeMatchesBackOfAlias(
-        "solved-front",
+      assertCubeMatchesBackOfAlias<Aliases, "solvedFront">(
+        "solvedFront",
         pllTrainerElements.wrongPage.expectedCubeStateBack
       );
     });
@@ -918,6 +946,9 @@ describe("PLL Trainer - Basic Functionality", function () {
     });
 
     it("has all the correct elements", function () {
+      type Aliases = {
+        testCaseFront: string;
+      };
       pllTrainerElements.wrongPage.assertAllShow();
       pllTrainerElements.globals.feedbackButton
         .assertShows()
@@ -938,9 +969,10 @@ describe("PLL Trainer - Basic Functionality", function () {
 
       // Check that the test case cube is actually displaying the case that was tested
       pllTrainerStatesUserDone.testRunning.restoreState();
-      getCubeHtml(pllTrainerElements.testRunning.testCase).as(
-        "test-case-front"
-      );
+      getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
+        Aliases,
+        "testCaseFront"
+      >("testCaseFront");
 
       cy.clock();
       cy.mouseClickScreen("center");
@@ -955,12 +987,12 @@ describe("PLL Trainer - Basic Functionality", function () {
       // to it instead of the solved cube with inverse test case
       pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
 
-      assertCubeMatchesAlias(
-        "test-case-front",
+      assertCubeMatchesAlias<Aliases, "testCaseFront">(
+        "testCaseFront",
         pllTrainerElements.wrongPage.testCaseFront
       );
-      assertCubeMatchesBackOfAlias(
-        "test-case-front",
+      assertCubeMatchesBackOfAlias<Aliases, "testCaseFront">(
+        "testCaseFront",
         pllTrainerElements.wrongPage.testCaseBack
       );
     });
@@ -1065,9 +1097,12 @@ function removeAnySVGs(html: string): string {
   return html.replaceAll(/<svg.*?>.*?<\/svg>/g, "");
 }
 
-function assertCubeMatchesAlias(alias: string, element: Element): void {
+function assertCubeMatchesAlias<
+  Aliases extends Record<string, unknown>,
+  Key extends keyof Aliases
+>(alias: Key, element: Element): void {
   getCubeHtml(element).should((actualHtml) => {
-    cy.getAliases(alias).then((wronglyTypedArg) => {
+    cy.getSingleAlias<Aliases, Key>(alias).then((wronglyTypedArg) => {
       if (typeof wronglyTypedArg !== "string") {
         throw new Error("html alias was not a string. Alias name was " + alias);
       }
@@ -1103,9 +1138,12 @@ function assertCubeMatchesAlias(alias: string, element: Element): void {
  * - The way it shows the backside is by using the exactly same html as for the
  *   front side, but just adding a 'rotateY(180deg) ' to the transform
  */
-function assertCubeMatchesBackOfAlias(alias: string, element: Element): void {
+function assertCubeMatchesBackOfAlias<
+  Aliases extends Record<string, unknown>,
+  Key extends keyof Aliases
+>(alias: Key, element: Element): void {
   getCubeHtml(element).should((actualBacksideHtml) => {
-    cy.getAliases(alias).then((wronglyTypedArg) => {
+    cy.getSingleAlias<Aliases, Key>(alias).then((wronglyTypedArg) => {
       if (typeof wronglyTypedArg !== "string") {
         throw new Error("html alias was not a string. Alias name was " + alias);
       }
@@ -1732,6 +1770,10 @@ describe("Behind Feature Flag", function () {
       return l.reduce((a, b) => a + b) / l.length;
     }
     it("correctly ignores y rotations at beginning and end of algorithm as this can be dealt with through AUFs", function () {
+      type Aliases = {
+        unmodified: string;
+        modified: string;
+      };
       pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
       const testCase = [AUF.U2, PLL.Aa, AUF.UPrime] as const;
       cy.setCurrentTestCase(testCase);
@@ -1741,11 +1783,10 @@ describe("Behind Feature Flag", function () {
         .type(pllToAlgorithmString[PLL.Aa] + "{enter}");
       pllTrainerElements.correctPage.container.waitFor();
       cy.visit(paths.pllTrainer);
-      const unmodifiedAlias = "unmodified";
       pllTrainerElements.recurringUserStartPage.worstCaseListItem
         .get()
         .invoke("text")
-        .as(unmodifiedAlias);
+        .setAlias<Aliases, "unmodified">("unmodified");
 
       cy.clearLocalStorage();
       pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
@@ -1759,17 +1800,21 @@ describe("Behind Feature Flag", function () {
       pllTrainerElements.recurringUserStartPage.worstCaseListItem
         .get()
         .invoke("text")
-        .should(function (this: Mocha.Context, modified) {
-          // eslint-disable-next-line no-invalid-this
-          expect(modified).to.equal(this[unmodifiedAlias]);
-        });
+        .setAlias<Aliases, "modified">("modified");
+      cy.getAliases<Aliases>().should(({ unmodified, modified }) => {
+        expect(unmodified).to.not.be.undefined;
+        expect(modified).to.not.be.undefined;
+        expect(modified).to.deep.equal(unmodified);
+      });
     });
 
     it("doesn't display the same cube for same case with algorithms that require different AUFs", function () {
+      type Aliases = {
+        firstCube: string;
+        secondCube: string;
+      };
       const pll = PLL.Ua;
       const aufs = [AUF.none, AUF.none] as const;
-      const FIRST_CUBE_ALIAS = "first-cube";
-      const SECOND_CUBE_ALIAS = "second-cube";
       const firstAlgorithm = "R2 U' R' U' R U R U R U' R";
       const secondAlgorithm = "R2 U' R2 S R2 S' U R2";
 
@@ -1779,7 +1824,7 @@ describe("Behind Feature Flag", function () {
       runTest({
         algorithm: firstAlgorithm,
         firstEncounterWithThisPLL: false,
-        cubeAlias: FIRST_CUBE_ALIAS,
+        cubeAlias: "firstCube",
       });
 
       cy.clearLocalStorage();
@@ -1788,25 +1833,25 @@ describe("Behind Feature Flag", function () {
       runTest({
         algorithm: secondAlgorithm,
         firstEncounterWithThisPLL: false,
-        cubeAlias: SECOND_CUBE_ALIAS,
+        cubeAlias: "secondCube",
       });
 
-      cy.getAliases([FIRST_CUBE_ALIAS, SECOND_CUBE_ALIAS]).should(
-        ([firstCube, secondCube]) => {
-          expect(
-            firstCube === secondCube,
-            "These algorithms should have different AUFs required"
-          ).to.be.false;
-        }
-      );
+      cy.getAliases<Aliases>().should(({ firstCube, secondCube }) => {
+        expect(firstCube).to.not.be.undefined;
+        expect(secondCube).to.not.be.undefined;
+        expect(
+          firstCube === secondCube,
+          "These algorithms should have different AUFs required"
+        ).to.be.false;
+      });
 
-      function runTest({
+      function runTest<Key extends keyof Aliases>({
         algorithm,
         cubeAlias,
         firstEncounterWithThisPLL,
       }: {
         algorithm: string;
-        cubeAlias?: string;
+        cubeAlias?: Key;
         firstEncounterWithThisPLL: boolean;
       }) {
         completePLLTestInMilliseconds(1000, pll, {
@@ -1818,36 +1863,45 @@ describe("Behind Feature Flag", function () {
             cubeAlias === undefined
               ? undefined
               : () =>
-                  getCubeHtml(pllTrainerElements.testRunning.testCase).as(
-                    cubeAlias
-                  ),
+                  getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
+                    Aliases,
+                    Key
+                    // Be cheeky with the types here to make it work. It could potentially
+                    // introduce some problems down the line for sure but I don't see a much
+                    // better choice and at least it's in the tests
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  >(cubeAlias as any),
         });
       }
     });
 
     it("correctly calculates the TPS of the first attempt on a case, even though we don't know which AUF was used until the algorithm is input", function () {
+      type Aliases = {
+        cubeBefore: string;
+        statsBefore: string;
+        cubeAfter: string;
+        statsAfter: string;
+        actualAUF: [AUF, AUF];
+      };
       const testResultTime = 1000;
       const pll = PLL.Ua;
       const internalInitialAUFs = [AUF.none, AUF.none] as const;
       // const algorithm = "R2 U' R' U' R U R U R U' R";
       const algorithm = "R2 U' R2 S R2 S' U R2";
-      const CUBE_BEFORE_ALIAS = "cube-before-picked";
-      const STATS_BEFORE_ALIAS = "stats-before-picked";
-      const CUBE_AFTER_ALIAS = "cube-after-picked";
-      const STATS_AFTER_ALIAS = "stats-after-picked";
-      const ACTUAL_AUF_ALIAS = "actual-auf";
       completePLLTestInMilliseconds(testResultTime, pll, {
         firstEncounterWithThisPLL: true,
         aufs: internalInitialAUFs,
         correct: false,
         overrideDefaultAlgorithm: algorithm,
         testRunningCallback: () =>
-          getCubeHtml(pllTrainerElements.testRunning.testCase).as(
-            CUBE_BEFORE_ALIAS
-          ),
-        wrongPageCallback: () => parseAUFsFromWrongPage().as(ACTUAL_AUF_ALIAS),
+          getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
+            Aliases,
+            "cubeBefore"
+          >("cubeBefore"),
+        wrongPageCallback: () =>
+          parseAUFsFromWrongPage().setAlias<Aliases, "actualAUF">("actualAUF"),
       });
-      cy.getAliases(ACTUAL_AUF_ALIAS)
+      cy.getSingleAlias<Aliases, "actualAUF">("actualAUF")
         .then((aufsBeforeTypeAssertion) => {
           const actualAUFs = assertIsAUFTuple(aufsBeforeTypeAssertion);
           cy.clearLocalStorage();
@@ -1866,28 +1920,29 @@ describe("Behind Feature Flag", function () {
               pllTrainerElements.recurringUserStartPage.worstCaseListItem
                 .get()
                 .invoke("text")
-                .as(STATS_BEFORE_ALIAS),
+                .setAlias<Aliases, "statsBefore">("statsBefore"),
             testRunningCallback: () =>
-              getCubeHtml(pllTrainerElements.testRunning.testCase).as(
-                CUBE_AFTER_ALIAS
-              ),
+              getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
+                Aliases,
+                "cubeAfter"
+              >("cubeAfter"),
           });
           cy.visit(paths.pllTrainer);
           pllTrainerElements.recurringUserStartPage.worstCaseListItem
             .get()
             .invoke("text")
-            .as(STATS_AFTER_ALIAS);
-          return cy.getAliases([
-            CUBE_BEFORE_ALIAS,
-            STATS_BEFORE_ALIAS,
-            CUBE_AFTER_ALIAS,
-            STATS_AFTER_ALIAS,
-          ]);
+            .setAlias<Aliases, "statsAfter">("statsAfter");
+          return cy.getAliases<Aliases>();
         })
-        .should(([cubeBefore, statsBefore, cubeAfter, statsAfter]) => {
+        .should(({ cubeBefore, statsBefore, cubeAfter, statsAfter }) => {
           expect(cubeBefore === cubeAfter, "cubes should be the same").to.be
             .true;
           expect(statsBefore).to.deep.equal(statsAfter);
+          // Just for safety
+          expect(cubeBefore).to.not.be.undefined;
+          expect(cubeAfter).to.not.be.undefined;
+          expect(statsBefore).to.not.be.undefined;
+          expect(statsAfter).to.not.be.null;
         });
     });
     function parseAUFsFromWrongPage(): Cypress.Chainable<[AUF, AUF]> {
