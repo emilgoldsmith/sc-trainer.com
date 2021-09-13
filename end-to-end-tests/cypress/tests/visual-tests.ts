@@ -2,10 +2,10 @@ import {
   applyDefaultIntercepts,
   createFeatureFlagSetter,
 } from "support/interceptors";
-import { Key } from "support/keys";
 import { paths } from "support/paths";
-import { AUF, PLL, pllToAlgorithmString } from "support/pll";
+import { PLL } from "support/pll";
 import {
+  completePLLTestInMilliseconds,
   pllTrainerElements,
   pllTrainerStatesNewUser,
 } from "./pll-trainer/state-and-elements.helper";
@@ -166,44 +166,3 @@ describe("Algorithm Picker Visual Tests", function () {
     cy.percySnapshotWithProperName("PLL Trainer Recurring User Start Page");
   });
 });
-
-function completePLLTestInMilliseconds(
-  milliseconds: number,
-  pll: PLL,
-  {
-    firstEncounterWithThisPLL,
-    aufs,
-    correct,
-  }: {
-    firstEncounterWithThisPLL: boolean;
-    aufs: [AUF, AUF] | [];
-    correct: boolean;
-  }
-): void {
-  const [preAUF, postAUF] = [aufs[0] || AUF.none, aufs[1] || AUF.none];
-  cy.visit(paths.pllTrainer);
-  cy.clock();
-  pllTrainerElements.newUserStartPage.startButton.get().click();
-  pllTrainerElements.getReadyScreen.container.waitFor();
-  cy.tick(1000);
-  pllTrainerElements.testRunning.container.waitFor();
-  cy.setCurrentTestCase([preAUF, pll, postAUF]);
-  cy.tick(milliseconds);
-  cy.pressKey(Key.space);
-  pllTrainerElements.evaluateResult.container.waitFor();
-  cy.tick(500);
-  cy.clock().then((clock) => clock.restore());
-  if (correct) {
-    pllTrainerElements.evaluateResult.correctButton.get().click();
-  } else {
-    pllTrainerElements.evaluateResult.wrongButton.get().click();
-    pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
-  }
-  if (firstEncounterWithThisPLL) {
-    pllTrainerElements.pickAlgorithmPage.algorithmInput
-      .get()
-      .type(pllToAlgorithmString[pll] + "{enter}");
-  }
-  if (correct) pllTrainerElements.correctPage.container.waitFor();
-  else pllTrainerElements.wrongPage.container.waitFor();
-}

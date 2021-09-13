@@ -4,6 +4,7 @@ import {
   pllTrainerStatesUserDone,
   pllTrainerElements,
   pllTrainerStatesNewUser,
+  completePLLTestInMilliseconds,
 } from "./state-and-elements.helper";
 import { Element } from "support/elements";
 import { paths } from "support/paths";
@@ -1698,63 +1699,6 @@ describe("Behind Feature Flag", function () {
           .should("include.text", ": " + globalTPSAverage.toFixed(2));
       }
     });
-    function completePLLTestInMilliseconds(
-      milliseconds: number,
-      pll: PLL,
-      params: {
-        firstEncounterWithThisPLL: boolean;
-        aufs: readonly [AUF, AUF] | readonly [];
-        overrideDefaultAlgorithm?: string;
-        startPageCallback?: () => void;
-        testRunningCallback?: () => void;
-      } & (
-        | { correct: true }
-        | { correct: false; wrongPageCallback?: () => void }
-      )
-    ): void {
-      const {
-        firstEncounterWithThisPLL,
-        aufs,
-        correct,
-        overrideDefaultAlgorithm,
-        startPageCallback,
-        testRunningCallback,
-      } = params;
-      const [preAUF, postAUF] = [aufs[0] || AUF.none, aufs[1] || AUF.none];
-      cy.visit(paths.pllTrainer);
-      cy.clock();
-      pllTrainerElements.newUserStartPage.container.waitFor();
-      startPageCallback?.();
-      pllTrainerElements.newUserStartPage.startButton.get().click();
-      pllTrainerElements.getReadyScreen.container.waitFor();
-      cy.tick(1000);
-      pllTrainerElements.testRunning.container.waitFor();
-      cy.setCurrentTestCase([preAUF, pll, postAUF]);
-      cy.tick(milliseconds);
-      testRunningCallback?.();
-      cy.pressKey(Key.space);
-      pllTrainerElements.evaluateResult.container.waitFor();
-      cy.tick(500);
-      cy.clock().then((clock) => clock.restore());
-      if (correct) {
-        pllTrainerElements.evaluateResult.correctButton.get().click();
-      } else {
-        pllTrainerElements.evaluateResult.wrongButton.get().click();
-        pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
-      }
-      if (firstEncounterWithThisPLL) {
-        pllTrainerElements.pickAlgorithmPage.algorithmInput
-          .get()
-          .type(
-            (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
-          );
-      }
-      if (correct) pllTrainerElements.correctPage.container.waitFor();
-      else {
-        pllTrainerElements.wrongPage.container.waitFor();
-        params.wrongPageCallback?.();
-      }
-    }
     function computeAverages(
       lastThreeResults: { timeMs: number; turns: number }[]
     ): { averageTimeMs: number; averageTPS: number } {
