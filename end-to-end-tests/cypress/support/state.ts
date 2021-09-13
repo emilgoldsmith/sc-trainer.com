@@ -1,23 +1,31 @@
 import { applyDefaultIntercepts } from "./interceptors";
 
 export type StateOptions = { log?: boolean };
-export interface StateCache {
+export interface StateCache<
+  ExtraNavigateOptions extends Record<string, unknown>
+> {
   populateCache(): void;
   restoreState(options?: StateOptions): void;
-  reloadAndNavigateTo(options?: StateOptions): void;
+  reloadAndNavigateTo(options?: StateOptions & ExtraNavigateOptions): void;
 }
 
-class StateCacheImplementation<Keys extends string> implements StateCache {
+class StateCacheImplementation<
+  Keys extends string,
+  ExtraNavigateOptions extends Record<string, unknown>
+> implements StateCache<ExtraNavigateOptions> {
   private elmModel: Cypress.OurApplicationState | null = null;
-  private otherCaches?: { [key in Keys]: StateCacheImplementation<Keys> };
+  private otherCaches?: {
+    [key in Keys]: StateCacheImplementation<Keys, ExtraNavigateOptions>;
+  };
 
   constructor(
     private name: string,
     private startPath: string,
     private getToThatState: (
       getState: (key: Keys) => void,
-      options?: StateOptions
+      options?: StateOptions & ExtraNavigateOptions
     ) => void,
+    private defaultNavigateOptions: ExtraNavigateOptions,
     private waitForStateToAppear: (options?: StateOptions) => void,
     private localStorage?: { [key: string]: unknown }
   ) {}
@@ -34,7 +42,10 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
       (consolePropsSetter) => {
         if (this.localStorage) cy.setLocalStorage(this.localStorage);
         cy.visit(this.startPath, { log: false });
-        this.getToThatState(this.getStateByRestore.bind(this), { log: false });
+        this.getToThatState(this.getStateByRestore.bind(this), {
+          ...this.defaultNavigateOptions,
+          log: false,
+        });
         this.waitForStateToAppear({ log: false });
         cy.getApplicationState(this.name, { log: false }).then((elmModel) => {
           this.elmModel = elmModel;
@@ -61,7 +72,7 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
     this.waitForStateToAppear(options);
   }
 
-  reloadAndNavigateTo(options?: StateOptions): void {
+  reloadAndNavigateTo(options?: StateOptions & ExtraNavigateOptions): void {
     cy.withOverallNameLogged(
       {
         displayName: "NAVIGATING TO",
@@ -75,7 +86,7 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
     );
   }
 
-  navigateFromStart(options?: StateOptions): void {
+  navigateFromStart(options?: StateOptions & ExtraNavigateOptions): void {
     this.getToThatState(this.getStateByNavigate.bind(this), options);
     this.waitForStateToAppear({ log: false });
   }
@@ -87,30 +98,39 @@ class StateCacheImplementation<Keys extends string> implements StateCache {
     this.otherCaches[key].navigateFromStart();
   }
 
-  setOtherCaches(caches: { [key in Keys]: StateCacheImplementation<Keys> }) {
+  setOtherCaches(
+    caches: {
+      [key in Keys]: StateCacheImplementation<Keys, ExtraNavigateOptions>;
+    }
+  ) {
     this.otherCaches = caches;
   }
 }
 
-export function buildStates<Keys extends string>(
+export function buildStates<
+  Keys extends string,
+  ExtraNavigateOptions extends Record<string, unknown> = Record<never, never>
+>(
   {
     startPath,
     localStorage,
+    defaultNavigateOptions,
   }: {
     startPath: string;
     localStorage?: { [key: string]: unknown };
+    defaultNavigateOptions: ExtraNavigateOptions;
   },
   states: {
     [key in Keys]: {
       name: string;
       getToThatState: (
         getState: (key: Keys) => void,
-        options?: StateOptions
+        options?: StateOptions & ExtraNavigateOptions
       ) => void;
       waitForStateToAppear: (options?: StateOptions) => void;
     };
   }
-): { [key in Keys]: StateCache } & {
+): { [key in Keys]: StateCache<ExtraNavigateOptions> } & {
   populateAll: (
     interceptArgs?: Parameters<typeof applyDefaultIntercepts>[0]
   ) => void;
@@ -127,6 +147,7 @@ export function buildStates<Keys extends string>(
         args.name,
         startPath,
         args.getToThatState,
+        defaultNavigateOptions,
         args.waitForStateToAppear,
         localStorage
       )

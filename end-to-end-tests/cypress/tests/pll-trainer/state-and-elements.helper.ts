@@ -140,112 +140,123 @@ export const pllTrainerStatesUserDone = buildStates<
   | "evaluateResultAfterIgnoringTransitions"
   | "correctPage"
   | "typeOfWrongPage"
-  | "wrongPage"
->({ startPath: paths.pllTrainer, localStorage: allPllsAttemptedLocalStorage }, {
-  startPage: {
-    name: "startPage",
-    getToThatState: () => {},
-    waitForStateToAppear: (options) => {
-      pllTrainerElements.recurringUserStartPage.container.waitFor(options);
-      cy.waitForDocumentEventListeners("keyup");
-    },
+  | "wrongPage",
+  { case?: [AUF, PLL, AUF] }
+>(
+  {
+    startPath: paths.pllTrainer,
+    localStorage: allPllsAttemptedLocalStorage,
+    defaultNavigateOptions: {},
   },
-  getReadyScreen: {
-    name: "getReadyScreen",
-    getToThatState: (getState, options) => {
-      getState("startPage");
-      pllTrainerElements.recurringUserStartPage.startButton
-        .get(options)
-        .click(options);
+  {
+    startPage: {
+      name: "startPage",
+      getToThatState: () => {},
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.recurringUserStartPage.container.waitFor(options);
+        cy.waitForDocumentEventListeners("keyup");
+      },
     },
-    waitForStateToAppear: (options) => {
-      pllTrainerElements.getReadyScreen.container.waitFor(options);
+    getReadyScreen: {
+      name: "getReadyScreen",
+      getToThatState: (getState, options) => {
+        getState("startPage");
+        pllTrainerElements.recurringUserStartPage.startButton
+          .get(options)
+          .click(options);
+      },
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.getReadyScreen.container.waitFor(options);
+      },
     },
-  },
-  testRunning: {
-    name: "testRunning",
-    getToThatState: (getState, options) => {
-      // We need to have time mocked from start page
-      // to programatically pass through the get ready page
-      getState("startPage");
-      cy.clock();
-      pllTrainerElements.recurringUserStartPage.startButton
-        .get(options)
-        .click(options);
-      pllTrainerElements.getReadyScreen.container.waitFor(options);
-      cy.tick(1000, options);
-      cy.clock().then((clock) => clock.restore());
+    testRunning: {
+      name: "testRunning",
+      getToThatState: (getState, options) => {
+        // We need to have time mocked from start page
+        // to programatically pass through the get ready page
+        getState("startPage");
+        cy.clock();
+        pllTrainerElements.recurringUserStartPage.startButton
+          .get(options)
+          .click(options);
+        pllTrainerElements.getReadyScreen.container.waitFor(options);
+        cy.tick(1000, options);
+        cy.clock().then((clock) => clock.restore());
+      },
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.testRunning.container.waitFor(options);
+        cy.waitForDocumentEventListeners("mousedown", "keydown");
+      },
     },
-    waitForStateToAppear: (options) => {
-      pllTrainerElements.testRunning.container.waitFor(options);
-      cy.waitForDocumentEventListeners("mousedown", "keydown");
+    evaluateResult: {
+      name: "evaluateResult",
+      getToThatState: (getState, options) => {
+        getState("testRunning");
+        cy.pressKey(Key.space, options);
+      },
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.evaluateResult.container.waitFor(options);
+      },
     },
-  },
-  evaluateResult: {
-    name: "evaluateResult",
-    getToThatState: (getState, options) => {
-      getState("testRunning");
-      cy.pressKey(Key.space, options);
+    evaluateResultAfterIgnoringTransitions: {
+      name: "evaluateResultAfterIgnoringTransitions",
+      getToThatState: (getState, options) => {
+        // We need to have time mocked from test running
+        // to programatically pass through the ignoring transitions phase
+        getState("testRunning");
+        if (options?.case !== undefined) cy.setCurrentTestCase(options.case);
+        cy.clock();
+        cy.pressKey(Key.space, options);
+        pllTrainerElements.evaluateResult.container.waitFor(options);
+        cy.tick(300, options);
+        cy.clock().then((clock) => clock.restore());
+      },
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.evaluateResult.container.waitFor(options);
+        cy.waitForDocumentEventListeners("keydown", "keyup");
+      },
     },
-    waitForStateToAppear: (options) => {
-      pllTrainerElements.evaluateResult.container.waitFor(options);
+    correctPage: {
+      name: "correctPage",
+      getToThatState: (getState, options) => {
+        getState("evaluateResultAfterIgnoringTransitions");
+        pllTrainerElements.evaluateResult.correctButton
+          .get(options)
+          .click(options);
+      },
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.correctPage.container.waitFor(options);
+        cy.waitForDocumentEventListeners("keyup");
+      },
     },
-  },
-  evaluateResultAfterIgnoringTransitions: {
-    name: "evaluateResultAfterIgnoringTransitions",
-    getToThatState: (getState, options) => {
-      // We need to have time mocked from test running
-      // to programatically pass through the ignoring transitions phase
-      getState("testRunning");
-      cy.clock();
-      cy.pressKey(Key.space, options);
-      pllTrainerElements.evaluateResult.container.waitFor(options);
-      cy.tick(300, options);
-      cy.clock().then((clock) => clock.restore());
+    typeOfWrongPage: {
+      name: "typeOfWrongPage",
+      getToThatState: (getState, options) => {
+        getState("evaluateResultAfterIgnoringTransitions");
+        pllTrainerElements.evaluateResult.wrongButton
+          .get(options)
+          .click(options);
+      },
+      waitForStateToAppear: (options?: StateOptions) => {
+        pllTrainerElements.typeOfWrongPage.container.waitFor(options);
+        cy.waitForDocumentEventListeners("keyup");
+      },
     },
-    waitForStateToAppear: (options) => {
-      pllTrainerElements.evaluateResult.container.waitFor(options);
-      cy.waitForDocumentEventListeners("keydown", "keyup");
+    wrongPage: {
+      name: "wrongPage",
+      getToThatState: (getState, options) => {
+        getState("typeOfWrongPage");
+        pllTrainerElements.typeOfWrongPage.unrecoverableButton
+          .get(options)
+          .click(options);
+      },
+      waitForStateToAppear: (options?: StateOptions) => {
+        pllTrainerElements.wrongPage.container.waitFor(options);
+        cy.waitForDocumentEventListeners("keyup");
+      },
     },
-  },
-  correctPage: {
-    name: "correctPage",
-    getToThatState: (getState, options) => {
-      getState("evaluateResultAfterIgnoringTransitions");
-      pllTrainerElements.evaluateResult.correctButton
-        .get(options)
-        .click(options);
-    },
-    waitForStateToAppear: (options) => {
-      pllTrainerElements.correctPage.container.waitFor(options);
-      cy.waitForDocumentEventListeners("keyup");
-    },
-  },
-  typeOfWrongPage: {
-    name: "typeOfWrongPage",
-    getToThatState: (getState, options) => {
-      getState("evaluateResultAfterIgnoringTransitions");
-      pllTrainerElements.evaluateResult.wrongButton.get(options).click(options);
-    },
-    waitForStateToAppear: (options?: StateOptions) => {
-      pllTrainerElements.typeOfWrongPage.container.waitFor(options);
-      cy.waitForDocumentEventListeners("keyup");
-    },
-  },
-  wrongPage: {
-    name: "wrongPage",
-    getToThatState: (getState, options) => {
-      getState("typeOfWrongPage");
-      pllTrainerElements.typeOfWrongPage.unrecoverableButton
-        .get(options)
-        .click(options);
-    },
-    waitForStateToAppear: (options?: StateOptions) => {
-      pllTrainerElements.wrongPage.container.waitFor(options);
-      cy.waitForDocumentEventListeners("keyup");
-    },
-  },
-} as const);
+  } as const
+);
 
 export const pllTrainerStatesNewUser = buildStates<
   | "startPage"
@@ -257,8 +268,9 @@ export const pllTrainerStatesNewUser = buildStates<
   | "pickAlgorithmPageAfterUnrecoverable"
   | "correctPage"
   | "typeOfWrongPage"
-  | "wrongPage"
->({ startPath: paths.pllTrainer }, {
+  | "wrongPage",
+  { case: [AUF, PLL, AUF]; algorithm: string } | Record<string, never>
+>({ startPath: paths.pllTrainer, defaultNavigateOptions: {} }, {
   startPage: {
     name: "startPage",
     getToThatState: () => {},
@@ -314,6 +326,7 @@ export const pllTrainerStatesNewUser = buildStates<
       // We need to have time mocked from test running
       // to programatically pass through the ignoring key presses phase
       getState("testRunning");
+      if (options?.case !== undefined) cy.setCurrentTestCase(options.case);
       cy.clock();
       cy.pressKey(Key.space, options);
       pllTrainerElements.evaluateResult.container.waitFor(options);
@@ -381,10 +394,17 @@ export const pllTrainerStatesNewUser = buildStates<
     name: "wrongPage",
     getToThatState: (getState, options) => {
       getState("pickAlgorithmPageAfterUnrecoverable");
-      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+      const { case: caseToSet, algorithm } =
+        options?.case !== undefined
+          ? options
+          : {
+              case: [AUF.none, PLL.Aa, AUF.none] as const,
+              algorithm: pllToAlgorithmString[PLL.Aa],
+            };
+      cy.setCurrentTestCase(caseToSet);
       pllTrainerElements.pickAlgorithmPage.algorithmInput
         .get(options)
-        .type(pllToAlgorithmString[PLL.Aa] + "{enter}", {
+        .type(algorithm + "{enter}", {
           ...options,
           delay: 0,
         });
@@ -395,3 +415,58 @@ export const pllTrainerStatesNewUser = buildStates<
     },
   },
 } as const);
+
+export function completePLLTestInMilliseconds(
+  milliseconds: number,
+  pll: PLL,
+  params: {
+    firstEncounterWithThisPLL: boolean;
+    aufs: readonly [AUF, AUF] | readonly [];
+    overrideDefaultAlgorithm?: string;
+    startPageCallback?: () => void;
+    testRunningCallback?: () => void;
+  } & ({ correct: true } | { correct: false; wrongPageCallback?: () => void })
+): void {
+  const {
+    firstEncounterWithThisPLL,
+    aufs,
+    correct,
+    overrideDefaultAlgorithm,
+    startPageCallback,
+    testRunningCallback,
+  } = params;
+  const [preAUF, postAUF] = [aufs[0] || AUF.none, aufs[1] || AUF.none];
+  cy.visit(paths.pllTrainer);
+  cy.clock();
+  pllTrainerElements.newUserStartPage.container.waitFor();
+  startPageCallback?.();
+  pllTrainerElements.newUserStartPage.startButton.get().click();
+  pllTrainerElements.getReadyScreen.container.waitFor();
+  cy.tick(1000);
+  pllTrainerElements.testRunning.container.waitFor();
+  cy.setCurrentTestCase([preAUF, pll, postAUF]);
+  cy.tick(milliseconds);
+  testRunningCallback?.();
+  cy.pressKey(Key.space);
+  pllTrainerElements.evaluateResult.container.waitFor();
+  cy.tick(500);
+  cy.clock().then((clock) => clock.restore());
+  if (correct) {
+    pllTrainerElements.evaluateResult.correctButton.get().click();
+  } else {
+    pllTrainerElements.evaluateResult.wrongButton.get().click();
+    pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+  }
+  if (firstEncounterWithThisPLL) {
+    pllTrainerElements.pickAlgorithmPage.algorithmInput
+      .get()
+      .type(
+        (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
+      );
+  }
+  if (correct) pllTrainerElements.correctPage.container.waitFor();
+  else {
+    pllTrainerElements.wrongPage.container.waitFor();
+    params.wrongPageCallback?.();
+  }
+}
