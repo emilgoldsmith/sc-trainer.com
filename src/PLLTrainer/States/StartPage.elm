@@ -90,9 +90,12 @@ view shared transitions =
                       <|
                         [ text "Orient Solved Cube Like This:" ]
                     , el [ centerX ] <|
-                        ViewCube.uFRWithLetters
+                        ViewCube.view
                             [ htmlTestid "cube-start-state" ]
-                            200
+                            { pixelSize = 200
+                            , displayAngle = Cube.ufrDisplayAngle
+                            , annotateFaces = True
+                            }
                             Cube.solved
                     , PLLTrainer.ButtonWithShortcut.view
                         shared.hardwareAvailable

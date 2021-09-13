@@ -185,8 +185,18 @@ view viewportSize palette hardwareAvailable transitions arguments _ =
                     [ centerX
                     , spacing cubeSpacing
                     ]
-                    [ ViewCube.uFRWithLetters [ htmlTestid "expected-cube-front" ] cubeSize arguments.expectedCubeState
-                    , ViewCube.uBLWithLetters [ htmlTestid "expected-cube-back" ] cubeSize arguments.expectedCubeState
+                    [ ViewCube.view [ htmlTestid "expected-cube-front" ]
+                        { pixelSize = cubeSize
+                        , displayAngle = Cube.ufrDisplayAngle
+                        , annotateFaces = True
+                        }
+                        arguments.expectedCubeState
+                    , ViewCube.view [ htmlTestid "expected-cube-back" ]
+                        { pixelSize = cubeSize
+                        , displayAngle = Cube.ublDisplayAngle
+                        , annotateFaces = True
+                        }
+                        arguments.expectedCubeState
                     ]
                 , row [ centerX, spacing buttonSpacing ]
                     [ PLLTrainer.ButtonWithShortcut.view
