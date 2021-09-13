@@ -90,11 +90,48 @@ declare namespace Cypress {
     ): Chainable<JQuery<HTMLElement>>;
 
     /**
-     * Get one or more aliases that were created with the .as() command.
-     * You don't need to prefix it with @ here as you do with cy.get()
+     * Get a specific alias previously set with {@link Cypress.Chainable.setAlias}. See those docs for more info.
+     *
+     * Sadly Typescript doesn't have partial type argument inference so you a bit awkwardly need to provide
+     * the key both in the type argument and in the function argument in order to get the full type information
      */
-    getAliases(alias: string): Chainable<unknown>;
-    getAliases(alias: string[]): Chainable<unknown[]>;
+    getSingleAlias<
+      Aliases extends Record<string, unknown>,
+      Key extends keyof Aliases
+    >(
+      alias: Key
+    ): Chainable<Aliases[Key] | undefined>;
+    /**
+     * Get all the aliases previously set with {@link Cypress.Chainable.setAlias}. See those docs for more info
+     */
+    getAliases<Aliases extends Record<string, unknown>>(): Chainable<
+      Partial<Aliases>
+    >;
+
+    /**
+     * Definitely playing with some type magic here, and sadly couldn't
+     * get it to infer the second type parameter, but I think that's something we can live with
+     * given that it gives us type safety, ensuring a type error if we are giving the wrong subject
+     * to an alias.
+     *
+     * The intended use is that you define a scoped aliases type in your test
+     * such as
+     *
+     * @example
+     * type Aliases = {first: string, second: number};
+     * // ...
+     * cy.get(first).setAlias<Aliases, "first">("first");
+     *
+     * @description Note that you are managing the types yourself though,
+     * so if you don't pass the same type to all the function calls you
+     * could get in trouble
+     */
+    setAlias<
+      Aliases extends Record<string, unknown>,
+      Key extends keyof Aliases
+    >(
+      alias: Aliases[Key] extends Subject ? Key : never
+    ): void;
 
     /**
      * Presses a key in the "global scope", not focusing on any specific node
@@ -236,5 +273,10 @@ declare namespace Cypress {
     ): void;
 
     setLocalStorage(storageState: { [key: string]: any }): void;
+
+    /**
+     * Just adding an options here for some internal use with the overwriting of the .as function
+     */
+    as(alias: string, options: unknown): Chainable<Subject>;
   }
 }
