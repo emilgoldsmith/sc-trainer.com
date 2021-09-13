@@ -235,10 +235,16 @@ function getBySpecifier(
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }
 ) {
-  return cy.getByTestId(getTestId(specifier), {
-    ...options,
-    testType: getMeta(specifier).testType,
-  });
+  const testType = getMeta(specifier).testType;
+  return cy.getByTestId(
+    getTestId(specifier),
+    testType !== undefined
+      ? {
+          ...options,
+          testType,
+        }
+      : options
+  );
 }
 
 function buildVisibleAsserter(specifier: ElementSpecifier) {

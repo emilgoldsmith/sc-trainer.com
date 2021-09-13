@@ -1859,10 +1859,10 @@ describe("Behind Feature Flag", function () {
           aufs,
           correct: true,
           overrideDefaultAlgorithm: algorithm,
-          testRunningCallback:
-            cubeAlias === undefined
-              ? undefined
-              : () =>
+          ...(cubeAlias === undefined
+            ? {}
+            : {
+                testRunningCallback: () =>
                   getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
                     Aliases,
                     Key
@@ -1871,6 +1871,7 @@ describe("Behind Feature Flag", function () {
                     // better choice and at least it's in the tests
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   >(cubeAlias as any),
+              }),
         });
       }
     });
