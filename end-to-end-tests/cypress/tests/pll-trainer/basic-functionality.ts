@@ -14,7 +14,6 @@ import {
 import {
   AUF,
   aufToAlgorithmString,
-  isAUF,
   PLL,
   pllToAlgorithmString,
   pllToPllLetters,
@@ -1903,8 +1902,10 @@ describe("Behind Feature Flag", function () {
           parseAUFsFromWrongPage().setAlias<Aliases, "actualAUF">("actualAUF"),
       });
       cy.getSingleAlias<Aliases, "actualAUF">("actualAUF")
-        .then((aufsBeforeTypeAssertion) => {
-          const actualAUFs = assertIsAUFTuple(aufsBeforeTypeAssertion);
+        .then((actualAUFs) => {
+          if (actualAUFs === undefined) {
+            throw new Error("AUFs weren't saved to the alias?");
+          }
           cy.clearLocalStorage();
           completePLLTestInMilliseconds(testResultTime, pll, {
             firstEncounterWithThisPLL: true,
@@ -1943,7 +1944,7 @@ describe("Behind Feature Flag", function () {
           expect(cubeBefore).to.not.be.undefined;
           expect(cubeAfter).to.not.be.undefined;
           expect(statsBefore).to.not.be.undefined;
-          expect(statsAfter).to.not.be.null;
+          expect(statsAfter).to.not.be.undefined;
         });
     });
     function parseAUFsFromWrongPage(): Cypress.Chainable<[AUF, AUF]> {
@@ -2013,18 +2014,6 @@ describe("Behind Feature Flag", function () {
     });
   });
 });
-
-function assertIsAUFTuple(possibleAUFTuple: unknown): [AUF, AUF] {
-  if (
-    !Array.isArray(possibleAUFTuple) ||
-    possibleAUFTuple.length !== 2 ||
-    !isAUF(possibleAUFTuple[0]) ||
-    !isAUF(possibleAUFTuple[1])
-  ) {
-    throw new Error("Invalid AUFs in ACTUAL_AUF_ALIAS");
-  }
-  return possibleAUFTuple as [AUF, AUF];
-}
 
 function testCaseToWrongPageRegex(testCase: readonly [AUF, PLL, AUF]): RegExp {
   const firstAufString = aufToAlgorithmString[testCase[0]];

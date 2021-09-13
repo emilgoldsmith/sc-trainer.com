@@ -5,10 +5,6 @@ export enum AUF {
   UPrime,
 }
 
-export function isAUF(possibleAUF: unknown): possibleAUF is AUF {
-  return [AUF.none, AUF.U, AUF.U2, AUF.UPrime].includes(possibleAUF as number);
-}
-
 export enum PLL {
   Aa,
   Ab,
