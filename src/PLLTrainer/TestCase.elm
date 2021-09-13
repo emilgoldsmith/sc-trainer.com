@@ -26,8 +26,7 @@ toAlg user (TestCase ( preAUF_, pll_, postAUF_ )) =
                 |> Maybe.withDefault (PLL.getAlgorithm PLL.referenceAlgorithms pll_)
     in
     baseAlgorithm
-        |> Algorithm.append (AUF.toAlgorithm preAUF_)
-        |> Algorithm.reverseAppend (AUF.toAlgorithm postAUF_)
+        |> AUF.addToAlgorithm ( preAUF_, postAUF_ )
 
 
 {-| A cube that would be solved by this test case
