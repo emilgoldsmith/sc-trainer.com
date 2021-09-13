@@ -53,8 +53,8 @@ const getAliases: Cypress.Chainable<undefined>["getAliases"] = function <
   Aliases extends Record<string, unknown>
 >(this: Aliases) {
   /**
-   * The aliases in Cypress live on the Mocha Context which is passed around as `this`
-   * so that's what we return with a lot of ugly linting ignores
+   * We are saving the aliases on Mocha Context which is passed around as `this`
+   * so that's what we return here
    */
   // eslint-disable-next-line no-invalid-this
   return cy.wrap(this);
@@ -69,7 +69,9 @@ const getSingleAlias: Cypress.Chainable<undefined>["getSingleAlias"] = function 
     cy
       .getAliases<Aliases>()
       // Sadly it seems best thing to do here is also to just type cast
-      // it should hopefully work though and it's pretty simple code!
+      // because it doesn't like interacting with the also complex .then
+      // return type that also uses type algebra.
+      // It should hopefully work though and it's pretty simple code!
       .then((aliases) => aliases[alias]) as Cypress.Chainable<
       Aliases[Key] | undefined
     >
