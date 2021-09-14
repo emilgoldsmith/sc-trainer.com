@@ -1820,76 +1820,105 @@ describe("Behind Feature Flag", function () {
     });
 
     it("correctly calculates the TPS of the first attempt on a case, even though we don't know which AUF was used until the algorithm is input", function () {
-      type Aliases = {
-        cubeBefore: string;
-        statsBefore: string;
-        cubeAfter: string;
-        statsAfter: string;
-        actualAUF: [AUF, AUF];
-      };
-      const testResultTime = 1000;
-      const pll = PLL.Ua;
-      const internalInitialAUFs = [AUF.none, AUF.none] as const;
-      // const algorithm = "R2 U' R' U' R U R U R U' R";
-      const algorithm = "R2 U' R2 S R2 S' U R2";
-      completePLLTestInMilliseconds(testResultTime, pll, {
-        firstEncounterWithThisPLL: true,
-        aufs: internalInitialAUFs,
-        correct: false,
-        overrideDefaultAlgorithm: algorithm,
-        testRunningCallback: () =>
-          getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
-            Aliases,
-            "cubeBefore"
-          >("cubeBefore"),
-        wrongPageCallback: () =>
-          parseAUFsFromWrongPage().setAlias<Aliases, "actualAUF">("actualAUF"),
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Ua,
+        // Standard slice algorithm
+        algorithm: "M2 U M' U2 M U M2",
       });
-      cy.getSingleAlias<Aliases, "actualAUF">("actualAUF")
-        .then((actualAUFs) => {
-          if (actualAUFs === undefined) {
-            throw new Error("AUFs weren't saved to the alias?");
-          }
-          cy.clearLocalStorage();
-          completePLLTestInMilliseconds(testResultTime, pll, {
-            firstEncounterWithThisPLL: true,
-            aufs: internalInitialAUFs,
-            correct: true,
-            overrideDefaultAlgorithm: algorithm,
-          });
-          completePLLTestInMilliseconds(testResultTime, pll, {
-            firstEncounterWithThisPLL: false,
-            aufs: actualAUFs,
-            correct: true,
-            overrideDefaultAlgorithm: algorithm,
-            startPageCallback: () =>
-              pllTrainerElements.recurringUserStartPage.worstCaseListItem
-                .get()
-                .invoke("text")
-                .setAlias<Aliases, "statsBefore">("statsBefore"),
-            testRunningCallback: () =>
-              getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
-                Aliases,
-                "cubeAfter"
-              >("cubeAfter"),
-          });
-          cy.visit(paths.pllTrainer);
-          pllTrainerElements.recurringUserStartPage.worstCaseListItem
-            .get()
-            .invoke("text")
-            .setAlias<Aliases, "statsAfter">("statsAfter");
-          return cy.getAliases<Aliases>();
-        })
-        .should(({ cubeBefore, statsBefore, cubeAfter, statsAfter }) => {
-          expect(cubeBefore === cubeAfter, "cubes should be the same").to.be
-            .true;
-          expect(statsBefore).to.deep.equal(statsAfter);
-          // Just for safety
-          expect(cubeBefore).to.not.be.undefined;
-          expect(cubeAfter).to.not.be.undefined;
-          expect(statsBefore).to.not.be.undefined;
-          expect(statsAfter).to.not.be.undefined;
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Ua,
+        // An algorithm with a different preAUF but same postAUF
+        algorithm: "R2 U' R2 S R2 S' U R2",
+      });
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Gc,
+        // Emil's main Gc algorithm (maybe standard?)
+        algorithm: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
+      });
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Gc,
+        // An algorithm with a different postAUF but same preAUF
+        algorithm: "(y) R2' u' (R U' R U R') u R2 (y) R U' R'",
+      });
+
+      function assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll,
+        algorithm,
+      }: {
+        pll: PLL;
+        algorithm: string;
+      }) {
+        type Aliases = {
+          cubeBefore: string;
+          statsBefore: string;
+          cubeAfter: string;
+          statsAfter: string;
+          actualAUF: [AUF, AUF];
+        };
+        const testResultTime = 1000;
+        const internalInitialAUFs = [AUF.none, AUF.none] as const;
+        cy.clearLocalStorage();
+        completePLLTestInMilliseconds(testResultTime, pll, {
+          firstEncounterWithThisPLL: true,
+          aufs: internalInitialAUFs,
+          correct: false,
+          overrideDefaultAlgorithm: algorithm,
+          testRunningCallback: () =>
+            getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
+              Aliases,
+              "cubeBefore"
+            >("cubeBefore"),
+          wrongPageCallback: () =>
+            parseAUFsFromWrongPage().setAlias<Aliases, "actualAUF">(
+              "actualAUF"
+            ),
         });
+        cy.getSingleAlias<Aliases, "actualAUF">("actualAUF")
+          .then((actualAUFs) => {
+            if (actualAUFs === undefined) {
+              throw new Error("AUFs weren't saved to the alias?");
+            }
+            cy.clearLocalStorage();
+            completePLLTestInMilliseconds(testResultTime, pll, {
+              firstEncounterWithThisPLL: true,
+              aufs: internalInitialAUFs,
+              correct: true,
+              overrideDefaultAlgorithm: algorithm,
+            });
+            completePLLTestInMilliseconds(testResultTime, pll, {
+              firstEncounterWithThisPLL: false,
+              aufs: actualAUFs,
+              correct: true,
+              overrideDefaultAlgorithm: algorithm,
+              startPageCallback: () =>
+                pllTrainerElements.recurringUserStartPage.worstCaseListItem
+                  .get()
+                  .invoke("text")
+                  .setAlias<Aliases, "statsBefore">("statsBefore"),
+              testRunningCallback: () =>
+                getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
+                  Aliases,
+                  "cubeAfter"
+                >("cubeAfter"),
+            });
+            cy.visit(paths.pllTrainer);
+            pllTrainerElements.recurringUserStartPage.worstCaseListItem
+              .get()
+              .invoke("text")
+              .setAlias<Aliases, "statsAfter">("statsAfter");
+            return cy.getAliases<Aliases>();
+          })
+          .should(({ cubeBefore, statsBefore, cubeAfter, statsAfter }) => {
+            expect(cubeBefore === cubeAfter, "cubes should be the same").to.be
+              .true;
+            expect(statsBefore).to.deep.equal(statsAfter);
+            // Just for safety
+            expect(cubeBefore).to.not.be.undefined;
+            expect(cubeAfter).to.not.be.undefined;
+            expect(statsBefore).to.not.be.undefined;
+            expect(statsAfter).to.not.be.undefined;
+          });
+      }
     });
     function parseAUFsFromWrongPage(): Cypress.Chainable<[AUF, AUF]> {
       // This is preeeetttyyy brittle sadly, so if someone finds a better way to accomplish
