@@ -227,7 +227,7 @@ view currentTestCase testResult toMsg shared model =
                             [ case testResult of
                                 User.Correct _ ->
                                     el [ testid "correct-text" ] <|
-                                        text "Which algorithm will you use to solve this case in the future? This is most likely the one you just used"
+                                        text "Which algorithm did you use?"
 
                                 User.Wrong _ ->
                                     el [ testid "wrong-text" ] <|
