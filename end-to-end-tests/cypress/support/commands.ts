@@ -57,7 +57,7 @@ const getAliases: Cypress.Chainable<undefined>["getAliases"] = function <
    * so that's what we return here
    */
   // eslint-disable-next-line no-invalid-this
-  return cy.wrap(this);
+  return cy.wrap(this, { log: false });
 };
 Cypress.Commands.add("getAliases", getAliases);
 
