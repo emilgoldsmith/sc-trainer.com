@@ -1717,14 +1717,12 @@ describe("Behind Feature Flag", function () {
         unmodified: string;
         modified: string;
       };
-      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
-      const testCase = [AUF.U2, PLL.Aa, AUF.UPrime] as const;
-      cy.setCurrentTestCase(testCase);
-      pllTrainerElements.evaluateResult.correctButton.get().click();
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type(pllToAlgorithmString[PLL.Aa] + "{enter}");
-      pllTrainerElements.correctPage.container.waitFor();
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        firstEncounterWithThisPLL: true,
+        aufs: [AUF.U2, AUF.UPrime],
+        correct: true,
+        overrideDefaultAlgorithm: pllToAlgorithmString[PLL.Aa],
+      });
       cy.visit(paths.pllTrainer);
       pllTrainerElements.recurringUserStartPage.worstCaseListItem
         .get()
@@ -1732,24 +1730,125 @@ describe("Behind Feature Flag", function () {
         .setAlias<Aliases, "unmodified">("unmodified");
 
       cy.clearLocalStorage();
-      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo();
-      cy.setCurrentTestCase(testCase);
-      pllTrainerElements.evaluateResult.correctButton.get().click();
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type("y' " + pllToAlgorithmString[PLL.Aa] + " y2{enter}");
-      pllTrainerElements.correctPage.container.waitFor();
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        firstEncounterWithThisPLL: true,
+        aufs: [AUF.U2, AUF.UPrime],
+        correct: true,
+        overrideDefaultAlgorithm: "y' " + pllToAlgorithmString[PLL.Aa] + " y2",
+      });
       cy.visit(paths.pllTrainer);
       pllTrainerElements.recurringUserStartPage.worstCaseListItem
         .get()
         .invoke("text")
         .setAlias<Aliases, "modified">("modified");
+
       cy.getAliases<Aliases>().should(({ unmodified, modified }) => {
         expect(unmodified).to.not.be.undefined;
         expect(modified).to.not.be.undefined;
         expect(modified).to.deep.equal(unmodified);
       });
     });
+
+    /* eslint-disable mocha/no-setup-in-describe */
+    ([
+      {
+        testName:
+          "displays a case in the standard orientation, even if there's a y rotation in the beginning of the algorithm that isn't corrected later",
+        pll: PLL.Gc,
+        algorithmWithRotation: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
+        // The same algorithm but just modified to move the faces without the rotation
+        algorithmWithoutRotation: "B2 U' B U' B U B' U B2 D' U B U' B' D",
+      },
+      {
+        testName:
+          "displays a case in the standard orientation, even if there's a y rotation in the middle of the algorithm that isn't corrected later",
+        pll: PLL.V,
+        algorithmWithRotation: "R' U R' U' (y) R' F' R2 U' R' U R' F R F",
+        // The same algorithm but just modified to move the faces without the rotation
+        algorithmWithoutRotation: "R' U R' U' B' R' B2 U' B' U B' R B R",
+      },
+      {
+        testName:
+          "displays a case in the standard orientation, even if there's an x rotation in the beginning of the algorithm that isn't corrected later",
+        pll: PLL.E,
+        algorithmWithRotation: "x U R' U' L U R U' r2 U' R U L U' R' U",
+        // The same algorithm but just modified to move the faces without the rotation
+        algorithmWithoutRotation: "F R' F' L F R F' r2 F' R F L F' R' F",
+      },
+      {
+        testName:
+          "displays a case in the standard orientation, even if there's a z rotation in the beginning of the algorithm that isn't corrected later",
+        pll: PLL.V,
+        algorithmWithRotation: "z D' R2 D R2 U R' D' R U' R U R' D R U'",
+        // The same algorithm but just modified to move the faces without the rotation
+        algorithmWithoutRotation: "R' U2 R U2 L U' R' U L' U L U' R U L'",
+      },
+      {
+        testName:
+          "displays a case in the standard orientation, even if there's a wide move in the algorithm that isn't corrected later",
+        pll: PLL.Jb,
+        algorithmWithRotation: "R U2 R' U' R U2 L' U R' U' r",
+        // The same algorithm but just added in an x' at the end to correct the orientation
+        algorithmWithoutRotation: "R U2 R' U' R U2 L' U R' U' r x'",
+      },
+    ] as const).forEach(
+      /* eslint-enable mocha/no-setup-in-describe */
+      ({ pll, algorithmWithRotation, algorithmWithoutRotation, testName }) => {
+        it(testName, function () {
+          type Aliases = {
+            withRotation: string;
+            withoutRotation: string;
+          };
+          // First we input the desired algorithm as our chosen one
+          completePLLTestInMilliseconds(1000, pll, {
+            firstEncounterWithThisPLL: true,
+            correct: true,
+            overrideDefaultAlgorithm: algorithmWithRotation,
+            aufs: [],
+          });
+          // Then we run the test with that algorithm being used
+          completePLLTestInMilliseconds(1000, pll, {
+            firstEncounterWithThisPLL: false,
+            correct: true,
+            aufs: [],
+            testRunningCallback: () =>
+              getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
+                Aliases,
+                "withRotation"
+              >("withRotation"),
+          });
+
+          cy.clearLocalStorage();
+          // First we input the desired algorithm as our chosen one
+          completePLLTestInMilliseconds(1000, pll, {
+            firstEncounterWithThisPLL: true,
+            correct: true,
+            overrideDefaultAlgorithm: algorithmWithoutRotation,
+            aufs: [],
+          });
+          // Then we run the test with that algorithm being used
+          completePLLTestInMilliseconds(1000, pll, {
+            firstEncounterWithThisPLL: false,
+            correct: true,
+            aufs: [],
+            testRunningCallback: () =>
+              getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
+                Aliases,
+                "withoutRotation"
+              >("withoutRotation"),
+          });
+
+          cy.getAliases<Aliases>().then(({ withRotation, withoutRotation }) => {
+            expect(!!(withRotation && withoutRotation), "no falsy values").to.be
+              .true;
+            expect(
+              withRotation === withoutRotation,
+              "they should display the same cube no matter about uncorrected rotations in the algorithm"
+            ).to.be.true;
+          });
+        });
+      }
+    );
 
     it("doesn't display the same cube for same case with algorithms that require different AUFs", function () {
       type Aliases = {
@@ -1913,10 +2012,10 @@ describe("Behind Feature Flag", function () {
               .true;
             expect(statsBefore).to.deep.equal(statsAfter);
             // Just for safety
-            expect(cubeBefore).to.not.be.undefined;
-            expect(cubeAfter).to.not.be.undefined;
-            expect(statsBefore).to.not.be.undefined;
-            expect(statsAfter).to.not.be.undefined;
+            expect(
+              !!(cubeBefore && cubeAfter && statsBefore && statsAfter),
+              "no aliases should be falsy"
+            ).to.be.true;
           });
       }
     });
