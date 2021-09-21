@@ -101,7 +101,7 @@ declare namespace Cypress {
       Key extends keyof Aliases
     >(
       alias: Key
-    ): Chainable<Aliases[Key] | undefined>;
+    ): Chainable<Aliases[Key]>;
     /**
      * Get all the aliases previously set with {@link Cypress.Chainable.setAlias}. See those docs for more info
      */

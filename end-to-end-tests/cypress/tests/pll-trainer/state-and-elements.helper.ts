@@ -435,7 +435,7 @@ export function completePLLTestInMilliseconds(
     startPageCallback,
     testRunningCallback,
   } = params;
-  const [preAUF, postAUF] = [aufs[0] || AUF.none, aufs[1] || AUF.none];
+  const [preAUF, postAUF] = [aufs[0] ?? AUF.none, aufs[1] ?? AUF.none];
   cy.visit(paths.pllTrainer);
   cy.clock();
   pllTrainerElements.newUserStartPage.container.waitFor();

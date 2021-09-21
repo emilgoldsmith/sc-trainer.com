@@ -68,13 +68,18 @@ const getSingleAlias: Cypress.Chainable<undefined>["getSingleAlias"] = function 
   return (
     cy
       .getAliases<Aliases>()
-      // Sadly it seems best thing to do here is also to just type cast
-      // because it doesn't like interacting with the also complex .then
-      // return type that also uses type algebra.
+      // Sadly it seems the best thing to do here is to just type cast
+      // as Typescript isn't liking these complex types
       // It should hopefully work though and it's pretty simple code!
-      .then((aliases) => aliases[alias]) as Cypress.Chainable<
-      Aliases[Key] | undefined
-    >
+      .then((aliases) => {
+        const value = aliases[alias];
+        if (value === undefined) {
+          throw new Error(
+            `Alias ${alias} was undefined when fetched with getSingleAlias`
+          );
+        }
+        return value;
+      }) as Cypress.Chainable<Aliases[Key]>
   );
 };
 Cypress.Commands.add("getSingleAlias", getSingleAlias);
