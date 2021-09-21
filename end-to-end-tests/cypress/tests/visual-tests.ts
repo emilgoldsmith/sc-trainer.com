@@ -209,7 +209,7 @@ describe("Algorithm Picker Visual Tests", function () {
       correct: true,
     });
     completePLLTestInMilliseconds(1000, PLL.Gc, {
-      firstEncounterWithThisPLL: true,
+      firstEncounterWithThisPLL: false,
       aufs: [AUF.UPrime, AUF.none],
       correct: false,
       wrongPageCallback: () =>
@@ -225,7 +225,7 @@ describe("Algorithm Picker Visual Tests", function () {
       correct: true,
     });
     completePLLTestInMilliseconds(1000, PLL.Gc, {
-      firstEncounterWithThisPLL: true,
+      firstEncounterWithThisPLL: false,
       // This same case corresponds to U' [Gc] U' with the previous algorithm
       aufs: [AUF.UPrime, AUF.none],
       correct: false,
