@@ -1974,9 +1974,6 @@ describe("Behind Feature Flag", function () {
         });
         cy.getSingleAlias<Aliases, "actualAUF">("actualAUF")
           .then((actualAUFs) => {
-            if (actualAUFs === undefined) {
-              throw new Error("AUFs weren't saved to the alias?");
-            }
             cy.clearLocalStorage();
             completePLLTestInMilliseconds(testResultTime, pll, {
               firstEncounterWithThisPLL: true,

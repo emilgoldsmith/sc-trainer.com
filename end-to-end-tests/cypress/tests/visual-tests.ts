@@ -8,7 +8,6 @@ import {
   completePLLTestInMilliseconds,
   pllTrainerElements,
   pllTrainerStatesNewUser,
-  pllTrainerStatesUserDone,
 } from "./pll-trainer/state-and-elements.helper";
 
 describe("Visual Tests", function () {
@@ -174,10 +173,13 @@ describe("Algorithm Picker Visual Tests", function () {
       overrideDefaultAlgorithm: "M2 U M' U2 M U M2",
       correct: true,
     });
-    pllTrainerStatesUserDone.wrongPage.reloadAndNavigateTo({
-      case: [AUF.U, PLL.Ua, AUF.U2],
+    completePLLTestInMilliseconds(1000, PLL.Ua, {
+      firstEncounterWithThisPLL: false,
+      aufs: [AUF.U, AUF.U2],
+      correct: false,
+      wrongPageCallback: () =>
+        cy.percySnapshotWithProperName("U [Ua] U2 standard slice algorithm"),
     });
-    cy.percySnapshotWithProperName("U [Ua] U2 standard slice algorithm");
 
     cy.clearLocalStorage();
     completePLLTestInMilliseconds(1000, PLL.Ua, {
@@ -187,13 +189,16 @@ describe("Algorithm Picker Visual Tests", function () {
       overrideDefaultAlgorithm: "R2 U' S' U2' S U' R2",
       correct: true,
     });
-    pllTrainerStatesUserDone.wrongPage.reloadAndNavigateTo({
+    completePLLTestInMilliseconds(1000, PLL.Ua, {
+      firstEncounterWithThisPLL: false,
       // This same case corresponds to [Ua] U' with the standard slice algorithm
-      case: [AUF.U, PLL.Ua, AUF.U2],
+      aufs: [AUF.U, AUF.U2],
+      correct: false,
+      wrongPageCallback: () =>
+        cy.percySnapshotWithProperName(
+          "[Ua] U' standard slice algorithm equivalent"
+        ),
     });
-    cy.percySnapshotWithProperName(
-      "[Ua] U' standard slice algorithm equivalent"
-    );
 
     // Now let's test some postAUFs with the Gc algorithm
     cy.clearLocalStorage();
@@ -203,10 +208,14 @@ describe("Algorithm Picker Visual Tests", function () {
       overrideDefaultAlgorithm: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
       correct: true,
     });
-    pllTrainerStatesUserDone.wrongPage.reloadAndNavigateTo({
-      case: [AUF.UPrime, PLL.Gc, AUF.none],
+    completePLLTestInMilliseconds(1000, PLL.Gc, {
+      firstEncounterWithThisPLL: true,
+      aufs: [AUF.UPrime, AUF.none],
+      overrideDefaultAlgorithm: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
+      correct: false,
+      wrongPageCallback: () =>
+        cy.percySnapshotWithProperName("U' [Gc] with Emil's main algorithm"),
     });
-    cy.percySnapshotWithProperName("U' [Gc] with Emil's main algorithm");
 
     cy.clearLocalStorage();
     completePLLTestInMilliseconds(1000, PLL.Gc, {
@@ -216,12 +225,16 @@ describe("Algorithm Picker Visual Tests", function () {
       overrideDefaultAlgorithm: "(y) R2' u' (R U' R U R') u R2 (y) R U' R'",
       correct: true,
     });
-    pllTrainerStatesUserDone.wrongPage.reloadAndNavigateTo({
+    completePLLTestInMilliseconds(1000, PLL.Gc, {
+      firstEncounterWithThisPLL: true,
       // This same case corresponds to U' [Gc] U' with the previous algorithm
-      case: [AUF.UPrime, PLL.Gc, AUF.none],
+      aufs: [AUF.UPrime, AUF.none],
+      overrideDefaultAlgorithm: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
+      correct: false,
+      wrongPageCallback: () =>
+        cy.percySnapshotWithProperName(
+          "U' [Gc] U' equivalent with Emil's main algorithm"
+        ),
     });
-    cy.percySnapshotWithProperName(
-      "U' [Gc] U' equivalent with Emil's main algorithm"
-    );
   });
 });
