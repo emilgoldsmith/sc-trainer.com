@@ -2,6 +2,7 @@ module Tests.PLLTrainer.TestCase exposing (toAlgTests)
 
 import AUF
 import Algorithm
+import Cube
 import Expect
 import Fuzz
 import Fuzz.Extra
@@ -26,7 +27,7 @@ toAlgTests =
                     |> Expect.equal
                         (Algorithm.fromTurnList <|
                             (AUF.toAlgorithm >> Algorithm.toTurnList) preAUF
-                                ++ Algorithm.toTurnList algorithm
+                                ++ Algorithm.toTurnList (Cube.makeAlgorithmMaintainOrientation algorithm)
                                 ++ (AUF.toAlgorithm >> Algorithm.toTurnList) postAUF
                         )
         , fuzz2 Fuzz.Extra.pll (Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf )) "adds the aufs correctly from the correct pll when user has not yet picked a pll" <|
@@ -35,11 +36,9 @@ toAlgTests =
                     testCase =
                         PLLTrainer.TestCase.build preAUF pll postAUF
 
-                    testCaseWithNoAUFs =
-                        PLLTrainer.TestCase.build AUF.None pll AUF.None
-
                     algorithmWithoutAUFs =
-                        PLLTrainer.TestCase.toAlg User.new testCaseWithNoAUFs
+                        PLLTrainer.TestCase.build AUF.None pll AUF.None
+                            |> PLLTrainer.TestCase.toAlg User.new
                 in
                 PLLTrainer.TestCase.toAlg User.new testCase
                     |> Expect.equal
