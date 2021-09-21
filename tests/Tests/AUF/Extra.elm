@@ -42,13 +42,13 @@ detectAUFsTests =
             \algorithm ->
                 let
                     definitelyNotMatchingAlgorithm =
-                        algorithm
-                            |> Algorithm.append
-                                (Algorithm.fromTurnList
-                                    -- An F turn cannot be fixed by any AUF
-                                    [ Algorithm.Turn Algorithm.F Algorithm.Halfway Algorithm.Clockwise
-                                    ]
-                                )
+                        Algorithm.append
+                            algorithm
+                            (Algorithm.fromTurnList
+                                -- An F turn cannot be fixed by any AUF
+                                [ Algorithm.Turn Algorithm.F Algorithm.Halfway Algorithm.Clockwise
+                                ]
+                            )
                 in
                 AUF.Extra.detectAUFs { toMatchTo = definitelyNotMatchingAlgorithm, toDetectFor = algorithm }
                     |> Expect.equal (Err AUF.Extra.NoAUFsMakeThemMatch)
