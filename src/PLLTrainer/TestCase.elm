@@ -24,6 +24,7 @@ toAlg user (TestCase ( preAUF_, pll_, postAUF_ )) =
         baseAlgorithm =
             User.getPLLAlgorithm pll_ user
                 |> Maybe.withDefault (PLL.getAlgorithm PLL.referenceAlgorithms pll_)
+                |> Cube.makeAlgorithmMaintainOrientation
     in
     baseAlgorithm
         |> AUF.addToAlgorithm ( preAUF_, postAUF_ )
