@@ -211,7 +211,6 @@ describe("Algorithm Picker Visual Tests", function () {
     completePLLTestInMilliseconds(1000, PLL.Gc, {
       firstEncounterWithThisPLL: true,
       aufs: [AUF.UPrime, AUF.none],
-      overrideDefaultAlgorithm: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
       correct: false,
       wrongPageCallback: () =>
         cy.percySnapshotWithProperName("U' [Gc] with Emil's main algorithm"),
@@ -229,7 +228,6 @@ describe("Algorithm Picker Visual Tests", function () {
       firstEncounterWithThisPLL: true,
       // This same case corresponds to U' [Gc] U' with the previous algorithm
       aufs: [AUF.UPrime, AUF.none],
-      overrideDefaultAlgorithm: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
       correct: false,
       wrongPageCallback: () =>
         cy.percySnapshotWithProperName(
