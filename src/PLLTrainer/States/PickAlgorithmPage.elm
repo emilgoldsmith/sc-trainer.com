@@ -123,15 +123,19 @@ update transitions currentTestCase msg model =
                     ( { model | error = Just (AlgorithmParsingError parsingError) }, command )
 
                 Ok algorithm ->
+                    let
+                        cleanedUpAlgorithm =
+                            cleanUpAlgorithm algorithm
+                    in
                     if
                         PLL.solvedBy
-                            algorithm
+                            cleanedUpAlgorithm
                             (PLLTrainer.TestCase.pll currentTestCase)
                     then
                         ( model
                         , Task.perform
                             transitions.continue
-                            (Task.succeed algorithm)
+                            (Task.succeed cleanedUpAlgorithm)
                         )
 
                     else
@@ -152,6 +156,30 @@ update transitions currentTestCase msg model =
                                     ++ "` to focus on"
                                 )
                             )
+
+
+cleanUpAlgorithm : Algorithm -> Algorithm
+cleanUpAlgorithm =
+    Algorithm.toTurnList
+        >> dropWhile (\(Algorithm.Turn turnable _ _) -> turnable == Algorithm.Y || turnable == Algorithm.Dw || turnable == Algorithm.U)
+        >> List.reverse
+        >> dropWhile (\(Algorithm.Turn turnable _ _) -> turnable == Algorithm.Y || turnable == Algorithm.Dw || turnable == Algorithm.U)
+        >> List.reverse
+        >> Algorithm.fromTurnList
+
+
+dropWhile : (a -> Bool) -> List a -> List a
+dropWhile fn list =
+    case list of
+        [] ->
+            []
+
+        x :: xs ->
+            if fn x then
+                dropWhile fn xs
+
+            else
+                list
 
 
 
