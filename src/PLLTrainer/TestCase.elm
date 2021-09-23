@@ -1,6 +1,7 @@
 module PLLTrainer.TestCase exposing (TestCase, build, generate, pll, postAUF, preAUF, toAlg, toCube)
 
 import AUF exposing (AUF)
+import AUF.Extra
 import Algorithm
 import Cube exposing (Cube)
 import List.Nonempty
@@ -14,8 +15,29 @@ type TestCase
 
 
 build : AUF -> PLL -> AUF -> TestCase
-build preauf pll_ postauf =
-    TestCase ( preauf, pll_, postauf )
+build preAUF_ pll_ postAUF_ =
+    let
+        -- Any pll algorithm will do. The equivalency classes of different
+        -- AUFs for a PLL should be independent of the algorithm used and which
+        -- AUFs/angles it uses
+        pllAlgorithm =
+            PLL.getAlgorithm PLL.referenceAlgorithms pll_
+
+        ( optimizedPreAUF, optimizedPostAUF ) =
+            AUF.Extra.detectAUFs
+                { toMatchTo =
+                    Algorithm.append
+                        (AUF.toAlgorithm preAUF_)
+                    <|
+                        Algorithm.append (Cube.makeAlgorithmMaintainOrientation pllAlgorithm) <|
+                            AUF.toAlgorithm postAUF_
+                , toDetectFor = pllAlgorithm
+                }
+                -- This should never be an error but this is a sensible default in case
+                -- it somehow does.
+                |> Result.withDefault ( preAUF_, postAUF_ )
+    in
+    TestCase ( optimizedPreAUF, pll_, optimizedPostAUF )
 
 
 toAlg : User -> TestCase -> Algorithm.Algorithm
