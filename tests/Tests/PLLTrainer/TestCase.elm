@@ -6,6 +6,7 @@ import Cube
 import Expect
 import Fuzz
 import Fuzz.Extra
+import PLL
 import PLLTrainer.TestCase
 import Test exposing (..)
 import User
@@ -14,22 +15,30 @@ import User
 toAlgTests : Test
 toAlgTests =
     describe "toAlg"
-        [ fuzz3 Fuzz.Extra.pll Fuzz.Extra.algorithm (Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf )) "adds the aufs correctly from the correct pll when user has pll picked" <|
-            \pll algorithm ( preAUF, postAUF ) ->
+        [ fuzz2 Fuzz.Extra.pll (Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf )) "adds the aufs correctly from the correct pll when user has pll picked" <|
+            \pll ( preAUF, postAUF ) ->
                 let
+                    algorithm =
+                        PLL.getAlgorithm PLL.referenceAlgorithms pll
+
                     testCase =
                         PLLTrainer.TestCase.build preAUF pll postAUF
 
                     user =
                         User.changePLLAlgorithm pll algorithm User.new
+
+                    result =
+                        PLLTrainer.TestCase.toAlg user testCase
+
+                    expected =
+                        AUF.addToAlgorithm ( preAUF, postAUF ) <|
+                            Cube.makeAlgorithmMaintainOrientation
+                                algorithm
                 in
-                PLLTrainer.TestCase.toAlg user testCase
-                    |> Expect.equal
-                        (Algorithm.fromTurnList <|
-                            (AUF.toAlgorithm >> Algorithm.toTurnList) preAUF
-                                ++ Algorithm.toTurnList (Cube.makeAlgorithmMaintainOrientation algorithm)
-                                ++ (AUF.toAlgorithm >> Algorithm.toTurnList) postAUF
-                        )
+                Cube.algorithmResultsAreEquivalent
+                    result
+                    expected
+                    |> Expect.true ("the algorithms should be equivalent\nExpected: " ++ Debug.toString expected ++ "\nResult: " ++ Debug.toString result)
         , fuzz2 Fuzz.Extra.pll (Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf )) "adds the aufs correctly from the correct pll when user has not yet picked a pll" <|
             \pll ( preAUF, postAUF ) ->
                 let
@@ -41,10 +50,11 @@ toAlgTests =
                             |> PLLTrainer.TestCase.toAlg User.new
                 in
                 PLLTrainer.TestCase.toAlg User.new testCase
-                    |> Expect.equal
+                    |> Cube.algorithmResultsAreEquivalent
                         (Algorithm.fromTurnList <|
                             (AUF.toAlgorithm >> Algorithm.toTurnList) preAUF
                                 ++ Algorithm.toTurnList algorithmWithoutAUFs
                                 ++ (AUF.toAlgorithm >> Algorithm.toTurnList) postAUF
                         )
+                    |> Expect.true "the algorithms should be equivalent"
         ]

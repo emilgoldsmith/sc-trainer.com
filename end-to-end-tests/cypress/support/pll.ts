@@ -15,6 +15,7 @@ export enum PLL {
   Ga,
   Gc,
   V,
+  Z,
 }
 
 export const aufToAlgorithmString: { [key in AUF]: string } = {
@@ -34,6 +35,7 @@ export const pllToPllLetters: { [key in PLL]: string } = {
   [PLL.Ga]: "Ga",
   [PLL.Gc]: "Gc",
   [PLL.V]: "V",
+  [PLL.Z]: "Z",
 };
 
 export const pllToAlgorithmString: { [key in PLL]: string } = {
@@ -55,6 +57,8 @@ export const pllToAlgorithmString: { [key in PLL]: string } = {
   [PLL.Gc]: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
   // Taken from https://www.speedsolving.com/wiki/index.php/PLL#V_Permutation
   [PLL.V]: "(y) R U' R U R' D R D' R U' D R2 U R2 D' R2",
+  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#Z_Permutation
+  [PLL.Z]: "M2 U2 M U' M2 U' M2 U' M",
 };
 
 export const allAUFs = [AUF.none, AUF.U, AUF.U2, AUF.UPrime];

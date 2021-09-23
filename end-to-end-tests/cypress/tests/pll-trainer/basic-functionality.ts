@@ -1350,6 +1350,7 @@ describe("Behind Feature Flag", function () {
       // Taken from the pllToAlgorithmString map
       const AaAlgorithmLength = 11;
       const HAlgorithmLength = 7;
+      const ZAlgorithmLength = 9;
       completePLLTestInMilliseconds(1500, PLL.Aa, {
         firstEncounterWithThisPLL: true,
         // Try with no AUFs
@@ -1422,15 +1423,13 @@ describe("Behind Feature Flag", function () {
       });
       completePLLTestInMilliseconds(2000, PLL.H, {
         firstEncounterWithThisPLL: true,
-        aufs: [AUF.UPrime, AUF.U2],
+        aufs: [],
         correct: true,
       });
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            // Only +1 because H perm is fully symmetrical
-            // TODO: Do proper tests for symmetric cases
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 1 }],
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
             pll: PLL.H,
           },
           {
@@ -1456,7 +1455,7 @@ describe("Behind Feature Flag", function () {
             dnf: true,
           },
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 1 }],
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
             pll: PLL.H,
           },
         ],
@@ -1473,7 +1472,7 @@ describe("Behind Feature Flag", function () {
             dnf: true,
           },
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 1 }],
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
             pll: PLL.H,
           },
         ],
@@ -1490,7 +1489,7 @@ describe("Behind Feature Flag", function () {
             dnf: true,
           },
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 1 }],
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
             pll: PLL.H,
           },
         ],
@@ -1503,7 +1502,7 @@ describe("Behind Feature Flag", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength + 1 }],
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
             pll: PLL.H,
           },
           {
@@ -1516,6 +1515,192 @@ describe("Behind Feature Flag", function () {
           },
         ],
       });
+
+      /** And here we now test that it correctly calculates statistics for AUFs on symmetric cases */
+      /** Note that H-perm is fully symmetrical. Therefore pre-AUF is not a thing, the only
+       * difference it makes is changing the post-AUF
+       */
+      completePLLTestInMilliseconds(2000, PLL.H, {
+        firstEncounterWithThisPLL: false,
+        // These AUFs actually cancel out and should result in a 0-AUF case
+        // and calculated as such
+        aufs: [AUF.U, AUF.UPrime],
+        correct: true,
+      });
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(2000, PLL.H, {
+        firstEncounterWithThisPLL: false,
+        // These should partially cancel out and just add a single postAUF
+        aufs: [AUF.U2, AUF.UPrime],
+        correct: true,
+      });
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(2000, PLL.H, {
+        firstEncounterWithThisPLL: false,
+        // This should predictably just add a single turn
+        aufs: [AUF.none, AUF.U],
+        correct: true,
+      });
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      /**
+       * Z is partially symmetrical, having 2 possible preAUFs, either none or a U turn.
+       * We just do two tests (after picking the algorithm) to see that these partial
+       * symmetries seem handled too
+       */
+      completePLLTestInMilliseconds(5000, PLL.Z, {
+        firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: true,
+      });
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [{ timeMs: 5000, turns: ZAlgorithmLength }],
+            pll: PLL.Z,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(5000, PLL.Z, {
+        firstEncounterWithThisPLL: false,
+        // We check that it can indeed get +2
+        aufs: [AUF.U, AUF.UPrime],
+        correct: true,
+      });
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 5000, turns: ZAlgorithmLength },
+              { timeMs: 5000, turns: ZAlgorithmLength + 2 },
+            ],
+            pll: PLL.Z,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(5000, PLL.Z, {
+        firstEncounterWithThisPLL: false,
+        // We check that a U2 postAUF gets correctly cancelled out
+        // as one could then just do U' as the preAUF and it's only +1
+        aufs: [AUF.U, AUF.U2],
+        correct: true,
+      });
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 5000, turns: ZAlgorithmLength },
+              { timeMs: 5000, turns: ZAlgorithmLength + 2 },
+              { timeMs: 5000, turns: ZAlgorithmLength + 1 },
+            ],
+            pll: PLL.Z,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+
       function assertCorrectStatistics({
         worstCasesFromWorstToBetter,
       }: {
@@ -2014,6 +2199,94 @@ describe("Behind Feature Flag", function () {
               "no aliases should be falsy"
             ).to.be.true;
           });
+      }
+    });
+    it("correctly identifies the AUFs of symmetrical cases", function () {
+      /**
+       * We are deciding here that we prefer less total turns, quarter turns over half turns,
+       * postAUFs over preAUFS and clockwise turns over counterclockwise turns if there
+       * are multiple AUF combinations that need tiebreaking between. Also special case
+       * [U, U'] is preferred over [U', U] just arbitrarily to have a fully defined ordering.
+       *
+       * As can be seen several factors are arbitrary such as the clockwise tiebreak.
+       * This can definitely be changed in the future to be user customizable
+       * or adjusted based on CATPS etc.
+       */
+      // H PERM TESTS - Full symmetry
+      // First we make sure the algorithm is picked so AUFs are predictable
+      completePLLTestInMilliseconds(1000, PLL.H, {
+        firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: true,
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.H,
+        // Checking that a preAUF is moved to a postAUF
+        aufToSet: [AUF.U, AUF.none],
+        aufToExpect: [AUF.none, AUF.U],
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.H,
+        // These two should be simplified to a single U postAUF
+        aufToSet: [AUF.UPrime, AUF.U2],
+        aufToExpect: [AUF.none, AUF.U],
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.H,
+        // These two should be simplified to a single U postAUF
+        aufToSet: [AUF.UPrime, AUF.U2],
+        aufToExpect: [AUF.none, AUF.U],
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.H,
+        // These should cancel out to no AUFs
+        aufToSet: [AUF.U2, AUF.U2],
+        aufToExpect: [AUF.none, AUF.none],
+      });
+
+      // Z PERM TESTS - Half symmetry
+      // Again make sure algorithm is picked
+      completePLLTestInMilliseconds(1000, PLL.Z, {
+        firstEncounterWithThisPLL: true,
+        aufs: [],
+        correct: true,
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.Z,
+        // Checking that [U, U'] is preferred over [U', U]
+        aufToSet: [AUF.UPrime, AUF.U],
+        aufToExpect: [AUF.U, AUF.UPrime],
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.Z,
+        // Checking that [U, U] is preferred over [U', U']
+        aufToSet: [AUF.UPrime, AUF.UPrime],
+        aufToExpect: [AUF.U, AUF.U],
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.Z,
+        // This should be simplified to a single U that has to be preAUF here
+        aufToSet: [AUF.UPrime, AUF.U2],
+        aufToExpect: [AUF.U, AUF.none],
+      });
+
+      function assertAUFsDisplayedCorrectly({
+        pll,
+        aufToSet,
+        aufToExpect,
+      }: {
+        pll: PLL;
+        aufToSet: [AUF, AUF];
+        aufToExpect: [AUF, AUF];
+      }) {
+        completePLLTestInMilliseconds(1000, pll, {
+          firstEncounterWithThisPLL: false,
+          aufs: aufToSet,
+          correct: false,
+          wrongPageCallback: () => {
+            parseAUFsFromWrongPage().should("deep.equal", aufToExpect);
+          },
+        });
       }
     });
     function parseAUFsFromWrongPage(): Cypress.Chainable<[AUF, AUF]> {
