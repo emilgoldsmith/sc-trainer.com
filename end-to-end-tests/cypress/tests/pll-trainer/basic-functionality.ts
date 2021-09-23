@@ -2233,12 +2233,6 @@ describe("Behind Feature Flag", function () {
       });
       assertAUFsDisplayedCorrectly({
         pll: PLL.H,
-        // These two should be simplified to a single U postAUF
-        aufToSet: [AUF.UPrime, AUF.U2],
-        aufToExpect: [AUF.none, AUF.U],
-      });
-      assertAUFsDisplayedCorrectly({
-        pll: PLL.H,
         // These should cancel out to no AUFs
         aufToSet: [AUF.U2, AUF.U2],
         aufToExpect: [AUF.none, AUF.none],
