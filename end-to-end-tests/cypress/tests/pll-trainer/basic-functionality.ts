@@ -1938,11 +1938,19 @@ describe("Behind Feature Flag", function () {
     ([
       {
         testName:
-          "displays a case in the standard orientation, even if there's a y rotation in the beginning of the algorithm that isn't corrected later",
+          "displays exactly the same whether there's a y rotation in the beginning or not as it's redundant",
         pll: PLL.Gc,
         algorithmWithRotation: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
         // The same algorithm but just modified to move the faces without the rotation
-        algorithmWithoutRotation: "B2 U' B U' B U B' U B2 D' U B U' B' D",
+        algorithmWithoutRotation: "R2 U' R U' R U R' U R2 D' U R U' R' D",
+      },
+      {
+        testName:
+          "displays exactly the same whether there's a U or Dw move in the beginning or not as it's redundant",
+        pll: PLL.Gc,
+        algorithmWithRotation: "U Dw R2 U' R U' R U R' U R2 D' U R U' R' D",
+        // The same algorithm but just modified to move the faces without the rotation
+        algorithmWithoutRotation: "R2 U' R U' R U R' U R2 D' U R U' R' D",
       },
       {
         testName:
