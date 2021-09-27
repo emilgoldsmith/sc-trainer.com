@@ -46,8 +46,8 @@ detectAUFsTests =
                         Algorithm.append
                             algorithm
                             (Algorithm.fromTurnList
-                                -- An F turn cannot be fixed by any AUF
-                                [ Algorithm.Turn Algorithm.F Algorithm.Halfway Algorithm.Clockwise
+                                -- An slice turn cannot be fixed by any AUF ever
+                                [ Algorithm.Turn Algorithm.E Algorithm.Halfway Algorithm.Clockwise
                                 ]
                             )
                 in
