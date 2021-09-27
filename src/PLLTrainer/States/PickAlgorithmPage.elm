@@ -163,7 +163,9 @@ cleanUpAlgorithm =
     Algorithm.toTurnList
         >> dropWhile (\(Algorithm.Turn turnable _ _) -> turnable == Algorithm.Y || turnable == Algorithm.Dw || turnable == Algorithm.U)
         >> List.reverse
-        >> dropWhile (\(Algorithm.Turn turnable _ _) -> turnable == Algorithm.Y || turnable == Algorithm.Dw || turnable == Algorithm.U)
+        -- At the end we just clean up any rotations. There may have been rotations beforehand so we don't actually know if U/Dw are
+        -- AUF like moves at this moment given we don't know the rotation of the cube like we do in the beginning
+        >> dropWhile (\(Algorithm.Turn turnable _ _) -> turnable == Algorithm.Y || turnable == Algorithm.X || turnable == Algorithm.Z)
         >> List.reverse
         >> Algorithm.fromTurnList
 
