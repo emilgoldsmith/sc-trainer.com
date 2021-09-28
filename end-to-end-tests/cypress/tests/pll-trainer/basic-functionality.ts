@@ -1348,7 +1348,7 @@ describe("Behind Feature Flag", function () {
 
     it("displays the correct averages ordered correctly", function () {
       // Taken from the pllToAlgorithmString map
-      const AaAlgorithmLength = 11;
+      const AaAlgorithmLength = 10;
       const HAlgorithmLength = 7;
       const ZAlgorithmLength = 9;
       completePLLTestInMilliseconds(1500, PLL.Aa, {
@@ -1755,7 +1755,7 @@ describe("Behind Feature Flag", function () {
     });
     it("displays the global statistics correctly", function () {
       // Taken from pllToAlgorithmString
-      const AaAlgorithmLength = 11;
+      const AaAlgorithmLength = 10;
       const GaAlgorithmLength = 15;
       const totalPLLCases = 21;
       cy.visit(paths.pllTrainer);
@@ -1795,7 +1795,7 @@ describe("Behind Feature Flag", function () {
         firstEncounterWithThisPLL: true,
         // TODO: This corresponds to no AUFs for first case as we can't really set
         // aufs on the first attempt, we should really fix that
-        aufs: [AUF.U2, AUF.U],
+        aufs: [AUF.U, AUF.U2],
         correct: true,
       });
       // And counts a third one after an incorrect

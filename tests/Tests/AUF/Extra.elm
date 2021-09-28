@@ -81,6 +81,17 @@ detectAUFsTests =
                             ]
                         )
                     |> Result.withDefault (Expect.fail "was an err")
+        , test "correctly detects AUF for an algorithm ending in a non-standard orientation" <|
+            \_ ->
+                Algorithm.fromString "(x) R' U R' D2 R U' R' D2 R2"
+                    |> Result.map
+                        (\algorithm ->
+                            AUF.Extra.detectAUFs
+                                { toMatchTo = AUF.addToAlgorithm ( AUF.Halfway, AUF.Clockwise ) <| PLL.getAlgorithm PLL.referenceAlgorithms PLL.Aa
+                                , toDetectFor = algorithm
+                                }
+                        )
+                    |> Expect.equal (Ok (Ok ( AUF.Halfway, AUF.Clockwise )))
         ]
 
 
