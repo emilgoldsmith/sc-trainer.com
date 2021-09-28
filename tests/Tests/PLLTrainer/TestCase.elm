@@ -31,11 +31,9 @@ toAlgTests =
                         PLLTrainer.TestCase.toAlg user testCase
 
                     expected =
-                        AUF.addToAlgorithm ( preAUF, postAUF ) <|
-                            Cube.makeAlgorithmMaintainOrientation
-                                algorithm
+                        AUF.addToAlgorithm ( preAUF, postAUF ) algorithm
                 in
-                Cube.algorithmResultsAreEquivalent
+                Cube.algorithmResultsAreEquivalentIndependentOfFinalRotation
                     result
                     expected
                     |> Expect.true ("the algorithms should be equivalent\nExpected: " ++ Debug.toString expected ++ "\nResult: " ++ Debug.toString result)
