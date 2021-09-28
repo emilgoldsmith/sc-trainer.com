@@ -25,12 +25,7 @@ build preAUF_ pll_ postAUF_ =
 
         ( optimizedPreAUF, optimizedPostAUF ) =
             AUF.Extra.detectAUFs
-                { toMatchTo =
-                    Algorithm.append
-                        (AUF.toAlgorithm preAUF_)
-                    <|
-                        Algorithm.append (Cube.makeAlgorithmMaintainOrientation pllAlgorithm) <|
-                            AUF.toAlgorithm postAUF_
+                { toMatchTo = AUF.addToAlgorithm ( preAUF_, postAUF_ ) pllAlgorithm
                 , toDetectFor = pllAlgorithm
                 }
                 -- This should never be an error but this is a sensible default in case

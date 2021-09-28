@@ -27,8 +27,8 @@ detectAUFs { toMatchTo, toDetectFor } =
             List.filter
                 (\aufs ->
                     Cube.algorithmResultsAreEquivalentIndependentOfFinalRotation
-                        (Cube.makeAlgorithmMaintainOrientation toMatchTo)
-                        (AUF.addToAlgorithm aufs (Cube.makeAlgorithmMaintainOrientation toDetectFor))
+                        toMatchTo
+                        (AUF.addToAlgorithm aufs toDetectFor)
                 )
                 allAUFPairs
                 |> List.sortWith
