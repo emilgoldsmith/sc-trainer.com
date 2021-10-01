@@ -10,6 +10,10 @@ jobs:
   wait-for-docker-images-to-build:
     name: Wait For Docker Images To Build
     runs-on: ubuntu-20.04
+    # Don't run this for dependabot merges to spare our free Percy limit as we assume
+    # that in the vast majority of cases this won't change anything. If we get unlimited
+    # Percy though we may want to reenable this
+    if: ${{ github.event.sender.login != 'dependabot[bot]' }}
     outputs:
       ci-chrome: ${{ steps.outputter.outputs.ci-chrome }}
       production: ${{ steps.outputter.outputs.production }}
@@ -62,6 +66,10 @@ jobs:
     name: Run Visual Tests on ${{ matrix.sizes.name }} screen size
     runs-on: ubuntu-20.04
     needs: wait-for-docker-images-to-build
+    # Don't run this for dependabot merges to spare our free Percy limit as we assume
+    # that in the vast majority of cases this won't change anything. If we get unlimited
+    # Percy though we may want to reenable this
+    if: ${{ github.event.sender.login != 'dependabot[bot]' }}
     permissions:
       contents: read
     container: ${{ needs.wait-for-docker-images-to-build.outputs.ci-chrome }}
