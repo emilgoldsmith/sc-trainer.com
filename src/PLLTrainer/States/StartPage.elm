@@ -74,7 +74,7 @@ view shared transitions =
                     , UI.paddingVertical.veryLarge
                     ]
                 <|
-                    [ if shared.featureFlags.displayAlgorithmPicker && User.hasAttemptedAPLLTestCase shared.user then
+                    [ if User.hasAttemptedAPLLTestCase shared.user then
                         recurringUserStatistics shared
 
                       else

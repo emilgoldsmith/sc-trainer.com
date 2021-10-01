@@ -1,6 +1,7 @@
 import { applyDefaultIntercepts } from "support/interceptors";
 import { Key } from "support/keys";
 import { paths } from "support/paths";
+import { AUF, PLL, pllToAlgorithmString } from "support/pll";
 import { pllTrainerElements } from "../state-and-elements.helper";
 
 /** iphone-8 dimensions from https://docs.cypress.io/api/commands/viewport#Arguments */
@@ -110,6 +111,7 @@ function checkWhetherShortcutsDisplay(
   pllTrainerElements.getReadyScreen.container.waitFor();
   cy.tick(1000);
   pllTrainerElements.testRunning.container.waitFor();
+  cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
   if (method === "useKeyboard") {
     cy.pressKey(Key.space);
   } else {
@@ -128,6 +130,23 @@ function checkWhetherShortcutsDisplay(
   } else {
     pllTrainerElements.evaluateResult.correctButton.get().click();
   }
+  // Note that we type before we check the shortcut text.
+  // This ensures we check the case of a mobile keyboard
+  // appearing for the input element and triggering
+  // global keyboard detection which it shouldn't
+  pllTrainerElements.pickAlgorithmPage.algorithmInput
+    .get()
+    .type(pllToAlgorithmString[PLL.Aa]);
+  pllTrainerElements.pickAlgorithmPage.submitButton
+    .get()
+    .invoke("text")
+    .should(matcher, buildShortcutRegex("Enter"));
+  if (method === "useKeyboard") {
+    // Note this also checks the enter shortcut actually works as the label implies
+    cy.pressKey(Key.enter);
+  } else {
+    pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
+  }
   pllTrainerElements.correctPage.container.waitFor();
   pllTrainerElements.correctPage.nextButton
     .get()
@@ -143,6 +162,7 @@ function checkWhetherShortcutsDisplay(
   pllTrainerElements.getReadyScreen.container.waitFor();
   cy.tick(1000);
   pllTrainerElements.testRunning.container.waitFor();
+  cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
 
   // And now we go back to evaluateResult so we can do the wrong path
   if (method === "useKeyboard") {

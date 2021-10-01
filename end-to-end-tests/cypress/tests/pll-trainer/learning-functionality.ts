@@ -1,7 +1,4 @@
-import {
-  applyDefaultIntercepts,
-  createFeatureFlagSetter,
-} from "support/interceptors";
+import { applyDefaultIntercepts } from "support/interceptors";
 import {
   allAUFs,
   AUF,
@@ -17,17 +14,13 @@ import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.js
 import { paths } from "support/paths";
 import { Key } from "support/keys";
 
-const extraIntercepts: Parameters<typeof applyDefaultIntercepts>[0] = {
-  extraHtmlModifiers: [createFeatureFlagSetter("displayAlgorithmPicker", true)],
-};
-
 describe("PLL Trainer - Learning Functionality", function () {
   before(function () {
-    pllTrainerStatesNewUser.populateAll(extraIntercepts);
+    pllTrainerStatesNewUser.populateAll();
   });
 
   beforeEach(function () {
-    applyDefaultIntercepts(extraIntercepts);
+    applyDefaultIntercepts();
     cy.visit(paths.pllTrainer);
     pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.restoreState();
   });
@@ -515,134 +508,3 @@ describe("PLL Trainer - Learning Functionality", function () {
     });
   });
 });
-
-/**
- * ALL THIS SHOULD BE MERGED INTO THE DYNAMIC PLL TRAINER TEST ON DEPLOYING THIS TO PRODUCTION
- * WITHOUT THE FEATURE FLAG
- */
-
-/** iphone-8 dimensions from https://docs.cypress.io/api/commands/viewport#Arguments */
-const smallViewportConfigOverride: Cypress.TestConfigOverrides = {
-  viewportWidth: 375,
-  viewportHeight: 667,
-};
-
-/** macbook-15 dimensions from https://docs.cypress.io/api/commands/viewport#Arguments */
-const largeViewportConfigOverride: Cypress.TestConfigOverrides = {
-  viewportWidth: 1440,
-  viewportHeight: 900,
-};
-/**
- * 1. A large touch screen shows shortcuts
- * 2. A large non touch screen shows shortcuts
- * 3. A small non touch screen shows shortcuts
- * 4. A small touch screen doesn't show shortcuts by default
- * 5. A small touch screen after a keyboard event shows shortcuts
- */
-
-// eslint-disable-next-line mocha/max-top-level-suites
-describe("Algorithm Picker Dynamic Viewport Tests", function () {
-  beforeEach(function () {
-    applyDefaultIntercepts(extraIntercepts);
-  });
-  context("touch screen", function () {
-    beforeEach(function () {
-      cy.visit(paths.pllTrainer, { onBeforeLoad: simulateIsTouchScreen });
-      cy.clock();
-    });
-    context("large viewport", largeViewportConfigOverride, function () {
-      it("displays shortcuts on large viewport with touch screen", function () {
-        assertShortcutsDisplay("useMouseAndButtons");
-      });
-    });
-    context("small viewport", smallViewportConfigOverride, function () {
-      it("doesnt display shortcuts by default on small viewport with touch screen", function () {
-        assertShortcutsDontDisplay("useMouseAndButtons");
-      });
-      it("displays shortcuts on small viewport with touch screen if a keyboard event was fired", function () {
-        cy.pressKey(Key.leftCtrl);
-        assertShortcutsDisplay("useMouseAndButtons");
-      });
-    });
-  });
-  context("non touch screen", function () {
-    /** For a non touch screen we should always show shortcuts as they must have a keyboard */
-    beforeEach(function () {
-      cy.visit(paths.pllTrainer);
-      cy.clock();
-    });
-    context("large viewport", largeViewportConfigOverride, function () {
-      it("displays shortcuts on a large viewport without touch screen", function () {
-        assertShortcutsDisplay("useKeyboard");
-      });
-    });
-    context("small viewport", smallViewportConfigOverride, function () {
-      it("displays shortcuts on a small viewport with no touch screen", function () {
-        assertShortcutsDisplay("useKeyboard");
-      });
-    });
-  });
-});
-
-function simulateIsTouchScreen(testWindow: Window) {
-  // We need to use defineProperty as it's a read only property, so this
-  // is the only way to modify it. We use maxTouchPoints as a proxy for if
-  // a touch screen is available due to
-  // https://developer.mozilla.org/en-US/docs/Web/HTTP/Browser_detection_using_the_user_agent#Mobile_Device_Detection
-  // which is the way we are currently doing "feature detection" on touch screen.
-  // Of course modify this function if we change the way we detect a touch screen
-  // though preferably by adding more things rather than removing the below
-  // as that'll keep making it less brittle
-  Object.defineProperty(testWindow.navigator, "maxTouchPoints", {
-    get() {
-      return 1;
-    },
-  });
-}
-
-function assertShortcutsDisplay(method: "useKeyboard" | "useMouseAndButtons") {
-  checkWhetherShortcutsDisplay("match", method);
-}
-
-function assertShortcutsDontDisplay(
-  method: "useKeyboard" | "useMouseAndButtons"
-) {
-  checkWhetherShortcutsDisplay("not.match", method);
-}
-
-function checkWhetherShortcutsDisplay(
-  matcher: "match" | "not.match",
-  method: "useKeyboard" | "useMouseAndButtons"
-) {
-  pllTrainerElements.newUserStartPage.startButton.get().click();
-  pllTrainerElements.getReadyScreen.container.waitFor();
-  cy.tick(1000);
-  pllTrainerElements.testRunning.container.waitFor();
-  cy.mouseClickScreen("center");
-  pllTrainerElements.evaluateResult.container.waitFor();
-  cy.tick(300);
-  pllTrainerElements.evaluateResult.correctButton.get().click();
-  cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
-  // Note that we type before we check the shortcut text.
-  // This ensures we check the case of a mobile keyboard
-  // appearing for the input element and triggering
-  // global keyboard detection which it shouldn't
-  pllTrainerElements.pickAlgorithmPage.algorithmInput
-    .get()
-    .type(pllToAlgorithmString[PLL.Aa]);
-  pllTrainerElements.pickAlgorithmPage.submitButton
-    .get()
-    .invoke("text")
-    .should(matcher, buildShortcutRegex("Enter"));
-  if (method === "useKeyboard") {
-    // Note this also checks the enter shortcut actually works as the label implies
-    cy.pressKey(Key.enter);
-  } else {
-    pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
-  }
-  pllTrainerElements.correctPage.container.waitFor();
-}
-
-function buildShortcutRegex(shortcutText: string): RegExp {
-  return new RegExp(String.raw`\(\s*${shortcutText}\s*\)`);
-}

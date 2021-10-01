@@ -257,45 +257,41 @@ update shared msg model =
                             )
 
                 EvaluateCorrect { testStartTime, result } ->
-                    if shared.featureFlags.displayAlgorithmPicker then
-                        let
-                            testResult =
-                                User.Correct
-                                    { timestamp = testStartTime
-                                    , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
-                                    , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
-                                    , resultInMilliseconds = TimeInterval.asMilliseconds result
-                                    }
-                        in
-                        if
-                            User.hasChosenPLLAlgorithmFor
-                                (PLLTrainer.TestCase.pll model.currentTestCase)
-                                shared.user
-                        then
-                            ( { model | trainerState = CorrectPage }
-                            , Effect.fromShared <|
-                                Shared.ModifyUser <|
-                                    recordPLLTestResultWithErrorHandling
-                                        (PLLTrainer.TestCase.pll model.currentTestCase)
-                                        testResult
-                            )
-
-                        else
-                            let
-                                extraState =
-                                    { nextTrainerState = CorrectPage
-                                    , testResult = testResult
-                                    }
-
-                                ( stateModel, stateCmd ) =
-                                    ((states shared model).pickAlgorithmPage extraState).init
-                            in
-                            ( { model | trainerState = PickAlgorithmPage stateModel extraState }
-                            , Effect.fromCmd <| stateCmd
-                            )
+                    let
+                        testResult =
+                            User.Correct
+                                { timestamp = testStartTime
+                                , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
+                                , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
+                                , resultInMilliseconds = TimeInterval.asMilliseconds result
+                                }
+                    in
+                    if
+                        User.hasChosenPLLAlgorithmFor
+                            (PLLTrainer.TestCase.pll model.currentTestCase)
+                            shared.user
+                    then
+                        ( { model | trainerState = CorrectPage }
+                        , Effect.fromShared <|
+                            Shared.ModifyUser <|
+                                recordPLLTestResultWithErrorHandling
+                                    (PLLTrainer.TestCase.pll model.currentTestCase)
+                                    testResult
+                        )
 
                     else
-                        ( { model | trainerState = CorrectPage }, Effect.none )
+                        let
+                            extraState =
+                                { nextTrainerState = CorrectPage
+                                , testResult = testResult
+                                }
+
+                            ( stateModel, stateCmd ) =
+                                ((states shared model).pickAlgorithmPage extraState).init
+                        in
+                        ( { model | trainerState = PickAlgorithmPage stateModel extraState }
+                        , Effect.fromCmd <| stateCmd
+                        )
 
                 EvaluateWrong arguments ->
                     let
@@ -369,95 +365,78 @@ update shared msg model =
                                         PLLTrainer.TestCase.toAlg shared.user model.currentTestCase
                                     )
                     in
-                    if shared.featureFlags.displayAlgorithmPicker then
-                        if
-                            User.hasChosenPLLAlgorithmFor
-                                (PLLTrainer.TestCase.pll model.currentTestCase)
-                                shared.user
-                        then
-                            ( { model | trainerState = WrongPage, expectedCubeState = newCubeState }, Effect.none )
-
-                        else
-                            let
-                                extraState =
-                                    { nextTrainerState = WrongPage
-                                    , testResult = testResult
-                                    }
-
-                                ( stateModel, stateCmd ) =
-                                    ((states shared model).pickAlgorithmPage extraState).init
-                            in
-                            ( { model
-                                | trainerState = PickAlgorithmPage stateModel extraState
-                                , expectedCubeState = newCubeState
-                              }
-                            , Effect.fromCmd stateCmd
-                            )
+                    if
+                        User.hasChosenPLLAlgorithmFor
+                            (PLLTrainer.TestCase.pll model.currentTestCase)
+                            shared.user
+                    then
+                        ( { model | trainerState = WrongPage, expectedCubeState = newCubeState }, Effect.none )
 
                     else
+                        let
+                            extraState =
+                                { nextTrainerState = WrongPage
+                                , testResult = testResult
+                                }
+
+                            ( stateModel, stateCmd ) =
+                                ((states shared model).pickAlgorithmPage extraState).init
+                        in
                         ( { model
-                            | trainerState = WrongPage
+                            | trainerState = PickAlgorithmPage stateModel extraState
                             , expectedCubeState = newCubeState
                           }
-                        , Effect.none
+                        , Effect.fromCmd stateCmd
                         )
 
                 WrongButExpectedStateWasReached { testResult } ->
-                    if shared.featureFlags.displayAlgorithmPicker then
-                        if
-                            User.hasChosenPLLAlgorithmFor
-                                (PLLTrainer.TestCase.pll model.currentTestCase)
-                                shared.user
-                        then
-                            ( { model | trainerState = WrongPage }, Effect.none )
-
-                        else
-                            let
-                                extraState =
-                                    { nextTrainerState = WrongPage
-                                    , testResult = testResult
-                                    }
-
-                                ( stateModel, stateCmd ) =
-                                    ((states shared model).pickAlgorithmPage extraState).init
-                            in
-                            ( { model
-                                | trainerState = PickAlgorithmPage stateModel extraState
-                              }
-                            , Effect.fromCmd stateCmd
-                            )
-
-                    else
+                    if
+                        User.hasChosenPLLAlgorithmFor
+                            (PLLTrainer.TestCase.pll model.currentTestCase)
+                            shared.user
+                    then
                         ( { model | trainerState = WrongPage }, Effect.none )
 
+                    else
+                        let
+                            extraState =
+                                { nextTrainerState = WrongPage
+                                , testResult = testResult
+                                }
+
+                            ( stateModel, stateCmd ) =
+                                ((states shared model).pickAlgorithmPage extraState).init
+                        in
+                        ( { model
+                            | trainerState = PickAlgorithmPage stateModel extraState
+                          }
+                        , Effect.fromCmd stateCmd
+                        )
+
                 WrongAndUnrecoverable { testResult } ->
-                    if shared.featureFlags.displayAlgorithmPicker then
-                        if
-                            User.hasChosenPLLAlgorithmFor
-                                (PLLTrainer.TestCase.pll model.currentTestCase)
-                                shared.user
-                        then
-                            ( { model | trainerState = WrongPage, expectedCubeState = Cube.solved }, Effect.none )
-
-                        else
-                            let
-                                extraState =
-                                    { nextTrainerState = WrongPage
-                                    , testResult = testResult
-                                    }
-
-                                ( stateModel, stateCmd ) =
-                                    ((states shared model).pickAlgorithmPage extraState).init
-                            in
-                            ( { model
-                                | trainerState = PickAlgorithmPage stateModel extraState
-                                , expectedCubeState = Cube.solved
-                              }
-                            , Effect.fromCmd stateCmd
-                            )
+                    if
+                        User.hasChosenPLLAlgorithmFor
+                            (PLLTrainer.TestCase.pll model.currentTestCase)
+                            shared.user
+                    then
+                        ( { model | trainerState = WrongPage, expectedCubeState = Cube.solved }, Effect.none )
 
                     else
-                        ( { model | trainerState = WrongPage, expectedCubeState = Cube.solved }, Effect.none )
+                        let
+                            extraState =
+                                { nextTrainerState = WrongPage
+                                , testResult = testResult
+                                }
+
+                            ( stateModel, stateCmd ) =
+                                ((states shared model).pickAlgorithmPage extraState).init
+                        in
+                        ( { model
+                            | trainerState = PickAlgorithmPage stateModel extraState
+                            , expectedCubeState = Cube.solved
+                          }
+                        , Effect.fromCmd stateCmd
+                        )
 
         StateMsg stateMsg ->
             Tuple.mapSecond Effect.fromCmd <|

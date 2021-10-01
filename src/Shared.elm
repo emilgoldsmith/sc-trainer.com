@@ -33,8 +33,7 @@ type alias Flags =
 
 
 type alias FeatureFlags =
-    { displayAlgorithmPicker : Bool
-    }
+    {}
 
 
 
