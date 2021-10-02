@@ -5,6 +5,7 @@ import {
   completePLLTestInMilliseconds,
   pllTrainerElements,
   pllTrainerStatesNewUser,
+  pllTrainerStatesUserDone,
 } from "./pll-trainer/state-and-elements.helper";
 
 describe("Visual Tests", function () {
@@ -13,7 +14,7 @@ describe("Visual Tests", function () {
   });
   describe("PLL Trainer", function () {
     it("looks right", function () {
-      cy.visit(paths.pllTrainer);
+      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
       cy.clock();
       pllTrainerElements.newUserStartPage.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer Start Page");
@@ -45,6 +46,7 @@ describe("Visual Tests", function () {
       cy.percySnapshotWithProperName(
         "PLL Trainer Wrong Page (Correct + Nearly There)"
       );
+      cy.clock().then((clock) => clock.restore());
 
       // All the new pick algorithm type visual tests
       pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.reloadAndNavigateTo();
