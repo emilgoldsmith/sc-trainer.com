@@ -25,6 +25,7 @@ const largeViewportConfigOverride: Cypress.TestConfigOverrides = {
 
 describe("Algorithm Trainer Dynamic Viewport Tests", function () {
   beforeEach(function () {
+    cy.clearLocalStorage();
     applyDefaultIntercepts();
   });
   context("touch screen", function () {
@@ -96,7 +97,8 @@ function checkWhetherShortcutsDisplay(
   matcher: "match" | "not.match",
   method: "useKeyboard" | "useMouseAndButtons"
 ) {
-  pllTrainerElements.newUserStartPage.container.waitFor();
+  // Ensure that it's a fresh user
+  pllTrainerElements.newUserStartPage.welcomeText.waitFor();
   pllTrainerElements.newUserStartPage.startButton
     .get()
     .invoke("text")

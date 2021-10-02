@@ -21,6 +21,7 @@ import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.js
 describe("PLL Trainer - Basic Functionality", function () {
   before(function () {
     pllTrainerStatesUserDone.populateAll();
+    pllTrainerStatesNewUser.populateAll();
   });
 
   beforeEach(function () {
@@ -29,78 +30,82 @@ describe("PLL Trainer - Basic Functionality", function () {
   });
 
   describe("Start Page", function () {
-    beforeEach(function () {
-      pllTrainerStatesUserDone.startPage.restoreState();
-    });
-
-    it("has all the correct elements", function () {
-      // These elements should all display without scrolling
-      pllTrainerElements.newUserStartPage.welcomeText.assertShows();
-      pllTrainerElements.newUserStartPage.welcomeText.assertContainedByWindow();
-      // These ones we accept possibly having to scroll for so just check it exists
-      // We check it's visibility including scroll in the element sizing
-      pllTrainerElements.newUserStartPage.cubeStartExplanation
-        .get()
-        .should("exist");
-      pllTrainerElements.newUserStartPage.cubeStartState.get().should("exist");
-      pllTrainerElements.newUserStartPage.startButton.get().should("exist");
-      pllTrainerElements.newUserStartPage.instructionsText
-        .get()
-        .should("exist");
-      pllTrainerElements.newUserStartPage.learningResources
-        .get()
-        .should("exist");
-
-      // A smoke test that we have added some links for the cubing terms
-      pllTrainerElements.newUserStartPage.container.get().within(() => {
-        cy.get("a").should("have.length.above", 0);
+    context("for a new user", function () {
+      beforeEach(function () {
+        pllTrainerStatesNewUser.startPage.restoreState();
       });
-    });
 
-    it("sizes elements reasonably", function () {
-      cy.assertNoHorizontalScrollbar();
-      const containerId =
-        pllTrainerElements.newUserStartPage.container.specifier;
-      // This one is allowed vertical scrolling, but we want to check
-      // that we can actually scroll down to see instructionsText if its missing
-      pllTrainerElements.newUserStartPage.instructionsText.assertConsumableViaVerticalScroll(
-        pllTrainerElements.newUserStartPage.container.specifier
-      );
-      pllTrainerElements.newUserStartPage.learningResources.assertConsumableViaVerticalScroll(
-        containerId
-      );
-      pllTrainerElements.newUserStartPage.cubeStartExplanation.assertConsumableViaVerticalScroll(
-        containerId
-      );
-      pllTrainerElements.newUserStartPage.cubeStartState.assertConsumableViaVerticalScroll(
-        containerId
-      );
-      pllTrainerElements.newUserStartPage.startButton.assertConsumableViaVerticalScroll(
-        containerId
-      );
-    });
+      it("has all the correct elements", function () {
+        // These elements should all display without scrolling
+        pllTrainerElements.newUserStartPage.welcomeText.assertShows();
+        pllTrainerElements.newUserStartPage.welcomeText.assertContainedByWindow();
+        // These ones we accept possibly having to scroll for so just check it exists
+        // We check it's visibility including scroll in the element sizing
+        pllTrainerElements.newUserStartPage.cubeStartExplanation
+          .get()
+          .should("exist");
+        pllTrainerElements.newUserStartPage.cubeStartState
+          .get()
+          .should("exist");
+        pllTrainerElements.newUserStartPage.startButton.get().should("exist");
+        pllTrainerElements.newUserStartPage.instructionsText
+          .get()
+          .should("exist");
+        pllTrainerElements.newUserStartPage.learningResources
+          .get()
+          .should("exist");
 
-    it("starts test when pressing space", function () {
-      cy.pressKey(Key.space);
-      pllTrainerElements.testRunning.container.assertShows();
-    });
+        // A smoke test that we have added some links for the cubing terms
+        pllTrainerElements.newUserStartPage.container.get().within(() => {
+          cy.get("a").should("have.length.above", 0);
+        });
+      });
 
-    it("starts when pressing the begin button", function () {
-      pllTrainerElements.newUserStartPage.startButton.get().click();
-      pllTrainerElements.getReadyScreen.container.assertShows();
-    });
+      it("sizes elements reasonably", function () {
+        cy.assertNoHorizontalScrollbar();
+        const containerId =
+          pllTrainerElements.newUserStartPage.container.specifier;
+        // This one is allowed vertical scrolling, but we want to check
+        // that we can actually scroll down to see instructionsText if its missing
+        pllTrainerElements.newUserStartPage.instructionsText.assertConsumableViaVerticalScroll(
+          pllTrainerElements.newUserStartPage.container.specifier
+        );
+        pllTrainerElements.newUserStartPage.learningResources.assertConsumableViaVerticalScroll(
+          containerId
+        );
+        pllTrainerElements.newUserStartPage.cubeStartExplanation.assertConsumableViaVerticalScroll(
+          containerId
+        );
+        pllTrainerElements.newUserStartPage.cubeStartState.assertConsumableViaVerticalScroll(
+          containerId
+        );
+        pllTrainerElements.newUserStartPage.startButton.assertConsumableViaVerticalScroll(
+          containerId
+        );
+      });
 
-    it("doesn't start test when pressing any other keys", function () {
-      cy.pressKey(Key.a);
-      pllTrainerElements.newUserStartPage.container.assertShows();
-      cy.pressKey(Key.x);
-      pllTrainerElements.newUserStartPage.container.assertShows();
-      cy.pressKey(Key.capsLock);
-      pllTrainerElements.newUserStartPage.container.assertShows();
+      it("starts test when pressing space", function () {
+        cy.pressKey(Key.space);
+        pllTrainerElements.testRunning.container.assertShows();
+      });
+
+      it("starts when pressing the begin button", function () {
+        pllTrainerElements.newUserStartPage.startButton.get().click();
+        pllTrainerElements.getReadyScreen.container.assertShows();
+      });
+
+      it("doesn't start test when pressing any other keys", function () {
+        cy.pressKey(Key.a);
+        pllTrainerElements.newUserStartPage.container.assertShows();
+        cy.pressKey(Key.x);
+        pllTrainerElements.newUserStartPage.container.assertShows();
+        cy.pressKey(Key.capsLock);
+        pllTrainerElements.newUserStartPage.container.assertShows();
+      });
     });
     context("for a done user", function () {
       beforeEach(function () {
-        pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
+        pllTrainerStatesUserDone.startPage.restoreState();
       });
       it("has all the correct elements when displaying statistics", function () {
         // These elements should all display without scrolling
@@ -2156,9 +2161,6 @@ describe("PLL Trainer - Basic Functionality", function () {
       pllTrainerElements.wrongPage.container.assertShows();
     });
     it("has the right correct answer text", function () {
-      applyDefaultIntercepts();
-      pllTrainerStatesNewUser.wrongPage.reloadAndNavigateTo();
-
       // Verify U and U2 display correctly
       const firstTestCase = [AUF.U, PLL.Aa, AUF.U2] as const;
       cy.setCurrentTestCase(firstTestCase);
