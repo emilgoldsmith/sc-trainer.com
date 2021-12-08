@@ -273,7 +273,7 @@ jobs:
           --spec cypress/tests/**/*.ts,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}
 
       - name: Upload recorded videos
-        uses: actions/upload-artifact@v2.2.4
+        uses: actions/upload-artifact@v2.3.0
         if: failure()
         continue-on-error: true
         with:
@@ -281,7 +281,7 @@ jobs:
           path: end-to-end-tests/cypress/videos
 
       - name: Upload recorded Screenshots
-        uses: actions/upload-artifact@v2.2.4
+        uses: actions/upload-artifact@v2.3.0
         if: failure()
         continue-on-error: true
         with:
