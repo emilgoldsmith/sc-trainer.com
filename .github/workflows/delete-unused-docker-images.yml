@@ -5,6 +5,9 @@ on:
   #   - cron: "0 0 * * 0"
   workflow_dispatch:
 
+env:
+  DOCKERHUB_USERNAME: emilgoldsmith
+
 jobs:
   main:
     name: Main
@@ -21,7 +24,7 @@ jobs:
       #     keep-last: 2
       #     repos: '["sctrainer/main"]'
       #     substrings: '["ci-chrome-"]'
-      #     user: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     user: ${{ env.DOCKERHUB_USERNAME }}
       #     token: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # - name: Delete unused ci-container images
@@ -32,7 +35,7 @@ jobs:
       #     keep-last: 2
       #     repos: '["sctrainer/main"]'
       #     substrings: '["ci-container-"]'
-      #     user: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     user: ${{ env.DOCKERHUB_USERNAME }}
       #     token: ${{ secrets.DOCKERHUB_TOKEN }}
 
       # - name: Delete unused production images
@@ -42,5 +45,5 @@ jobs:
       #     keep-last: 50
       #     repos: '["sctrainer/main"]'
       #     substrings: '["production-"]'
-      #     user: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     user: ${{ env.DOCKERHUB_USERNAME }}
       #     token: ${{ secrets.DOCKERHUB_TOKEN }}
