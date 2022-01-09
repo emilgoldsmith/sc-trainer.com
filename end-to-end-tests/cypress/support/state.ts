@@ -1,6 +1,9 @@
 import { applyDefaultIntercepts } from "./interceptors";
 
-export type StateOptions = { log?: boolean };
+export type StateOptions = {
+  log?: boolean;
+  retainCurrentLocalStorage?: boolean;
+};
 export interface StateCache<
   ExtraNavigateOptions extends Record<string, unknown>
 > {
@@ -67,7 +70,8 @@ class StateCacheImplementation<
       throw new Error(
         `Attempted to restore the ${this.name} state before cache was populated`
       );
-    if (this.localStorage) cy.setLocalStorage(this.localStorage);
+    if (options?.retainCurrentLocalStorage !== true && this.localStorage)
+      cy.setLocalStorage(this.localStorage);
     cy.setApplicationState(this.elmModel, this.name, options);
     this.waitForStateToAppear(options);
   }
@@ -79,7 +83,8 @@ class StateCacheImplementation<
         message: this.name,
       },
       () => {
-        if (this.localStorage) cy.setLocalStorage(this.localStorage);
+        if (options?.retainCurrentLocalStorage !== true && this.localStorage)
+          cy.setLocalStorage(this.localStorage);
         cy.visit(this.startPath, { log: false });
         this.navigateFromStart(options);
       }
