@@ -269,7 +269,12 @@ export const pllTrainerStatesNewUser = buildStates<
   | "correctPage"
   | "typeOfWrongPage"
   | "wrongPage",
-  { case: [AUF, PLL, AUF]; algorithm: string } | Record<string, never>
+  // We override the error on the {} type here as the Record<string, never>
+  // or Record<string, unknown> break code in different ways and since
+  // this generic is always used for & types then it doesn't actually seem to
+  // be an issue.
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  { case: [AUF, PLL, AUF]; algorithm: string } | {}
 >(
   { startPath: paths.pllTrainer, defaultNavigateOptions: {}, localStorage: {} },
   {
@@ -328,7 +333,8 @@ export const pllTrainerStatesNewUser = buildStates<
         // We need to have time mocked from test running
         // to programatically pass through the ignoring key presses phase
         getState("testRunning");
-        if (options?.case !== undefined) cy.setCurrentTestCase(options.case);
+        if (options && "case" in options && options.case !== undefined)
+          cy.setCurrentTestCase(options.case);
         cy.clock();
         cy.pressKey(Key.space, options);
         pllTrainerElements.evaluateResult.container.waitFor(options);
@@ -399,7 +405,7 @@ export const pllTrainerStatesNewUser = buildStates<
       getToThatState: (getState, options) => {
         getState("pickAlgorithmPageAfterUnrecoverable");
         const { case: caseToSet, algorithm } =
-          options?.case !== undefined
+          options && "case" in options && options.case !== undefined
             ? options
             : {
                 case: [AUF.none, PLL.Aa, AUF.none] as const,
