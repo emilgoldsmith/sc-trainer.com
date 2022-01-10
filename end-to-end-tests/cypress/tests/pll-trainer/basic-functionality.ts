@@ -2221,18 +2221,32 @@ function getTestRunningWithMaxLengthTimer() {
 
 function getCubeHtml(element: Element) {
   return element.get().then((jqueryElement) => {
-    const html = jqueryElement.html();
-    const sanitized = Cypress._.flow(
-      removeAnySVGs,
-      removeTestids,
-      removeSizeSpecifications,
-      sortStyleBlocks,
-      removeRandomClassAttribute,
-      normalizeWhitespace
-    )(html);
-
-    return sanitized;
+    if (jqueryElement[0]?.tagName !== "CANVAS") {
+      throw new Error(
+        "Only supported cube elements right now are canvas elements"
+      );
+    }
+    const canvasElement: HTMLCanvasElement = jqueryElement[0] as HTMLCanvasElement;
+    return canvasElement.toDataURL();
   });
+}
+
+/**
+ * This is no longer relevant as we migrated to using WebGL, but it's
+ * worth keeping here in case we want to use something similar again in the future
+ */
+function getHtml5Cube(jqueryElement: JQuery<HTMLElement>) {
+  const html = jqueryElement.html();
+  const sanitized = Cypress._.flow(
+    removeAnySVGs,
+    removeTestids,
+    removeSizeSpecifications,
+    sortStyleBlocks,
+    removeRandomClassAttribute,
+    normalizeWhitespace
+  )(html);
+
+  return sanitized;
 }
 
 function removeTestids(html: string): string {
