@@ -278,3 +278,10 @@ declare namespace Cypress {
     setLocalStorage(storageState: { [key: string]: any }): void;
   }
 }
+
+/** This is in the internal API in the current version anyway and very useful */
+declare namespace Mocha {
+  interface Suite {
+    hasOnly(): boolean;
+  }
+}
