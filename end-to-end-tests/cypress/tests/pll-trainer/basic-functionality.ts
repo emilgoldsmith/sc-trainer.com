@@ -17,6 +17,9 @@ import {
   pllToPllLetters,
 } from "support/pll";
 import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
+import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
+
+forceReloadAndNavigateIfDotOnlyIsUsed();
 
 describe("PLL Trainer - Basic Functionality", function () {
   before(function () {

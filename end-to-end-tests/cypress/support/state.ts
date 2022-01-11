@@ -1,5 +1,11 @@
 import { applyDefaultIntercepts } from "./interceptors";
 
+let forceReloadAndNavigate = false;
+
+export function setForceReloadAndNavigate(): void {
+  forceReloadAndNavigate = true;
+}
+
 export type StateOptions = {
   log?: boolean;
   retainCurrentLocalStorage?: boolean;
@@ -36,6 +42,10 @@ class StateCacheImplementation<
   populateCache(
     interceptArgs?: Parameters<typeof applyDefaultIntercepts>[0]
   ): void {
+    if (forceReloadAndNavigate) {
+      cy.log("SKIPPED POPULATING CACHE");
+      return;
+    }
     applyDefaultIntercepts(interceptArgs);
     cy.withOverallNameLogged(
       {
@@ -65,7 +75,11 @@ class StateCacheImplementation<
     this.otherCaches[key].restoreState();
   }
 
-  restoreState(options?: StateOptions): void {
+  restoreState(options?: StateOptions & ExtraNavigateOptions): void {
+    if (forceReloadAndNavigate) {
+      cy.log("RELOADING INSTEAD OF RESTORE");
+      return this.reloadAndNavigateTo(options);
+    }
     if (this.elmModel === null)
       throw new Error(
         `Attempted to restore the ${this.name} state before cache was populated`
@@ -91,7 +105,9 @@ class StateCacheImplementation<
     );
   }
 
-  navigateFromStart(options?: StateOptions & ExtraNavigateOptions): void {
+  private navigateFromStart(
+    options?: StateOptions & ExtraNavigateOptions
+  ): void {
     this.getToThatState(this.getStateByNavigate.bind(this), options);
     this.waitForStateToAppear({ log: false });
   }
