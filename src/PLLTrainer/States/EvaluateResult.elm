@@ -15,14 +15,14 @@ import TimeInterval exposing (TimeInterval)
 import UI
 import View
 import ViewCube
-import ViewportSize exposing (ViewportSize)
+import ViewportSize
 
 
 state : Shared.Model -> Transitions msg -> Arguments -> (Msg -> msg) -> PLLTrainer.State.State msg Msg Model
-state { viewportSize, palette, hardwareAvailable } transitions arguments toMsg =
+state shared transitions arguments toMsg =
     PLLTrainer.State.element
         { init = init
-        , view = view viewportSize palette hardwareAvailable transitions arguments
+        , view = view shared transitions arguments
         , subscriptions = subscriptions transitions arguments toMsg
         , update = update
         }
@@ -135,8 +135,8 @@ subscriptions transitions arguments toMsg model =
 -- VIEW
 
 
-view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> Arguments -> Model -> PLLTrainer.State.View msg
-view viewportSize palette hardwareAvailable transitions arguments _ =
+view : Shared.Model -> Transitions msg -> Arguments -> Model -> PLLTrainer.State.View msg
+view { viewportSize, palette, hardwareAvailable, cubeViewOptions } transitions arguments _ =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -185,13 +185,15 @@ view viewportSize palette hardwareAvailable transitions arguments _ =
                     [ centerX
                     , spacing cubeSpacing
                     ]
-                    [ ViewCube.view [ htmlTestid "expected-cube-front" ]
+                    [ ViewCube.view cubeViewOptions
+                        [ htmlTestid "expected-cube-front" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
                         }
                         arguments.expectedCubeState
-                    , ViewCube.view [ htmlTestid "expected-cube-back" ]
+                    , ViewCube.view cubeViewOptions
+                        [ htmlTestid "expected-cube-back" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ublDisplayAngle
                         , annotateFaces = True

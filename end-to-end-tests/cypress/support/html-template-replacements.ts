@@ -7,6 +7,10 @@ export function handleHtmlCypressModifications(html: {
       key: "HANDLE_ERROR",
       value: handleError.toString(),
     },
+    {
+      key: "CUBE_VIEW_OPTIONS",
+      value: JSON.stringify({ useDebugViewForVisualTesting: true }) + ",",
+    },
   ]);
 
   function handleError(errorString: string) {

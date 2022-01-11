@@ -2,12 +2,15 @@ module ViewCube exposing (view)
 
 import Css exposing (htmlCubeTestType)
 import Cube
+import Cube.Advanced
 import Element
 import Html
+import Shared
 
 
 view :
-    List (Html.Attribute msg)
+    Shared.CubeViewOptions
+    -> List (Html.Attribute msg)
     ->
         { pixelSize : Int
         , displayAngle : Cube.DisplayAngle
@@ -15,5 +18,13 @@ view :
         }
     -> Cube.Cube
     -> Element.Element msg
-view attributes parameters =
-    Element.html << Cube.view (htmlCubeTestType :: attributes) parameters
+view options attributes parameters =
+    let
+        viewFn =
+            if Shared.shouldUseDebugViewForVisualTesting options then
+                Cube.Advanced.debugViewAllowingVisualTesting
+
+            else
+                Cube.view
+    in
+    Element.html << viewFn (htmlCubeTestType :: attributes) parameters

@@ -90,7 +90,7 @@ view shared transitions =
                       <|
                         [ text "Orient Solved Cube Like This:" ]
                     , el [ centerX ] <|
-                        ViewCube.view
+                        ViewCube.view shared.cubeViewOptions
                             [ htmlTestid "cube-start-state" ]
                             { pixelSize = 200
                             , displayAngle = Cube.ufrDisplayAngle
