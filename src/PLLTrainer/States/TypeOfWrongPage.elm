@@ -61,7 +61,7 @@ type alias Transitions msg =
 
 
 view : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
-view { user, viewportSize, palette, hardwareAvailable } transitions arguments =
+view { user, viewportSize, palette, hardwareAvailable, cubeViewOptions } transitions arguments =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -98,14 +98,14 @@ view { user, viewportSize, palette, hardwareAvailable } transitions arguments =
                 [ paragraph [ centerX, Font.center, Font.bold, Font.size headerSize ] [ text "Choose the case that fits your cube state:" ]
                 , paragraph [ testid "no-move-explanation", centerX, Font.center ] [ text "1. I didn't apply any moves to the cube" ]
                 , row [ centerX ]
-                    [ ViewCube.view
+                    [ ViewCube.view cubeViewOptions
                         [ htmlTestid "no-move-cube-state-front" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
                         }
                         noMovesCube
-                    , ViewCube.view
+                    , ViewCube.view cubeViewOptions
                         [ htmlTestid "no-move-cube-state-back" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ublDisplayAngle
@@ -122,14 +122,14 @@ view { user, viewportSize, palette, hardwareAvailable } transitions arguments =
                     [ text "2. I can get to the expected state. I for example just got the AUF wrong"
                     ]
                 , row [ centerX ]
-                    [ ViewCube.view
+                    [ ViewCube.view cubeViewOptions
                         [ htmlTestid "nearly-there-cube-state-front" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
                         }
                         nearlyThereCube
-                    , ViewCube.view
+                    , ViewCube.view cubeViewOptions
                         [ htmlTestid "nearly-there-cube-state-back" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ublDisplayAngle

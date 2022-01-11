@@ -55,7 +55,7 @@ type alias Transitions msg =
 
 
 view : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
-view { palette, viewportSize, hardwareAvailable, user } transitions arguments =
+view { palette, viewportSize, hardwareAvailable, user, cubeViewOptions } transitions arguments =
     { overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
     , body =
         let
@@ -105,13 +105,15 @@ view { palette, viewportSize, hardwareAvailable, user } transitions arguments =
                 , row
                     [ centerX
                     ]
-                    [ ViewCube.view [ htmlTestid "test-case-front" ]
+                    [ ViewCube.view cubeViewOptions
+                        [ htmlTestid "test-case-front" ]
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
                         }
                         testCaseCube
-                    , ViewCube.view [ htmlTestid "test-case-back" ]
+                    , ViewCube.view cubeViewOptions
+                        [ htmlTestid "test-case-back" ]
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ublDisplayAngle
                         , annotateFaces = True
@@ -128,14 +130,14 @@ view { palette, viewportSize, hardwareAvailable, user } transitions arguments =
                 , row
                     [ centerX
                     ]
-                    [ ViewCube.view
+                    [ ViewCube.view cubeViewOptions
                         [ htmlTestid "expected-cube-state-front" ]
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
                         }
                         arguments.expectedCubeState
-                    , ViewCube.view
+                    , ViewCube.view cubeViewOptions
                         [ htmlTestid "expected-cube-state-back" ]
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ublDisplayAngle

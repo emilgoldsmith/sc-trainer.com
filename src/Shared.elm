@@ -1,11 +1,13 @@
 module Shared exposing
-    ( Flags
+    ( CubeViewOptions
+    , Flags
     , HardwareAvailable
     , Model
     , Msg
     , PublicMsg(..)
     , buildSharedMessage
     , init
+    , shouldUseDebugViewForVisualTesting
     , subscriptions
     , update
     )
@@ -29,11 +31,26 @@ type alias Flags =
     , touchScreenAvailable : Bool
     , featureFlags : FeatureFlags
     , storedUser : Json.Decode.Value
+    , cubeViewOptions : CubeViewOptionsRecord
     }
 
 
 type alias FeatureFlags =
     {}
+
+
+type alias CubeViewOptionsRecord =
+    { useDebugViewForVisualTesting : Bool
+    }
+
+
+type CubeViewOptions
+    = CubeViewOptions CubeViewOptionsRecord
+
+
+shouldUseDebugViewForVisualTesting : CubeViewOptions -> Bool
+shouldUseDebugViewForVisualTesting (CubeViewOptions { useDebugViewForVisualTesting }) =
+    useDebugViewForVisualTesting
 
 
 
@@ -46,11 +63,12 @@ type alias Model =
     , palette : UI.Palette
     , featureFlags : FeatureFlags
     , user : User
+    , cubeViewOptions : CubeViewOptions
     }
 
 
 init : Request -> Flags -> ( Model, Cmd Msg )
-init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser } =
+init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser, cubeViewOptions } =
     let
         builtViewportSize =
             ViewportSize.build viewportSize
@@ -67,8 +85,9 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser } =
                 -- for sure
                 , keyboard = False
                 }
-      , featureFlags = featureFlags
       , user = User.deserialize storedUser |> Result.withDefault User.new
+      , featureFlags = featureFlags
+      , cubeViewOptions = CubeViewOptions cubeViewOptions
       }
     , Cmd.none
     )

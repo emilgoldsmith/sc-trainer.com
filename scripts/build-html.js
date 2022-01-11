@@ -170,9 +170,7 @@ function replaceInTemplateForKey({ template, key, value }) {
     throw new Error("Couldn't find end identifier " + endIdentifier);
   }
   return (
-    template.substring(0, startIndex) +
-    JSON.stringify(value) +
-    template.substring(endIndex)
+    template.substring(0, startIndex) + value + template.substring(endIndex)
   );
 }
 
@@ -196,17 +194,20 @@ function replaceMany(template, replacements) {
 const builtIndexHtml = replaceMany(indexHtmlTemplate, [
   {
     key: "FEATURE_FLAGS",
-    value: { ...featureFlagsToUse },
+    value: JSON.stringify({ ...featureFlagsToUse }) + ",",
   },
   {
     key: "SENTRY_ENABLE",
-    value: environment === PRODUCTION || environment === STAGING,
+    value: JSON.stringify(
+      environment === PRODUCTION || environment === STAGING
+    ),
   },
   {
     key: "SENTRY_ENVIRONMENT",
-    value:
+    value: JSON.stringify(
       { [PRODUCTION]: "production", [STAGING]: "staging" }[environment] ||
-      undefined,
+        undefined
+    ),
   },
 ]);
 
