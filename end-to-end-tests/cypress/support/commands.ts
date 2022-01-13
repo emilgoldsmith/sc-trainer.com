@@ -24,6 +24,7 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
+import { isCanvasBlank } from "./html-helpers";
 import { getCode, getKeyCode, getKeyValue, Key } from "./keys";
 import { aufToAlgorithmString, pllToPllLetters } from "./pll";
 
@@ -667,6 +668,12 @@ const percySnapshotWithProperName: Cypress.Chainable<undefined>["percySnapshotWi
   name,
   options
 ) {
+  // Wait for all canvases to fully render before snapshotting
+  cy.get("canvas").should((elements) => {
+    elements.each((_, canvas) => {
+      expect(isCanvasBlank(canvas), "canvas not to be blank").to.be.false;
+    });
+  });
   const width = Cypress.config().viewportWidth;
   const properName = `${name}-${width}`;
   cy.percySnapshot(properName, options);
@@ -734,21 +741,6 @@ const setExtraAlgToApplyToAllCubes: Cypress.Chainable<undefined>["setExtraAlgToA
     }
   );
 };
-/** Modified from https://stackoverflow.com/questions/17386707/how-to-check-if-a-canvas-is-blank */
-function isCanvasBlank(canvas: HTMLCanvasElement) {
-  const blank = document.createElement("canvas");
-
-  blank.width = canvas.width;
-  blank.height = canvas.height;
-  blank.style.width = canvas.style.width;
-  blank.style.height = canvas.style.height;
-
-  const canvasUrl = canvas.toDataURL();
-  const blankUrl = blank.toDataURL();
-  // This is 100% a hack but sometimes we get blank canvases that have different PNG
-  // representations, and this works. Better solutions very welcome though
-  return canvasUrl.length < blankUrl.length * 2;
-}
 Cypress.Commands.add(
   "setExtraAlgToApplyToAllCubes",
   setExtraAlgToApplyToAllCubes
