@@ -131,6 +131,7 @@ type StateMsg
 
 type InternalMsg
     = TESTONLYSetTestCase (Result Json.Decode.Error TestCase)
+    | TESTONLYSetExtraAlgToApplyToAllCubes (Result Algorithm.FromStringError Algorithm)
 
 
 {-| We use this structure to make sure the test case
@@ -456,6 +457,26 @@ update shared msg model =
                             )
                     )
 
+                TESTONLYSetExtraAlgToApplyToAllCubes (Ok algorithm) ->
+                    ( model, Effect.fromShared (Shared.TESTONLYSetExtraAlgToApplyToAllCubes algorithm) )
+
+                TESTONLYSetExtraAlgToApplyToAllCubes (Err error) ->
+                    case error of
+                        Algorithm.EmptyAlgorithm ->
+                            ( model
+                            , Effect.fromShared
+                                (Shared.TESTONLYSetExtraAlgToApplyToAllCubes Algorithm.empty)
+                            )
+
+                        _ ->
+                            ( model
+                            , Effect.fromCmd <|
+                                Ports.logError
+                                    ("Error in test only set extra alg to apply to all cubes: "
+                                        ++ Algorithm.debugFromStringError error
+                                    )
+                            )
+
         NoOp ->
             ( model, Effect.none )
 
@@ -492,6 +513,7 @@ subscriptions shared model =
         [ handleStateSubscriptionsBoilerplate shared model
             |> PLLTrainer.Subscription.getSub
         , Ports.onTESTONLYSetTestCase (InternalMsg << TESTONLYSetTestCase)
+        , Ports.onTESTONLYSetExtraAlgToApplyToAllCubes (InternalMsg << TESTONLYSetExtraAlgToApplyToAllCubes)
         ]
 
 

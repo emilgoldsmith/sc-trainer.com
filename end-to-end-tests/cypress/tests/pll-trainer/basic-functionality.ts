@@ -846,9 +846,11 @@ describe("PLL Trainer - Basic Functionality", function () {
         .setAlias<Aliases, "modified">("modified");
 
       cy.getAliases<Aliases>().should(({ unmodified, modified }) => {
-        expect(unmodified).to.not.be.undefined;
-        expect(modified).to.not.be.undefined;
-        expect(modified).to.deep.equal(unmodified);
+        assertNonFalsyStringsEqual(
+          modified,
+          unmodified,
+          "modified with y rotations should equal unmodified algorithm"
+        );
       });
     });
 
@@ -923,10 +925,9 @@ describe("PLL Trainer - Basic Functionality", function () {
             correct: true,
             aufs: [],
             testRunningCallback: () =>
-              getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
-                Aliases,
-                "withRotation"
-              >("withRotation"),
+              getStringRepresentationOfCube(
+                pllTrainerElements.testRunning.testCase
+              ).setAlias<Aliases, "withRotation">("withRotation"),
           });
 
           cy.clearLocalStorage();
@@ -943,19 +944,17 @@ describe("PLL Trainer - Basic Functionality", function () {
             correct: true,
             aufs: [],
             testRunningCallback: () =>
-              getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
-                Aliases,
-                "withoutRotation"
-              >("withoutRotation"),
+              getStringRepresentationOfCube(
+                pllTrainerElements.testRunning.testCase
+              ).setAlias<Aliases, "withoutRotation">("withoutRotation"),
           });
 
           cy.getAliases<Aliases>().then(({ withRotation, withoutRotation }) => {
-            expect(!!(withRotation && withoutRotation), "no falsy values").to.be
-              .true;
-            expect(
-              withRotation === withoutRotation,
+            assertNonFalsyStringsEqual(
+              withRotation,
+              withoutRotation,
               "they should display the same cube no matter about uncorrected rotations in the algorithm"
-            ).to.be.true;
+            );
           });
         });
       }
@@ -990,12 +989,11 @@ describe("PLL Trainer - Basic Functionality", function () {
       });
 
       cy.getAliases<Aliases>().should(({ firstCube, secondCube }) => {
-        expect(firstCube).to.not.be.undefined;
-        expect(secondCube).to.not.be.undefined;
-        expect(
-          firstCube === secondCube,
+        assertNonFalsyStringsDifferent(
+          firstCube,
+          secondCube,
           "These algorithms should have different AUFs required"
-        ).to.be.false;
+        );
       });
 
       function runTest<Key extends keyof Aliases>({
@@ -1016,7 +1014,9 @@ describe("PLL Trainer - Basic Functionality", function () {
             ? {}
             : {
                 testRunningCallback: () =>
-                  getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
+                  getStringRepresentationOfCube(
+                    pllTrainerElements.testRunning.testCase
+                  ).setAlias<
                     Aliases,
                     Key
                     // Be cheeky with the types here to make it work. It could potentially
@@ -1074,10 +1074,9 @@ describe("PLL Trainer - Basic Functionality", function () {
           correct: false,
           overrideDefaultAlgorithm: algorithm,
           testRunningCallback: () =>
-            getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
-              Aliases,
-              "cubeBefore"
-            >("cubeBefore"),
+            getStringRepresentationOfCube(
+              pllTrainerElements.testRunning.testCase
+            ).setAlias<Aliases, "cubeBefore">("cubeBefore"),
           wrongPageCallback: () =>
             parseAUFsFromWrongPage().setAlias<Aliases, "actualAUF">(
               "actualAUF"
@@ -1103,10 +1102,9 @@ describe("PLL Trainer - Basic Functionality", function () {
                   .invoke("text")
                   .setAlias<Aliases, "statsBefore">("statsBefore"),
               testRunningCallback: () =>
-                getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
-                  Aliases,
-                  "cubeAfter"
-                >("cubeAfter"),
+                getStringRepresentationOfCube(
+                  pllTrainerElements.testRunning.testCase
+                ).setAlias<Aliases, "cubeAfter">("cubeAfter"),
             });
             cy.visit(paths.pllTrainer);
             pllTrainerElements.recurringUserStartPage.worstCaseListItem
@@ -1116,14 +1114,16 @@ describe("PLL Trainer - Basic Functionality", function () {
             return cy.getAliases<Aliases>();
           })
           .should(({ cubeBefore, statsBefore, cubeAfter, statsAfter }) => {
-            expect(cubeBefore === cubeAfter, "cubes should be the same").to.be
-              .true;
-            expect(statsBefore).to.deep.equal(statsAfter);
-            // Just for safety
-            expect(
-              !!(cubeBefore && cubeAfter && statsBefore && statsAfter),
-              "no aliases should be falsy"
-            ).to.be.true;
+            assertNonFalsyStringsEqual(
+              cubeBefore,
+              cubeAfter,
+              "cubes should be the same"
+            );
+            assertNonFalsyStringsEqual(
+              statsBefore,
+              statsAfter,
+              "stats should be the same"
+            );
           });
       }
     });
@@ -1869,14 +1869,12 @@ describe("PLL Trainer - Basic Functionality", function () {
       // Go to evaluate to get the "original" cube state
       pllTrainerStatesUserDone.evaluateResultAfterIgnoringTransitions.restoreState();
       cy.log("GETTING ORIGINAL CUBE HTMLS");
-      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeFront).setAlias<
-        Aliases,
-        "originalCubeFront"
-      >("originalCubeFront");
-      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeBack).setAlias<
-        Aliases,
-        "originalCubeBack"
-      >("originalCubeBack");
+      getStringRepresentationOfCube(
+        pllTrainerElements.evaluateResult.expectedCubeFront
+      ).setAlias<Aliases, "originalCubeFront">("originalCubeFront");
+      getStringRepresentationOfCube(
+        pllTrainerElements.evaluateResult.expectedCubeBack
+      ).setAlias<Aliases, "originalCubeBack">("originalCubeBack");
       // Run another test case
       pllTrainerElements.evaluateResult.correctButton.get().click();
       cy.clock();
@@ -1887,14 +1885,12 @@ describe("PLL Trainer - Basic Functionality", function () {
       cy.mouseClickScreen("center");
       // We're back at Evaluate Result
       cy.log("GETTING NEXT CUBE HTMLS");
-      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeFront).setAlias<
-        Aliases,
-        "nextCubeFront"
-      >("nextCubeFront");
-      getCubeHtml(pllTrainerElements.evaluateResult.expectedCubeBack).setAlias<
-        Aliases,
-        "nextCubeBack"
-      >("nextCubeBack");
+      getStringRepresentationOfCube(
+        pllTrainerElements.evaluateResult.expectedCubeFront
+      ).setAlias<Aliases, "nextCubeFront">("nextCubeFront");
+      getStringRepresentationOfCube(
+        pllTrainerElements.evaluateResult.expectedCubeBack
+      ).setAlias<Aliases, "nextCubeBack">("nextCubeBack");
       // Navigate to Type Of Wrong for the tests
       cy.tick(500);
       pllTrainerElements.evaluateResult.wrongButton.get().click();
@@ -1945,10 +1941,10 @@ describe("PLL Trainer - Basic Functionality", function () {
         front: string;
         back: string;
       };
-      getCubeHtml(
+      getStringRepresentationOfCube(
         pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
       ).setAlias<Aliases, "front">("front");
-      getCubeHtml(
+      getStringRepresentationOfCube(
         pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
       ).setAlias<Aliases, "back">("back");
 
@@ -1969,10 +1965,10 @@ describe("PLL Trainer - Basic Functionality", function () {
         front: string;
         back: string;
       };
-      getCubeHtml(
+      getStringRepresentationOfCube(
         pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
       ).setAlias<Aliases, "front">("front");
-      getCubeHtml(
+      getStringRepresentationOfCube(
         pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
       ).setAlias<Aliases, "back">("back");
 
@@ -1993,10 +1989,10 @@ describe("PLL Trainer - Basic Functionality", function () {
         front: string;
         back: string;
       };
-      getCubeHtml(
+      getStringRepresentationOfCube(
         pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
       ).setAlias<Aliases, "front">("front");
-      getCubeHtml(
+      getStringRepresentationOfCube(
         pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateBack
       ).setAlias<Aliases, "back">("back");
 
@@ -2017,10 +2013,10 @@ describe("PLL Trainer - Basic Functionality", function () {
         front: string;
         back: string;
       };
-      getCubeHtml(
+      getStringRepresentationOfCube(
         pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
       ).setAlias<Aliases, "front">("front");
-      getCubeHtml(
+      getStringRepresentationOfCube(
         pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateBack
       ).setAlias<Aliases, "back">("back");
 
@@ -2039,12 +2035,18 @@ describe("PLL Trainer - Basic Functionality", function () {
     it("navigates to 'wrong page' displaying a solved cube when unrecoverable button clicked", function () {
       type Aliases = {
         solvedFront: string;
+        solvedBack: string;
       };
       cy.visit(paths.pllTrainer);
-      getCubeHtml(pllTrainerElements.newUserStartPage.cubeStartState).setAlias<
-        Aliases,
-        "solvedFront"
-      >("solvedFront");
+      getStringRepresentationOfCube(
+        pllTrainerElements.newUserStartPage.cubeStartState
+      ).setAlias<Aliases, "solvedFront">("solvedFront");
+      cy.setExtraAlgToApplyToAllCubes("y2");
+      getStringRepresentationOfCube(
+        pllTrainerElements.newUserStartPage.cubeStartState
+      ).setAlias<Aliases, "solvedBack">("solvedBack");
+      cy.setExtraAlgToApplyToAllCubes("");
+
       pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
 
       pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
@@ -2053,8 +2055,8 @@ describe("PLL Trainer - Basic Functionality", function () {
         "solvedFront",
         pllTrainerElements.wrongPage.expectedCubeStateFront
       );
-      assertCubeMatchesBackOfAlias<Aliases, "solvedFront">(
-        "solvedFront",
+      assertCubeMatchesAlias<Aliases, "solvedBack">(
+        "solvedBack",
         pllTrainerElements.wrongPage.expectedCubeStateBack
       );
     });
@@ -2062,12 +2064,18 @@ describe("PLL Trainer - Basic Functionality", function () {
     it("navigates to 'wrong page' displaying a solved cube when '3' is pressed", function () {
       type Aliases = {
         solvedFront: string;
+        solvedBack: string;
       };
       cy.visit(paths.pllTrainer);
-      getCubeHtml(pllTrainerElements.newUserStartPage.cubeStartState).setAlias<
-        Aliases,
-        "solvedFront"
-      >("solvedFront");
+      getStringRepresentationOfCube(
+        pllTrainerElements.newUserStartPage.cubeStartState
+      ).setAlias<Aliases, "solvedFront">("solvedFront");
+      cy.setExtraAlgToApplyToAllCubes("y2");
+      getStringRepresentationOfCube(
+        pllTrainerElements.newUserStartPage.cubeStartState
+      ).setAlias<Aliases, "solvedBack">("solvedBack");
+      cy.setExtraAlgToApplyToAllCubes("");
+
       pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
 
       cy.pressKey(Key.three);
@@ -2076,8 +2084,8 @@ describe("PLL Trainer - Basic Functionality", function () {
         "solvedFront",
         pllTrainerElements.wrongPage.expectedCubeStateFront
       );
-      assertCubeMatchesBackOfAlias<Aliases, "solvedFront">(
-        "solvedFront",
+      assertCubeMatchesAlias<Aliases, "solvedBack">(
+        "solvedBack",
         pllTrainerElements.wrongPage.expectedCubeStateBack
       );
     });
@@ -2091,6 +2099,7 @@ describe("PLL Trainer - Basic Functionality", function () {
     it("has all the correct elements", function () {
       type Aliases = {
         testCaseFront: string;
+        testCaseBack: string;
       };
       pllTrainerElements.wrongPage.assertAllShow();
       pllTrainerElements.globals.feedbackButton
@@ -2112,10 +2121,14 @@ describe("PLL Trainer - Basic Functionality", function () {
 
       // Check that the test case cube is actually displaying the case that was tested
       pllTrainerStatesUserDone.testRunning.restoreState();
-      getCubeHtml(pllTrainerElements.testRunning.testCase).setAlias<
-        Aliases,
-        "testCaseFront"
-      >("testCaseFront");
+      getStringRepresentationOfCube(
+        pllTrainerElements.testRunning.testCase
+      ).setAlias<Aliases, "testCaseFront">("testCaseFront");
+      cy.setExtraAlgToApplyToAllCubes("y2");
+      getStringRepresentationOfCube(
+        pllTrainerElements.testRunning.testCase
+      ).setAlias<Aliases, "testCaseBack">("testCaseBack");
+      cy.setExtraAlgToApplyToAllCubes("");
 
       cy.clock();
       cy.mouseClickScreen("center");
@@ -2134,8 +2147,8 @@ describe("PLL Trainer - Basic Functionality", function () {
         "testCaseFront",
         pllTrainerElements.wrongPage.testCaseFront
       );
-      assertCubeMatchesBackOfAlias<Aliases, "testCaseFront">(
-        "testCaseFront",
+      assertCubeMatchesAlias<Aliases, "testCaseBack">(
+        "testCaseBack",
         pllTrainerElements.wrongPage.testCaseBack
       );
     });
@@ -2222,135 +2235,134 @@ function getTestRunningWithMaxLengthTimer() {
   pllTrainerElements.testRunning.timer.get().should("have.text", "15:00:00.0");
 }
 
-function getCubeHtml(element: Element) {
-  return element.get().then((jqueryElement) => {
-    if (jqueryElement[0]?.tagName !== "CANVAS") {
-      throw new Error(
-        "Only supported cube elements right now are canvas elements"
-      );
-    }
-    const canvasElement: HTMLCanvasElement = jqueryElement[0] as HTMLCanvasElement;
-    return canvasElement.toDataURL();
+function getStringRepresentationOfCube(element: Element) {
+  // Standardize the size of the canvas so that string representations are comparable
+  let prevWidth: number,
+    prevHeight: number,
+    prevCSSWidth: string,
+    prevCSSHeight: string;
+  element.get().then((jqueryElement) => {
+    const canvasElement: HTMLCanvasElement = canvasOrThrow(jqueryElement);
+    // Standardize the size of the canvas so that string representations are comparable
+    prevWidth = canvasElement.width;
+    prevHeight = canvasElement.height;
+    prevCSSWidth = canvasElement.style.width;
+    prevCSSHeight = canvasElement.style.height;
+
+    canvasElement.width = canvasElement.height = 50;
+    canvasElement.style.width = canvasElement.style.height = "50px";
   });
+
+  return element
+    .get()
+    .should((jqueryElement) => {
+      expect(
+        isCanvasBlank(canvasOrThrow(jqueryElement)),
+        "canvas not to be blank"
+      ).to.be.false;
+    })
+    .then((jqueryElement) => {
+      const canvasElement: HTMLCanvasElement = canvasOrThrow(jqueryElement);
+
+      if (isCanvasBlank(canvasElement)) throw new Error("BLANK MOFO");
+      const dataUrl = canvasElement.toDataURL();
+
+      canvasElement.width = prevWidth;
+      canvasElement.height = prevHeight;
+      canvasElement.style.width = prevCSSWidth;
+      canvasElement.style.height = prevCSSHeight;
+
+      return dataUrl;
+    });
+}
+
+function canvasOrThrow(jqueryElement: JQuery<HTMLElement>): HTMLCanvasElement {
+  if (jqueryElement[0]?.tagName !== "CANVAS") {
+    throw new Error(
+      "Only supported cube elements right now are canvas elements"
+    );
+  }
+  return jqueryElement[0] as HTMLCanvasElement;
+}
+
+/** Modified from https://stackoverflow.com/questions/17386707/how-to-check-if-a-canvas-is-blank */
+function isCanvasBlank(canvas: HTMLCanvasElement) {
+  const blank = document.createElement("canvas");
+
+  blank.width = canvas.width;
+  blank.height = canvas.height;
+  blank.style.width = canvas.style.width;
+  blank.style.height = canvas.style.height;
+
+  const canvasUrl = canvas.toDataURL();
+  const blankUrl = blank.toDataURL();
+  // This is 100% a hack but sometimes we get blank canvases that have different PNG
+  // representations, and this works. Better solutions very welcome though
+  return canvasUrl.length < blankUrl.length * 2;
 }
 
 /**
  * This is no longer relevant as we migrated to using WebGL, but it's
  * worth keeping here in case we want to use something similar again in the future
  */
-function getHtml5Cube(jqueryElement: JQuery<HTMLElement>) {
-  const html = jqueryElement.html();
-  const sanitized = Cypress._.flow(
-    removeAnySVGs,
-    removeTestids,
-    removeSizeSpecifications,
-    sortStyleBlocks,
-    removeRandomClassAttribute,
-    normalizeWhitespace
-  )(html);
+// function getHtml5Cube(jqueryElement: JQuery<HTMLElement>) {
+//   const html = jqueryElement.html();
+//   const sanitized = Cypress._.flow(
+//     removeAnySVGs,
+//     removeTestids,
+//     removeSizeSpecifications,
+//     sortStyleBlocks,
+//     removeRandomClassAttribute,
+//     normalizeWhitespace
+//   )(html);
 
-  return sanitized;
-}
+//   return sanitized;
+// }
 
-function removeTestids(html: string): string {
-  return html.replaceAll(/data-testid=".+?"/g, "");
-}
-function removeSizeSpecifications(html: string): string {
-  return html.replaceAll(/-?[0-9]+px/g, "px");
-}
-function sortStyleBlocks(html: string): string {
-  return html.replaceAll(
-    /style="(.*?)"/g,
-    (_, styleString: string) =>
-      `style="${styleString
-        .split(";")
-        .map((x) => x.trim())
-        .sort()
-        .join(";")}"`
-  );
-}
-function removeRandomClassAttribute(html: string): string {
-  return html.replaceAll('class=""', "");
-}
-function normalizeWhitespace(html: string): string {
-  return html.replaceAll(/ +/g, " ");
-}
-function removeAnySVGs(html: string): string {
-  return html.replaceAll(/<svg.*?>.*?<\/svg>/g, "");
-}
+// function removeTestids(html: string): string {
+//   return html.replaceAll(/data-testid=".+?"/g, "");
+// }
+// function removeSizeSpecifications(html: string): string {
+//   return html.replaceAll(/-?[0-9]+px/g, "px");
+// }
+// function sortStyleBlocks(html: string): string {
+//   return html.replaceAll(
+//     /style="(.*?)"/g,
+//     (_, styleString: string) =>
+//       `style="${styleString
+//         .split(";")
+//         .map((x) => x.trim())
+//         .sort()
+//         .join(";")}"`
+//   );
+// }
+// function removeRandomClassAttribute(html: string): string {
+//   return html.replaceAll('class=""', "");
+// }
+// function normalizeWhitespace(html: string): string {
+//   return html.replaceAll(/ +/g, " ");
+// }
+// function removeAnySVGs(html: string): string {
+//   return html.replaceAll(/<svg.*?>.*?<\/svg>/g, "");
+// }
 
 function assertCubeMatchesAlias<
   Aliases extends Record<string, unknown>,
   Key extends keyof Aliases
 >(alias: Key, element: Element): void {
-  getCubeHtml(element).should((actualHtml) => {
+  getStringRepresentationOfCube(element).should((actualHtml) => {
     cy.getSingleAlias<Aliases, Key>(alias).then((wronglyTypedArg) => {
       if (typeof wronglyTypedArg !== "string") {
         throw new Error("html alias was not a string. Alias name was " + alias);
       }
       const expectedHtml: string = wronglyTypedArg;
-      if (actualHtml !== expectedHtml) {
-        cy.log("Actual and expected HTML Logged To Console");
-        console.log("actual html:");
-        console.log(actualHtml);
-        console.log("expected html:");
-        console.log(expectedHtml);
-      }
-      // Don't do a expect().equal as the diff isn't useful anyway
-      // and it takes a long time to generate it due to the large strings
-      // We just deal with a boolean and a custom message instead
-      expect(
-        actualHtml === expectedHtml,
-        "cube html should equal " + alias + " html"
-      ).to.be.true;
-    });
-  });
-}
-
-/**
- * This function is very implementation dependant, much more so than the other cube
- * asserting functions, so could definitely break if the implementation changes.
- * For now we use it as it allows us to assert the backside of cubes displayed even
- * when we don't have a reference to compare to, but up to next developer's judgement
- * what to do if it breaks because of implementation change.
- *
- * Some of the assumptions it makes:
- * - The html for the front side includes the description of the back side even if
- *   it doesn't display it to the user
- * - The way it shows the backside is by using the exactly same html as for the
- *   front side, but just adding a 'rotateY(180deg) ' to the transform
- */
-function assertCubeMatchesBackOfAlias<
-  Aliases extends Record<string, unknown>,
-  Key extends keyof Aliases
->(alias: Key, element: Element): void {
-  getCubeHtml(element).should((actualBacksideHtml) => {
-    cy.getSingleAlias<Aliases, Key>(alias).then((wronglyTypedArg) => {
-      if (typeof wronglyTypedArg !== "string") {
-        throw new Error("html alias was not a string. Alias name was " + alias);
-      }
-      const expectedFrontSideHtml: string = wronglyTypedArg;
-      expect(
-        actualBacksideHtml !== expectedFrontSideHtml,
-        "actual backside shouldn't be equal to front side for alias " + alias
-      );
-      const actualFrontSideHtml = actualBacksideHtml.replace(
-        "rotateY(180deg) ",
-        ""
-      );
-      if (actualFrontSideHtml !== expectedFrontSideHtml) {
-        cy.log("Actual and expected HTML Logged To Console");
-        console.log("actual front side html:");
-        console.log(actualBacksideHtml);
-        console.log("expected back side html:");
-        console.log(expectedFrontSideHtml);
-      }
-      expect(
-        actualFrontSideHtml === expectedFrontSideHtml,
-        "simulated front side of cube html should equal " +
+      assertNonFalsyStringsEqual(
+        actualHtml,
+        expectedHtml,
+        "cube html (first) should equal " +
           alias +
-          " front side html"
-      ).to.be.true;
+          " (second) string representation"
+      );
     });
   });
 }
@@ -2365,4 +2377,54 @@ function testCaseToWrongPageRegex(testCase: readonly [AUF, PLL, AUF]): RegExp {
       secondAufString && String.raw`\s+${secondAufString}\b`,
     ].join("")
   );
+}
+
+function assertNonFalsyStringsEqual(
+  first: string | undefined | null,
+  second: string | undefined | null,
+  msg: string
+): void {
+  if (first === undefined || first === null) {
+    expect.fail("First string in `" + msg + "` was " + JSON.stringify(first));
+  }
+  if (second === undefined || second === null) {
+    expect.fail("Second string in `" + msg + "` was " + JSON.stringify(first));
+  }
+  if (first !== second) {
+    console.log(msg);
+    console.log("It failed so we are logging the strings here:");
+    console.log("First:");
+    console.log(first);
+    console.log("Second:");
+    console.log(second);
+  }
+  // Don't do a expect().equal as the diff isn't useful anyway
+  // and it takes a long time to generate it due to the large strings
+  // We just deal with a boolean and a custom message instead
+  expect(first === second, msg).to.be.true;
+}
+
+function assertNonFalsyStringsDifferent(
+  first: string | undefined | null,
+  second: string | undefined | null,
+  msg: string
+): void {
+  if (first === undefined || first === null) {
+    expect.fail("First string in `" + msg + "` was " + JSON.stringify(first));
+  }
+  if (second === undefined || second === null) {
+    expect.fail("Second string in `" + msg + "` was " + JSON.stringify(first));
+  }
+  if (first === second) {
+    console.log(msg);
+    console.log("It failed so we are logging the strings here:");
+    console.log("First:");
+    console.log(first);
+    console.log("Second:");
+    console.log(second);
+  }
+  // Don't do a expect().equal as the diff isn't useful anyway
+  // and it takes a long time to generate it due to the large strings
+  // We just deal with a boolean and a custom message instead
+  expect(first !== second, msg).to.be.true;
 }

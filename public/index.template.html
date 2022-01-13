@@ -94,7 +94,10 @@
           /** REPLACED_WITH_FEATURE_FLAGS_END **/
           cubeViewOptions:
             /** CYPRESS_REPLACE_CUBE_VIEW_OPTIONS_START **/
-            { useDebugViewForVisualTesting: false },
+            {
+              useDebugViewForVisualTesting: false,
+              extraAlgToApplyToAllCubes: "",
+            },
           /** CYPRESS_REPLACE_CUBE_VIEW_OPTIONS_END **/
         },
       });

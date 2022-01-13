@@ -1,6 +1,7 @@
-port module Ports exposing (logError, onTESTONLYSetTestCase, updateStoredUser)
+port module Ports exposing (logError, onTESTONLYSetExtraAlgToApplyToAllCubes, onTESTONLYSetTestCase, updateStoredUser)
 
 import AUF exposing (AUF)
+import Algorithm exposing (Algorithm)
 import Json.Decode
 import Json.Encode
 import List.Nonempty
@@ -30,6 +31,14 @@ port logError : String -> Cmd msg
 
 
 -- TEST ONLY PORTS
+
+
+port setExtraAlgToApplyToAllCubesPort : (String -> msg) -> Sub msg
+
+
+onTESTONLYSetExtraAlgToApplyToAllCubes : (Result Algorithm.FromStringError Algorithm -> msg) -> Sub msg
+onTESTONLYSetExtraAlgToApplyToAllCubes toMsg =
+    setExtraAlgToApplyToAllCubesPort (Algorithm.fromString >> toMsg)
 
 
 port setCurrentTestCasePort : (Json.Decode.Value -> msg) -> Sub msg
