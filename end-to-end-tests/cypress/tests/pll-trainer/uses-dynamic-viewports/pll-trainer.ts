@@ -1,8 +1,11 @@
 import { applyDefaultIntercepts } from "support/interceptors";
 import { Key } from "support/keys";
+import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
 import { paths } from "support/paths";
 import { AUF, PLL, pllToAlgorithmString } from "support/pll";
 import { pllTrainerElements } from "../state-and-elements.helper";
+
+forceReloadAndNavigateIfDotOnlyIsUsed();
 
 /** iphone-8 dimensions from https://docs.cypress.io/api/commands/viewport#Arguments */
 const smallViewportConfigOverride: Cypress.TestConfigOverrides = {
