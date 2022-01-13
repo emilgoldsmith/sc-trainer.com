@@ -709,6 +709,51 @@ const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] = f
 };
 Cypress.Commands.add("setCurrentTestCase", setCurrentTestCase);
 
+const setExtraAlgToApplyToAllCubes: Cypress.Chainable<undefined>["setExtraAlgToApplyToAllCubes"] = function (
+  alg
+) {
+  cy.withOverallNameLogged(
+    { displayName: "SET EXTRA ALG", message: alg },
+    () => {
+      cy.getCustomWindow({ log: false }).then((window) => {
+        const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+        const setExtraAlgToApplyToAllCubesPort =
+          ports.setExtraAlgToApplyToAllCubesPort;
+        if (!setExtraAlgToApplyToAllCubesPort)
+          throw new Error(
+            "setExtraAlgToApplyToAllCubes port is not exposed for some reason"
+          );
+        setExtraAlgToApplyToAllCubesPort.send(alg);
+      });
+      // Wait until canvases are finished re-rendering
+      cy.get("canvas").should((elements) => {
+        elements.each((_, canvas) => {
+          expect(isCanvasBlank(canvas), "canvas not to be blank").to.be.false;
+        });
+      });
+    }
+  );
+};
+/** Modified from https://stackoverflow.com/questions/17386707/how-to-check-if-a-canvas-is-blank */
+function isCanvasBlank(canvas: HTMLCanvasElement) {
+  const blank = document.createElement("canvas");
+
+  blank.width = canvas.width;
+  blank.height = canvas.height;
+  blank.style.width = canvas.style.width;
+  blank.style.height = canvas.style.height;
+
+  const canvasUrl = canvas.toDataURL();
+  const blankUrl = blank.toDataURL();
+  // This is 100% a hack but sometimes we get blank canvases that have different PNG
+  // representations, and this works. Better solutions very welcome though
+  return canvasUrl.length < blankUrl.length * 2;
+}
+Cypress.Commands.add(
+  "setExtraAlgToApplyToAllCubes",
+  setExtraAlgToApplyToAllCubes
+);
+
 const setLocalStorage: Cypress.Chainable<undefined>["setLocalStorage"] = function (
   storageState
 ) {

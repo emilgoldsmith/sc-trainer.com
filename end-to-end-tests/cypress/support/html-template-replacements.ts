@@ -9,7 +9,11 @@ export function handleHtmlCypressModifications(html: {
     },
     {
       key: "CUBE_VIEW_OPTIONS",
-      value: JSON.stringify({ useDebugViewForVisualTesting: true }) + ",",
+      value:
+        JSON.stringify({
+          useDebugViewForVisualTesting: true,
+          extraAlgToApplyToAllCubes: "",
+        }) + ",",
     },
   ]);
 

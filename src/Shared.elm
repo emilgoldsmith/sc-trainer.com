@@ -6,12 +6,14 @@ module Shared exposing
     , Msg
     , PublicMsg(..)
     , buildSharedMessage
+    , getExtraAlgToApplyToAllCubes
     , init
     , shouldUseDebugViewForVisualTesting
     , subscriptions
     , update
     )
 
+import Algorithm exposing (Algorithm)
 import Browser.Events as Events
 import Json.Decode
 import Key
@@ -31,7 +33,10 @@ type alias Flags =
     , touchScreenAvailable : Bool
     , featureFlags : FeatureFlags
     , storedUser : Json.Decode.Value
-    , cubeViewOptions : CubeViewOptionsRecord
+    , cubeViewOptions :
+        { useDebugViewForVisualTesting : Bool
+        , extraAlgToApplyToAllCubes : String
+        }
     }
 
 
@@ -39,18 +44,21 @@ type alias FeatureFlags =
     {}
 
 
-type alias CubeViewOptionsRecord =
-    { useDebugViewForVisualTesting : Bool
-    }
-
-
 type CubeViewOptions
-    = CubeViewOptions CubeViewOptionsRecord
+    = CubeViewOptions
+        { useDebugViewForVisualTesting : Bool
+        , extraAlgToApplyToAllCubes : Algorithm
+        }
 
 
 shouldUseDebugViewForVisualTesting : CubeViewOptions -> Bool
 shouldUseDebugViewForVisualTesting (CubeViewOptions { useDebugViewForVisualTesting }) =
     useDebugViewForVisualTesting
+
+
+getExtraAlgToApplyToAllCubes : CubeViewOptions -> Algorithm
+getExtraAlgToApplyToAllCubes (CubeViewOptions { extraAlgToApplyToAllCubes }) =
+    extraAlgToApplyToAllCubes
 
 
 
@@ -72,6 +80,20 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser, cubeViewO
     let
         builtViewportSize =
             ViewportSize.build viewportSize
+
+        ( extraAlgToApplyToAllCubes, cmd ) =
+            case Algorithm.fromString cubeViewOptions.extraAlgToApplyToAllCubes of
+                Ok alg ->
+                    ( alg, Cmd.none )
+
+                Err Algorithm.EmptyAlgorithm ->
+                    ( Algorithm.empty, Cmd.none )
+
+                Err error ->
+                    ( Algorithm.empty
+                    , Ports.logError
+                        ("There was an error with the extra alg to apply to all cubes flag: " ++ Algorithm.debugFromStringError error)
+                    )
     in
     ( { viewportSize = builtViewportSize
       , palette = UI.defaultPalette
@@ -87,9 +109,13 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser, cubeViewO
                 }
       , user = User.deserialize storedUser |> Result.withDefault User.new
       , featureFlags = featureFlags
-      , cubeViewOptions = CubeViewOptions cubeViewOptions
+      , cubeViewOptions =
+            CubeViewOptions
+                { useDebugViewForVisualTesting = cubeViewOptions.useDebugViewForVisualTesting
+                , extraAlgToApplyToAllCubes = extraAlgToApplyToAllCubes
+                }
       }
-    , Cmd.none
+    , cmd
     )
 
 
@@ -153,6 +179,7 @@ type InternalMsg
 
 type PublicMsg
     = ModifyUser (User -> ( User, Maybe { errorMessage : String } ))
+    | TESTONLYSetExtraAlgToApplyToAllCubes Algorithm
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
@@ -197,6 +224,19 @@ update _ msg model =
                                 , Cmd.batch [ cmd, Ports.updateStoredUser newModel.user ]
                                 )
                            )
+
+                TESTONLYSetExtraAlgToApplyToAllCubes algorithm ->
+                    let
+                        (CubeViewOptions cubeViewOptionsRecord) =
+                            model.cubeViewOptions
+
+                        newCubeViewOptions =
+                            CubeViewOptions
+                                { cubeViewOptionsRecord
+                                    | extraAlgToApplyToAllCubes = algorithm
+                                }
+                    in
+                    ( { model | cubeViewOptions = newCubeViewOptions }, Cmd.none )
 
 
 

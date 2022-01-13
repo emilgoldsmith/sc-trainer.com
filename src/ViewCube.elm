@@ -18,7 +18,7 @@ view :
         }
     -> Cube.Cube
     -> Element.Element msg
-view options attributes parameters =
+view options attributes parameters notFinalCube =
     let
         viewFn =
             if Shared.shouldUseDebugViewForVisualTesting options then
@@ -26,5 +26,8 @@ view options attributes parameters =
 
             else
                 Cube.view
+
+        finalCube =
+            Cube.applyAlgorithm (Shared.getExtraAlgToApplyToAllCubes options) notFinalCube
     in
-    Element.html << viewFn (htmlCubeTestType :: attributes) parameters
+    Element.html <| viewFn (htmlCubeTestType :: attributes) parameters finalCube

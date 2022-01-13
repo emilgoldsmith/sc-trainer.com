@@ -25,11 +25,13 @@ const largeViewportConfigOverride: Cypress.TestConfigOverrides = {
 
 describe("Algorithm Trainer Dynamic Viewport Tests", function () {
   beforeEach(function () {
-    cy.clearLocalStorage();
     applyDefaultIntercepts();
   });
   context("touch screen", function () {
     beforeEach(function () {
+      // This really shouldn't make a difference but for some reason local storage is persisting across tests
+      // Maybe it's because we're using config overrides, it seems like the only difference...
+      cy.clearLocalStorage();
       cy.visit(paths.pllTrainer, { onBeforeLoad: simulateIsTouchScreen });
       cy.clock();
     });
@@ -51,6 +53,9 @@ describe("Algorithm Trainer Dynamic Viewport Tests", function () {
   context("non touch screen", function () {
     /** For a non touch screen we should always show shortcuts as they must have a keyboard */
     beforeEach(function () {
+      // This really shouldn't make a difference but for some reason local storage is persisting across tests
+      // Maybe it's because we're using config overrides, it seems like the only difference...
+      cy.clearLocalStorage();
       cy.visit(paths.pllTrainer);
       cy.clock();
     });
