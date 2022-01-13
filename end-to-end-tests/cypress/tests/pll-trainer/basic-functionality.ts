@@ -1868,7 +1868,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       };
       // Go to evaluate to get the "original" cube state
       pllTrainerStatesUserDone.evaluateResultAfterIgnoringTransitions.restoreState();
-      cy.log("GETTING ORIGINAL CUBE HTMLS");
+      cy.log("GETTING ORIGINAL CUBE STRINGS");
       getStringRepresentationOfCube(
         pllTrainerElements.evaluateResult.expectedCubeFront
       ).setAlias<Aliases, "originalCubeFront">("originalCubeFront");
@@ -1884,7 +1884,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       pllTrainerElements.testRunning.container.waitFor();
       cy.mouseClickScreen("center");
       // We're back at Evaluate Result
-      cy.log("GETTING NEXT CUBE HTMLS");
+      cy.log("GETTING NEXT CUBE STRINGS");
       getStringRepresentationOfCube(
         pllTrainerElements.evaluateResult.expectedCubeFront
       ).setAlias<Aliases, "nextCubeFront">("nextCubeFront");
@@ -2264,7 +2264,6 @@ function getStringRepresentationOfCube(element: Element) {
     .then((jqueryElement) => {
       const canvasElement: HTMLCanvasElement = canvasOrThrow(jqueryElement);
 
-      if (isCanvasBlank(canvasElement)) throw new Error("BLANK MOFO");
       const dataUrl = canvasElement.toDataURL();
 
       canvasElement.width = prevWidth;
@@ -2350,16 +2349,16 @@ function assertCubeMatchesAlias<
   Aliases extends Record<string, unknown>,
   Key extends keyof Aliases
 >(alias: Key, element: Element): void {
-  getStringRepresentationOfCube(element).should((actualHtml) => {
+  getStringRepresentationOfCube(element).should((actualCubeString) => {
     cy.getSingleAlias<Aliases, Key>(alias).then((wronglyTypedArg) => {
       if (typeof wronglyTypedArg !== "string") {
-        throw new Error("html alias was not a string. Alias name was " + alias);
+        throw new Error("Alias was not a string. Alias name was " + alias);
       }
-      const expectedHtml: string = wronglyTypedArg;
+      const expectedCubeString: string = wronglyTypedArg;
       assertNonFalsyStringsEqual(
-        actualHtml,
-        expectedHtml,
-        "cube html (first) should equal " +
+        actualCubeString,
+        expectedCubeString,
+        "cube string (first) should equal " +
           alias +
           " (second) string representation"
       );

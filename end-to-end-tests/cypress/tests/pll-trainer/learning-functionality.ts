@@ -13,6 +13,9 @@ import {
 import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 import { paths } from "support/paths";
 import { Key } from "support/keys";
+import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
+
+forceReloadAndNavigateIfDotOnlyIsUsed();
 
 describe("PLL Trainer - Learning Functionality", function () {
   before(function () {
