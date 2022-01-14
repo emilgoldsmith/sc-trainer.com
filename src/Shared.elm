@@ -7,6 +7,7 @@ module Shared exposing
     , PublicMsg(..)
     , buildSharedMessage
     , getExtraAlgToApplyToAllCubes
+    , getSizeOverride
     , init
     , shouldUseDebugViewForVisualTesting
     , subscriptions
@@ -36,6 +37,7 @@ type alias Flags =
     , cubeViewOptions :
         { useDebugViewForVisualTesting : Bool
         , extraAlgToApplyToAllCubes : String
+        , sizeOverride : Maybe Int
         }
     }
 
@@ -48,6 +50,7 @@ type CubeViewOptions
     = CubeViewOptions
         { useDebugViewForVisualTesting : Bool
         , extraAlgToApplyToAllCubes : Algorithm
+        , sizeOverride : Maybe Int
         }
 
 
@@ -59,6 +62,11 @@ shouldUseDebugViewForVisualTesting (CubeViewOptions { useDebugViewForVisualTesti
 getExtraAlgToApplyToAllCubes : CubeViewOptions -> Algorithm
 getExtraAlgToApplyToAllCubes (CubeViewOptions { extraAlgToApplyToAllCubes }) =
     extraAlgToApplyToAllCubes
+
+
+getSizeOverride : CubeViewOptions -> Maybe Int
+getSizeOverride (CubeViewOptions { sizeOverride }) =
+    sizeOverride
 
 
 
@@ -113,6 +121,7 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser, cubeViewO
             CubeViewOptions
                 { useDebugViewForVisualTesting = cubeViewOptions.useDebugViewForVisualTesting
                 , extraAlgToApplyToAllCubes = extraAlgToApplyToAllCubes
+                , sizeOverride = cubeViewOptions.sizeOverride
                 }
       }
     , cmd
@@ -180,6 +189,7 @@ type InternalMsg
 type PublicMsg
     = ModifyUser (User -> ( User, Maybe { errorMessage : String } ))
     | TESTONLYSetExtraAlgToApplyToAllCubes Algorithm
+    | TESTONLYSetCubeSizeOverride (Maybe Int)
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
@@ -234,6 +244,19 @@ update _ msg model =
                             CubeViewOptions
                                 { cubeViewOptionsRecord
                                     | extraAlgToApplyToAllCubes = algorithm
+                                }
+                    in
+                    ( { model | cubeViewOptions = newCubeViewOptions }, Cmd.none )
+
+                TESTONLYSetCubeSizeOverride size ->
+                    let
+                        (CubeViewOptions cubeViewOptionsRecord) =
+                            model.cubeViewOptions
+
+                        newCubeViewOptions =
+                            CubeViewOptions
+                                { cubeViewOptionsRecord
+                                    | sizeOverride = size
                                 }
                     in
                     ( { model | cubeViewOptions = newCubeViewOptions }, Cmd.none )

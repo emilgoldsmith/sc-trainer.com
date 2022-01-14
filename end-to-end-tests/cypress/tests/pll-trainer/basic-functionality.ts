@@ -2236,24 +2236,11 @@ function getTestRunningWithMaxLengthTimer() {
   pllTrainerElements.testRunning.timer.get().should("have.text", "15:00:00.0");
 }
 
-function getStringRepresentationOfCube(element: Element) {
+function getStringRepresentationOfCube(
+  element: Element
+): Cypress.Chainable<string> {
   // Standardize the size of the canvas so that string representations are comparable
-  let prevWidth: number,
-    prevHeight: number,
-    prevCSSWidth: string,
-    prevCSSHeight: string;
-  element.get().then((jqueryElement) => {
-    const canvasElement: HTMLCanvasElement = canvasOrThrow(jqueryElement);
-    // Standardize the size of the canvas so that string representations are comparable
-    prevWidth = canvasElement.width;
-    prevHeight = canvasElement.height;
-    prevCSSWidth = canvasElement.style.width;
-    prevCSSHeight = canvasElement.style.height;
-
-    canvasElement.width = canvasElement.height = 50;
-    canvasElement.style.width = canvasElement.style.height = "50px";
-  });
-
+  cy.setCubeSizeOverride(50);
   return element
     .get()
     .should((jqueryElement) => {
@@ -2267,12 +2254,8 @@ function getStringRepresentationOfCube(element: Element) {
 
       const dataUrl = canvasElement.toDataURL();
 
-      canvasElement.width = prevWidth;
-      canvasElement.height = prevHeight;
-      canvasElement.style.width = prevCSSWidth;
-      canvasElement.style.height = prevCSSHeight;
-
-      return dataUrl;
+      cy.setCubeSizeOverride(null);
+      return cy.wrap(dataUrl);
     });
 }
 

@@ -132,6 +132,7 @@ type StateMsg
 type InternalMsg
     = TESTONLYSetTestCase (Result Json.Decode.Error TestCase)
     | TESTONLYSetExtraAlgToApplyToAllCubes (Result Algorithm.FromStringError Algorithm)
+    | TESTONLYSetCubeSizeOverride (Maybe Int)
 
 
 {-| We use this structure to make sure the test case
@@ -477,6 +478,9 @@ update shared msg model =
                                     )
                             )
 
+                TESTONLYSetCubeSizeOverride size ->
+                    ( model, Effect.fromShared (Shared.TESTONLYSetCubeSizeOverride size) )
+
         NoOp ->
             ( model, Effect.none )
 
@@ -514,6 +518,7 @@ subscriptions shared model =
             |> PLLTrainer.Subscription.getSub
         , Ports.onTESTONLYSetTestCase (InternalMsg << TESTONLYSetTestCase)
         , Ports.onTESTONLYSetExtraAlgToApplyToAllCubes (InternalMsg << TESTONLYSetExtraAlgToApplyToAllCubes)
+        , Ports.onTESTONLYSetCubeSizeOverride (InternalMsg << TESTONLYSetCubeSizeOverride)
         ]
 
 

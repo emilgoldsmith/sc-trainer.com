@@ -278,6 +278,8 @@ declare namespace Cypress {
     setLocalStorage(storageState: { [key: string]: any }): void;
 
     setExtraAlgToApplyToAllCubes(alg: string): void;
+
+    setCubeSizeOverride(size: number | null): void;
   }
 }
 

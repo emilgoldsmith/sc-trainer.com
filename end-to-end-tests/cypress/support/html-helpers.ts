@@ -1,6 +1,9 @@
 export function canvasOrThrow(
   jqueryElement: JQuery<HTMLElement>
 ): HTMLCanvasElement {
+  if (jqueryElement.length > 1) {
+    throw new Error("Several elements were matched by JQuery in canvasOrThrow");
+  }
   if (jqueryElement[0]?.tagName !== "CANVAS") {
     throw new Error(
       "Only supported cube elements right now are canvas elements"
