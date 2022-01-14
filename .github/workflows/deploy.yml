@@ -1,7 +1,9 @@
 name: CD
 on:
   workflow_dispatch: {}
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: main
 
 permissions: {}
@@ -16,7 +18,7 @@ jobs:
     # just use the workflow dispatch manual trigger after CI passed
 
     # Also skip if there is a no-deploy tag in the commit message
-    if: ${{ github.event.sender.login != 'dependabot[bot]' && ! startsWith(github.event.commits[0].message, '[no-deploy]') }}
+    if: ${{ github.event.sender.login != 'dependabot[bot]' && ! startsWith(github.event.commits[0].message, '[no-deploy]') && github.event.workflow_run.conclusion == 'success' }}
     env:
       PRODUCTION_SERVICE: speedcubing-trainer
       STAGING_SERVICE: staging-speedcubing-trainer
@@ -26,17 +28,6 @@ jobs:
       # Remember to update project id here if you update the variable above
       GOOGLE_TAG: us-east4-docker.pkg.dev/carbide-ether-306312/speedcubing-trainer/main:${{ github.sha }}
     steps:
-      - name: Wait for CI to pass
-        if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: emilgoldsmith/wait-for-workflows-to-succeed@v1.7
-        with:
-          wait-interval-seconds: 30
-          wait-max-seconds: 2000
-          workflows: |
-            ci.yml
-            build-and-push-docker-containers.yml
-          repo-token: ${{ github.token }}
-
       - name: Pull our production image
         run: docker pull ${{ env.DOCKER_HUB_TAG }}
 
