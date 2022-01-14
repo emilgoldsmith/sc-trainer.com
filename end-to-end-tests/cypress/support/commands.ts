@@ -732,6 +732,9 @@ const setExtraAlgToApplyToAllCubes: Cypress.Chainable<undefined>["setExtraAlgToA
           );
         setExtraAlgToApplyToAllCubesPort.send(alg);
       });
+      // Release control of the thread to let the render loop do it's thing
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(0);
       // Wait until canvases are finished re-rendering
       cy.get("canvas").should((elements) => {
         elements.each((_, canvas) => {
@@ -750,7 +753,7 @@ const setCubeSizeOverride: Cypress.Chainable<undefined>["setCubeSizeOverride"] =
   size
 ) {
   cy.withOverallNameLogged(
-    { displayName: "SET SIZE OVERRIDE", message: size },
+    { displayName: "SET SIZE OVERRIDE", message: JSON.stringify(size) },
     () => {
       cy.getCustomWindow({ log: false }).then((window) => {
         const ports = window.END_TO_END_TEST_HELPERS.getPorts();
@@ -761,6 +764,9 @@ const setCubeSizeOverride: Cypress.Chainable<undefined>["setCubeSizeOverride"] =
           );
         setCubeSizeOverridePort.send(size);
       });
+      // Release control of the thread to let the render loop do it's thing
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(0);
       // Wait until canvases are finished re-rendering
       cy.get("canvas").should((elements) => {
         elements.each((_, canvas) => {

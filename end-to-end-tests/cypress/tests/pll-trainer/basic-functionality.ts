@@ -905,10 +905,22 @@ describe("PLL Trainer - Basic Functionality", function () {
         // The same algorithm but just added in an x' at the end to correct the orientation
         algorithmWithoutRotation: "R U2 R' U' R U2 L' U R' U' r x'",
       },
-    ] as const).forEach(
+    ] as {
+      testName: string;
+      pll: PLL;
+      algorithmWithRotation: string;
+      algorithmWithoutRotation: string;
+      only?: boolean;
+    }[]).forEach(
       /* eslint-enable mocha/no-setup-in-describe */
-      ({ pll, algorithmWithRotation, algorithmWithoutRotation, testName }) => {
-        it(testName, function () {
+      ({
+        pll,
+        algorithmWithRotation,
+        algorithmWithoutRotation,
+        testName,
+        only,
+      }) => {
+        (only ? it.only : it)(testName, () => {
           type Aliases = {
             withRotation: string;
             withoutRotation: string;
