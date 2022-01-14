@@ -34,12 +34,16 @@ jobs:
       - name: Retag our production image to Google format
         run: docker image tag ${{ env.DOCKER_HUB_TAG }} ${{ env.GOOGLE_TAG }}
 
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v0
+        with:
+          credentials_json: "${{ secrets.GOOGLE_CLOUD_DEPLOY_SA_KEY }}"
+
       - name: Setup Cloud SDK
         uses: google-github-actions/setup-gcloud@v0.3
         with:
           project_id: ${{ env.PROJECT_ID }}
-          service_account_key: ${{ secrets.GOOGLE_CLOUD_DEPLOY_SA_KEY }}
-          export_default_credentials: true # Set to true to authenticate the Cloud Run action
 
       - name: Configure and Authorize Docker For Pushing to Google
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
