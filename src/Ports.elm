@@ -1,4 +1,4 @@
-port module Ports exposing (logError, onTESTONLYSetExtraAlgToApplyToAllCubes, onTESTONLYSetTestCase, updateStoredUser)
+port module Ports exposing (logError, onTESTONLYSetCubeSizeOverride, onTESTONLYSetExtraAlgToApplyToAllCubes, onTESTONLYSetTestCase, updateStoredUser)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
@@ -39,6 +39,14 @@ port setExtraAlgToApplyToAllCubesPort : (String -> msg) -> Sub msg
 onTESTONLYSetExtraAlgToApplyToAllCubes : (Result Algorithm.FromStringError Algorithm -> msg) -> Sub msg
 onTESTONLYSetExtraAlgToApplyToAllCubes toMsg =
     setExtraAlgToApplyToAllCubesPort (Algorithm.fromString >> toMsg)
+
+
+port setCubeSizeOverridePort : (Maybe Int -> msg) -> Sub msg
+
+
+onTESTONLYSetCubeSizeOverride : (Maybe Int -> msg) -> Sub msg
+onTESTONLYSetCubeSizeOverride =
+    setCubeSizeOverridePort
 
 
 port setCurrentTestCasePort : (Json.Decode.Value -> msg) -> Sub msg

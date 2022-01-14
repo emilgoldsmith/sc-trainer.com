@@ -746,6 +746,32 @@ Cypress.Commands.add(
   setExtraAlgToApplyToAllCubes
 );
 
+const setCubeSizeOverride: Cypress.Chainable<undefined>["setCubeSizeOverride"] = function (
+  size
+) {
+  cy.withOverallNameLogged(
+    { displayName: "SET SIZE OVERRIDE", message: size },
+    () => {
+      cy.getCustomWindow({ log: false }).then((window) => {
+        const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+        const setCubeSizeOverridePort = ports.setCubeSizeOverridePort;
+        if (!setCubeSizeOverridePort)
+          throw new Error(
+            "setCubeSizeOverride port is not exposed for some reason"
+          );
+        setCubeSizeOverridePort.send(size);
+      });
+      // Wait until canvases are finished re-rendering
+      cy.get("canvas").should((elements) => {
+        elements.each((_, canvas) => {
+          expect(isCanvasBlank(canvas), "canvas not to be blank").to.be.false;
+        });
+      });
+    }
+  );
+};
+Cypress.Commands.add("setCubeSizeOverride", setCubeSizeOverride);
+
 const setLocalStorage: Cypress.Chainable<undefined>["setLocalStorage"] = function (
   storageState
 ) {

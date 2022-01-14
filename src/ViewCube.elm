@@ -18,7 +18,7 @@ view :
         }
     -> Cube.Cube
     -> Element.Element msg
-view options attributes parameters notFinalCube =
+view options attributes notFinalParameters notFinalCube =
     let
         viewFn =
             if Shared.shouldUseDebugViewForVisualTesting options then
@@ -29,5 +29,10 @@ view options attributes parameters notFinalCube =
 
         finalCube =
             Cube.applyAlgorithm (Shared.getExtraAlgToApplyToAllCubes options) notFinalCube
+
+        finalParameters =
+            Shared.getSizeOverride options
+                |> Maybe.map (\newSize -> { notFinalParameters | pixelSize = newSize })
+                |> Maybe.withDefault notFinalParameters
     in
-    Element.html <| viewFn (htmlCubeTestType :: attributes) parameters finalCube
+    Element.html <| viewFn (htmlCubeTestType :: attributes) finalParameters finalCube
