@@ -63,7 +63,7 @@ type TrainerState
 
 
 type alias TestRunningExtraState =
-    { startTime : Time.Posix }
+    { startTime : Time.Posix, memoizedCube : Cube }
 
 
 type alias EvaluateResultExtraState =
@@ -186,7 +186,9 @@ update shared msg model =
                 StartTest (EverythingGenerated testCase startTime) ->
                     let
                         arguments =
-                            { startTime = startTime }
+                            { startTime = startTime
+                            , memoizedCube = PLLTrainer.TestCase.toCube shared.user model.currentTestCase
+                            }
 
                         ( stateModel, stateCmd ) =
                             ((states shared model).testRunning arguments).init
@@ -590,9 +592,9 @@ states shared model =
         \arguments ->
             PLLTrainer.States.TestRunning.state
                 shared
-                model.currentTestCase
+                { memoizedCube = arguments.memoizedCube }
                 (StateMsg << TestRunningMsg)
-                { endTest = TransitionMsg (EndTest arguments Nothing) }
+                { endTest = TransitionMsg (EndTest { startTime = arguments.startTime } Nothing) }
     , evaluateResult =
         \arguments ->
             PLLTrainer.States.EvaluateResult.state

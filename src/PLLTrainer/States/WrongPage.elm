@@ -105,14 +105,14 @@ view { palette, viewportSize, hardwareAvailable, user, cubeViewOptions } transit
                 , row
                     [ centerX
                     ]
-                    [ ViewCube.view cubeViewOptions
+                    [ ViewCube.viewLazy cubeViewOptions
                         [ htmlTestid "test-case-front" ]
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
                         }
                         testCaseCube
-                    , ViewCube.view cubeViewOptions
+                    , ViewCube.viewLazy cubeViewOptions
                         [ htmlTestid "test-case-back" ]
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ublDisplayAngle
@@ -130,14 +130,14 @@ view { palette, viewportSize, hardwareAvailable, user, cubeViewOptions } transit
                 , row
                     [ centerX
                     ]
-                    [ ViewCube.view cubeViewOptions
+                    [ ViewCube.viewLazy cubeViewOptions
                         [ htmlTestid "expected-cube-state-front" ]
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
                         }
                         arguments.expectedCubeState
-                    , ViewCube.view cubeViewOptions
+                    , ViewCube.viewLazy cubeViewOptions
                         [ htmlTestid "expected-cube-state-back" ]
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ublDisplayAngle

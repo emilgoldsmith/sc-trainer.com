@@ -1,8 +1,8 @@
-module PLLTrainer.States.TestRunning exposing (Model, Msg, state)
+module PLLTrainer.States.TestRunning exposing (Arguments, Model, Msg, state)
 
 import Browser.Events
 import Css exposing (htmlTestid, testid)
-import Cube
+import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Font as Font
 import Html.Events
@@ -10,7 +10,6 @@ import Json.Decode
 import Key
 import PLLTrainer.State
 import PLLTrainer.Subscription
-import PLLTrainer.TestCase exposing (TestCase)
 import Shared
 import TimeInterval exposing (TimeInterval)
 import View
@@ -20,21 +19,26 @@ import ViewportSize
 
 state :
     Shared.Model
-    -> TestCase
+    -> Arguments
     -> (Msg -> msg)
     -> Transitions msg
     -> PLLTrainer.State.State msg Msg Model
-state shared testCase toMsg transitions =
+state shared { memoizedCube } toMsg transitions =
     PLLTrainer.State.element
         { init = init
-        , view = view shared testCase
+        , view = view shared memoizedCube
         , update = update
         , subscriptions = subscriptions toMsg transitions
         }
 
 
 
--- TRANSITIONS
+-- ARGUMENTS AND TRANSITIONS
+
+
+type alias Arguments =
+    { memoizedCube : Cube
+    }
 
 
 type alias Transitions msg =
@@ -99,8 +103,8 @@ subscriptions toMsg transitions _ =
 -- VIEW
 
 
-view : Shared.Model -> TestCase -> Model -> PLLTrainer.State.View msg
-view { viewportSize, user, cubeViewOptions } testCase model =
+view : Shared.Model -> Cube -> Model -> PLLTrainer.State.View msg
+view { viewportSize, cubeViewOptions } memoizedCube model =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -111,14 +115,13 @@ view { viewportSize, user, cubeViewOptions } testCase model =
                 , spacing (ViewportSize.minDimension viewportSize // 10)
                 ]
                 [ el [ centerX ] <|
-                    ViewCube.view cubeViewOptions
+                    ViewCube.viewLazy cubeViewOptions
                         [ htmlTestid "test-case" ]
                         { pixelSize = ViewportSize.minDimension viewportSize // 2
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = False
                         }
-                    <|
-                        PLLTrainer.TestCase.toCube user testCase
+                        memoizedCube
                 , el
                     [ testid "timer"
                     , centerX
