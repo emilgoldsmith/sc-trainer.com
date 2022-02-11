@@ -98,14 +98,14 @@ view { user, viewportSize, palette, hardwareAvailable, cubeViewOptions } transit
                 [ paragraph [ centerX, Font.center, Font.bold, Font.size headerSize ] [ text "Choose the case that fits your cube state:" ]
                 , paragraph [ testid "no-move-explanation", centerX, Font.center ] [ text "1. I didn't apply any moves to the cube" ]
                 , row [ centerX ]
-                    [ ViewCube.view cubeViewOptions
+                    [ ViewCube.viewLazy cubeViewOptions
                         [ htmlTestid "no-move-cube-state-front" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
                         }
                         noMovesCube
-                    , ViewCube.view cubeViewOptions
+                    , ViewCube.viewLazy cubeViewOptions
                         [ htmlTestid "no-move-cube-state-back" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ublDisplayAngle
@@ -122,14 +122,14 @@ view { user, viewportSize, palette, hardwareAvailable, cubeViewOptions } transit
                     [ text "2. I can get to the expected state. I for example just got the AUF wrong"
                     ]
                 , row [ centerX ]
-                    [ ViewCube.view cubeViewOptions
+                    [ ViewCube.viewLazy cubeViewOptions
                         [ htmlTestid "nearly-there-cube-state-front" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
                         }
                         nearlyThereCube
-                    , ViewCube.view cubeViewOptions
+                    , ViewCube.viewLazy cubeViewOptions
                         [ htmlTestid "nearly-there-cube-state-back" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ublDisplayAngle
