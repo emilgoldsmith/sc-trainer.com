@@ -2255,7 +2255,7 @@ function getStringRepresentationOfCube(
   cy.setCubeSizeOverride(50);
   return element
     .get()
-    .get("canvas")
+    .find("canvas")
     .should((jqueryElement) => {
       expect(
         isCanvasBlank(canvasOrThrow(jqueryElement)),
