@@ -4,9 +4,12 @@ export function canvasOrThrow(
   if (jqueryElement.length > 1) {
     throw new Error("Several elements were matched by JQuery in canvasOrThrow");
   }
+  if (jqueryElement.length === 0)
+    throw new Error("No element was found when canvas element was expected");
   if (jqueryElement[0]?.tagName !== "CANVAS") {
     throw new Error(
-      "Only supported cube elements right now are canvas elements"
+      "Only supported cube elements right now are canvas elements. The tag name was " +
+        jqueryElement[0]?.tagName
     );
   }
   return jqueryElement[0] as HTMLCanvasElement;
