@@ -1,4 +1,7 @@
-import { applyDefaultIntercepts } from "support/interceptors";
+import {
+  addPercyCanvasStyleFixers,
+  applyDefaultIntercepts,
+} from "support/interceptors";
 import { paths } from "support/paths";
 import { AUF, PLL } from "support/pll";
 import {
@@ -10,7 +13,7 @@ import {
 
 describe("Visual Tests", function () {
   beforeEach(function () {
-    applyDefaultIntercepts();
+    applyDefaultIntercepts({ extraHtmlModifiers: [addPercyCanvasStyleFixers] });
   });
   describe("PLL Trainer", function () {
     it("looks right", function () {
