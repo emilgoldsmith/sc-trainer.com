@@ -118,6 +118,16 @@ export const removeAnalyticsScripts: HtmlModifier = (prevHtml) =>
     )
     .replace(/\bnew Sentry[a-zA-Z.]+\b/, "(() => {return {};})");
 
+export const addPercyCanvasStyleFixers: HtmlModifier = (prevHtml) =>
+  /**
+   * The max width property for some reason makes our images max-width 0 which means
+   * they don't display so overriding it here that you can use for visual tests
+   */
+  prevHtml.value.replace(
+    "<head>",
+    "<head><style>img {max-width: none !important;}</style>"
+  );
+
 const defaultHtmlModifiers: HtmlModifier[] = [
   addElmModelObserversAndModifiersToHtml,
   handleHtmlCypressModifications,
