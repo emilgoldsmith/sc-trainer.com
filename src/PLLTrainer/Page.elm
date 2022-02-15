@@ -449,7 +449,23 @@ update shared msg model =
         InternalMsg internalMsg ->
             case internalMsg of
                 TESTONLYSetTestCase (Ok testCase) ->
-                    ( { model | currentTestCase = testCase }, Effect.none )
+                    let
+                        withUpdatedTestCase =
+                            { model | currentTestCase = testCase }
+
+                        fullyUpdatedModel =
+                            case model.trainerState of
+                                TestRunning localModel extraState ->
+                                    let
+                                        newExtraState =
+                                            { extraState | memoizedCube = PLLTrainer.TestCase.toCube shared.user testCase }
+                                    in
+                                    { withUpdatedTestCase | trainerState = TestRunning localModel newExtraState }
+
+                                _ ->
+                                    withUpdatedTestCase
+                    in
+                    ( fullyUpdatedModel, Effect.none )
 
                 TESTONLYSetTestCase (Err decodeError) ->
                     ( model
