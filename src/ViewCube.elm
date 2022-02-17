@@ -1,15 +1,18 @@
-module ViewCube exposing (viewLazy)
+module ViewCube exposing (view)
 
 import Css exposing (htmlCubeTestType)
 import Cube
 import Cube.Advanced
 import Element
-import Element.Lazy
 import Html
 import Shared
 
 
-viewLazy :
+{-| Remember that in order to utilize the lazy ability of this
+function you need to be using the exact same cube by reference
+which in most cases means saving it in the model
+-}
+view :
     Shared.CubeViewOptions
     -> List (Html.Attribute msg)
     ->
@@ -19,32 +22,8 @@ viewLazy :
         }
     -> Cube.Cube
     -> Element.Element msg
-viewLazy options attributes parameters cube =
-    Element.el (List.map Element.htmlAttribute <| htmlCubeTestType :: attributes) <|
-        Element.Lazy.lazy5
-            viewHelper
-            options
-            parameters.annotateFaces
-            parameters.displayAngle
-            parameters.pixelSize
-            cube
-
-
-viewHelper :
-    Shared.CubeViewOptions
-    -> Bool
-    -> Cube.DisplayAngle
-    -> Int
-    -> Cube.Cube
-    -> Element.Element msg
-viewHelper options annotateFaces displayAngle pixelSize notFinalCube =
+view options attributes notFinalParameters notFinalCube =
     let
-        notFinalParameters =
-            { annotateFaces = annotateFaces
-            , displayAngle = displayAngle
-            , pixelSize = pixelSize
-            }
-
         viewFn =
             if Shared.shouldUseDebugViewForVisualTesting options then
                 Cube.Advanced.debugViewAllowingVisualTesting
@@ -60,4 +39,4 @@ viewHelper options annotateFaces displayAngle pixelSize notFinalCube =
                 |> Maybe.map (\newSize -> { notFinalParameters | pixelSize = newSize })
                 |> Maybe.withDefault notFinalParameters
     in
-    Element.html <| viewFn [] finalParameters finalCube
+    Element.html <| viewFn (htmlCubeTestType :: attributes) finalParameters finalCube

@@ -185,14 +185,14 @@ view { viewportSize, palette, hardwareAvailable, cubeViewOptions } transitions a
                     [ centerX
                     , spacing cubeSpacing
                     ]
-                    [ ViewCube.viewLazy cubeViewOptions
+                    [ ViewCube.view cubeViewOptions
                         [ htmlTestid "expected-cube-front" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
                         }
                         arguments.expectedCubeState
-                    , ViewCube.viewLazy cubeViewOptions
+                    , ViewCube.view cubeViewOptions
                         [ htmlTestid "expected-cube-back" ]
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ublDisplayAngle
