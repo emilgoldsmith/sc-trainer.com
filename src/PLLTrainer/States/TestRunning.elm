@@ -115,7 +115,7 @@ view { viewportSize, cubeViewOptions } memoizedCube model =
                 , spacing (ViewportSize.minDimension viewportSize // 10)
                 ]
                 [ el [ centerX ] <|
-                    ViewCube.viewLazy cubeViewOptions
+                    ViewCube.view cubeViewOptions
                         [ htmlTestid "test-case" ]
                         { pixelSize = ViewportSize.minDimension viewportSize // 2
                         , displayAngle = Cube.ufrDisplayAngle
