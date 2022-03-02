@@ -23,7 +23,7 @@ jobs:
     if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Get container tags
         id: tags
@@ -121,7 +121,7 @@ jobs:
     if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Assert elm-verify-examples is up to date
         run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommitted-changes.sh
@@ -232,7 +232,7 @@ jobs:
     if: ${{ !( github.event_name == 'push' && github.event.sender.login == 'dependabot[bot]' ) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Handle Yarn caching
         uses: actions/cache@v2
