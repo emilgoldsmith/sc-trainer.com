@@ -53,7 +53,7 @@ jobs:
 
       - name: Deploy Production to Cloud Run
         id: deploy-production
-        uses: google-github-actions/deploy-cloudrun@v0.8.0
+        uses: google-github-actions/deploy-cloudrun@v0.9.0
         with:
           service: ${{ env.PRODUCTION_SERVICE }}
           image: ${{ env.GOOGLE_TAG }}
@@ -64,7 +64,7 @@ jobs:
 
       - name: Deploy Staging to Cloud Run
         id: deploy-staging
-        uses: google-github-actions/deploy-cloudrun@v0.8.0
+        uses: google-github-actions/deploy-cloudrun@v0.9.0
         with:
           service: ${{ env.STAGING_SERVICE }}
           image: ${{ env.GOOGLE_TAG }}
