@@ -167,7 +167,7 @@ ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 # The `unsafe-html-cube-devcontainer` is built in the
 # initializeCommand for the devcontainer from base.dockerfile
 # which is located in the .devcontainer directory
-FROM unsafe-html-cube-devcontainer:12 AS local-development
+FROM emilgoldsmith/unsafe-dev-container:node-16-latest AS local-development
 
 ENV ELM_LIVE_VERSION 4.0.2
 
