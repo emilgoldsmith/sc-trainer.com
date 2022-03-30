@@ -136,7 +136,7 @@ jobs:
         run: ./scripts/checks/elm-test.sh
 
       - name: Handle Yarn caching
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         env:
           cache-name: yarn-cache-v1
         with:
@@ -235,7 +235,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Handle Yarn caching
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         env:
           cache-name: yarn-cache-v1
         with:
@@ -246,7 +246,7 @@ jobs:
           # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
 
       - name: Handle Cypress caching
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         env:
           cache-name: cypress-cache-v1
         with:
