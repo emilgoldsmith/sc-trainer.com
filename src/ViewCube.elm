@@ -1,5 +1,6 @@
 module ViewCube exposing (view)
 
+import Algorithm
 import Css exposing (htmlCubeTestType)
 import Cube
 import Cube.Advanced
@@ -31,8 +32,17 @@ view options attributes notFinalParameters notFinalCube =
             else
                 Cube.view
 
+        extraAlgToApplyToAllCubes =
+            Shared.getExtraAlgToApplyToAllCubes options
+
+        -- We use this if else statement to ensure it doesn't break the lazy call when
+        -- we aren't adding an extra alg to all cubes
         finalCube =
-            Cube.applyAlgorithm (Shared.getExtraAlgToApplyToAllCubes options) notFinalCube
+            if extraAlgToApplyToAllCubes /= Algorithm.empty then
+                Cube.applyAlgorithm extraAlgToApplyToAllCubes notFinalCube
+
+            else
+                notFinalCube
 
         finalParameters =
             Shared.getSizeOverride options
