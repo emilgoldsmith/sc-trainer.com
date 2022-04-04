@@ -22,5 +22,10 @@ export function setTimeTo(now: number): void {
     const clock = getClock();
     clock.setSystemTime(now);
     clock.next();
+    // We need this cy.wait in order to let requestAnimationFrame trigger
+    // which we use sometimes in the app, specifically for the timer when the
+    // test is running
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(0);
   });
 }
