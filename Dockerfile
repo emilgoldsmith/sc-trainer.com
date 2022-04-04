@@ -3,7 +3,7 @@
 # SHARED DEPENDENCIES STAGE
 ############################
 
-FROM node:12 as dependency-builder
+FROM node:16 as dependency-builder
 
 ENV ELM_VERSION=0.19.1
 ENV ELM_SPA_VERSION 6.0.4
@@ -29,7 +29,7 @@ RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/$ELM_VER
 ############################
 
 
-FROM node:12 AS prod-builder
+FROM node:16 AS prod-builder
 
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 COPY --from=dependency-builder /dependencies/node_modules /node_modules
@@ -50,7 +50,7 @@ RUN ./build-production-js.sh
 ############################
 
 
-FROM node:12-alpine as production
+FROM node:16-alpine as production
 
 WORKDIR /app
 
@@ -72,7 +72,7 @@ ENTRYPOINT ["./scripts/run-production.sh"]
 ############################
 
 # We need buster for high enough glibc version for elm-format
-FROM node:12-buster as ci
+FROM node:16-buster as ci
 
 #### IMPORTANT: To have any changes actually take effect in CI, you have
 #### to go change the version number in the yaml file too
@@ -99,7 +99,7 @@ COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 # CI WITH BROWSERS STAGE
 ############################
 
-FROM node:12 AS ci-browsers-base
+FROM node:16 AS ci-browsers-base
 
 #### IMPORTANT: To have any changes actually take effect in CI, you have
 #### to go change the version number of all dockerfile stages that depend
