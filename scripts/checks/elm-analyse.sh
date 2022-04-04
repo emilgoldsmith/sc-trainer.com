@@ -8,6 +8,11 @@ cd $ROOT_DIRECTORY
 
 TEMPORARY_MODULE="src/Temporary.elm"
 
+### The reason for this is that CI detects elm-spa as an unused dependency when we haven't generated the elm-spa files
+### using the CLI. We don't actually need to generate any elm-spa files for our linting job in CI so instead we just do
+### this small hack of adding a temporary file that imports an elm-spa file.
+
+
 # Note this first one is a single arrow meaning overwrite, the next ones are double arrows which mean append
 
 # Also note that this must be a pretty proper module as we don't want Elm Analyse to error on it in any way
