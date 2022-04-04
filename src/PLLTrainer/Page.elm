@@ -63,11 +63,11 @@ type TrainerState
 
 
 type alias TestRunningExtraState =
-    { startTime : Time.Posix, memoizedCube : Cube }
+    { testTimestamp : Time.Posix, memoizedCube : Cube }
 
 
 type alias EvaluateResultExtraState =
-    { testStartTime : Time.Posix, result : TimeInterval, transitionsDisabled : Bool }
+    { testTimestamp : Time.Posix, result : TimeInterval, transitionsDisabled : Bool }
 
 
 type alias TypeOfWrongExtraState =
@@ -111,13 +111,11 @@ type Msg
 type TransitionMsg
     = GetReadyForTest
     | StartTest StartTestData
-      -- Meant to be sent with `Nothing` as the second Posix time, and
-      -- then the end time is figured out internally
-    | EndTest { startTime : Time.Posix } (Maybe Time.Posix)
+    | EndTest { testTimestamp : Time.Posix } TimeInterval
     | EnableEvaluateResultTransitions
-    | EvaluateCorrect { testStartTime : Time.Posix, result : TimeInterval }
+    | EvaluateCorrect { testTimestamp : Time.Posix, result : TimeInterval }
     | AlgorithmPicked TrainerState User.TestResult Algorithm
-    | EvaluateWrong { testStartTime : Time.Posix }
+    | EvaluateWrong { testTimestamp : Time.Posix }
     | WrongButNoMoveApplied { testResult : User.TestResult }
     | WrongButExpectedStateWasReached { testResult : User.TestResult }
     | WrongAndUnrecoverable { testResult : User.TestResult }
@@ -183,10 +181,10 @@ update shared msg model =
                             Time.now
                     )
 
-                StartTest (EverythingGenerated testCase startTime) ->
+                StartTest (EverythingGenerated testCase testTimestamp) ->
                     let
                         arguments =
-                            { startTime = startTime
+                            { testTimestamp = testTimestamp
                             , memoizedCube = PLLTrainer.TestCase.toCube shared.user model.currentTestCase
                             }
 
@@ -200,28 +198,11 @@ update shared msg model =
                     , Effect.fromCmd stateCmd
                     )
 
-                EndTest arguments Nothing ->
-                    ( { model
-                        | expectedCubeState =
-                            model.expectedCubeState
-                                |> Cube.applyAlgorithm
-                                    (PLLTrainer.TestCase.toAlg shared.user model.currentTestCase)
-                      }
-                    , Effect.fromCmd <|
-                        Task.perform
-                            (TransitionMsg << EndTest arguments << Just)
-                            Time.now
-                    )
-
-                EndTest { startTime } (Just endTime) ->
+                EndTest { testTimestamp } result ->
                     let
                         arguments =
-                            { testStartTime = startTime
-                            , result =
-                                TimeInterval.betweenTimestamps
-                                    { start = startTime
-                                    , end = endTime
-                                    }
+                            { testTimestamp = testTimestamp
+                            , result = result
 
                             -- We disable transitions to start in case people
                             -- are button mashing to stop the test
@@ -233,6 +214,10 @@ update shared msg model =
                     in
                     ( { model
                         | trainerState = EvaluateResult stateModel arguments
+                        , expectedCubeState =
+                            model.expectedCubeState
+                                |> Cube.applyAlgorithm
+                                    (PLLTrainer.TestCase.toAlg shared.user model.currentTestCase)
                       }
                     , Effect.fromCmd <|
                         Cmd.batch
@@ -260,11 +245,11 @@ update shared msg model =
                                 Ports.logError "Unexpected enable evaluate result transitions outside of EvaluateResult state"
                             )
 
-                EvaluateCorrect { testStartTime, result } ->
+                EvaluateCorrect { testTimestamp, result } ->
                     let
                         testResult =
                             User.Correct
-                                { timestamp = testStartTime
+                                { timestamp = testTimestamp
                                 , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
                                 , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
                                 , resultInMilliseconds = TimeInterval.asMilliseconds result
@@ -301,7 +286,7 @@ update shared msg model =
                     let
                         testResult =
                             User.Wrong
-                                { timestamp = arguments.testStartTime
+                                { timestamp = arguments.testTimestamp
                                 , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
                                 , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
                                 }
@@ -610,7 +595,7 @@ states shared model =
                 shared
                 { memoizedCube = arguments.memoizedCube }
                 (StateMsg << TestRunningMsg)
-                { endTest = TransitionMsg (EndTest { startTime = arguments.startTime } Nothing) }
+                { endTest = TransitionMsg << EndTest { testTimestamp = arguments.testTimestamp } }
     , evaluateResult =
         \arguments ->
             PLLTrainer.States.EvaluateResult.state
@@ -618,9 +603,9 @@ states shared model =
                 { evaluateCorrect =
                     TransitionMsg
                         (EvaluateCorrect
-                            { testStartTime = arguments.testStartTime, result = arguments.result }
+                            { testTimestamp = arguments.testTimestamp, result = arguments.result }
                         )
-                , evaluateWrong = TransitionMsg (EvaluateWrong { testStartTime = arguments.testStartTime })
+                , evaluateWrong = TransitionMsg (EvaluateWrong { testTimestamp = arguments.testTimestamp })
                 , noOp = NoOp
                 }
                 { expectedCubeState = model.expectedCubeState
@@ -733,9 +718,9 @@ trainerStateToString trainerState =
         GetReadyScreen ->
             "GetReadyScreen"
 
-        TestRunning _ { startTime } ->
-            "TestRunning: { startTime = "
-                ++ String.fromInt (Time.posixToMillis startTime)
+        TestRunning _ { testTimestamp } ->
+            "TestRunning: { testTimestamp = "
+                ++ String.fromInt (Time.posixToMillis testTimestamp)
                 ++ " }"
 
         EvaluateResult _ { result, transitionsDisabled } ->
