@@ -42,7 +42,7 @@ type alias Arguments =
 
 
 type alias Transitions msg =
-    { endTest : msg
+    { endTest : TimeInterval -> msg
     }
 
 
@@ -79,22 +79,22 @@ update msg model =
 
 
 subscriptions : (Msg -> msg) -> Transitions msg -> Model -> PLLTrainer.Subscription.Subscription msg
-subscriptions toMsg transitions _ =
+subscriptions toMsg transitions model =
     PLLTrainer.Subscription.browserEventsAndElementAttributes
         { browserEvents =
             Sub.batch
                 [ Browser.Events.onKeyDown <|
                     Json.Decode.map
-                        (always transitions.endTest)
+                        (always (transitions.endTest model.elapsedTime))
                         Key.decodeNonRepeatedKeyEvent
                 , Browser.Events.onMouseDown <|
-                    Json.Decode.succeed transitions.endTest
+                    Json.Decode.succeed (transitions.endTest model.elapsedTime)
                 , Browser.Events.onAnimationFrameDelta (toMsg << MillisecondsPassed)
                 ]
         , elementAttributes =
             [ htmlAttribute <|
                 Html.Events.on "touchstart" <|
-                    Json.Decode.succeed transitions.endTest
+                    Json.Decode.succeed (transitions.endTest model.elapsedTime)
             ]
         }
 
