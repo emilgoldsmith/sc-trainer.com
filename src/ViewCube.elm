@@ -27,7 +27,7 @@ view options attributes notFinalParameters notFinalCube =
     let
         viewFn =
             if Shared.shouldUseDebugViewForVisualTesting options then
-                Cube.Advanced.debugViewAllowingVisualTesting
+                debugViewWithDefaultTheme
 
             else
                 Cube.view
@@ -50,3 +50,21 @@ view options attributes notFinalParameters notFinalCube =
                 |> Maybe.withDefault notFinalParameters
     in
     Element.html <| viewFn (htmlCubeTestType :: attributes) finalParameters finalCube
+
+
+debugViewWithDefaultTheme :
+    List (Html.Attribute msg)
+    ->
+        { pixelSize : Int
+        , displayAngle : Cube.DisplayAngle
+        , annotateFaces : Bool
+        }
+    -> Cube.Cube
+    -> Html.Html msg
+debugViewWithDefaultTheme attributes args =
+    Cube.Advanced.debugViewAllowingVisualTesting attributes
+        { theme = Cube.Advanced.defaultTheme
+        , pixelSize = args.pixelSize
+        , displayAngle = args.displayAngle
+        , annotateFaces = args.annotateFaces
+        }
