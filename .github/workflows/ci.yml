@@ -47,8 +47,8 @@ jobs:
             ) \
           )
 
-          echo "::set-output name=ci-container::ci-container-v1"
-          echo "::set-output name=ci-chrome::ci-chrome-v1"
+          echo "::set-output name=ci-container::ci-container-v2"
+          echo "::set-output name=ci-chrome::ci-chrome-v2"
           echo "::set-output name=production::production-$SHA"
 
       - name: Wait for CI Container image to exist
@@ -138,7 +138,7 @@ jobs:
       - name: Handle Yarn caching
         uses: actions/cache@v3
         env:
-          cache-name: yarn-cache-v1
+          cache-name: yarn-cache-v2
         with:
           path: |
             ~/.cache/yarn
@@ -237,7 +237,7 @@ jobs:
       - name: Handle Yarn caching
         uses: actions/cache@v3
         env:
-          cache-name: yarn-cache-v1
+          cache-name: yarn-cache-v2
         with:
           path: |
             ~/.cache/yarn
@@ -248,7 +248,7 @@ jobs:
       - name: Handle Cypress caching
         uses: actions/cache@v3
         env:
-          cache-name: cypress-cache-v1
+          cache-name: cypress-cache-v2
         with:
           path: |
             ~/.cache/Cypress

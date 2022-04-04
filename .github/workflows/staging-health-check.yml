@@ -12,7 +12,7 @@ jobs:
     name: Run Staging Health Check
     runs-on: ubuntu-20.04
     container:
-      image: sctrainer/main:ci-chrome-v1
+      image: sctrainer/main:ci-chrome-v2
       # This is needed for Firefox running as described here
       # https://github.com/cypress-io/github-action/issues/104
       options: --user 1001
@@ -24,7 +24,7 @@ jobs:
       - name: Handle Yarn caching
         uses: actions/cache@v3
         env:
-          cache-name: yarn-cache-v1
+          cache-name: yarn-cache-v2
         with:
           path: |
             ~/.cache/yarn
@@ -35,7 +35,7 @@ jobs:
       - name: Handle Cypress caching
         uses: actions/cache@v3
         env:
-          cache-name: cypress-cache-v1
+          cache-name: cypress-cache-v2
         with:
           path: |
             ~/.cache/Cypress
