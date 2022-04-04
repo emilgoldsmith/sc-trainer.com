@@ -14,7 +14,14 @@ export function installClock(): void {
   });
 }
 export function tick(ms: number): void {
-  cy.wrap(undefined, { log: false }).then(() => getClock().tick(ms));
+  cy.wrap(undefined, { log: false }).then(() => {
+    getClock().tick(ms);
+    // We need this cy.wait in order to let requestAnimationFrame trigger
+    // which we use sometimes in the app, specifically for the timer when the
+    // test is running
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(50);
+  });
 }
 
 export function setTimeTo(now: number): void {
@@ -26,6 +33,6 @@ export function setTimeTo(now: number): void {
     // which we use sometimes in the app, specifically for the timer when the
     // test is running
     // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(0);
+    cy.wait(50);
   });
 }

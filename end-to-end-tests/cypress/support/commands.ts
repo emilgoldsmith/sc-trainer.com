@@ -28,6 +28,19 @@ import { isCanvasBlank } from "./html-helpers";
 import { getCode, getKeyCode, getKeyValue, Key } from "./keys";
 import { aufToAlgorithmString, pllToPllLetters } from "./pll";
 
+/** OVERWRITES */
+Cypress.Commands.overwrite("tick", (originalFn, milliseconds, options) => {
+  originalFn(milliseconds, options);
+  // We need this cy.wait in order to let requestAnimationFrame trigger
+  // which we use sometimes in the app, specifically for the timer when the
+  // test is running
+  // eslint-disable-next-line cypress/no-unnecessary-waiting
+  cy.wait(50, { log: false });
+  return cy.clock({ log: false });
+});
+
+/** CUSTOM COMMANDS */
+
 const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
   testId,
   ...args
