@@ -584,7 +584,7 @@ states shared model =
                     case extraState of
                         GettingReadyExtraState ->
                             PLLTrainer.States.TestRunning.GetReadyArgument
-                                { startTest = NoOp }
+                                { startTest = TransitionMsg <| StartTest NothingGenerated }
 
                         TestRunningExtraState { memoizedCube, testTimestamp } ->
                             PLLTrainer.States.TestRunning.TestRunningArgument
