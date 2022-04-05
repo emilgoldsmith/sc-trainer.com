@@ -95,6 +95,7 @@ view shared transitions =
                             { pixelSize = 200
                             , displayAngle = Cube.ufrDisplayAngle
                             , annotateFaces = True
+                            , theme = User.cubeTheme shared.user
                             }
                             Cube.solved
                     , PLLTrainer.ButtonWithShortcut.view

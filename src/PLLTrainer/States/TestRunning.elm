@@ -15,6 +15,7 @@ import Process
 import Shared
 import Task
 import TimeInterval exposing (TimeInterval)
+import User
 import View
 import ViewCube
 import ViewportSize
@@ -143,7 +144,7 @@ subscriptions toMsg transitions model =
 
 
 view : Shared.Model -> Model -> PLLTrainer.State.View msg
-view { viewportSize, cubeViewOptions } model =
+view { viewportSize, cubeViewOptions, user } model =
     let
         parameters =
             case model of
@@ -168,6 +169,7 @@ view { viewportSize, cubeViewOptions } model =
                         { pixelSize = ViewportSize.minDimension viewportSize // 2
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = False
+                        , theme = User.cubeTheme user
                         }
                         parameters.cube
                 , el

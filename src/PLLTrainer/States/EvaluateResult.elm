@@ -13,6 +13,7 @@ import PLLTrainer.Subscription
 import Shared
 import TimeInterval exposing (TimeInterval)
 import UI
+import User
 import View
 import ViewCube
 import ViewportSize
@@ -136,7 +137,7 @@ subscriptions transitions arguments toMsg model =
 
 
 view : Shared.Model -> Transitions msg -> Arguments -> Model -> PLLTrainer.State.View msg
-view { viewportSize, palette, hardwareAvailable, cubeViewOptions } transitions arguments _ =
+view { viewportSize, palette, hardwareAvailable, cubeViewOptions, user } transitions arguments _ =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -190,6 +191,7 @@ view { viewportSize, palette, hardwareAvailable, cubeViewOptions } transitions a
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
+                        , theme = User.cubeTheme user
                         }
                         arguments.expectedCubeState
                     , ViewCube.view cubeViewOptions
@@ -197,6 +199,7 @@ view { viewportSize, palette, hardwareAvailable, cubeViewOptions } transitions a
                         { pixelSize = cubeSize
                         , displayAngle = Cube.ublDisplayAngle
                         , annotateFaces = True
+                        , theme = User.cubeTheme user
                         }
                         arguments.expectedCubeState
                     ]
