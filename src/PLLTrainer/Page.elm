@@ -183,16 +183,16 @@ update shared msg model =
 
                 StartTest (EverythingGenerated testCase testTimestamp) ->
                     let
-                        arguments =
+                        extraState =
                             { testTimestamp = testTimestamp
-                            , memoizedCube = PLLTrainer.TestCase.toCube shared.user model.currentTestCase
+                            , memoizedCube = PLLTrainer.TestCase.toCube shared.user testCase
                             }
 
                         ( stateModel, stateCmd ) =
-                            ((states shared model).testRunning arguments).init
+                            ((states shared model).testRunning extraState).init
                     in
                     ( { model
-                        | trainerState = TestRunning stateModel arguments
+                        | trainerState = TestRunning stateModel extraState
                         , currentTestCase = testCase
                       }
                     , Effect.fromCmd stateCmd
@@ -200,7 +200,7 @@ update shared msg model =
 
                 EndTest { testTimestamp } result ->
                     let
-                        arguments =
+                        extraState =
                             { testTimestamp = testTimestamp
                             , result = result
 
@@ -210,10 +210,10 @@ update shared msg model =
                             }
 
                         ( stateModel, stateCmd ) =
-                            ((states shared model).evaluateResult arguments).init
+                            ((states shared model).evaluateResult extraState).init
                     in
                     ( { model
-                        | trainerState = EvaluateResult stateModel arguments
+                        | trainerState = EvaluateResult stateModel extraState
                         , expectedCubeState =
                             model.expectedCubeState
                                 |> Cube.applyAlgorithm
@@ -232,10 +232,10 @@ update shared msg model =
 
                 EnableEvaluateResultTransitions ->
                     case model.trainerState of
-                        EvaluateResult stateModel arguments ->
+                        EvaluateResult stateModel extraState ->
                             let
                                 newTrainerState =
-                                    EvaluateResult stateModel { arguments | transitionsDisabled = False }
+                                    EvaluateResult stateModel { extraState | transitionsDisabled = False }
                             in
                             ( { model | trainerState = newTrainerState }, Effect.none )
 
@@ -282,11 +282,11 @@ update shared msg model =
                         , Effect.fromCmd <| stateCmd
                         )
 
-                EvaluateWrong arguments ->
+                EvaluateWrong extraState ->
                     let
                         testResult =
                             User.Wrong
-                                { timestamp = arguments.testTimestamp
+                                { timestamp = extraState.testTimestamp
                                 , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
                                 , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
                                 }
@@ -327,11 +327,11 @@ update shared msg model =
 
                                 correctedTestResult =
                                     case testResult of
-                                        User.Correct arguments ->
-                                            User.Correct { arguments | preAUF = correctedPreAUF, postAUF = correctedPostAUF }
+                                        User.Correct parameters ->
+                                            User.Correct { parameters | preAUF = correctedPreAUF, postAUF = correctedPostAUF }
 
-                                        User.Wrong arguments ->
-                                            User.Wrong { arguments | preAUF = correctedPreAUF, postAUF = correctedPostAUF }
+                                        User.Wrong parameters ->
+                                            User.Wrong { parameters | preAUF = correctedPreAUF, postAUF = correctedPostAUF }
                             in
                             ( { model | currentTestCase = correctedTestCase, trainerState = nextTrainerState }
                             , Effect.fromShared <|
@@ -548,8 +548,8 @@ view shared model =
 -- BOILERPLATE
 
 
-type alias StateBuilder localMsg model arguments =
-    arguments
+type alias StateBuilder localMsg model extraState =
+    extraState
     -> PLLTrainer.State.State Msg localMsg model
 
 
@@ -590,27 +590,29 @@ states shared model =
         always <|
             PLLTrainer.States.GetReadyScreen.state shared
     , testRunning =
-        \arguments ->
+        \extraState ->
             PLLTrainer.States.TestRunning.state
                 shared
-                { memoizedCube = arguments.memoizedCube }
+                (PLLTrainer.States.TestRunning.TestRunningArgument { memoizedCube = extraState.memoizedCube })
                 (StateMsg << TestRunningMsg)
-                { endTest = TransitionMsg << EndTest { testTimestamp = arguments.testTimestamp } }
+                { startTest = NoOp
+                , endTest = TransitionMsg << EndTest { testTimestamp = extraState.testTimestamp }
+                }
     , evaluateResult =
-        \arguments ->
+        \extraState ->
             PLLTrainer.States.EvaluateResult.state
                 shared
                 { evaluateCorrect =
                     TransitionMsg
                         (EvaluateCorrect
-                            { testTimestamp = arguments.testTimestamp, result = arguments.result }
+                            { testTimestamp = extraState.testTimestamp, result = extraState.result }
                         )
-                , evaluateWrong = TransitionMsg (EvaluateWrong { testTimestamp = arguments.testTimestamp })
+                , evaluateWrong = TransitionMsg (EvaluateWrong { testTimestamp = extraState.testTimestamp })
                 , noOp = NoOp
                 }
                 { expectedCubeState = model.expectedCubeState
-                , result = arguments.result
-                , transitionsDisabled = arguments.transitionsDisabled
+                , result = extraState.result
+                , transitionsDisabled = extraState.transitionsDisabled
                 }
                 (StateMsg << EvaluateResultMsg)
     , pickAlgorithmPage =
@@ -632,12 +634,12 @@ states shared model =
                 , noOp = NoOp
                 }
     , typeOfWrongPage =
-        \arguments ->
+        \extraState ->
             PLLTrainer.States.TypeOfWrongPage.state
                 shared
-                { noMoveWasApplied = TransitionMsg (WrongButNoMoveApplied { testResult = arguments.testResult })
-                , expectedStateWasReached = TransitionMsg (WrongButExpectedStateWasReached { testResult = arguments.testResult })
-                , cubeUnrecoverable = TransitionMsg (WrongAndUnrecoverable { testResult = arguments.testResult })
+                { noMoveWasApplied = TransitionMsg (WrongButNoMoveApplied { testResult = extraState.testResult })
+                , expectedStateWasReached = TransitionMsg (WrongButExpectedStateWasReached { testResult = extraState.testResult })
+                , cubeUnrecoverable = TransitionMsg (WrongAndUnrecoverable { testResult = extraState.testResult })
                 , noOp = NoOp
                 }
                 { expectedCubeState = model.expectedCubeState
@@ -663,18 +665,18 @@ handleStateMsgBoilerplate :
     -> ( Model, Cmd Msg )
 handleStateMsgBoilerplate shared model stateMsg =
     case ( stateMsg, model.trainerState ) of
-        ( TestRunningMsg localMsg, TestRunning localModel arguments ) ->
-            ((states shared model).testRunning arguments).update localMsg localModel
+        ( TestRunningMsg localMsg, TestRunning localModel extraState ) ->
+            ((states shared model).testRunning extraState).update localMsg localModel
                 |> Tuple.mapFirst
                     (\newStateModel ->
-                        { model | trainerState = TestRunning newStateModel arguments }
+                        { model | trainerState = TestRunning newStateModel extraState }
                     )
 
-        ( EvaluateResultMsg localMsg, EvaluateResult localModel arguments ) ->
-            ((states shared model).evaluateResult arguments).update localMsg localModel
+        ( EvaluateResultMsg localMsg, EvaluateResult localModel extraState ) ->
+            ((states shared model).evaluateResult extraState).update localMsg localModel
                 |> Tuple.mapFirst
                     (\newStateModel ->
-                        { model | trainerState = EvaluateResult newStateModel arguments }
+                        { model | trainerState = EvaluateResult newStateModel extraState }
                     )
 
         ( PickAlgorithmMsg localMsg, PickAlgorithmPage localModel extraState ) ->
@@ -761,20 +763,20 @@ handleStateSubscriptionsBoilerplate shared model =
         GetReadyScreen ->
             ((states shared model).getReadyScreen ()).subscriptions ()
 
-        TestRunning stateModel arguments ->
-            ((states shared model).testRunning arguments).subscriptions stateModel
+        TestRunning stateModel extraState ->
+            ((states shared model).testRunning extraState).subscriptions stateModel
 
-        EvaluateResult stateModel arguments ->
-            ((states shared model).evaluateResult arguments).subscriptions stateModel
+        EvaluateResult stateModel extraState ->
+            ((states shared model).evaluateResult extraState).subscriptions stateModel
 
-        PickAlgorithmPage stateModel arguments ->
-            ((states shared model).pickAlgorithmPage arguments).subscriptions stateModel
+        PickAlgorithmPage stateModel extraState ->
+            ((states shared model).pickAlgorithmPage extraState).subscriptions stateModel
 
         CorrectPage ->
             ((states shared model).correctPage ()).subscriptions ()
 
-        TypeOfWrongPage arguments ->
-            ((states shared model).typeOfWrongPage arguments).subscriptions ()
+        TypeOfWrongPage extraState ->
+            ((states shared model).typeOfWrongPage extraState).subscriptions ()
 
         WrongPage ->
             ((states shared model).wrongPage ()).subscriptions ()
@@ -789,20 +791,20 @@ handleStateViewBoilerplate shared model =
         GetReadyScreen ->
             ((states shared model).getReadyScreen ()).view ()
 
-        TestRunning stateModel arguments ->
-            ((states shared model).testRunning arguments).view stateModel
+        TestRunning stateModel extraState ->
+            ((states shared model).testRunning extraState).view stateModel
 
-        EvaluateResult stateModel arguments ->
-            ((states shared model).evaluateResult arguments).view stateModel
+        EvaluateResult stateModel extraState ->
+            ((states shared model).evaluateResult extraState).view stateModel
 
-        PickAlgorithmPage stateModel arguments ->
-            ((states shared model).pickAlgorithmPage arguments).view stateModel
+        PickAlgorithmPage stateModel extraState ->
+            ((states shared model).pickAlgorithmPage extraState).view stateModel
 
         CorrectPage ->
             ((states shared model).correctPage ()).view ()
 
-        TypeOfWrongPage arguments ->
-            ((states shared model).typeOfWrongPage arguments).view ()
+        TypeOfWrongPage extraState ->
+            ((states shared model).typeOfWrongPage extraState).view ()
 
         WrongPage ->
             ((states shared model).wrongPage ()).view ()
