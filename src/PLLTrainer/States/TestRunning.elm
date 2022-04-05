@@ -4,6 +4,7 @@ import Browser.Events
 import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
+import Element.Background
 import Element.Font as Font
 import Html.Events
 import Json.Decode
@@ -25,14 +26,13 @@ state :
     Shared.Model
     -> Arguments msg
     -> (Msg -> msg)
-    -> Transitions msg
-    -> PLLTrainer.State.State msg Msg Model
-state shared arguments toMsg transitions =
+    -> PLLTrainer.State.State msg Msg (Model msg)
+state shared arguments toMsg =
     PLLTrainer.State.element
         { init = init arguments toMsg
         , view = view shared
         , update = update toMsg
-        , subscriptions = subscriptions toMsg transitions
+        , subscriptions = subscriptions toMsg
         }
 
 
@@ -41,35 +41,37 @@ state shared arguments toMsg transitions =
 
 
 type Arguments msg
-    = GetReadyArgument
-    | TestRunningArgument { memoizedCube : Cube }
-
-
-type alias Transitions msg =
-    { startTest : msg
-    , endTest : TimeInterval -> msg
-    }
+    = GetReadyArgument { startTest : msg }
+    | TestRunningArgument { memoizedCube : Cube, endTest : TimeInterval -> msg }
 
 
 
 -- INIT
 
 
-type Model
-    = GetReadyModel { countdown : Int }
-    | TestRunningModel { elapsedTime : TimeInterval, memoizedCube : Cube }
+type Model msg
+    = GetReadyModel { countdown : Int, startTest : msg }
+    | TestRunningModel
+        { elapsedTime : TimeInterval
+        , memoizedCube : Cube
+        , endTest : TimeInterval -> msg
+        }
 
 
-init : Arguments msg -> (Msg -> msg) -> ( Model, Cmd msg )
+init : Arguments msg -> (Msg -> msg) -> ( Model msg, Cmd msg )
 init arguments toMsg =
     case arguments of
-        GetReadyArgument ->
-            ( GetReadyModel { countdown = 3 }
+        GetReadyArgument { startTest } ->
+            ( GetReadyModel { countdown = 3, startTest = startTest }
             , Task.perform (always <| toMsg DecrementGetReadyCountdown) <| Process.sleep (1000 / 3)
             )
 
-        TestRunningArgument { memoizedCube } ->
-            ( TestRunningModel { elapsedTime = TimeInterval.zero, memoizedCube = memoizedCube }
+        TestRunningArgument { memoizedCube, endTest } ->
+            ( TestRunningModel
+                { elapsedTime = TimeInterval.zero
+                , memoizedCube = memoizedCube
+                , endTest = endTest
+                }
             , Cmd.none
             )
 
@@ -83,7 +85,7 @@ type Msg
     | DecrementGetReadyCountdown
 
 
-update : (Msg -> msg) -> Msg -> Model -> ( Model, Cmd msg )
+update : (Msg -> msg) -> Msg -> Model msg -> ( Model msg, Cmd msg )
 update toMsg msg model =
     case ( model, msg ) of
         ( GetReadyModel modelRecord, DecrementGetReadyCountdown ) ->
@@ -113,28 +115,28 @@ update toMsg msg model =
 -- SUBSCRIPTIONS
 
 
-subscriptions : (Msg -> msg) -> Transitions msg -> Model -> PLLTrainer.Subscription.Subscription msg
-subscriptions toMsg transitions model =
+subscriptions : (Msg -> msg) -> Model msg -> PLLTrainer.Subscription.Subscription msg
+subscriptions toMsg model =
     case model of
         GetReadyModel _ ->
             PLLTrainer.Subscription.none
 
-        TestRunningModel { elapsedTime } ->
+        TestRunningModel { elapsedTime, endTest } ->
             PLLTrainer.Subscription.browserEventsAndElementAttributes
                 { browserEvents =
                     Sub.batch
                         [ Browser.Events.onKeyDown <|
                             Json.Decode.map
-                                (always (transitions.endTest elapsedTime))
+                                (always (endTest elapsedTime))
                                 Key.decodeNonRepeatedKeyEvent
                         , Browser.Events.onMouseDown <|
-                            Json.Decode.succeed (transitions.endTest elapsedTime)
+                            Json.Decode.succeed (endTest elapsedTime)
                         , Browser.Events.onAnimationFrameDelta (toMsg << MillisecondsPassed)
                         ]
                 , elementAttributes =
                     [ htmlAttribute <|
                         Html.Events.on "touchstart" <|
-                            Json.Decode.succeed (transitions.endTest elapsedTime)
+                            Json.Decode.succeed (endTest elapsedTime)
                     ]
                 }
 
@@ -143,44 +145,84 @@ subscriptions toMsg transitions model =
 -- VIEW
 
 
-view : Shared.Model -> Model -> PLLTrainer.State.View msg
+view : Shared.Model -> Model msg -> PLLTrainer.State.View msg
 view { viewportSize, cubeViewOptions, user } model =
     let
+        black =
+            ( 0, 0, 0 )
+
+        grey =
+            ( 100, 100, 100 )
+
         parameters =
             case model of
                 GetReadyModel _ ->
-                    { cube = Cube.solved, elapsedTime = TimeInterval.zero }
+                    { cube = Cube.solved
+                    , elapsedTime = TimeInterval.zero
+                    , cubeTheme =
+                        { up = grey
+                        , down = grey
+                        , right = grey
+                        , left = grey
+                        , front = grey
+                        , back = grey
+                        , plastic = black
+                        , annotations = black
+                        }
+                    , isGettingReady = True
+                    }
 
                 TestRunningModel { memoizedCube, elapsedTime } ->
-                    { cube = memoizedCube, elapsedTime = elapsedTime }
+                    { cube = memoizedCube
+                    , elapsedTime = elapsedTime
+                    , cubeTheme = User.cubeTheme user
+                    , isGettingReady = False
+                    }
     in
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
-            column
-                [ testid "test-running-container"
-                , centerX
-                , centerY
-                , spacing (ViewportSize.minDimension viewportSize // 10)
+            el
+                [ width fill
+                , height fill
+                , inFront <|
+                    if parameters.isGettingReady then
+                        el
+                            [ width fill
+                            , height fill
+                            , Element.Background.color (rgba255 0 0 0 0.7)
+                            ]
+                        <|
+                            column [ centerX, centerY ] []
+
+                    else
+                        none
                 ]
-                [ el [ centerX ] <|
-                    ViewCube.view cubeViewOptions
-                        [ htmlTestid "test-case" ]
-                        { pixelSize = ViewportSize.minDimension viewportSize // 2
-                        , displayAngle = Cube.ufrDisplayAngle
-                        , annotateFaces = False
-                        , theme = User.cubeTheme user
-                        }
-                        parameters.cube
-                , el
-                    [ testid "timer"
+            <|
+                column
+                    [ testid "test-running-container"
                     , centerX
-                    , Font.size (ViewportSize.minDimension viewportSize // 5)
+                    , centerY
+                    , spacing (ViewportSize.minDimension viewportSize // 10)
                     ]
-                  <|
-                    text <|
-                        TimeInterval.displayOneDecimal parameters.elapsedTime
-                ]
+                    [ el [ centerX ] <|
+                        ViewCube.view cubeViewOptions
+                            [ htmlTestid "test-case" ]
+                            { pixelSize = ViewportSize.minDimension viewportSize // 2
+                            , displayAngle = Cube.ufrDisplayAngle
+                            , annotateFaces = False
+                            , theme = parameters.cubeTheme
+                            }
+                            parameters.cube
+                    , el
+                        [ testid "timer"
+                        , centerX
+                        , Font.size (ViewportSize.minDimension viewportSize // 5)
+                        ]
+                      <|
+                        text <|
+                            TimeInterval.displayOneDecimal parameters.elapsedTime
+                    ]
     }
 
 
@@ -194,7 +236,7 @@ msgToString msg =
             "DecrementGetReadyCountdown"
 
 
-modelToString : Model -> String
+modelToString : Model msg -> String
 modelToString model =
     case model of
         GetReadyModel _ ->
