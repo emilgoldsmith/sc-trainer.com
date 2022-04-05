@@ -4,7 +4,8 @@ import Browser.Events
 import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
-import Element.Background
+import Element.Background as Background
+import Element.Border as Border
 import Element.Font as Font
 import Html.Events
 import Json.Decode
@@ -63,7 +64,7 @@ init arguments toMsg =
     case arguments of
         GetReadyArgument { startTest } ->
             ( GetReadyModel { countdown = 3, startTest = startTest }
-            , Task.perform (always <| toMsg DecrementGetReadyCountdown) <| Process.sleep (1000 / 3)
+            , Task.perform (always <| toMsg CountdownIntervalPassed) <| Process.sleep countdownInterval
             )
 
         TestRunningArgument { memoizedCube, endTest } ->
@@ -80,20 +81,33 @@ init arguments toMsg =
 -- UPDATE
 
 
+countdownInterval : Float
+countdownInterval =
+    600
+
+
 type Msg
     = MillisecondsPassed Float
-    | DecrementGetReadyCountdown
+    | CountdownIntervalPassed
 
 
 update : (Msg -> msg) -> Msg -> Model msg -> ( Model msg, Cmd msg )
 update toMsg msg model =
     case ( model, msg ) of
-        ( GetReadyModel modelRecord, DecrementGetReadyCountdown ) ->
-            ( GetReadyModel { modelRecord | countdown = modelRecord.countdown - 1 }
-            , Task.perform
-                (always <| toMsg DecrementGetReadyCountdown)
-                (Process.sleep (1000 / 3))
-            )
+        ( GetReadyModel modelRecord, CountdownIntervalPassed ) ->
+            if modelRecord.countdown > 1 then
+                ( GetReadyModel { modelRecord | countdown = modelRecord.countdown - 1 }
+                , Task.perform
+                    (always <| toMsg CountdownIntervalPassed)
+                    (Process.sleep countdownInterval)
+                )
+
+            else
+                ( model
+                , Task.perform
+                    (always <| modelRecord.startTest)
+                    (Process.sleep countdownInterval)
+                )
 
         ( TestRunningModel modelRecord, MillisecondsPassed timeDelta ) ->
             ( TestRunningModel { modelRecord | elapsedTime = TimeInterval.increment timeDelta modelRecord.elapsedTime }
@@ -156,7 +170,7 @@ view { viewportSize, cubeViewOptions, user } model =
 
         parameters =
             case model of
-                GetReadyModel _ ->
+                GetReadyModel { countdown } ->
                     { cube = Cube.solved
                     , elapsedTime = TimeInterval.zero
                     , cubeTheme =
@@ -169,14 +183,14 @@ view { viewportSize, cubeViewOptions, user } model =
                         , plastic = black
                         , annotations = black
                         }
-                    , isGettingReady = True
+                    , isGettingReady = Just countdown
                     }
 
                 TestRunningModel { memoizedCube, elapsedTime } ->
                     { cube = memoizedCube
                     , elapsedTime = elapsedTime
                     , cubeTheme = User.cubeTheme user
-                    , isGettingReady = False
+                    , isGettingReady = Nothing
                     }
     in
     { overlays = View.buildOverlays []
@@ -186,17 +200,58 @@ view { viewportSize, cubeViewOptions, user } model =
                 [ width fill
                 , height fill
                 , inFront <|
-                    if parameters.isGettingReady then
-                        el
-                            [ width fill
-                            , height fill
-                            , Element.Background.color (rgba255 0 0 0 0.7)
-                            ]
-                        <|
-                            column [ centerX, centerY ] []
+                    case parameters.isGettingReady of
+                        Just countdown ->
+                            let
+                                red =
+                                    rgb255 255 0 0
 
-                    else
-                        none
+                                yellow =
+                                    rgb255 255 255 0
+
+                                green =
+                                    rgb255 0 255 0
+
+                                circleSize =
+                                    ViewportSize.minDimension viewportSize // 8
+
+                                circleColor =
+                                    if countdown > 2 then
+                                        red
+
+                                    else if countdown == 2 then
+                                        yellow
+
+                                    else
+                                        green
+                            in
+                            el
+                                [ width fill
+                                , height fill
+                                , Background.color (rgba255 0 0 0 0.7)
+                                ]
+                            <|
+                                column
+                                    [ centerX
+                                    , centerY
+                                    , Font.center
+                                    , Font.size (ViewportSize.minDimension viewportSize // 10)
+                                    , spacing (ViewportSize.minDimension viewportSize // 20)
+                                    , Background.color (rgba255 255 255 255 0.3)
+                                    , padding (ViewportSize.minDimension viewportSize // 40)
+                                    , Border.rounded (ViewportSize.minDimension viewportSize // 40)
+                                    ]
+                                    [ paragraph [] [ text "Get Ready" ]
+                                    , paragraph [] [ text "Go To Home Grip" ]
+                                    , row [ centerX, spacing (ViewportSize.minDimension viewportSize // 30) ]
+                                        [ circle circleSize circleColor
+                                        , circle circleSize circleColor
+                                        , circle circleSize circleColor
+                                        ]
+                                    ]
+
+                        Nothing ->
+                            none
                 ]
             <|
                 column
@@ -226,14 +281,25 @@ view { viewportSize, cubeViewOptions, user } model =
     }
 
 
+circle : Int -> Color -> Element msg
+circle size color =
+    el
+        [ width <| px size
+        , height <| px size
+        , Border.rounded size
+        , Background.color color
+        ]
+        none
+
+
 msgToString : Msg -> String
 msgToString msg =
     case msg of
         MillisecondsPassed _ ->
             "MillisecondsPassed"
 
-        DecrementGetReadyCountdown ->
-            "DecrementGetReadyCountdown"
+        CountdownIntervalPassed ->
+            "CountdownIntervalPassed"
 
 
 modelToString : Model msg -> String
