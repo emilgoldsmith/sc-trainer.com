@@ -10,7 +10,6 @@ import PLL exposing (PLL)
 import PLLTrainer.State
 import PLLTrainer.States.CorrectPage
 import PLLTrainer.States.EvaluateResult
-import PLLTrainer.States.GetReadyScreen
 import PLLTrainer.States.PickAlgorithmPage
 import PLLTrainer.States.StartPage
 import PLLTrainer.States.TestRunning
@@ -53,8 +52,7 @@ type alias Model =
 
 type TrainerState
     = StartPage
-    | GetReadyScreen
-    | TestRunning PLLTrainer.States.TestRunning.Model TestRunningExtraState
+    | TestRunning (PLLTrainer.States.TestRunning.Model Msg) TestRunningExtraState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
     | PickAlgorithmPage PLLTrainer.States.PickAlgorithmPage.Model PickAlgorithmExtraState
     | CorrectPage
@@ -62,8 +60,9 @@ type TrainerState
     | WrongPage
 
 
-type alias TestRunningExtraState =
-    { testTimestamp : Time.Posix, memoizedCube : Cube }
+type TestRunningExtraState
+    = GettingReadyExtraState
+    | TestRunningExtraState { testTimestamp : Time.Posix, memoizedCube : Cube }
 
 
 type alias EvaluateResultExtraState =
@@ -150,19 +149,11 @@ update shared msg model =
             case transition of
                 GetReadyForTest ->
                     let
-                        ( _, stateCmd ) =
-                            ((states shared model).getReadyScreen ()).init
-
-                        startTestAfterASecond =
-                            Task.perform
-                                (always <| TransitionMsg (StartTest NothingGenerated))
-                                (Process.sleep 1000)
-
-                        cmd =
-                            Cmd.batch [ stateCmd, startTestAfterASecond ]
+                        ( stateModel, stateCmd ) =
+                            ((states shared model).testRunning GettingReadyExtraState).init
                     in
-                    ( { model | trainerState = GetReadyScreen }
-                    , Effect.fromCmd cmd
+                    ( { model | trainerState = TestRunning stateModel GettingReadyExtraState }
+                    , Effect.fromCmd stateCmd
                     )
 
                 StartTest NothingGenerated ->
@@ -184,9 +175,10 @@ update shared msg model =
                 StartTest (EverythingGenerated testCase testTimestamp) ->
                     let
                         extraState =
-                            { testTimestamp = testTimestamp
-                            , memoizedCube = PLLTrainer.TestCase.toCube shared.user testCase
-                            }
+                            TestRunningExtraState
+                                { testTimestamp = testTimestamp
+                                , memoizedCube = PLLTrainer.TestCase.toCube shared.user testCase
+                                }
 
                         ( stateModel, stateCmd ) =
                             ((states shared model).testRunning extraState).init
@@ -440,12 +432,12 @@ update shared msg model =
 
                         fullyUpdatedModel =
                             case model.trainerState of
-                                TestRunning localModel extraState ->
+                                TestRunning localModel (TestRunningExtraState extraState) ->
                                     let
                                         newExtraState =
                                             { extraState | memoizedCube = PLLTrainer.TestCase.toCube shared.user testCase }
                                     in
-                                    { withUpdatedTestCase | trainerState = TestRunning localModel newExtraState }
+                                    { withUpdatedTestCase | trainerState = TestRunning localModel (TestRunningExtraState newExtraState) }
 
                                 _ ->
                                     withUpdatedTestCase
@@ -558,11 +550,10 @@ states :
     -> Model
     ->
         { startPage : StateBuilder () () ()
-        , getReadyScreen : StateBuilder () () ()
         , testRunning :
             StateBuilder
                 PLLTrainer.States.TestRunning.Msg
-                PLLTrainer.States.TestRunning.Model
+                (PLLTrainer.States.TestRunning.Model Msg)
                 TestRunningExtraState
         , evaluateResult :
             StateBuilder
@@ -586,18 +577,25 @@ states shared model =
                 { startTest = TransitionMsg GetReadyForTest
                 , noOp = NoOp
                 }
-    , getReadyScreen =
-        always <|
-            PLLTrainer.States.GetReadyScreen.state shared
     , testRunning =
         \extraState ->
+            let
+                argument =
+                    case extraState of
+                        GettingReadyExtraState ->
+                            PLLTrainer.States.TestRunning.GetReadyArgument
+                                { startTest = NoOp }
+
+                        TestRunningExtraState { memoizedCube, testTimestamp } ->
+                            PLLTrainer.States.TestRunning.TestRunningArgument
+                                { memoizedCube = memoizedCube
+                                , endTest = TransitionMsg << EndTest { testTimestamp = testTimestamp }
+                                }
+            in
             PLLTrainer.States.TestRunning.state
                 shared
-                (PLLTrainer.States.TestRunning.TestRunningArgument { memoizedCube = extraState.memoizedCube })
+                argument
                 (StateMsg << TestRunningMsg)
-                { startTest = NoOp
-                , endTest = TransitionMsg << EndTest { testTimestamp = extraState.testTimestamp }
-                }
     , evaluateResult =
         \extraState ->
             PLLTrainer.States.EvaluateResult.state
@@ -717,13 +715,17 @@ trainerStateToString trainerState =
         StartPage ->
             "StartPage"
 
-        GetReadyScreen ->
-            "GetReadyScreen"
+        TestRunning _ extraState ->
+            "TestRunning: "
+                ++ (case extraState of
+                        GettingReadyExtraState ->
+                            "GettingReadyExtraState"
 
-        TestRunning _ { testTimestamp } ->
-            "TestRunning: { testTimestamp = "
-                ++ String.fromInt (Time.posixToMillis testTimestamp)
-                ++ " }"
+                        TestRunningExtraState { testTimestamp } ->
+                            "TestRunningExtraState: { testTimestamp = "
+                                ++ String.fromInt (Time.posixToMillis testTimestamp)
+                                ++ " }"
+                   )
 
         EvaluateResult _ { result, transitionsDisabled } ->
             "EvaluateResult: { result = "
@@ -760,9 +762,6 @@ handleStateSubscriptionsBoilerplate shared model =
         StartPage ->
             ((states shared model).startPage ()).subscriptions ()
 
-        GetReadyScreen ->
-            ((states shared model).getReadyScreen ()).subscriptions ()
-
         TestRunning stateModel extraState ->
             ((states shared model).testRunning extraState).subscriptions stateModel
 
@@ -787,9 +786,6 @@ handleStateViewBoilerplate shared model =
     case model.trainerState of
         StartPage ->
             ((states shared model).startPage ()).view ()
-
-        GetReadyScreen ->
-            ((states shared model).getReadyScreen ()).view ()
 
         TestRunning stateModel extraState ->
             ((states shared model).testRunning extraState).view stateModel
