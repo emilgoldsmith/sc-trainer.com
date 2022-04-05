@@ -1,8 +1,9 @@
-module User exposing (CaseStatistics(..), RecordResultError(..), TestResult(..), User, changePLLAlgorithm, deserialize, getPLLAlgorithm, hasAttemptedAPLLTestCase, hasChosenPLLAlgorithmFor, new, orderByWorstCaseFirst, pllStatistics, recordPLLTestResult, serialize)
+module User exposing (CaseStatistics(..), RecordResultError(..), TestResult(..), User, changePLLAlgorithm, cubeTheme, deserialize, getPLLAlgorithm, hasAttemptedAPLLTestCase, hasChosenPLLAlgorithmFor, new, orderByWorstCaseFirst, pllStatistics, recordPLLTestResult, serialize)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
 import Algorithm.Extra
+import Cube.Advanced
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -12,7 +13,7 @@ import Time
 
 
 type User
-    = User PLLUserData
+    = User PLLUserData Cube.Advanced.CubeTheme
 
 
 type alias PLLUserData =
@@ -61,7 +62,7 @@ type TestResult
 
 new : User
 new =
-    User emptyPLLData
+    User emptyPLLData Cube.Advanced.defaultTheme
 
 
 emptyPLLData : PLLUserData
@@ -94,6 +95,11 @@ emptyPLLData =
 -- GETTERS AND MODIFIERS
 
 
+cubeTheme : User -> Cube.Advanced.CubeTheme
+cubeTheme (User _ theme) =
+    theme
+
+
 hasChosenPLLAlgorithmFor : PLL -> User -> Bool
 hasChosenPLLAlgorithmFor pll user =
     getPLLAlgorithm pll user
@@ -102,25 +108,25 @@ hasChosenPLLAlgorithmFor pll user =
 
 
 hasAttemptedAPLLTestCase : User -> Bool
-hasAttemptedAPLLTestCase (User pllData) =
+hasAttemptedAPLLTestCase user =
     PLL.all
         |> List.Nonempty.toList
-        |> List.filterMap (\pll -> getPLLResults pll pllData)
+        |> List.filterMap (\pll -> getPLLResults pll (getPLLUserData user))
         |> List.any (List.isEmpty >> not)
 
 
 getPLLAlgorithm : PLL -> User -> Maybe Algorithm
-getPLLAlgorithm pll (User pllData) =
-    getPLLAlgorithm_ pll pllData
+getPLLAlgorithm pll user =
+    getPLLAlgorithm_ pll (getPLLUserData user)
 
 
 changePLLAlgorithm : PLL -> Algorithm -> User -> User
-changePLLAlgorithm pll algorithm (User pllData) =
+changePLLAlgorithm pll algorithm user =
     let
         newPLLData =
-            setPLLAlgorithm pll algorithm pllData
+            setPLLAlgorithm pll algorithm (getPLLUserData user)
     in
-    User newPLLData
+    setPLLUserData newPLLData user
 
 
 type CaseStatistics
@@ -135,12 +141,12 @@ type CaseStatistics
 pllStatistics :
     User
     -> List CaseStatistics
-pllStatistics (User pllData) =
+pllStatistics user =
     PLL.all
         |> List.Nonempty.toList
         |> List.filterMap
             (\pll ->
-                getPLLData pll pllData
+                getPLLData pll (getPLLUserData user)
                     |> Maybe.map
                         (\( algorithm, results ) ->
                             ( ( results, algorithm )
@@ -257,14 +263,14 @@ type RecordResultError
 
 
 recordPLLTestResult : PLL -> TestResult -> User -> Result RecordResultError User
-recordPLLTestResult pll result (User pllData) =
+recordPLLTestResult pll result user =
     let
-        newPLLData =
-            addPLLResult pll result pllData
+        maybeNewPLLData =
+            addPLLResult pll result (getPLLUserData user)
     in
-    newPLLData
+    maybeNewPLLData
         |> Result.fromMaybe NoAlgorithmPickedYet
-        |> Result.map User
+        |> Result.map (\newPLLData -> setPLLUserData newPLLData user)
 
 
 
@@ -302,13 +308,13 @@ serializationKeys =
 
 
 serialize : User -> Json.Encode.Value
-serialize (User pllData) =
+serialize user =
     Json.Encode.object
         [ ( serializationKeys.usersCurrentPLLAlgorithms
-          , serializePLLAlgorithms pllData
+          , serializePLLAlgorithms (getPLLUserData user)
           )
         , ( serializationKeys.usersPLLResults
-          , serializePLLResults pllData
+          , serializePLLResults (getPLLUserData user)
           )
         ]
 
@@ -332,7 +338,7 @@ decoder =
                 pllResultsDecoder
     in
     pllUserDataDecoder pllAlgorithms pllResults
-        |> Json.Decode.map User
+        |> Json.Decode.map (\pllUserData -> setPLLUserData pllUserData new)
 
 
 
@@ -707,3 +713,13 @@ setPLLData pll newData data =
 
         PLL.Y ->
             { data | y = Just newData }
+
+
+getPLLUserData : User -> PLLUserData
+getPLLUserData (User pllUserData _) =
+    pllUserData
+
+
+setPLLUserData : PLLUserData -> User -> User
+setPLLUserData newPLLUserData (User _ theme) =
+    User newPLLUserData theme

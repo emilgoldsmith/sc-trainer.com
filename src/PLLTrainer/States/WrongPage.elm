@@ -13,6 +13,7 @@ import PLLTrainer.State
 import PLLTrainer.TestCase exposing (TestCase)
 import Shared
 import UI
+import User
 import View
 import ViewCube
 import ViewportSize
@@ -110,6 +111,7 @@ view { palette, viewportSize, hardwareAvailable, user, cubeViewOptions } transit
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
+                        , theme = User.cubeTheme user
                         }
                         testCaseCube
                     , ViewCube.view cubeViewOptions
@@ -117,6 +119,7 @@ view { palette, viewportSize, hardwareAvailable, user, cubeViewOptions } transit
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ublDisplayAngle
                         , annotateFaces = True
+                        , theme = User.cubeTheme user
                         }
                         testCaseCube
                     ]
@@ -135,6 +138,7 @@ view { palette, viewportSize, hardwareAvailable, user, cubeViewOptions } transit
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ufrDisplayAngle
                         , annotateFaces = True
+                        , theme = User.cubeTheme user
                         }
                         arguments.expectedCubeState
                     , ViewCube.view cubeViewOptions
@@ -142,6 +146,7 @@ view { palette, viewportSize, hardwareAvailable, user, cubeViewOptions } transit
                         { pixelSize = ViewportSize.minDimension viewportSize // 4
                         , displayAngle = Cube.ublDisplayAngle
                         , annotateFaces = True
+                        , theme = User.cubeTheme user
                         }
                         arguments.expectedCubeState
                     ]
