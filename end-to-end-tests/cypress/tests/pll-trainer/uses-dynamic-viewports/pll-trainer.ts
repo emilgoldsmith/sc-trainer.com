@@ -3,7 +3,10 @@ import { Key } from "support/keys";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
 import { paths } from "support/paths";
 import { AUF, PLL, pllToAlgorithmString } from "support/pll";
-import { pllTrainerElements } from "../state-and-elements.helper";
+import {
+  getReadyWaitTime,
+  pllTrainerElements,
+} from "../state-and-elements.helper";
 
 forceReloadAndNavigateIfDotOnlyIsUsed();
 
@@ -118,8 +121,8 @@ function checkWhetherShortcutsDisplay(
   } else {
     pllTrainerElements.newUserStartPage.startButton.get().click();
   }
-  pllTrainerElements.getReadyScreen.container.waitFor();
-  cy.tick(1000);
+  pllTrainerElements.getReadyState.container.waitFor();
+  cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();
   cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
   if (method === "useKeyboard") {
@@ -169,8 +172,8 @@ function checkWhetherShortcutsDisplay(
   } else {
     pllTrainerElements.correctPage.nextButton.get().click();
   }
-  pllTrainerElements.getReadyScreen.container.waitFor();
-  cy.tick(1000);
+  pllTrainerElements.getReadyState.container.waitFor();
+  cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();
   cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
 
@@ -234,7 +237,7 @@ function checkWhetherShortcutsDisplay(
   } else {
     pllTrainerElements.wrongPage.nextButton.get().click();
   }
-  pllTrainerElements.getReadyScreen.container.waitFor();
+  pllTrainerElements.getReadyState.container.waitFor();
 }
 
 function buildShortcutRegex(shortcutText: string): RegExp {

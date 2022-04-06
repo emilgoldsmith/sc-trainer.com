@@ -784,6 +784,10 @@ const setCubeSizeOverride: Cypress.Chainable<undefined>["setCubeSizeOverride"] =
       cy.get("canvas").should((elements) => {
         elements.each((_, canvas) => {
           expect(isCanvasBlank(canvas), "canvas not to be blank").to.be.false;
+          if (size !== null) {
+            expect(canvas.style.width).to.equal(size.toString() + "px");
+            expect(canvas.style.height).to.equal(size.toString() + "px");
+          }
         });
       });
     }
