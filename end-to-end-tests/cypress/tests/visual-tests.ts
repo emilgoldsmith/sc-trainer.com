@@ -6,6 +6,7 @@ import { paths } from "support/paths";
 import { AUF, PLL } from "support/pll";
 import {
   completePLLTestInMilliseconds,
+  getReadyWaitTime,
   pllTrainerElements,
   pllTrainerStatesNewUser,
   pllTrainerStatesUserDone,
@@ -22,25 +23,25 @@ describe("Visual Tests", function () {
       pllTrainerElements.newUserStartPage.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer Start Page");
       pllTrainerElements.newUserStartPage.startButton.get().click();
-      pllTrainerElements.getReadyScreen.container.waitFor();
+      pllTrainerElements.getReadyState.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer Get Ready Screen");
-      cy.tick(1000);
+      cy.tick(getReadyWaitTime);
       pllTrainerElements.testRunning.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer Test Running");
       cy.mouseClickScreen("center");
       pllTrainerElements.evaluateResult.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer Evaluate Result");
-      cy.tick(1000);
+      cy.tick(getReadyWaitTime);
       pllTrainerElements.evaluateResult.correctButton.get().click();
       pllTrainerElements.correctPage.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer Correct Page");
       pllTrainerElements.correctPage.nextButton.get().click();
-      pllTrainerElements.getReadyScreen.container.waitFor();
-      cy.tick(1000);
+      pllTrainerElements.getReadyState.container.waitFor();
+      cy.tick(getReadyWaitTime);
       pllTrainerElements.testRunning.container.waitFor();
       cy.mouseClickScreen("center");
       pllTrainerElements.evaluateResult.container.waitFor();
-      cy.tick(1000);
+      cy.tick(getReadyWaitTime);
       pllTrainerElements.evaluateResult.wrongButton.get().click();
       pllTrainerElements.typeOfWrongPage.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer Type Of Wrong Page");

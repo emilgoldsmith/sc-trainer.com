@@ -37,9 +37,12 @@ export const pllTrainerElements = {
     instructionsText: "instructions-text",
     learningResources: "learning-resources",
   }),
-  getReadyScreen: buildElementsCategory({
-    container: "get-ready-container",
+  getReadyState: buildElementsCategory({
+    container: "test-running-container-get-ready",
+    getReadyOverlay: "get-ready-overlay",
     getReadyExplanation: "get-ready-explanation",
+    timer: "timer",
+    cubePlaceholder: cubeElement("cube-placeholder"),
   }),
   testRunning: buildElementsCategory({
     container: "test-running-container",
@@ -132,9 +135,11 @@ export const pllTrainerElements = {
   }),
 };
 
+export const getReadyWaitTime = 2400;
+
 export const pllTrainerStatesUserDone = buildStates<
   | "startPage"
-  | "getReadyScreen"
+  | "getReadyState"
   | "testRunning"
   | "evaluateResult"
   | "evaluateResultAfterIgnoringTransitions"
@@ -157,8 +162,8 @@ export const pllTrainerStatesUserDone = buildStates<
         cy.waitForDocumentEventListeners("keyup");
       },
     },
-    getReadyScreen: {
-      name: "getReadyScreen",
+    getReadyState: {
+      name: "getReadyState",
       getToThatState: (getState, options) => {
         getState("startPage");
         pllTrainerElements.recurringUserStartPage.startButton
@@ -166,7 +171,7 @@ export const pllTrainerStatesUserDone = buildStates<
           .click(options);
       },
       waitForStateToAppear: (options) => {
-        pllTrainerElements.getReadyScreen.container.waitFor(options);
+        pllTrainerElements.getReadyState.container.waitFor(options);
       },
     },
     testRunning: {
@@ -179,8 +184,8 @@ export const pllTrainerStatesUserDone = buildStates<
         pllTrainerElements.recurringUserStartPage.startButton
           .get(options)
           .click(options);
-        pllTrainerElements.getReadyScreen.container.waitFor(options);
-        cy.tick(1000, options);
+        pllTrainerElements.getReadyState.container.waitFor(options);
+        cy.tick(getReadyWaitTime, options);
         cy.clock().then((clock) => clock.restore());
       },
       waitForStateToAppear: (options) => {
@@ -260,7 +265,7 @@ export const pllTrainerStatesUserDone = buildStates<
 
 export const pllTrainerStatesNewUser = buildStates<
   | "startPage"
-  | "getReadyScreen"
+  | "getReadyState"
   | "testRunning"
   | "evaluateResult"
   | "evaluateResultAfterIgnoringTransitions"
@@ -286,8 +291,8 @@ export const pllTrainerStatesNewUser = buildStates<
         cy.waitForDocumentEventListeners("keyup");
       },
     },
-    getReadyScreen: {
-      name: "getReadyScreen",
+    getReadyState: {
+      name: "getReadyState",
       getToThatState: (getState, options) => {
         getState("startPage");
         pllTrainerElements.newUserStartPage.startButton
@@ -295,7 +300,7 @@ export const pllTrainerStatesNewUser = buildStates<
           .click(options);
       },
       waitForStateToAppear: (options) => {
-        pllTrainerElements.getReadyScreen.container.waitFor(options);
+        pllTrainerElements.getReadyState.container.waitFor(options);
       },
     },
     testRunning: {
@@ -308,8 +313,8 @@ export const pllTrainerStatesNewUser = buildStates<
         pllTrainerElements.newUserStartPage.startButton
           .get(options)
           .click(options);
-        pllTrainerElements.getReadyScreen.container.waitFor(options);
-        cy.tick(1000, options);
+        pllTrainerElements.getReadyState.container.waitFor(options);
+        cy.tick(getReadyWaitTime, options);
         cy.clock().then((clock) => clock.restore());
       },
       waitForStateToAppear: (options) => {
@@ -452,8 +457,8 @@ export function completePLLTestInMilliseconds(
   pllTrainerElements.newUserStartPage.container.waitFor();
   startPageCallback?.();
   pllTrainerElements.newUserStartPage.startButton.get().click();
-  pllTrainerElements.getReadyScreen.container.waitFor();
-  cy.tick(1000);
+  pllTrainerElements.getReadyState.container.waitFor();
+  cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();
   cy.setCurrentTestCase([preAUF, pll, postAUF]);
   cy.tick(milliseconds);

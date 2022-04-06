@@ -7,6 +7,7 @@ import {
   pllToAlgorithmString,
 } from "support/pll";
 import {
+  getReadyWaitTime,
   pllTrainerElements,
   pllTrainerStatesNewUser,
 } from "./state-and-elements.helper";
@@ -87,7 +88,7 @@ describe("PLL Trainer - Learning Functionality", function () {
 
     it("starts when pressing the begin button", function () {
       pllTrainerElements.newUserStartPage.startButton.get().click();
-      pllTrainerElements.getReadyScreen.container.assertShows();
+      pllTrainerElements.getReadyState.container.assertShows();
     });
 
     it("doesn't start test when pressing any other keys", function () {
@@ -155,7 +156,7 @@ describe("PLL Trainer - Learning Functionality", function () {
       }) => {
         /* eslint-enable mocha/no-setup-in-describe */
         describe(caseName, function () {
-          it("displays picker exactly once first time that case is encountered and navigates to correct page afterwards", function () {
+          it("displays picker exactly once first time that case is encountered and navigates to the expected page afterwards", function () {
             pllTrainerStatesNewUser.testRunning.restoreState();
             cy.clock();
 
@@ -178,8 +179,8 @@ describe("PLL Trainer - Learning Functionality", function () {
             targetContainer.assertShows();
 
             startNextTestButton.get().click();
-            pllTrainerElements.getReadyScreen.container.waitFor();
-            cy.tick(1000);
+            pllTrainerElements.getReadyState.container.waitFor();
+            cy.tick(getReadyWaitTime);
             pllTrainerElements.testRunning.container.waitFor();
             cy.setCurrentTestCase(testCase);
 

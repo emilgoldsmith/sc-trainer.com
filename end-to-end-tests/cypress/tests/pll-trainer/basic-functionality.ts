@@ -5,6 +5,7 @@ import {
   pllTrainerElements,
   pllTrainerStatesNewUser,
   completePLLTestInMilliseconds,
+  getReadyWaitTime,
 } from "./state-and-elements.helper";
 import { Element } from "support/elements";
 import { paths } from "support/paths";
@@ -95,7 +96,7 @@ describe("PLL Trainer - Basic Functionality", function () {
 
       it("starts when pressing the begin button", function () {
         pllTrainerElements.newUserStartPage.startButton.get().click();
-        pllTrainerElements.getReadyScreen.container.assertShows();
+        pllTrainerElements.getReadyState.container.assertShows();
       });
 
       it("doesn't start test when pressing any other keys", function () {
@@ -181,7 +182,7 @@ describe("PLL Trainer - Basic Functionality", function () {
 
       it("starts when pressing the begin button", function () {
         pllTrainerElements.recurringUserStartPage.startButton.get().click();
-        pllTrainerElements.getReadyScreen.container.assertShows();
+        pllTrainerElements.getReadyState.container.assertShows();
       });
 
       it("doesn't start test when pressing any other keys", function () {
@@ -1260,15 +1261,21 @@ describe("PLL Trainer - Basic Functionality", function () {
   });
 
   describe("Test Running", function () {
-    describe("Get Ready Screen", function () {
+    describe("Get Ready State", function () {
       beforeEach(function () {
-        pllTrainerStatesUserDone.getReadyScreen.restoreState();
+        pllTrainerStatesUserDone.getReadyState.restoreState();
       });
 
       it("has all the correct elements", function () {
-        pllTrainerElements.testRunning.container.assertDoesntExist();
-        pllTrainerElements.getReadyScreen.container.assertShows();
-        pllTrainerElements.getReadyScreen.getReadyExplanation.assertShows();
+        // We don't want it to auto transition while we're doing checks
+        cy.clock();
+        pllTrainerElements.getReadyState.container.assertShows();
+        pllTrainerElements.getReadyState.getReadyOverlay.assertShows();
+        pllTrainerElements.getReadyState.getReadyExplanation.assertShows();
+        // Since they are behind the overlay they don't actually show, so we just assert
+        // they are contained by the window instead
+        pllTrainerElements.getReadyState.timer.assertContainedByWindow();
+        pllTrainerElements.getReadyState.cubePlaceholder.assertContainedByWindow();
       });
 
       it("sizes elements reasonably", function () {
@@ -1849,12 +1856,12 @@ describe("PLL Trainer - Basic Functionality", function () {
 
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
-      pllTrainerElements.testRunning.container.assertShows();
+      pllTrainerElements.getReadyState.container.assertShows();
     });
 
     it("starts when pressing the next button", function () {
       pllTrainerElements.correctPage.nextButton.get().click();
-      pllTrainerElements.testRunning.container.assertShows();
+      pllTrainerElements.getReadyState.container.assertShows();
     });
 
     it("doesn't start test when pressing any other keys", function () {
@@ -1892,8 +1899,8 @@ describe("PLL Trainer - Basic Functionality", function () {
       pllTrainerElements.evaluateResult.correctButton.get().click();
       cy.clock();
       pllTrainerElements.correctPage.nextButton.get().click();
-      pllTrainerElements.getReadyScreen.container.waitFor();
-      cy.tick(1000);
+      pllTrainerElements.getReadyState.container.waitFor();
+      cy.tick(getReadyWaitTime);
       pllTrainerElements.testRunning.container.waitFor();
       cy.mouseClickScreen("center");
       // We're back at Evaluate Result
@@ -2173,12 +2180,12 @@ describe("PLL Trainer - Basic Functionality", function () {
 
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
-      pllTrainerElements.testRunning.container.assertShows();
+      pllTrainerElements.getReadyState.container.assertShows();
     });
 
     it("starts when pressing the next button", function () {
       pllTrainerElements.wrongPage.nextButton.get().click();
-      pllTrainerElements.testRunning.container.assertShows();
+      pllTrainerElements.getReadyState.container.assertShows();
     });
 
     it("doesn't start test when pressing any other keys", function () {
@@ -2229,11 +2236,9 @@ function getTestRunningWithMockedTime(): number {
   installClock();
   let curTime = 0;
   cy.pressKey(Key.space);
-  pllTrainerElements.getReadyScreen.container.waitFor();
-  // This has to match exactly with the applications one sadly, so pretty brittle
-  const timeForGetReadyTransition = 1000;
-  tick(timeForGetReadyTransition);
-  curTime += timeForGetReadyTransition;
+  pllTrainerElements.getReadyState.container.waitFor();
+  tick(getReadyWaitTime);
+  curTime += getReadyWaitTime;
   pllTrainerElements.testRunning.container.waitFor();
   return curTime;
 }

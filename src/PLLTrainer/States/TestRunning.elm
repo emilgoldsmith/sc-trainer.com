@@ -1,4 +1,4 @@
-module PLLTrainer.States.TestRunning exposing (Arguments(..), Model, Msg, state)
+module PLLTrainer.States.TestRunning exposing (Arguments(..), Model, Msg, state, tESTONLYUpdateMemoizedCube)
 
 import Browser.Events
 import Css exposing (htmlTestid, testid)
@@ -89,6 +89,12 @@ countdownInterval =
 type Msg
     = MillisecondsPassed Float
     | CountdownIntervalPassed
+    | TESTONLYUpdateMemoizedCube Cube
+
+
+tESTONLYUpdateMemoizedCube : Cube -> Msg
+tESTONLYUpdateMemoizedCube =
+    TESTONLYUpdateMemoizedCube
 
 
 update : (Msg -> msg) -> Msg -> Model msg -> ( Model msg, Cmd msg )
@@ -111,6 +117,11 @@ update toMsg msg model =
 
         ( TestRunningModel modelRecord, MillisecondsPassed timeDelta ) ->
             ( TestRunningModel { modelRecord | elapsedTime = TimeInterval.increment timeDelta modelRecord.elapsedTime }
+            , Cmd.none
+            )
+
+        ( TestRunningModel modelRecord, TESTONLYUpdateMemoizedCube newCube ) ->
+            ( TestRunningModel { modelRecord | memoizedCube = newCube }
             , Cmd.none
             )
 
@@ -184,6 +195,8 @@ view { viewportSize, cubeViewOptions, user } model =
                         , annotations = black
                         }
                     , isGettingReady = Just countdown
+                    , mainContainerTestId = "test-running-container-get-ready"
+                    , cubeTestId = "cube-placeholder"
                     }
 
                 TestRunningModel { memoizedCube, elapsedTime } ->
@@ -191,13 +204,16 @@ view { viewportSize, cubeViewOptions, user } model =
                     , elapsedTime = elapsedTime
                     , cubeTheme = User.cubeTheme user
                     , isGettingReady = Nothing
+                    , mainContainerTestId = "test-running-container"
+                    , cubeTestId = "test-case"
                     }
     in
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
             el
-                [ width fill
+                [ testid parameters.mainContainerTestId
+                , width fill
                 , height fill
                 , inFront <|
                     case parameters.isGettingReady of
@@ -226,7 +242,8 @@ view { viewportSize, cubeViewOptions, user } model =
                                         green
                             in
                             el
-                                [ width fill
+                                [ testid "get-ready-overlay"
+                                , width fill
                                 , height fill
                                 , Background.color (rgba255 0 0 0 0.7)
                                 ]
@@ -241,7 +258,7 @@ view { viewportSize, cubeViewOptions, user } model =
                                     , padding (ViewportSize.minDimension viewportSize // 40)
                                     , Border.rounded (ViewportSize.minDimension viewportSize // 40)
                                     ]
-                                    [ paragraph [] [ text "Get Ready" ]
+                                    [ paragraph [ testid "get-ready-explanation" ] [ text "Get Ready" ]
                                     , paragraph [] [ text "Go To Home Grip" ]
                                     , row [ centerX, spacing (ViewportSize.minDimension viewportSize // 30) ]
                                         [ circle circleSize circleColor
@@ -255,14 +272,13 @@ view { viewportSize, cubeViewOptions, user } model =
                 ]
             <|
                 column
-                    [ testid "test-running-container"
-                    , centerX
+                    [ centerX
                     , centerY
                     , spacing (ViewportSize.minDimension viewportSize // 10)
                     ]
                     [ el [ centerX ] <|
                         ViewCube.view cubeViewOptions
-                            [ htmlTestid "test-case" ]
+                            [ htmlTestid parameters.cubeTestId ]
                             { pixelSize = ViewportSize.minDimension viewportSize // 2
                             , displayAngle = Cube.ufrDisplayAngle
                             , annotateFaces = False
@@ -300,6 +316,9 @@ msgToString msg =
 
         CountdownIntervalPassed ->
             "CountdownIntervalPassed"
+
+        TESTONLYUpdateMemoizedCube _ ->
+            "TESTONLYUpdateMemoizedCube"
 
 
 modelToString : Model msg -> String

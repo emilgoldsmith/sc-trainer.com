@@ -87,7 +87,7 @@ init =
       -- This is just a placeholder as new test cases are always generated
       -- just before the test is run, and this way we avoid a more complex
       -- type that for example needs to represent that there's no test case
-      -- until after the first getReadyScreen is done which would then
+      -- until after the first test has begun which would then
       -- possibly need a Maybe or a difficult tagged type. A placeholder
       -- seems the best option of these right now
       , currentTestCase = PLLTrainer.TestCase.build AUF.None PLL.Aa AUF.None
@@ -436,8 +436,14 @@ update shared msg model =
                                     let
                                         newExtraState =
                                             { extraState | memoizedCube = PLLTrainer.TestCase.toCube shared.user testCase }
+
+                                        newLocalModel =
+                                            ((states shared model).testRunning (TestRunningExtraState newExtraState)).update
+                                                (PLLTrainer.States.TestRunning.tESTONLYUpdateMemoizedCube newExtraState.memoizedCube)
+                                                localModel
+                                                |> Tuple.first
                                     in
-                                    { withUpdatedTestCase | trainerState = TestRunning localModel (TestRunningExtraState newExtraState) }
+                                    { withUpdatedTestCase | trainerState = TestRunning newLocalModel (TestRunningExtraState newExtraState) }
 
                                 _ ->
                                     withUpdatedTestCase
