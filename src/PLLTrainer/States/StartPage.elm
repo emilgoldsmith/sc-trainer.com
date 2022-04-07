@@ -187,10 +187,13 @@ recurringUserStatistics shared =
                 |> List.filterMap
                     (\statistics ->
                         case statistics of
-                            User.CaseLearnedStatistics { lastThreeAverageMs, lastThreeAverageTPS } ->
+                            User.AllRecentAttemptsSucceeded { lastThreeAverageMs, lastThreeAverageTPS } ->
                                 Just ( lastThreeAverageMs, lastThreeAverageTPS )
 
-                            User.CaseNotLearnedStatistics _ ->
+                            User.HasRecentDNF _ ->
+                                Nothing
+
+                            User.CaseNotAttemptedYet _ ->
                                 Nothing
                     )
                 |> List.unzip
@@ -222,23 +225,28 @@ recurringUserStatistics shared =
             (allStatistics
                 |> User.orderByWorstCaseFirst
                 |> List.take 3
-                |> List.map
+                |> List.filterMap
                     (\statistics ->
                         (case statistics of
-                            User.CaseLearnedStatistics { lastThreeAverageMs, lastThreeAverageTPS, pll } ->
-                                PLL.getLetters pll
-                                    ++ "-perm: "
-                                    ++ UI.formatTPS lastThreeAverageTPS
-                                    ++ " ("
-                                    ++ UI.formatMilliseconds lastThreeAverageMs
-                                    ++ ")"
+                            User.AllRecentAttemptsSucceeded { lastThreeAverageMs, lastThreeAverageTPS, pll } ->
+                                Just <|
+                                    PLL.getLetters pll
+                                        ++ "-perm: "
+                                        ++ UI.formatTPS lastThreeAverageTPS
+                                        ++ " ("
+                                        ++ UI.formatMilliseconds lastThreeAverageMs
+                                        ++ ")"
 
-                            User.CaseNotLearnedStatistics pll ->
-                                PLL.getLetters pll
-                                    ++ "-perm: DNF"
+                            User.HasRecentDNF pll ->
+                                Just <|
+                                    PLL.getLetters pll
+                                        ++ "-perm: DNF"
+
+                            User.CaseNotAttemptedYet _ ->
+                                Nothing
                         )
-                            |> text
-                            |> el [ testid "worst-case-list-item" ]
+                            |> Maybe.map text
+                            |> Maybe.map (el [ testid "worst-case-list-item" ])
                     )
             )
         , UI.viewDivider shared.palette

@@ -71,7 +71,7 @@ helperTests =
                         |> Result.map User.pllStatistics
                         |> Result.withDefault []
                         |> Expect.equal
-                            [ User.CaseLearnedStatistics
+                            [ User.AllRecentAttemptsSucceeded
                                 { lastThreeAverageMs = 3000
                                 , lastThreeAverageTPS =
                                     let
@@ -116,7 +116,7 @@ helperTests =
                         |> Result.map User.pllStatistics
                         |> Result.withDefault []
                         |> Expect.equal
-                            [ User.CaseNotLearnedStatistics PLL.Aa ]
+                            [ User.HasRecentDNF PLL.Aa ]
             , test "orders cases correctly" <|
                 \_ ->
                     User.new
@@ -148,10 +148,10 @@ helperTests =
                         |> List.map
                             (\statistics ->
                                 case statistics of
-                                    User.CaseLearnedStatistics { pll } ->
+                                    User.AllRecentAttemptsSucceeded { pll } ->
                                         { learned = True, pll = pll }
 
-                                    User.CaseNotLearnedStatistics pll ->
+                                    User.HasRecentDNF pll ->
                                         { learned = False, pll = pll }
                             )
                         |> Expect.equal
