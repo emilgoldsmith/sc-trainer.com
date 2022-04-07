@@ -5,6 +5,7 @@ module User exposing
     , TestResult(..), RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
     , serialize, deserialize
+    , testTimestamp
     )
 
 {-|
@@ -105,6 +106,16 @@ type TestResult
         }
 
 
+testTimestamp : TestResult -> Time.Posix
+testTimestamp testResult =
+    case testResult of
+        Correct { timestamp } ->
+            timestamp
+
+        Wrong { timestamp } ->
+            timestamp
+
+
 {-| A completely new user
 -}
 new : User
@@ -199,6 +210,7 @@ type CaseStatistics
         { lastThreeAverageMs : Float
         , lastThreeAverageTPS : Float
         , pll : PLL
+        , lastTimeTested : Time.Posix
         }
     | CaseNotLearnedStatistics PLL
 
@@ -226,9 +238,19 @@ pllStatistics user =
                                     )
                         )
             )
-        |> List.map (Tuple.mapFirst computeAveragesOfLastThree)
         |> List.map
-            (\( maybeAverages, pll ) ->
+            (Tuple.mapFirst
+                (\results ->
+                    ( results
+                        |> Tuple.first
+                        |> List.Nonempty.head
+                        |> testTimestamp
+                    , computeAveragesOfLastThree results
+                    )
+                )
+            )
+        |> List.map
+            (\( ( lastTimeTested, maybeAverages ), pll ) ->
                 maybeAverages
                     |> Maybe.map
                         (\{ timeMs, tps } ->
@@ -236,6 +258,7 @@ pllStatistics user =
                                 { lastThreeAverageMs = timeMs
                                 , lastThreeAverageTPS = tps
                                 , pll = pll
+                                , lastTimeTested = lastTimeTested
                                 }
                         )
                     |> Maybe.withDefault (CaseNotLearnedStatistics pll)
