@@ -1,4 +1,45 @@
-module User exposing (CaseStatistics(..), RecordResultError(..), TestResult(..), User, changePLLAlgorithm, cubeTheme, deserialize, getPLLAlgorithm, hasAttemptedAPLLTestCase, hasChosenPLLAlgorithmFor, new, orderByWorstCaseFirst, pllStatistics, recordPLLTestResult, serialize)
+module User exposing
+    ( User
+    , new
+    , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor, hasAttemptedAPLLTestCase, cubeTheme
+    , TestResult(..), RecordResultError(..), recordPLLTestResult
+    , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
+    , serialize, deserialize
+    )
+
+{-|
+
+
+# Type
+
+@docs User
+
+
+# Constructors
+
+@docs new
+
+
+# Getters And Setters
+
+@docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor, hasAttemptedAPLLTestCase, cubeTheme
+
+
+# Event Handling
+
+@docs TestResult, RecordResultError, recordPLLTestResult
+
+
+# Statistics
+
+@docs CaseStatistics, pllStatistics, orderByWorstCaseFirst
+
+
+# (De)serialization
+
+@docs serialize, deserialize
+
+-}
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
@@ -12,6 +53,8 @@ import PLL exposing (PLL)
 import Time
 
 
+{-| The User type
+-}
 type User
     = User PLLUserData Cube.Advanced.CubeTheme
 
@@ -46,6 +89,8 @@ type alias PLLUserData =
     }
 
 
+{-| The result of a test
+-}
 type TestResult
     = Correct
         { timestamp : Time.Posix
@@ -60,6 +105,8 @@ type TestResult
         }
 
 
+{-| A completely new user
+-}
 new : User
 new =
     User emptyPLLData Cube.Advanced.defaultTheme
@@ -95,11 +142,15 @@ emptyPLLData =
 -- GETTERS AND MODIFIERS
 
 
+{-| The users customized cube theme
+-}
 cubeTheme : User -> Cube.Advanced.CubeTheme
 cubeTheme (User _ theme) =
     theme
 
 
+{-| Whether the user has already chosen an algorithm for this pll
+-}
 hasChosenPLLAlgorithmFor : PLL -> User -> Bool
 hasChosenPLLAlgorithmFor pll user =
     getPLLAlgorithm pll user
@@ -107,6 +158,8 @@ hasChosenPLLAlgorithmFor pll user =
         |> Maybe.withDefault False
 
 
+{-| If the user has attempted any PLL yet
+-}
 hasAttemptedAPLLTestCase : User -> Bool
 hasAttemptedAPLLTestCase user =
     PLL.all
@@ -115,11 +168,15 @@ hasAttemptedAPLLTestCase user =
         |> List.any (List.isEmpty >> not)
 
 
+{-| Get the algorithm the user uses for this PLL
+-}
 getPLLAlgorithm : PLL -> User -> Maybe Algorithm
 getPLLAlgorithm pll user =
     getPLLAlgorithm_ pll (getPLLUserData user)
 
 
+{-| Change the algorithm the user uses for this PLL
+-}
 changePLLAlgorithm : PLL -> Algorithm -> User -> User
 changePLLAlgorithm pll algorithm user =
     let
@@ -129,6 +186,14 @@ changePLLAlgorithm pll algorithm user =
     setPLLUserData newPLLData user
 
 
+{-| Describes the statistics we compute on a pll.
+
+**CaseLearnedStatistics**: If the last three attempts were successful
+we can compute proper statistics for it
+
+**CaseNotLearnedStatistics**: If there are at least
+
+-}
 type CaseStatistics
     = CaseLearnedStatistics
         { lastThreeAverageMs : Float
@@ -138,6 +203,8 @@ type CaseStatistics
     | CaseNotLearnedStatistics PLL
 
 
+{-| Get statistics for the users PLL progress
+-}
 pllStatistics :
     User
     -> List CaseStatistics
@@ -212,6 +279,8 @@ average list =
         List.sum list / toFloat (List.length list)
 
 
+{-| Order the pll statistics by worst case first
+-}
 orderByWorstCaseFirst : List CaseStatistics -> List CaseStatistics
 orderByWorstCaseFirst =
     List.sortWith
@@ -258,10 +327,20 @@ invertOrder comp =
             LT
 
 
+{-| The types of errors that can occur when recording a result.
+
+**NoAlgorithmPickedYet**: Occurs if you try to record a test result for a PLL that has
+yet to have an algorithm picked for it
+
+-}
 type RecordResultError
     = NoAlgorithmPickedYet
 
 
+{-| Record a test result for a pll test. If it is the first time the user
+attempts this PLL, you can only record it after an algorithm has been picked
+for the PLL case
+-}
 recordPLLTestResult : PLL -> TestResult -> User -> Result RecordResultError User
 recordPLLTestResult pll result user =
     let
@@ -307,6 +386,8 @@ serializationKeys =
     }
 
 
+{-| Serialize the user for saving or sending somewhere
+-}
 serialize : User -> Json.Encode.Value
 serialize user =
     Json.Encode.object
@@ -319,6 +400,8 @@ serialize user =
         ]
 
 
+{-| Read and deserialize a serialized user
+-}
 deserialize : Json.Decode.Value -> Result Json.Decode.Error User
 deserialize =
     Json.Decode.decodeValue decoder

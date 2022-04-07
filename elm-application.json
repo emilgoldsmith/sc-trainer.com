@@ -1,0 +1,5 @@
+{
+  "name": "emilgoldsmith/sc-trainer",
+  "summary": "Offline Documentation Previewer",
+  "exposed-modules": ["User"]
+}
