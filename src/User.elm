@@ -199,20 +199,22 @@ changePLLAlgorithm pll algorithm user =
 
 {-| Describes the statistics we compute on a pll.
 
-**CaseLearnedStatistics**: If the last three attempts were successful
-we can compute proper statistics for it
+**AllRecentAttemptsSucceeded**: In this case we can compute proper statistics for it
 
-**CaseNotLearnedStatistics**: If there are at least
+**HasRecentDNF**: This makes stats like averages impossible
+
+**CaseNotAttemptedYet**: Which means we obviously can't compute advanced statistics for it
 
 -}
 type CaseStatistics
-    = CaseLearnedStatistics
+    = AllRecentAttemptsSucceeded
         { lastThreeAverageMs : Float
         , lastThreeAverageTPS : Float
         , pll : PLL
         , lastTimeTested : Time.Posix
         }
-    | CaseNotLearnedStatistics PLL
+    | HasRecentDNF PLL
+    | CaseNotAttemptedYet PLL
 
 
 {-| Get statistics for the users PLL progress
@@ -223,7 +225,7 @@ pllStatistics :
 pllStatistics user =
     PLL.all
         |> List.Nonempty.toList
-        |> List.filterMap
+        |> List.map
             (\pll ->
                 getPLLData pll (getPLLUserData user)
                     |> Maybe.andThen
@@ -237,31 +239,43 @@ pllStatistics user =
                                         )
                                     )
                         )
+                    |> Result.fromMaybe (CaseNotAttemptedYet pll)
             )
         |> List.map
-            (Tuple.mapFirst
-                (\results ->
-                    ( results
-                        |> Tuple.first
-                        |> List.Nonempty.head
-                        |> testTimestamp
-                    , computeAveragesOfLastThree results
-                    )
-                )
-            )
-        |> List.map
-            (\( ( lastTimeTested, maybeAverages ), pll ) ->
-                maybeAverages
-                    |> Maybe.map
-                        (\{ timeMs, tps } ->
-                            CaseLearnedStatistics
-                                { lastThreeAverageMs = timeMs
-                                , lastThreeAverageTPS = tps
-                                , pll = pll
-                                , lastTimeTested = lastTimeTested
-                                }
+            (Result.map <|
+                Tuple.mapFirst
+                    (\results ->
+                        ( results
+                            |> Tuple.first
+                            |> List.Nonempty.head
+                            |> testTimestamp
+                        , computeAveragesOfLastThree results
                         )
-                    |> Maybe.withDefault (CaseNotLearnedStatistics pll)
+                    )
+            )
+        |> List.map
+            (Result.map <|
+                \( ( lastTimeTested, maybeAverages ), pll ) ->
+                    maybeAverages
+                        |> Maybe.map
+                            (\{ timeMs, tps } ->
+                                AllRecentAttemptsSucceeded
+                                    { lastThreeAverageMs = timeMs
+                                    , lastThreeAverageTPS = tps
+                                    , pll = pll
+                                    , lastTimeTested = lastTimeTested
+                                    }
+                            )
+                        |> Maybe.withDefault (HasRecentDNF pll)
+            )
+        |> List.map
+            (\result ->
+                case result of
+                    Ok x ->
+                        x
+
+                    Err x ->
+                        x
             )
 
 
@@ -319,16 +333,25 @@ orderByWorstCaseFirst =
     List.sortWith
         (\a b ->
             case ( a, b ) of
-                ( CaseNotLearnedStatistics _, CaseNotLearnedStatistics _ ) ->
+                ( CaseNotAttemptedYet _, CaseNotAttemptedYet _ ) ->
                     EQ
 
-                ( CaseNotLearnedStatistics _, _ ) ->
+                ( CaseNotAttemptedYet _, _ ) ->
                     LT
 
-                ( _, CaseNotLearnedStatistics _ ) ->
+                ( _, CaseNotAttemptedYet _ ) ->
                     GT
 
-                ( CaseLearnedStatistics argsA, CaseLearnedStatistics argsB ) ->
+                ( HasRecentDNF _, HasRecentDNF _ ) ->
+                    EQ
+
+                ( HasRecentDNF _, _ ) ->
+                    LT
+
+                ( _, HasRecentDNF _ ) ->
+                    GT
+
+                ( AllRecentAttemptsSucceeded argsA, AllRecentAttemptsSucceeded argsB ) ->
                     let
                         primaryComparison =
                             -- For TPS lower is worse
