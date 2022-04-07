@@ -214,11 +214,16 @@ pllStatistics user =
         |> List.filterMap
             (\pll ->
                 getPLLData pll (getPLLUserData user)
-                    |> Maybe.map
-                        (\( algorithm, results ) ->
-                            ( ( results, algorithm )
-                            , pll
-                            )
+                    |> Maybe.andThen
+                        (\( algorithm, resultsList ) ->
+                            resultsList
+                                |> List.Nonempty.fromList
+                                |> Maybe.map
+                                    (\nonEmptyResults ->
+                                        ( ( nonEmptyResults, algorithm )
+                                        , pll
+                                        )
+                                    )
                         )
             )
         |> List.map (Tuple.mapFirst computeAveragesOfLastThree)
@@ -237,46 +242,51 @@ pllStatistics user =
             )
 
 
-computeAveragesOfLastThree : ( List TestResult, Algorithm ) -> Maybe { timeMs : Float, tps : Float }
+computeAveragesOfLastThree : ( List.Nonempty.Nonempty TestResult, Algorithm ) -> Maybe { timeMs : Float, tps : Float }
 computeAveragesOfLastThree ( results, algorithm ) =
     results
-        |> List.take 3
-        |> List.foldl
+        |> List.Nonempty.take 3
+        |> List.Nonempty.map
             (\result ->
-                Maybe.andThen
-                    (\timeAndTpses ->
-                        case result of
-                            Correct { resultInMilliseconds, preAUF, postAUF } ->
-                                Just <|
-                                    ( resultInMilliseconds
-                                    , Algorithm.Extra.complexityAdjustedTPS
-                                        { milliseconds = resultInMilliseconds }
-                                        ( preAUF, postAUF )
-                                        algorithm
-                                    )
-                                        :: timeAndTpses
+                case result of
+                    Correct { resultInMilliseconds, preAUF, postAUF } ->
+                        Just <|
+                            ( resultInMilliseconds
+                            , Algorithm.Extra.complexityAdjustedTPS
+                                { milliseconds = resultInMilliseconds }
+                                ( preAUF, postAUF )
+                                algorithm
+                            )
 
-                            Wrong _ ->
-                                Nothing
-                    )
+                    Wrong _ ->
+                        Nothing
             )
-            (Just [])
-        |> Maybe.map List.unzip
+        |> listOfMaybesToMaybeList
+        |> Maybe.map List.Nonempty.unzip
         |> Maybe.map (\( timeMs, tps ) -> { timeMs = averageInts timeMs, tps = average tps })
 
 
-averageInts : List Int -> Float
+{-| If there's a single Nothing it will be nothing, else a list of all
+the elements encapsulated in a Just
+-}
+listOfMaybesToMaybeList : List.Nonempty.Nonempty (Maybe a) -> Maybe (List.Nonempty.Nonempty a)
+listOfMaybesToMaybeList list =
+    List.Nonempty.foldl
+        (\next ->
+            Maybe.andThen (\accumulator -> Maybe.map (\justNext -> List.Nonempty.cons justNext accumulator) next)
+        )
+        (Maybe.map List.Nonempty.singleton (List.Nonempty.head list))
+        list
+
+
+averageInts : List.Nonempty.Nonempty Int -> Float
 averageInts =
-    List.map toFloat >> average
+    List.Nonempty.map toFloat >> average
 
 
-average : List Float -> Float
+average : List.Nonempty.Nonempty Float -> Float
 average list =
-    if List.isEmpty list then
-        0
-
-    else
-        List.sum list / toFloat (List.length list)
+    (List.Nonempty.toList >> List.sum) list / toFloat (List.Nonempty.length list)
 
 
 {-| Order the pll statistics by worst case first
