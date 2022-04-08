@@ -7,6 +7,7 @@ import Cube exposing (Cube)
 import List.Nonempty
 import PLL exposing (PLL)
 import Random
+import Time
 import User exposing (User)
 
 
@@ -55,15 +56,6 @@ toCube user testCase =
         |> Cube.applyAlgorithm (Algorithm.inverse <| toAlg user testCase)
 
 
-generate : Random.Generator TestCase
-generate =
-    Random.map TestCase <|
-        Random.map3 (\a b c -> ( a, b, c ))
-            (List.Nonempty.sample AUF.all)
-            (List.Nonempty.sample PLL.all)
-            (List.Nonempty.sample AUF.all)
-
-
 preAUF : TestCase -> AUF
 preAUF (TestCase ( x, _, _ )) =
     x
@@ -77,3 +69,74 @@ pll (TestCase ( _, x, _ )) =
 postAUF : TestCase -> AUF
 postAUF (TestCase ( _, _, x )) =
     x
+
+
+generate : Time.Posix -> User -> Random.Generator TestCase
+generate now user =
+    Random.map TestCase <|
+        Random.map3 (\a b c -> ( a, b, c ))
+            (List.Nonempty.sample AUF.all)
+            (generatePLL now user)
+            (List.Nonempty.sample AUF.all)
+
+
+generatePLL : Time.Posix -> User -> Random.Generator PLL
+generatePLL now user =
+    let
+        statistics =
+            User.pllStatistics user
+
+        notAttemptedYets =
+            List.filterMap
+                (\stat ->
+                    case stat of
+                        User.CaseNotAttemptedYet pll_ ->
+                            Just pll_
+
+                        _ ->
+                            Nothing
+                )
+                statistics
+
+        notYetLearneds =
+            List.filterMap
+                (\stat ->
+                    case stat of
+                        User.HasRecentDNF pll_ ->
+                            Just pll_
+
+                        _ ->
+                            Nothing
+                )
+                statistics
+
+        fullyLearneds =
+            List.filterMap
+                (\stat ->
+                    case stat of
+                        User.AllRecentAttemptsSucceeded record ->
+                            Just
+                                ( toFloat
+                                    (Time.posixToMillis now - Time.posixToMillis record.lastTimeTested)
+                                    * record.lastThreeAverageTPS
+                                , record.pll
+                                )
+
+                        _ ->
+                            Nothing
+                )
+                statistics
+    in
+    case ( notAttemptedYets, notYetLearneds, fullyLearneds ) of
+        ( head :: tail, _, _ ) ->
+            Random.uniform head tail
+
+        ( _, head :: tail, _ ) ->
+            Random.uniform head tail
+
+        ( _, _, head :: tail ) ->
+            Random.weighted head tail
+
+        -- This should never occur as there should always be at least one list with elements in it
+        _ ->
+            Random.constant PLL.Aa
