@@ -132,14 +132,13 @@ type InternalMsg
     | TESTONLYSetCubeSizeOverride (Maybe Int)
 
 
-{-| We use this structure to make sure the test case
-is generated before the start time, so we can ensure
-we don't record the start time until the very last moment
+{-| We use this structure to make sure there is a set
+order of generation of the different outside effects
 -}
 type StartTestData
     = NothingGenerated
-    | TestCaseGenerated TestCase
-    | EverythingGenerated TestCase Time.Posix
+    | TimestampGenerated Time.Posix
+    | EverythingGenerated Time.Posix TestCase
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -159,20 +158,20 @@ update shared msg model =
                 StartTest NothingGenerated ->
                     ( model
                     , Effect.fromCmd <|
-                        Random.generate
-                            (TransitionMsg << StartTest << TestCaseGenerated)
-                            PLLTrainer.TestCase.generate
-                    )
-
-                StartTest (TestCaseGenerated testCase) ->
-                    ( model
-                    , Effect.fromCmd <|
                         Task.perform
-                            (TransitionMsg << StartTest << EverythingGenerated testCase)
+                            (TransitionMsg << StartTest << TimestampGenerated)
                             Time.now
                     )
 
-                StartTest (EverythingGenerated testCase testTimestamp) ->
+                StartTest (TimestampGenerated testTimestamp) ->
+                    ( model
+                    , Effect.fromCmd <|
+                        Random.generate
+                            (TransitionMsg << StartTest << EverythingGenerated testTimestamp)
+                            (PLLTrainer.TestCase.generate testTimestamp shared.user)
+                    )
+
+                StartTest (EverythingGenerated testTimestamp testCase) ->
                     let
                         extraState =
                             TestRunningExtraState
