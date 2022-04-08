@@ -308,12 +308,20 @@ the elements encapsulated in a Just
 -}
 listOfMaybesToMaybeList : List.Nonempty.Nonempty (Maybe a) -> Maybe (List.Nonempty.Nonempty a)
 listOfMaybesToMaybeList list =
-    List.Nonempty.foldl
-        (\next ->
-            Maybe.andThen (\accumulator -> Maybe.map (\justNext -> List.Nonempty.cons justNext accumulator) next)
-        )
-        (Maybe.map List.Nonempty.singleton (List.Nonempty.head list))
-        list
+    let
+        seed =
+            Maybe.map List.Nonempty.singleton (List.Nonempty.head list)
+    in
+    List.Nonempty.tail list
+        |> List.Nonempty.fromList
+        |> Maybe.map
+            (List.Nonempty.foldl
+                (\next ->
+                    Maybe.andThen (\accumulator -> Maybe.map (\justNext -> List.Nonempty.cons justNext accumulator) next)
+                )
+                seed
+            )
+        |> Maybe.withDefault seed
 
 
 averageInts : List.Nonempty.Nonempty Int -> Float
@@ -337,10 +345,10 @@ orderByWorstCaseFirst =
                     EQ
 
                 ( CaseNotAttemptedYet _, _ ) ->
-                    LT
+                    GT
 
                 ( _, CaseNotAttemptedYet _ ) ->
-                    GT
+                    LT
 
                 ( HasRecentDNF _, HasRecentDNF _ ) ->
                     EQ

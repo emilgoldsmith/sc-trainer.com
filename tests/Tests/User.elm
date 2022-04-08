@@ -70,6 +70,9 @@ helperTests =
                             )
                         |> Result.map User.pllStatistics
                         |> Result.withDefault []
+                        -- To remove all the cases not attempted
+                        |> User.orderByWorstCaseFirst
+                        |> List.take 1
                         |> Expect.equal
                             [ User.AllRecentAttemptsSucceeded
                                 { lastThreeAverageMs = 3000
@@ -92,6 +95,7 @@ helperTests =
                                     in
                                     (first + second + third) / 3
                                 , pll = PLL.Aa
+                                , lastTimeTested = placeholderTestTimestamp
                                 }
                             ]
             , test "passes a test with a failure in it" <|
@@ -115,6 +119,9 @@ helperTests =
                             )
                         |> Result.map User.pllStatistics
                         |> Result.withDefault []
+                        -- To remove all the cases with no attempts on them
+                        |> User.orderByWorstCaseFirst
+                        |> List.take 1
                         |> Expect.equal
                             [ User.HasRecentDNF PLL.Aa ]
             , test "orders cases correctly" <|
@@ -149,20 +156,25 @@ helperTests =
                             (\statistics ->
                                 case statistics of
                                     User.AllRecentAttemptsSucceeded { pll } ->
-                                        { learned = True, pll = pll }
+                                        { encounteredBefore = True, learned = True, pll = pll }
 
                                     User.HasRecentDNF pll ->
-                                        { learned = False, pll = pll }
+                                        { encounteredBefore = True, learned = False, pll = pll }
+
+                                    User.CaseNotAttemptedYet pll ->
+                                        { encounteredBefore = False, learned = False, pll = pll }
                             )
+                        -- We take 3 as the rest of the list should just be cases not attempted before
+                        |> List.take 3
                         |> Expect.equal
-                            [ { learned = False, pll = PLL.Nb }
+                            [ { learned = False, encounteredBefore = True, pll = PLL.Nb }
 
                             -- We have Ab before Na here because we expect the ordering
                             -- to be based on TPS and even though Na is slower than Ab
                             -- it is a much shorter algorithm so the skill level seems to be
                             -- higher for Na than it is for Ab
-                            , { learned = True, pll = PLL.Ab }
-                            , { learned = True, pll = PLL.Na }
+                            , { learned = True, encounteredBefore = True, pll = PLL.Ab }
+                            , { learned = True, encounteredBefore = True, pll = PLL.Na }
                             ]
             ]
         ]
@@ -171,7 +183,7 @@ helperTests =
 correctResult : Int -> ( AUF, AUF ) -> User.TestResult
 correctResult resultInMilliseconds ( preAUF, postAUF ) =
     User.Correct
-        { timestamp = Time.millisToPosix 0
+        { timestamp = placeholderTestTimestamp
         , preAUF = preAUF
         , postAUF = postAUF
         , resultInMilliseconds = resultInMilliseconds
@@ -181,10 +193,15 @@ correctResult resultInMilliseconds ( preAUF, postAUF ) =
 wrongResult : ( AUF, AUF ) -> User.TestResult
 wrongResult ( preAUF, postAUF ) =
     User.Wrong
-        { timestamp = Time.millisToPosix 0
+        { timestamp = placeholderTestTimestamp
         , preAUF = preAUF
         , postAUF = postAUF
         }
+
+
+placeholderTestTimestamp : Time.Posix
+placeholderTestTimestamp =
+    Time.millisToPosix 0
 
 
 serializationTests : Test
