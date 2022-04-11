@@ -182,6 +182,22 @@ recurringUserStatistics shared =
         allStatistics =
             User.pllStatistics shared.user
 
+        numCasesAttempted =
+            allStatistics
+                |> List.map
+                    (\stat ->
+                        case stat of
+                            User.CaseNotAttemptedYet _ ->
+                                0
+
+                            User.HasRecentDNF _ ->
+                                1
+
+                            User.AllRecentAttemptsSucceeded _ ->
+                                1
+                    )
+                |> List.sum
+
         ( averageTimeMs, averageTPS ) =
             allStatistics
                 |> List.filterMap
@@ -212,7 +228,7 @@ recurringUserStatistics shared =
         , wrappedRow [ width fill, UI.spacingHorizontal.extremelySmall ]
             [ paragraph [ testid "num-cases-tried" ]
                 [ text "Cases Tried: "
-                , text <| String.fromInt <| List.length allStatistics
+                , text <| String.fromInt numCasesAttempted
                 ]
             , paragraph [ testid "num-cases-not-yet-tried" ]
                 [ text "Cases Not Yet Tried: "
