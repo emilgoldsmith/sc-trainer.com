@@ -232,7 +232,7 @@ recurringUserStatistics shared =
                 ]
             , paragraph [ testid "num-cases-not-yet-tried" ]
                 [ text "Cases Not Yet Tried: "
-                , text <| String.fromInt <| List.Nonempty.length PLL.all - List.length allStatistics
+                , text <| String.fromInt <| List.Nonempty.length PLL.all - numCasesAttempted
                 ]
             ]
         , UI.viewDivider shared.palette
