@@ -13,6 +13,13 @@ import { AUF, PLL, pllToAlgorithmString } from "support/pll";
 import allPllsAttemptedLocalStorage from "fixtures/local-storage/all-plls-attempted.json";
 
 export const pllTrainerElements = {
+  pickTargetParametersPage: buildElementsCategory({
+    container: "pick-target-parameters-container",
+    explanation: "explanation",
+    recognitionTimeInput: "recognition-time-input",
+    targetTPSInput: "target-TPS-input",
+    submitButton: "submit-button",
+  }),
   newUserStartPage: buildElementsCategory({
     container: "start-page-container",
     welcomeText: "welcome-text",
@@ -264,6 +271,7 @@ export const pllTrainerStatesUserDone = buildStates<
 );
 
 export const pllTrainerStatesNewUser = buildStates<
+  | "pickTargetParametersPage"
   | "startPage"
   | "getReadyState"
   | "testRunning"
@@ -283,9 +291,18 @@ export const pllTrainerStatesNewUser = buildStates<
 >(
   { startPath: paths.pllTrainer, defaultNavigateOptions: {}, localStorage: {} },
   {
+    pickTargetParametersPage: {
+      name: "pickTargetParametersPage",
+      getToThatState: () => {},
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.pickTargetParametersPage.container.waitFor(options);
+      },
+    },
     startPage: {
       name: "startPage",
-      getToThatState: () => {},
+      getToThatState: () => {
+        pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
+      },
       waitForStateToAppear: (options) => {
         pllTrainerElements.newUserStartPage.container.waitFor(options);
         cy.waitForDocumentEventListeners("keyup");
