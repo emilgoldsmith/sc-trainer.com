@@ -26,7 +26,12 @@ describe("PLL Trainer - Learning Functionality", function () {
   beforeEach(function () {
     applyDefaultIntercepts();
     cy.visit(paths.pllTrainer);
-    pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.restoreState();
+  });
+
+  describe("Pick Target Parameters Page", function () {
+    it("has all the correct elements", function () {
+      pllTrainerElements.pickTargetParametersPage.assertAllShow();
+    });
   });
 
   describe("New User Start Page", function () {
@@ -102,6 +107,10 @@ describe("PLL Trainer - Learning Functionality", function () {
   });
 
   describe("Algorithm Picker", function () {
+    beforeEach(function () {
+      pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.restoreState();
+    });
+
     /* eslint-disable mocha/no-setup-in-describe */
     [
       {
