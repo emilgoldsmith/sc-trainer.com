@@ -47,7 +47,7 @@ jobs:
             ) \
           )
 
-          echo "::set-output name=ci-container::ci-container-v2"
+          echo "::set-output name=ci-container::ci-container-v3"
           echo "::set-output name=ci-chrome::ci-chrome-v2"
           echo "::set-output name=production::production-$SHA"
 
