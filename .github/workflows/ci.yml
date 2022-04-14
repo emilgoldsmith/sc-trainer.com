@@ -135,6 +135,9 @@ jobs:
       - name: Run unit tests
         run: ./scripts/checks/elm-test.sh
 
+      - name: Check that docs compile
+        run: ./scripts/checks/elm-docs-compile.sh
+
       - name: Handle Yarn caching
         uses: actions/cache@v3
         env:
