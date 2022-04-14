@@ -1,7 +1,9 @@
 module User exposing
     ( User
     , new
-    , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor, hasAttemptedAPLLTestCase, getPLLTargetParameters, changePLLTargetParameters, cubeTheme
+    , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
+    , hasAttemptedAPLLTestCase, getPLLTargetParameters, changePLLTargetParameters
+    , hasChosenPLLTargetParameters, cubeTheme
     , TestResult(..), testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
     , serialize, deserialize
@@ -22,7 +24,9 @@ module User exposing
 
 # Getters And Setters
 
-@docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor, hasAttemptedAPLLTestCase, getPLLTargetParameters, changePLLTargetParameters, cubeTheme
+@docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
+@docs hasAttemptedAPLLTestCase, getPLLTargetParameters, changePLLTargetParameters
+@docs hasChosenPLLTargetParameters, cubeTheme
 
 
 # Event Handling
@@ -210,7 +214,12 @@ changePLLAlgorithm pll algorithm user =
     setPLLData newPLLData user
 
 
-{-| Get the target parameters the user has for PLL cases
+{-| Get the target parameters the user has for PLL cases.
+Notice that you get values even if the user has not set their parameters
+yet. This is a design decision to avoid complexity with maybe types
+in places where they shouldn't really be, so we just give the default values
+if the user hasn't chosen them yet. However, still note that the user should
+be prompted to choose these values if they haven't yet.
 -}
 getPLLTargetParameters : User -> PLLTargetParameters
 getPLLTargetParameters =
@@ -228,6 +237,13 @@ changePLLTargetParameters { targetRecognitionTimeInSeconds, targetTps } =
             , tps = targetTps
             }
         )
+
+
+{-| Returns true if the user has previously selected their target parameters
+-}
+hasChosenPLLTargetParameters : User -> Bool
+hasChosenPLLTargetParameters =
+    getInternalPLLTargetParameters >> (/=) Nothing
 
 
 {-| Describes the statistics we compute on a pll.
