@@ -1,4 +1,4 @@
-module PLLTrainer.State exposing (State, View, element, stateViewToGlobalView, static)
+module PLLTrainer.State exposing (State, View, element, sandbox, stateViewToGlobalView, static)
 
 import Browser.Events
 import Json.Decode
@@ -44,6 +44,34 @@ static { nonRepeatedKeyUpHandler, view } =
     , update = always <| always ( (), Cmd.none )
     , subscriptions = always subscription
     , view = always view
+    }
+
+
+sandbox :
+    { nonRepeatedKeyUpHandler : Maybe (Key -> msg)
+    , init : model
+    , view : model -> View msg
+    , update : localMsg -> model -> model
+    }
+    -> State msg localMsg model
+sandbox { nonRepeatedKeyUpHandler, init, view, update } =
+    let
+        subscription =
+            PLLTrainer.Subscription.onlyBrowserEvents <|
+                Maybe.withDefault Sub.none <|
+                    Maybe.map
+                        (\handler ->
+                            Browser.Events.onKeyUp <|
+                                Json.Decode.map
+                                    handler
+                                    Key.decodeNonRepeatedKeyEvent
+                        )
+                        nonRepeatedKeyUpHandler
+    in
+    { init = ( init, Cmd.none )
+    , update = \msg model -> ( update msg model, Cmd.none )
+    , subscriptions = always subscription
+    , view = view
     }
 
 

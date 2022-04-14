@@ -11,6 +11,7 @@ import PLLTrainer.State
 import PLLTrainer.States.CorrectPage
 import PLLTrainer.States.EvaluateResult
 import PLLTrainer.States.PickAlgorithmPage
+import PLLTrainer.States.PickTargetParametersPage
 import PLLTrainer.States.StartPage
 import PLLTrainer.States.TestRunning
 import PLLTrainer.States.TypeOfWrongPage
@@ -32,7 +33,7 @@ import View exposing (View)
 page : Shared.Model -> Page.With Model Msg
 page shared =
     Page.advanced
-        { init = init
+        { init = init shared
         , update = update shared
         , view = view shared
         , subscriptions = subscriptions shared
@@ -51,7 +52,8 @@ type alias Model =
 
 
 type TrainerState
-    = StartPage
+    = PickTargetParametersPage PLLTrainer.States.PickTargetParametersPage.Model
+    | StartPage
     | TestRunning (PLLTrainer.States.TestRunning.Model Msg) TestRunningExtraState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
     | PickAlgorithmPage PLLTrainer.States.PickAlgorithmPage.Model PickAlgorithmExtraState
@@ -79,9 +81,15 @@ type alias PickAlgorithmExtraState =
     }
 
 
-init : ( Model, Effect Msg )
-init =
-    ( { trainerState = StartPage
+init : Shared.Model -> ( Model, Effect Msg )
+init shared =
+    ( { trainerState =
+            if User.hasChosenPLLTargetParameters shared.user then
+                StartPage
+
+            else
+                PickTargetParametersPage
+                    (Tuple.first ((states shared).pickTargetParametersPage ()).init)
       , expectedCubeState = Cube.solved
 
       -- This is just a placeholder as new test cases are always generated
@@ -121,7 +129,8 @@ type TransitionMsg
 
 
 type StateMsg
-    = TestRunningMsg PLLTrainer.States.TestRunning.Msg
+    = PickTargetParametersMsg PLLTrainer.States.PickTargetParametersPage.Msg
+    | TestRunningMsg PLLTrainer.States.TestRunning.Msg
     | EvaluateResultMsg PLLTrainer.States.EvaluateResult.Msg
     | PickAlgorithmMsg PLLTrainer.States.PickAlgorithmPage.Msg
 
@@ -149,7 +158,7 @@ update shared msg model =
                 GetReadyForTest ->
                     let
                         ( stateModel, stateCmd ) =
-                            ((states shared model).testRunning GettingReadyExtraState).init
+                            ((states shared).testRunning GettingReadyExtraState).init
                     in
                     ( { model | trainerState = TestRunning stateModel GettingReadyExtraState }
                     , Effect.fromCmd stateCmd
@@ -180,7 +189,7 @@ update shared msg model =
                                 }
 
                         ( stateModel, stateCmd ) =
-                            ((states shared model).testRunning extraState).init
+                            ((states shared).testRunning extraState).init
                     in
                     ( { model
                         | trainerState = TestRunning stateModel extraState
@@ -201,7 +210,7 @@ update shared msg model =
                             }
 
                         ( stateModel, stateCmd ) =
-                            ((states shared model).evaluateResult extraState).init
+                            ((states shared).evaluateResult model extraState).init
                     in
                     ( { model
                         | trainerState = EvaluateResult stateModel extraState
@@ -267,7 +276,7 @@ update shared msg model =
                                 }
 
                             ( stateModel, stateCmd ) =
-                                ((states shared model).pickAlgorithmPage extraState).init
+                                ((states shared).pickAlgorithmPage model extraState).init
                         in
                         ( { model | trainerState = PickAlgorithmPage stateModel extraState }
                         , Effect.fromCmd <| stateCmd
@@ -360,7 +369,7 @@ update shared msg model =
                                 }
 
                             ( stateModel, stateCmd ) =
-                                ((states shared model).pickAlgorithmPage extraState).init
+                                ((states shared).pickAlgorithmPage model extraState).init
                         in
                         ( { model
                             | trainerState = PickAlgorithmPage stateModel extraState
@@ -385,7 +394,7 @@ update shared msg model =
                                 }
 
                             ( stateModel, stateCmd ) =
-                                ((states shared model).pickAlgorithmPage extraState).init
+                                ((states shared).pickAlgorithmPage model extraState).init
                         in
                         ( { model
                             | trainerState = PickAlgorithmPage stateModel extraState
@@ -409,7 +418,7 @@ update shared msg model =
                                 }
 
                             ( stateModel, stateCmd ) =
-                                ((states shared model).pickAlgorithmPage extraState).init
+                                ((states shared).pickAlgorithmPage model extraState).init
                         in
                         ( { model
                             | trainerState = PickAlgorithmPage stateModel extraState
@@ -437,7 +446,7 @@ update shared msg model =
                                             { extraState | memoizedCube = PLLTrainer.TestCase.toCube shared.user testCase }
 
                                         newLocalModel =
-                                            ((states shared model).testRunning (TestRunningExtraState newExtraState)).update
+                                            ((states shared).testRunning (TestRunningExtraState newExtraState)).update
                                                 (PLLTrainer.States.TestRunning.tESTONLYUpdateMemoizedCube newExtraState.memoizedCube)
                                                 localModel
                                                 |> Tuple.first
@@ -552,30 +561,45 @@ type alias StateBuilder localMsg model extraState =
 
 states :
     Shared.Model
-    -> Model
     ->
-        { startPage : StateBuilder () () ()
+        { pickTargetParametersPage :
+            StateBuilder
+                PLLTrainer.States.PickTargetParametersPage.Msg
+                PLLTrainer.States.PickTargetParametersPage.Model
+                ()
+        , startPage : StateBuilder () () ()
         , testRunning :
             StateBuilder
                 PLLTrainer.States.TestRunning.Msg
                 (PLLTrainer.States.TestRunning.Model Msg)
                 TestRunningExtraState
         , evaluateResult :
-            StateBuilder
-                PLLTrainer.States.EvaluateResult.Msg
-                PLLTrainer.States.EvaluateResult.Model
-                EvaluateResultExtraState
+            Model
+            ->
+                StateBuilder
+                    PLLTrainer.States.EvaluateResult.Msg
+                    PLLTrainer.States.EvaluateResult.Model
+                    EvaluateResultExtraState
         , pickAlgorithmPage :
-            StateBuilder
-                PLLTrainer.States.PickAlgorithmPage.Msg
-                PLLTrainer.States.PickAlgorithmPage.Model
-                PickAlgorithmExtraState
+            Model
+            ->
+                StateBuilder
+                    PLLTrainer.States.PickAlgorithmPage.Msg
+                    PLLTrainer.States.PickAlgorithmPage.Model
+                    PickAlgorithmExtraState
         , correctPage : StateBuilder () () ()
-        , typeOfWrongPage : StateBuilder () () TypeOfWrongExtraState
-        , wrongPage : StateBuilder () () ()
+        , typeOfWrongPage : Model -> StateBuilder () () TypeOfWrongExtraState
+        , wrongPage : Model -> StateBuilder () () ()
         }
-states shared model =
-    { startPage =
+states shared =
+    { pickTargetParametersPage =
+        always <|
+            PLLTrainer.States.PickTargetParametersPage.state
+                shared
+                { submit = NoOp
+                }
+                (StateMsg << PickTargetParametersMsg)
+    , startPage =
         always <|
             PLLTrainer.States.StartPage.state
                 shared
@@ -602,7 +626,7 @@ states shared model =
                 argument
                 (StateMsg << TestRunningMsg)
     , evaluateResult =
-        \extraState ->
+        \model extraState ->
             PLLTrainer.States.EvaluateResult.state
                 shared
                 { evaluateCorrect =
@@ -619,7 +643,7 @@ states shared model =
                 }
                 (StateMsg << EvaluateResultMsg)
     , pickAlgorithmPage =
-        \{ nextTrainerState, testResult } ->
+        \model { nextTrainerState, testResult } ->
             PLLTrainer.States.PickAlgorithmPage.state
                 { currentTestCase = model.currentTestCase
                 , testCaseResult = testResult
@@ -637,7 +661,7 @@ states shared model =
                 , noOp = NoOp
                 }
     , typeOfWrongPage =
-        \extraState ->
+        \model extraState ->
             PLLTrainer.States.TypeOfWrongPage.state
                 shared
                 { noMoveWasApplied = TransitionMsg (WrongButNoMoveApplied { testResult = extraState.testResult })
@@ -649,7 +673,7 @@ states shared model =
                 , testCase = model.currentTestCase
                 }
     , wrongPage =
-        \_ ->
+        \model _ ->
             PLLTrainer.States.WrongPage.state
                 shared
                 { startNextTest = TransitionMsg GetReadyForTest
@@ -669,21 +693,21 @@ handleStateMsgBoilerplate :
 handleStateMsgBoilerplate shared model stateMsg =
     case ( stateMsg, model.trainerState ) of
         ( TestRunningMsg localMsg, TestRunning localModel extraState ) ->
-            ((states shared model).testRunning extraState).update localMsg localModel
+            ((states shared).testRunning extraState).update localMsg localModel
                 |> Tuple.mapFirst
                     (\newStateModel ->
                         { model | trainerState = TestRunning newStateModel extraState }
                     )
 
         ( EvaluateResultMsg localMsg, EvaluateResult localModel extraState ) ->
-            ((states shared model).evaluateResult extraState).update localMsg localModel
+            ((states shared).evaluateResult model extraState).update localMsg localModel
                 |> Tuple.mapFirst
                     (\newStateModel ->
                         { model | trainerState = EvaluateResult newStateModel extraState }
                     )
 
         ( PickAlgorithmMsg localMsg, PickAlgorithmPage localModel extraState ) ->
-            ((states shared model).pickAlgorithmPage extraState).update localMsg localModel
+            ((states shared).pickAlgorithmPage model extraState).update localMsg localModel
                 |> Tuple.mapFirst
                     (\newStateModel ->
                         { model | trainerState = PickAlgorithmPage newStateModel extraState }
@@ -704,6 +728,9 @@ handleStateMsgBoilerplate shared model stateMsg =
 stateMsgToString : StateMsg -> String
 stateMsgToString stateMsg =
     case stateMsg of
+        PickTargetParametersMsg _ ->
+            "PickTargetParametersMsg"
+
         TestRunningMsg _ ->
             "TestRunningMsg"
 
@@ -717,6 +744,9 @@ stateMsgToString stateMsg =
 trainerStateToString : TrainerState -> String
 trainerStateToString trainerState =
     case trainerState of
+        PickTargetParametersPage _ ->
+            "PickTargetParametersPage"
+
         StartPage ->
             "StartPage"
 
@@ -764,48 +794,54 @@ stringFromBool bool =
 handleStateSubscriptionsBoilerplate : Shared.Model -> Model -> PLLTrainer.Subscription.Subscription Msg
 handleStateSubscriptionsBoilerplate shared model =
     case model.trainerState of
+        PickTargetParametersPage stateModel ->
+            ((states shared).pickTargetParametersPage ()).subscriptions stateModel
+
         StartPage ->
-            ((states shared model).startPage ()).subscriptions ()
+            ((states shared).startPage ()).subscriptions ()
 
         TestRunning stateModel extraState ->
-            ((states shared model).testRunning extraState).subscriptions stateModel
+            ((states shared).testRunning extraState).subscriptions stateModel
 
         EvaluateResult stateModel extraState ->
-            ((states shared model).evaluateResult extraState).subscriptions stateModel
+            ((states shared).evaluateResult model extraState).subscriptions stateModel
 
         PickAlgorithmPage stateModel extraState ->
-            ((states shared model).pickAlgorithmPage extraState).subscriptions stateModel
+            ((states shared).pickAlgorithmPage model extraState).subscriptions stateModel
 
         CorrectPage ->
-            ((states shared model).correctPage ()).subscriptions ()
+            ((states shared).correctPage ()).subscriptions ()
 
         TypeOfWrongPage extraState ->
-            ((states shared model).typeOfWrongPage extraState).subscriptions ()
+            ((states shared).typeOfWrongPage model extraState).subscriptions ()
 
         WrongPage ->
-            ((states shared model).wrongPage ()).subscriptions ()
+            ((states shared).wrongPage model ()).subscriptions ()
 
 
 handleStateViewBoilerplate : Shared.Model -> Model -> PLLTrainer.State.View Msg
 handleStateViewBoilerplate shared model =
     case model.trainerState of
+        PickTargetParametersPage stateModel ->
+            ((states shared).pickTargetParametersPage ()).view stateModel
+
         StartPage ->
-            ((states shared model).startPage ()).view ()
+            ((states shared).startPage ()).view ()
 
         TestRunning stateModel extraState ->
-            ((states shared model).testRunning extraState).view stateModel
+            ((states shared).testRunning extraState).view stateModel
 
         EvaluateResult stateModel extraState ->
-            ((states shared model).evaluateResult extraState).view stateModel
+            ((states shared).evaluateResult model extraState).view stateModel
 
         PickAlgorithmPage stateModel extraState ->
-            ((states shared model).pickAlgorithmPage extraState).view stateModel
+            ((states shared).pickAlgorithmPage model extraState).view stateModel
 
         CorrectPage ->
-            ((states shared model).correctPage ()).view ()
+            ((states shared).correctPage ()).view ()
 
         TypeOfWrongPage extraState ->
-            ((states shared model).typeOfWrongPage extraState).view ()
+            ((states shared).typeOfWrongPage model extraState).view ()
 
         WrongPage ->
-            ((states shared model).wrongPage ()).view ()
+            ((states shared).wrongPage model ()).view ()
