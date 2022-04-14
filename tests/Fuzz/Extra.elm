@@ -18,21 +18,29 @@ user =
         recordResultOperations =
             Fuzz.list <| Fuzz.map2 User.recordPLLTestResult pll testResult
     in
-    Fuzz.map2
-        (\changePLL recordResult ->
-            List.foldl
-                (\operation user_ -> operation user_)
-                User.new
-                changePLL
-                |> (\initialUser ->
-                        List.foldl
-                            (\operation user_ -> operation user_ |> Result.withDefault user_)
-                            initialUser
-                            recordResult
-                   )
-        )
-        changePLLOperations
-        recordResultOperations
+    Fuzz.constant User.new
+        |> Fuzz.map2
+            (\changePLLOperations_ curUser ->
+                List.foldl
+                    (\operation user_ -> operation user_)
+                    curUser
+                    changePLLOperations_
+            )
+            changePLLOperations
+        |> Fuzz.map2
+            (\recordResultOperations_ curUser ->
+                List.foldl
+                    (\operation user_ -> operation user_ |> Result.withDefault user_)
+                    curUser
+                    recordResultOperations_
+            )
+            recordResultOperations
+        |> Fuzz.map3
+            (\recognitionTime tps ->
+                User.changePLLTargetParameters { targetRecognitionTimeInSeconds = recognitionTime, targetTps = tps }
+            )
+            (Fuzz.floatRange 0.1 100)
+            (Fuzz.floatRange 0.1 30)
 
 
 posix : Fuzz.Fuzzer Time.Posix

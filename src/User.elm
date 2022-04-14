@@ -1,11 +1,10 @@
 module User exposing
     ( User
     , new
-    , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor, hasAttemptedAPLLTestCase, cubeTheme
-    , TestResult(..), RecordResultError(..), recordPLLTestResult
+    , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor, hasAttemptedAPLLTestCase, getPLLTargetParameters, changePLLTargetParameters, cubeTheme
+    , TestResult(..), testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
     , serialize, deserialize
-    , testTimestamp
     )
 
 {-|
@@ -23,12 +22,12 @@ module User exposing
 
 # Getters And Setters
 
-@docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor, hasAttemptedAPLLTestCase, cubeTheme
+@docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor, hasAttemptedAPLLTestCase, getPLLTargetParameters, changePLLTargetParameters, cubeTheme
 
 
 # Event Handling
 
-@docs TestResult, RecordResultError, recordPLLTestResult
+@docs TestResult, testTimestamp, RecordResultError, recordPLLTestResult
 
 
 # Statistics
@@ -57,10 +56,20 @@ import Time
 {-| The User type
 -}
 type User
-    = User PLLUserData Cube.Advanced.CubeTheme
+    = User PLLTrainerData Cube.Advanced.CubeTheme
 
 
-type alias PLLUserData =
+type alias PLLTrainerData =
+    { targetParameters : Maybe PLLTargetParameters
+    , pllData : PLLData
+    }
+
+
+type alias PLLTargetParameters =
+    { recognitionTimeInSeconds : Float, tps : Float }
+
+
+type alias PLLData =
     { -- Edges only
       h : Maybe ( Algorithm, List TestResult )
     , ua : Maybe ( Algorithm, List TestResult )
@@ -106,6 +115,8 @@ type TestResult
         }
 
 
+{-| Get the timestamp of a given test result
+-}
 testTimestamp : TestResult -> Time.Posix
 testTimestamp testResult =
     case testResult of
@@ -120,10 +131,12 @@ testTimestamp testResult =
 -}
 new : User
 new =
-    User emptyPLLData Cube.Advanced.defaultTheme
+    User
+        { targetParameters = Nothing, pllData = emptyPLLData }
+        Cube.Advanced.defaultTheme
 
 
-emptyPLLData : PLLUserData
+emptyPLLData : PLLData
 emptyPLLData =
     { h = Nothing
     , ua = Nothing
@@ -175,7 +188,7 @@ hasAttemptedAPLLTestCase : User -> Bool
 hasAttemptedAPLLTestCase user =
     PLL.all
         |> List.Nonempty.toList
-        |> List.filterMap (\pll -> getPLLResults pll (getPLLUserData user))
+        |> List.filterMap (\pll -> getPLLResults pll (getPLLData user))
         |> List.any (List.isEmpty >> not)
 
 
@@ -183,7 +196,7 @@ hasAttemptedAPLLTestCase user =
 -}
 getPLLAlgorithm : PLL -> User -> Maybe Algorithm
 getPLLAlgorithm pll user =
-    getPLLAlgorithm_ pll (getPLLUserData user)
+    getPLLAlgorithm_ pll (getPLLData user)
 
 
 {-| Change the algorithm the user uses for this PLL
@@ -192,9 +205,29 @@ changePLLAlgorithm : PLL -> Algorithm -> User -> User
 changePLLAlgorithm pll algorithm user =
     let
         newPLLData =
-            setPLLAlgorithm pll algorithm (getPLLUserData user)
+            setPLLAlgorithm pll algorithm (getPLLData user)
     in
-    setPLLUserData newPLLData user
+    setPLLData newPLLData user
+
+
+{-| Get the target parameters the user has for PLL cases
+-}
+getPLLTargetParameters : User -> PLLTargetParameters
+getPLLTargetParameters =
+    getInternalPLLTargetParameters
+        >> Maybe.withDefault { recognitionTimeInSeconds = 2, tps = 2.5 }
+
+
+{-| Update the target parameters the user has for PLL cases
+-}
+changePLLTargetParameters : { targetRecognitionTimeInSeconds : Float, targetTps : Float } -> User -> User
+changePLLTargetParameters { targetRecognitionTimeInSeconds, targetTps } =
+    setInternalPLLTargetParameters
+        (Just
+            { recognitionTimeInSeconds = targetRecognitionTimeInSeconds
+            , tps = targetTps
+            }
+        )
 
 
 {-| Describes the statistics we compute on a pll.
@@ -227,7 +260,7 @@ pllStatistics user =
         |> List.Nonempty.toList
         |> List.map
             (\pll ->
-                getPLLData pll (getPLLUserData user)
+                getSpecificPLLData pll (getPLLData user)
                     |> Maybe.andThen
                         (\( algorithm, resultsList ) ->
                             resultsList
@@ -409,11 +442,11 @@ recordPLLTestResult : PLL -> TestResult -> User -> Result RecordResultError User
 recordPLLTestResult pll result user =
     let
         maybeNewPLLData =
-            addPLLResult pll result (getPLLUserData user)
+            addPLLResult pll result (getPLLData user)
     in
     maybeNewPLLData
         |> Result.fromMaybe NoAlgorithmPickedYet
-        |> Result.map (\newPLLData -> setPLLUserData newPLLData user)
+        |> Result.map (\newPLLData -> setPLLData newPLLData user)
 
 
 
@@ -426,8 +459,14 @@ feature. It will completely break backwards compatibility unless
 managed in the code somehow
 -}
 serializationKeys :
-    { usersCurrentPLLAlgorithms : String
+    { version : String
+    , usersCurrentPLLAlgorithms : String
     , usersPLLResults : String
+    , usersPLLTargetParameters :
+        { topLevelKey : String
+        , recognitionTime : String
+        , tps : String
+        }
     , testResult :
         { correct : String
         , timestamp : String
@@ -437,8 +476,14 @@ serializationKeys :
         }
     }
 serializationKeys =
-    { usersCurrentPLLAlgorithms = "usersCurrentPLLAlgorithms"
+    { version = "version"
+    , usersCurrentPLLAlgorithms = "usersCurrentPLLAlgorithms"
     , usersPLLResults = "usersPLLResults"
+    , usersPLLTargetParameters =
+        { topLevelKey = "usersPLLTargetParameters"
+        , recognitionTime = "recognitionTime"
+        , tps = "tps"
+        }
     , testResult =
         -- These are subkeys that will be used many places so more important these are short
         { correct = "a"
@@ -450,16 +495,27 @@ serializationKeys =
     }
 
 
+serializationVersion : Int
+serializationVersion =
+    2
+
+
 {-| Serialize the user for saving or sending somewhere
 -}
 serialize : User -> Json.Encode.Value
 serialize user =
     Json.Encode.object
-        [ ( serializationKeys.usersCurrentPLLAlgorithms
-          , serializePLLAlgorithms (getPLLUserData user)
+        [ ( serializationKeys.version
+          , Json.Encode.int serializationVersion
+          )
+        , ( serializationKeys.usersCurrentPLLAlgorithms
+          , serializePLLAlgorithms (getPLLData user)
           )
         , ( serializationKeys.usersPLLResults
-          , serializePLLResults (getPLLUserData user)
+          , serializePLLResults (getPLLData user)
+          )
+        , ( serializationKeys.usersPLLTargetParameters.topLevelKey
+          , serializePLLTargetParameters (getInternalPLLTargetParameters user)
           )
         ]
 
@@ -473,6 +529,54 @@ deserialize =
 
 decoder : Json.Decode.Decoder User
 decoder =
+    Json.Decode.maybe
+        (Json.Decode.field serializationKeys.version Json.Decode.int)
+        |> Json.Decode.andThen decoderByVersion
+
+
+decoderByVersion : Maybe Int -> Json.Decode.Decoder User
+decoderByVersion maybeVersion =
+    case maybeVersion of
+        Nothing ->
+            decoderv1
+
+        Just 2 ->
+            decoderv2
+
+        Just version ->
+            Json.Decode.fail <|
+                "Trying to decode user data but version "
+                    ++ String.fromInt version
+                    ++ " is not supported"
+
+
+decoderv2 : Json.Decode.Decoder User
+decoderv2 =
+    let
+        pllAlgorithms =
+            Json.Decode.field
+                serializationKeys.usersCurrentPLLAlgorithms
+                pllAlgorithmsDecoder
+
+        pllResults =
+            Json.Decode.field
+                serializationKeys.usersPLLResults
+                pllResultsDecoder
+
+        pllTargetParameters =
+            Json.Decode.field
+                serializationKeys.usersPLLTargetParameters.topLevelKey
+                pllTargetParametersDecoder
+    in
+    pllDataDecoder pllAlgorithms pllResults
+        |> Json.Decode.map (\pllUserData -> setPLLData pllUserData new)
+        |> Json.Decode.map2
+            setInternalPLLTargetParameters
+            pllTargetParameters
+
+
+decoderv1 : Json.Decode.Decoder User
+decoderv1 =
     let
         pllAlgorithms =
             Json.Decode.field
@@ -484,15 +588,15 @@ decoder =
                 serializationKeys.usersPLLResults
                 pllResultsDecoder
     in
-    pllUserDataDecoder pllAlgorithms pllResults
-        |> Json.Decode.map (\pllUserData -> setPLLUserData pllUserData new)
+    pllDataDecoder pllAlgorithms pllResults
+        |> Json.Decode.map (\pllUserData -> setPLLData pllUserData new)
 
 
 
 -- pll algorithms (de)serialization
 
 
-serializePLLAlgorithms : PLLUserData -> Json.Encode.Value
+serializePLLAlgorithms : PLLData -> Json.Encode.Value
 serializePLLAlgorithms pllData =
     let
         stringKeyValuePairs =
@@ -512,7 +616,7 @@ serializePLLAlgorithms pllData =
     Json.Encode.object objectKeyValuePairs
 
 
-serializePLLResults : PLLUserData -> Json.Encode.Value
+serializePLLResults : PLLData -> Json.Encode.Value
 serializePLLResults pllData =
     let
         keyValuePairs =
@@ -569,11 +673,28 @@ buildBaseSerializedTestResultObject { correct } { timestamp, preAUF, postAUF } =
     ]
 
 
-pllUserDataDecoder :
+serializePLLTargetParameters : Maybe PLLTargetParameters -> Json.Encode.Value
+serializePLLTargetParameters maybeTargetParameters =
+    case maybeTargetParameters of
+        Nothing ->
+            Json.Encode.null
+
+        Just targetParameters ->
+            Json.Encode.object
+                [ ( serializationKeys.usersPLLTargetParameters.recognitionTime
+                  , Json.Encode.float targetParameters.recognitionTimeInSeconds
+                  )
+                , ( serializationKeys.usersPLLTargetParameters.tps
+                  , Json.Encode.float targetParameters.tps
+                  )
+                ]
+
+
+pllDataDecoder :
     Json.Decode.Decoder (Dict String Algorithm)
     -> Json.Decode.Decoder (Dict String (List TestResult))
-    -> Json.Decode.Decoder PLLUserData
-pllUserDataDecoder =
+    -> Json.Decode.Decoder PLLData
+pllDataDecoder =
     Json.Decode.map2
         (\algorithms results ->
             PLL.all
@@ -591,7 +712,7 @@ pllUserDataDecoder =
                                 Maybe.map (\x -> ( x, testResults )) maybeAlgorithm
                         in
                         Maybe.map
-                            (\updatedData -> setPLLData pll updatedData previousPLLData)
+                            (\updatedData -> setSpecificPLLData pll updatedData previousPLLData)
                             maybeUpdatedData
                             |> Maybe.withDefault previousPLLData
                     )
@@ -685,22 +806,41 @@ testResultDecoder =
             )
 
 
+pllTargetParametersDecoder : Json.Decode.Decoder (Maybe PLLTargetParameters)
+pllTargetParametersDecoder =
+    Json.Decode.nullable <|
+        Json.Decode.map2
+            (\recognitionTime tps ->
+                { recognitionTimeInSeconds = recognitionTime
+                , tps = tps
+                }
+            )
+            (Json.Decode.field
+                serializationKeys.usersPLLTargetParameters.recognitionTime
+                Json.Decode.float
+            )
+            (Json.Decode.field
+                serializationKeys.usersPLLTargetParameters.tps
+                Json.Decode.float
+            )
+
+
 
 -- BOILERPLATE
 
 
-getPLLAlgorithm_ : PLL -> PLLUserData -> Maybe Algorithm
+getPLLAlgorithm_ : PLL -> PLLData -> Maybe Algorithm
 getPLLAlgorithm_ pll data =
-    Maybe.map Tuple.first (getPLLData pll data)
+    Maybe.map Tuple.first (getSpecificPLLData pll data)
 
 
-getPLLResults : PLL -> PLLUserData -> Maybe (List TestResult)
+getPLLResults : PLL -> PLLData -> Maybe (List TestResult)
 getPLLResults pll data =
-    Maybe.map Tuple.second (getPLLData pll data)
+    Maybe.map Tuple.second (getSpecificPLLData pll data)
 
 
-getPLLData : PLL -> PLLUserData -> Maybe ( Algorithm, List TestResult )
-getPLLData pll data =
+getSpecificPLLData : PLL -> PLLData -> Maybe ( Algorithm, List TestResult )
+getSpecificPLLData pll data =
     case pll of
         PLL.H ->
             data.h
@@ -769,34 +909,34 @@ getPLLData pll data =
 setPLLAlgorithm :
     PLL
     -> Algorithm
-    -> PLLUserData
-    -> PLLUserData
+    -> PLLData
+    -> PLLData
 setPLLAlgorithm pll newAlgorithm data =
     let
         newData =
-            getPLLData pll data
+            getSpecificPLLData pll data
                 |> Maybe.map (Tuple.mapFirst (always newAlgorithm))
                 |> Maybe.withDefault ( newAlgorithm, [] )
     in
-    setPLLData pll newData data
+    setSpecificPLLData pll newData data
 
 
-addPLLResult : PLL -> TestResult -> PLLUserData -> Maybe PLLUserData
+addPLLResult : PLL -> TestResult -> PLLData -> Maybe PLLData
 addPLLResult pll result data =
     let
         newData =
-            getPLLData pll data
+            getSpecificPLLData pll data
                 |> (Maybe.map <|
                         Tuple.mapSecond <|
                             (::) result
                    )
     in
     newData
-        |> Maybe.map (\justNewData -> setPLLData pll justNewData data)
+        |> Maybe.map (\justNewData -> setSpecificPLLData pll justNewData data)
 
 
-setPLLData : PLL -> ( Algorithm, List TestResult ) -> PLLUserData -> PLLUserData
-setPLLData pll newData data =
+setSpecificPLLData : PLL -> ( Algorithm, List TestResult ) -> PLLData -> PLLData
+setSpecificPLLData pll newData data =
     case pll of
         PLL.H ->
             { data | h = Just newData }
@@ -862,11 +1002,39 @@ setPLLData pll newData data =
             { data | y = Just newData }
 
 
-getPLLUserData : User -> PLLUserData
-getPLLUserData (User pllUserData _) =
-    pllUserData
+getPLLTrainerData : User -> PLLTrainerData
+getPLLTrainerData (User pllTrainerData _) =
+    pllTrainerData
 
 
-setPLLUserData : PLLUserData -> User -> User
-setPLLUserData newPLLUserData (User _ theme) =
-    User newPLLUserData theme
+setPLLTrainerData : PLLTrainerData -> User -> User
+setPLLTrainerData newPLLTrainerData (User _ theme) =
+    User newPLLTrainerData theme
+
+
+getInternalPLLTargetParameters : User -> Maybe PLLTargetParameters
+getInternalPLLTargetParameters =
+    getPLLTrainerData >> .targetParameters
+
+
+setInternalPLLTargetParameters : Maybe PLLTargetParameters -> User -> User
+setInternalPLLTargetParameters newTargetParameters user =
+    let
+        prevTrainerData =
+            getPLLTrainerData user
+    in
+    setPLLTrainerData { prevTrainerData | targetParameters = newTargetParameters } user
+
+
+getPLLData : User -> PLLData
+getPLLData =
+    getPLLTrainerData >> .pllData
+
+
+setPLLData : PLLData -> User -> User
+setPLLData newPLLData user =
+    let
+        prevTrainerData =
+            getPLLTrainerData user
+    in
+    setPLLTrainerData { prevTrainerData | pllData = newPLLData } user
