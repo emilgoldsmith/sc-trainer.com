@@ -2,8 +2,10 @@ module PLLTrainer.States.PickTargetParametersPage exposing (Model, Msg, Transiti
 
 import Css exposing (testid)
 import Element exposing (..)
+import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Html
 import Html.Attributes
 import PLLTrainer.State
 import Shared
@@ -69,10 +71,23 @@ update : Msg -> Model -> Model
 update msg model =
     case msg of
         UpdateRecognitionTime nextRecognitionTime ->
-            { model | targetRecognitionTimeInSeconds = nextRecognitionTime }
+            { model | targetRecognitionTimeInSeconds = processFloatStringInput nextRecognitionTime }
 
         UpdateTPS nextTPS ->
-            { model | targetTps = nextTPS }
+            { model | targetTps = processFloatStringInput nextTPS }
+
+
+processFloatStringInput : String -> String
+processFloatStringInput =
+    String.map
+        (\character ->
+            case character of
+                ',' ->
+                    '.'
+
+                x ->
+                    x
+        )
 
 
 
@@ -125,6 +140,7 @@ view shared transitions toMsg model =
                         ]
                     , targetFloatInput
                         { testId = "recognition-time-input"
+                        , errorTestId = "recognition-time-error"
                         , onChange = toMsg << UpdateRecognitionTime
                         , inputContent = model.targetRecognitionTimeInSeconds
                         , label = "Recognition Time"
@@ -135,6 +151,7 @@ view shared transitions toMsg model =
                         }
                     , targetFloatInput
                         { testId = "target-TPS-input"
+                        , errorTestId = "tps-error"
                         , onChange = toMsg << UpdateTPS
                         , inputContent = model.targetTps
                         , label = "TPS"
@@ -154,6 +171,7 @@ view shared transitions toMsg model =
 
 targetFloatInput :
     { testId : String
+    , errorTestId : String
     , onChange : String -> msg
     , inputContent : String
     , label : String
@@ -164,18 +182,42 @@ targetFloatInput :
     }
     -> Element msg
 targetFloatInput params =
-    Input.text
-        [ testid params.testId
-        , htmlAttribute <| Html.Attributes.attribute "inputmode" "decimal"
-        , width <| px (45 + 10 * params.maxExpectedMainDigits + round params.unitWidth)
-        , onRight <|
-            el [ moveDown 10, moveLeft (4 + params.unitWidth), Font.color params.palette.label ] <|
-                text params.unit
-        , paddingEach { left = 12, right = 5 + round params.unitWidth, top = 11, bottom = 11 }
-        , centerX
+    let
+        { maybeExtraErrorStyling, maybeErrorText } =
+            case String.toFloat params.inputContent of
+                Just _ ->
+                    { maybeExtraErrorStyling = []
+                    , maybeErrorText = none
+                    }
+
+                Nothing ->
+                    { maybeExtraErrorStyling =
+                        [ Border.glow params.palette.errorText 3 ]
+                    , maybeErrorText =
+                        el [ testid params.errorTestId, Font.color params.palette.errorText ] <|
+                            text "Invalid Number"
+                    }
+    in
+    column
+        [ centerX
+        , UI.spacingVertical.extremelySmall
         ]
-        { onChange = params.onChange
-        , text = params.inputContent
-        , placeholder = Nothing
-        , label = Input.labelAbove [ Font.color params.palette.label, centerX ] <| text params.label
-        }
+        [ Input.text
+            (maybeExtraErrorStyling
+                ++ [ testid params.testId
+                   , htmlAttribute <| Html.Attributes.attribute "inputmode" "decimal"
+                   , width <| px (45 + 10 * params.maxExpectedMainDigits + round params.unitWidth)
+                   , onRight <|
+                        el [ moveDown 10, moveLeft (4 + params.unitWidth), Font.color params.palette.label ] <|
+                            text params.unit
+                   , paddingEach { left = 12, right = 5 + round params.unitWidth, top = 11, bottom = 11 }
+                   , centerX
+                   ]
+            )
+            { onChange = params.onChange
+            , text = params.inputContent
+            , placeholder = Nothing
+            , label = Input.labelAbove [ Font.color params.palette.label, centerX ] <| text params.label
+            }
+        , maybeErrorText
+        ]
