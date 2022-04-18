@@ -279,7 +279,7 @@ view currentTestCase testResult toMsg shared model =
                             { onChange = toMsg << UpdateText
                             , text = model.text
                             , placeholder = Nothing
-                            , label = Input.labelAbove [] none
+                            , label = Input.labelHidden "Algorithm Input"
                             }
                         , maybeViewError shared.palette model.error
                         ]
