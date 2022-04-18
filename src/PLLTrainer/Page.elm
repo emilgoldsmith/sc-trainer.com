@@ -98,10 +98,20 @@ init shared =
       -- until after the first test has begun which would then
       -- possibly need a Maybe or a difficult tagged type. A placeholder
       -- seems the best option of these right now
-      , currentTestCase = PLLTrainer.TestCase.build AUF.None PLL.Aa AUF.None
+      , currentTestCase = placeholderTestCase
       }
     , Effect.none
     )
+
+
+{-| We extracted this into a constant for performance reasons.
+The init function is called on every render and we need it to be
+performant but the TestCase.build function does some heavy computations
+in order to determine to optimal AUF that slows down the app
+-}
+placeholderTestCase : TestCase
+placeholderTestCase =
+    PLLTrainer.TestCase.build AUF.None PLL.Aa AUF.None
 
 
 
