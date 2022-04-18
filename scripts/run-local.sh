@@ -21,4 +21,4 @@ echo "${RED}NOTE:${RESET_COLOUR}"
 echo "${RED}NOTE: Elm SPA generated files don't rebuild. Therefore a restart of the command is needed if files are removed/added/renamed in the Pages directory$RESET_COLOUR"
 echo "${RED}NOTE:${RESET_COLOUR}"
 
-elm-live src/Main.elm --port 4000 --no-reload --dir build/public -- --output build/public/main.js
+elm-live src/Main.elm --port 4000 --no-reload --dir build/public -- --output build/public/main.js "$@"
