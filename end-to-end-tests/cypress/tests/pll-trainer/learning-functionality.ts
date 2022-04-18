@@ -30,7 +30,19 @@ describe("PLL Trainer - Learning Functionality", function () {
 
   describe("Pick Target Parameters Page", function () {
     it("has all the correct elements", function () {
-      pllTrainerElements.pickTargetParametersPage.assertAllShow();
+      pllTrainerElements.pickTargetParametersPage.explanation.assertConsumableViaVerticalScroll(
+        pllTrainerElements.pickTargetParametersPage.container.specifier
+      );
+      pllTrainerElements.pickTargetParametersPage.recognitionTimeInput.assertConsumableViaVerticalScroll(
+        pllTrainerElements.pickTargetParametersPage.container.specifier
+      );
+      pllTrainerElements.pickTargetParametersPage.targetTPSInput.assertConsumableViaVerticalScroll(
+        pllTrainerElements.pickTargetParametersPage.container.specifier
+      );
+      pllTrainerElements.pickTargetParametersPage.submitButton.assertConsumableViaVerticalScroll(
+        pllTrainerElements.pickTargetParametersPage.container.specifier
+      );
+      cy.assertNoHorizontalScrollbar();
     });
   });
 

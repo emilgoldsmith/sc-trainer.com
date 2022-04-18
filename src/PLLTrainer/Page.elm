@@ -692,6 +692,13 @@ handleStateMsgBoilerplate :
     -> ( Model, Cmd Msg )
 handleStateMsgBoilerplate shared model stateMsg =
     case ( stateMsg, model.trainerState ) of
+        ( PickTargetParametersMsg localMsg, PickTargetParametersPage localModel ) ->
+            ((states shared).pickTargetParametersPage ()).update localMsg localModel
+                |> Tuple.mapFirst
+                    (\newStateModel ->
+                        { model | trainerState = PickTargetParametersPage newStateModel }
+                    )
+
         ( TestRunningMsg localMsg, TestRunning localModel extraState ) ->
             ((states shared).testRunning extraState).update localMsg localModel
                 |> Tuple.mapFirst
