@@ -19,6 +19,8 @@ export const pllTrainerElements = {
     recognitionTimeInput: "recognition-time-input",
     targetTPSInput: "target-TPS-input",
     submitButton: "submit-button",
+    recognitionTimeError: "recognition-time-error",
+    tpsError: "tps-error",
   }),
   newUserStartPage: buildElementsCategory({
     container: "start-page-container",

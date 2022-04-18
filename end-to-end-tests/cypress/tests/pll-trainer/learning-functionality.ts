@@ -15,6 +15,7 @@ import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.js
 import { paths } from "support/paths";
 import { Key } from "support/keys";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
+import { Element } from "support/elements";
 
 forceReloadAndNavigateIfDotOnlyIsUsed();
 
@@ -43,6 +44,59 @@ describe("PLL Trainer - Learning Functionality", function () {
         pllTrainerElements.pickTargetParametersPage.container.specifier
       );
       cy.assertNoHorizontalScrollbar();
+    });
+
+    it("has the correct default values", function () {
+      pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+        .get()
+        .should("have.value", "2");
+      pllTrainerElements.pickTargetParametersPage.targetTPSInput
+        .get()
+        .should("have.value", "2.5");
+    });
+
+    it("correctly inputs decimal inputs, including making commas periods", function () {
+      pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+        .get()
+        .type("{selectall}{backspace}13.5")
+        .should("have.value", "13.5");
+      pllTrainerElements.pickTargetParametersPage.targetTPSInput
+        .get()
+        .type("{selectall}{backspace}23.7")
+        .should("have.value", "23.7");
+      pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+        .get()
+        .type("{selectall}{backspace}1,3")
+        .should("have.value", "1.3");
+      pllTrainerElements.pickTargetParametersPage.targetTPSInput
+        .get()
+        .type("{selectall}{backspace}2,9")
+        .should("have.value", "2.9");
+    });
+
+    it("displays error exactly if there's an invalid number", function () {
+      testInput(
+        pllTrainerElements.pickTargetParametersPage.recognitionTimeInput,
+        pllTrainerElements.pickTargetParametersPage.recognitionTimeError
+      );
+      testInput(
+        pllTrainerElements.pickTargetParametersPage.targetTPSInput,
+        pllTrainerElements.pickTargetParametersPage.tpsError
+      );
+
+      function testInput(inputElement: Element, expectedError: Element) {
+        inputElement.get().type("{selectall}{backspace}abc").blur();
+        expectedError.assertShows();
+        inputElement.get().type("{selectall}{backspace}3.5").blur();
+        expectedError.assertDoesntExist();
+        inputElement.get().type("{selectall}{backspace}3.5.5").blur();
+        expectedError.assertShows();
+        inputElement.get().type("{selectall}{backspace}61.1").blur();
+        expectedError.assertDoesntExist();
+        // Empty input should also error
+        inputElement.get().type("{selectall}{backspace}").blur();
+        expectedError.assertShows();
+      }
     });
   });
 
