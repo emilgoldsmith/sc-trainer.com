@@ -125,6 +125,7 @@ type alias Palette =
     , correct : El.Color
     , wrong : El.Color
     , black : El.Color
+    , label : El.Color
     , errorText : El.Color
 
     -- Link
@@ -142,6 +143,7 @@ defaultPalette =
     , correct = El.rgb255 0 128 0
     , wrong = El.rgb255 255 0 0
     , black = El.rgb255 0 0 0
+    , label = El.rgb255 125 125 125
     , errorText = El.rgb255 255 0 0
 
     -- Link

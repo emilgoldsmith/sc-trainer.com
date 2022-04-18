@@ -2,7 +2,9 @@ module PLLTrainer.States.PickTargetParametersPage exposing (Model, Msg, Transiti
 
 import Css exposing (testid)
 import Element exposing (..)
+import Element.Font as Font
 import Element.Input as Input
+import Html.Attributes
 import PLLTrainer.State
 import Shared
 import UI
@@ -16,6 +18,7 @@ state shared transitions toMsg =
         { init = init shared
         , view =
             view
+                shared
                 transitions
                 toMsg
         , update = update
@@ -37,8 +40,8 @@ type alias Transitions msg =
 
 
 type alias Model =
-    { targetRecognitionTimeInSeconds : Float
-    , targetTps : Float
+    { targetRecognitionTimeInSeconds : String
+    , targetTps : String
     }
 
 
@@ -48,8 +51,8 @@ init shared =
         targetParameters =
             User.getPLLTargetParameters shared.user
     in
-    { targetRecognitionTimeInSeconds = targetParameters.recognitionTimeInSeconds
-    , targetTps = targetParameters.tps
+    { targetRecognitionTimeInSeconds = String.fromFloat targetParameters.recognitionTimeInSeconds
+    , targetTps = String.fromFloat targetParameters.tps
     }
 
 
@@ -58,12 +61,18 @@ init shared =
 
 
 type Msg
-    = Msg
+    = UpdateRecognitionTime String
+    | UpdateTPS String
 
 
 update : Msg -> Model -> Model
 update msg model =
-    model
+    case msg of
+        UpdateRecognitionTime nextRecognitionTime ->
+            { model | targetRecognitionTimeInSeconds = nextRecognitionTime }
+
+        UpdateTPS nextTPS ->
+            { model | targetTps = nextTPS }
 
 
 
@@ -71,50 +80,102 @@ update msg model =
 
 
 view :
-    Transitions msg
+    Shared.Model
+    -> Transitions msg
     -> (Msg -> msg)
     -> Model
     -> PLLTrainer.State.View msg
-view transitions toMsg model =
+view shared transitions toMsg model =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
-            column
+            el
                 [ testid "pick-target-parameters-container"
-                , centerX
-                , centerY
+                , width fill
+                , height fill
+                , scrollbarY
                 ]
-                [ paragraph [ testid "explanation" ] [ text "These are the target parameters" ]
-                , el [ testid "recognition-time-input" ] <|
-                    Input.slider
-                        [ width (px 100)
-                        , height (px 30)
+            <|
+                column
+                    [ centerX
+                    , centerY
+                    , width (fill |> maximum 700)
+                    , UI.fontSize.large
+                    , UI.spacingVertical.medium
+                    , UI.paddingAll.veryLarge
+                    ]
+                    [ textColumn [ testid "explanation", UI.spacingVertical.small, width fill ]
+                        [ paragraph []
+                            [ text "Welcome! It is different from person to person how fast they expect to solve a case before they consider it learned."
+                            , text " That's why we ask you to specify your expectations here before we get started. Don't worry if this seems confusing,"
+                            , text " in that case just leave the values as they are right now, as this is a sensible default we have provided for you that"
+                            , text " should work well for everyone, and especially less experienced cubers."
+                            ]
+                        , paragraph []
+                            [ text "If you decide to change the values, you should note that they are not meant to signify your ultimate speed goals, but rather"
+                            , text " the point when you are no longer stumbling through the algorithm. However, when at this point you should be recognizing the case"
+                            , text " comfortably even if still a bit slowly, and executing it without any significant pauses. If these values are set too low the"
+                            , text " app could take too long to move onto new algorithms and mark it as learned, and it is therefore recommended to keep them"
+                            , text " on the higher side of what you may think you want."
+                            ]
+                        , paragraph []
+                            [ text "Recognition time is the time taken in seconds from seeing the cube to executing the first move. TPS is how many turns per second"
+                            , text " you are executing the algorithm itself at after the recognition time."
+                            ]
                         ]
-                        { onChange = always (toMsg Msg)
-                        , label = Input.labelAbove [] (text "label")
-                        , min = 0.1
-                        , max = 5
-                        , value = 2
-                        , thumb = Input.defaultThumb
-                        , step = Nothing
+                    , targetFloatInput
+                        { testId = "recognition-time-input"
+                        , onChange = toMsg << UpdateRecognitionTime
+                        , inputContent = model.targetRecognitionTimeInSeconds
+                        , label = "Recognition Time"
+                        , palette = shared.palette
+                        , unit = "s"
+                        , unitWidth = 10.5
+                        , maxExpectedMainDigits = 1
                         }
-                , el [ testid "target-TPS-input" ] <|
-                    Input.slider
-                        [ width (px 100)
-                        , height (px 30)
-                        ]
-                        { onChange = always (toMsg Msg)
-                        , label = Input.labelAbove [] (text "label")
-                        , min = 0.1
-                        , max = 5
-                        , value = 2
-                        , thumb = Input.defaultThumb
-                        , step = Nothing
+                    , targetFloatInput
+                        { testId = "target-TPS-input"
+                        , onChange = toMsg << UpdateTPS
+                        , inputContent = model.targetTps
+                        , label = "TPS"
+                        , palette = shared.palette
+                        , unit = "tps"
+                        , unitWidth = 28.0667
+                        , maxExpectedMainDigits = 2
                         }
-                , UI.viewButton.large [ testid "submit-button" ]
-                    { onPress = Nothing
-                    , color = rgb255 150 150 150
-                    , label = always (text "label")
-                    }
-                ]
+                    , UI.viewButton.large [ testid "submit-button", centerX ]
+                        { onPress = Nothing
+                        , color = shared.palette.primary
+                        , label = always (text "Submit")
+                        }
+                    ]
     }
+
+
+targetFloatInput :
+    { testId : String
+    , onChange : String -> msg
+    , inputContent : String
+    , label : String
+    , palette : UI.Palette
+    , unit : String
+    , unitWidth : Float
+    , maxExpectedMainDigits : Int
+    }
+    -> Element msg
+targetFloatInput params =
+    Input.text
+        [ testid params.testId
+        , htmlAttribute <| Html.Attributes.attribute "inputmode" "decimal"
+        , width <| px (45 + 10 * params.maxExpectedMainDigits + round params.unitWidth)
+        , onRight <|
+            el [ moveDown 10, moveLeft (4 + params.unitWidth), Font.color params.palette.label ] <|
+                text params.unit
+        , paddingEach { left = 12, right = 5 + round params.unitWidth, top = 11, bottom = 11 }
+        , centerX
+        ]
+        { onChange = params.onChange
+        , text = params.inputContent
+        , placeholder = Nothing
+        , label = Input.labelAbove [ Font.color params.palette.label, centerX ] <| text params.label
+        }
