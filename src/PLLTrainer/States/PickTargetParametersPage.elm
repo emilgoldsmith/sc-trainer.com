@@ -223,7 +223,7 @@ targetFloatInput params =
                             text "Invalid Number"
                     }
 
-        maybeOnEnterStyling =
+        maybeOnEnterAttribute =
             case params.onEnter of
                 Just msg ->
                     [ Key.onEnter msg ]
@@ -237,7 +237,7 @@ targetFloatInput params =
         ]
         [ Input.text
             (maybeExtraErrorStyling
-                ++ maybeOnEnterStyling
+                ++ maybeOnEnterAttribute
                 ++ [ testid params.testId
                    , htmlAttribute <| Html.Attributes.attribute "inputmode" "decimal"
                    , width <| px (45 + 10 * params.maxExpectedMainDigits + round params.unitWidth)

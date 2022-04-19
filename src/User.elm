@@ -584,8 +584,8 @@ decoderv2 =
                 serializationKeys.usersPLLTargetParameters.topLevelKey
                 pllTargetParametersDecoder
     in
-    pllDataDecoder pllAlgorithms pllResults
-        |> Json.Decode.map (\pllUserData -> setPLLData pllUserData new)
+    Json.Decode.succeed new
+        |> Json.Decode.map2 setPLLData (pllDataDecoder pllAlgorithms pllResults)
         |> Json.Decode.map2
             setInternalPLLTargetParameters
             pllTargetParameters
@@ -604,8 +604,8 @@ decoderv1 =
                 serializationKeys.usersPLLResults
                 pllResultsDecoder
     in
-    pllDataDecoder pllAlgorithms pllResults
-        |> Json.Decode.map (\pllUserData -> setPLLData pllUserData new)
+    Json.Decode.succeed new
+        |> Json.Decode.map2 setPLLData (pllDataDecoder pllAlgorithms pllResults)
 
 
 
@@ -727,9 +727,9 @@ pllDataDecoder =
                             maybeUpdatedData =
                                 Maybe.map (\x -> ( x, testResults )) maybeAlgorithm
                         in
-                        Maybe.map
-                            (\updatedData -> setSpecificPLLData pll updatedData previousPLLData)
-                            maybeUpdatedData
+                        maybeUpdatedData
+                            |> Maybe.map
+                                (\updatedData -> setSpecificPLLData pll updatedData previousPLLData)
                             |> Maybe.withDefault previousPLLData
                     )
                     emptyPLLData

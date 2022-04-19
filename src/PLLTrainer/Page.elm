@@ -126,7 +126,7 @@ type Msg
 
 
 type TransitionMsg
-    = UpdateTargetParameters { newTargetRecognitionTime : Float, newTargetTps : Float }
+    = SubmitNewTargetParameters { newTargetRecognitionTime : Float, newTargetTps : Float }
     | GoToEditTargetParameters
     | GetReadyForTest
     | StartTest StartTestData
@@ -167,7 +167,7 @@ update shared msg model =
     case msg of
         TransitionMsg transition ->
             case transition of
-                UpdateTargetParameters { newTargetRecognitionTime, newTargetTps } ->
+                SubmitNewTargetParameters { newTargetRecognitionTime, newTargetTps } ->
                     let
                         ( _, stateCmd ) =
                             ((states shared).startPage ()).init
@@ -641,7 +641,7 @@ states shared =
         always <|
             PLLTrainer.States.PickTargetParametersPage.state
                 shared
-                { submit = TransitionMsg << UpdateTargetParameters
+                { submit = TransitionMsg << SubmitNewTargetParameters
                 }
                 (StateMsg << PickTargetParametersMsg)
     , startPage =
