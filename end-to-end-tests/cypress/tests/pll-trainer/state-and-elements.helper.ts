@@ -150,6 +150,7 @@ export const getReadyWaitTime = 2400;
 
 export const pllTrainerStatesUserDone = buildStates<
   | "startPage"
+  | "pickTargetParametersPage"
   | "getReadyState"
   | "testRunning"
   | "evaluateResult"
@@ -171,6 +172,18 @@ export const pllTrainerStatesUserDone = buildStates<
       waitForStateToAppear: (options) => {
         pllTrainerElements.recurringUserStartPage.container.waitFor(options);
         cy.waitForDocumentEventListeners("keyup");
+      },
+    },
+    pickTargetParametersPage: {
+      name: "pickTargetParametersPage",
+      getToThatState: (getState, options) => {
+        getState("startPage");
+        pllTrainerElements.recurringUserStartPage.editTargetParametersButton
+          .get(options)
+          .click();
+      },
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.pickTargetParametersPage.container.waitFor(options);
       },
     },
     getReadyState: {

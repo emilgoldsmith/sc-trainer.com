@@ -43,6 +43,7 @@ state shared transitions =
 
 type alias Transitions msg =
     { startTest : msg
+    , editTargetParameters : msg
     , noOp : msg
     }
 
@@ -177,7 +178,10 @@ view shared transitions =
                         [ testid "edit-target-parameters-button"
                         , centerX
                         ]
-                        { onPress = Nothing, color = shared.palette.primary, label = always <| text "Edit Target Parameters" }
+                        { onPress = Just transitions.editTargetParameters
+                        , color = shared.palette.primary
+                        , label = always <| text "Edit Target Parameters"
+                        }
                     ]
     }
 

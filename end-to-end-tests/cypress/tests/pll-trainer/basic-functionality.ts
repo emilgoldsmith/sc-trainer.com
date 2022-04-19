@@ -113,6 +113,13 @@ describe("PLL Trainer - Basic Functionality", function () {
         cy.pressKey(Key.capsLock);
         pllTrainerElements.newUserStartPage.container.assertShows();
       });
+
+      it("goes to edit target parameters when pressed", function () {
+        pllTrainerElements.newUserStartPage.editTargetParametersButton
+          .get()
+          .click();
+        pllTrainerElements.pickTargetParametersPage.container.assertShows();
+      });
     });
     context("for a done user", function () {
       beforeEach(function () {
@@ -204,6 +211,13 @@ describe("PLL Trainer - Basic Functionality", function () {
         pllTrainerElements.recurringUserStartPage.container.assertShows();
         cy.pressKey(Key.capsLock);
         pllTrainerElements.recurringUserStartPage.container.assertShows();
+      });
+
+      it("goes to edit target parameters when pressed", function () {
+        pllTrainerElements.recurringUserStartPage.editTargetParametersButton
+          .get()
+          .click();
+        pllTrainerElements.pickTargetParametersPage.container.assertShows();
       });
     });
     it("doesn't display statistics when local storage only has picked but not attempted plls", function () {
