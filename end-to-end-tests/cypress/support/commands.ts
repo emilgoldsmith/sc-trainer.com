@@ -589,38 +589,17 @@ const assertNoVerticalScrollbar: Cypress.Chainable<undefined>["assertNoVerticalS
         if (windowHeight === undefined)
           throw new Error("Window height is undefined");
 
-        cy.get(":not(style,script)").should((allDomNodes) => {
-          const minMax = { top: 0, bottom: 0 };
-          const consoleProps = {
-            "Furthest Up": allDomNodes.get(0),
-            "Furthest Down": allDomNodes.get(0),
-          };
-          allDomNodes.each((_, curNode) => {
-            const nodeTop = Cypress.$(curNode).offset()?.top;
-            if (nodeTop === undefined) {
-              throw new Error("node had no offset");
-            }
-            const nodeHeight = Cypress.$(curNode).height();
-            if (nodeHeight === undefined) {
-              throw new Error("Node had no height");
-            }
-            const nodeBottom = nodeTop + nodeHeight;
-            if (nodeTop < minMax.top) {
-              minMax.top = nodeTop;
-              consoleProps["Furthest Up"] = curNode;
-            }
-            if (nodeBottom > minMax.bottom) {
-              minMax.bottom = nodeBottom;
-              consoleProps["Furthest Down"] = curNode;
-            }
+        getTopAndBottomElements().then(({ positions, elements }) => {
+          consolePropsSetter({
+            "Furthest Up": elements.top,
+            "Furthest Down": elements.bottom,
           });
-          consolePropsSetter(consoleProps);
           expect(
-            minMax.top,
+            positions.top,
             "furthest up element should be within window"
           ).to.be.at.least(0);
           expect(
-            minMax.bottom,
+            positions.bottom,
             "furthest down element should be within window"
           ).to.be.at.most(windowHeight);
         });
@@ -691,16 +670,12 @@ const percySnapshotWithProperName: Cypress.Chainable<undefined>["percySnapshotWi
   const properName = `${name}-${width}`;
 
   if (options?.ensureFullHeightIsCaptured) {
-    cy.document({ log: false }).then((document) => {
-      const documentHeight = Cypress.$(document).height();
-      if (documentHeight === undefined)
-        throw new Error("document height is undefined");
-
-      return cy.percySnapshot(properName, {
+    getTopAndBottomElements().then(({ positions }) =>
+      cy.percySnapshot(properName, {
         ...options,
-        minHeight: documentHeight,
-      });
-    });
+        minHeight: positions.bottom,
+      })
+    );
   } else {
     cy.percySnapshot(properName, options);
   }
@@ -819,3 +794,36 @@ const setLocalStorage: Cypress.Chainable<undefined>["setLocalStorage"] = functio
   });
 };
 Cypress.Commands.add("setLocalStorage", setLocalStorage);
+
+function getTopAndBottomElements(): Cypress.Chainable<{
+  elements: { top: HTMLElement; bottom: HTMLElement };
+  positions: { top: number; bottom: number };
+}> {
+  return cy.get(":not(style,script)").then((allDomNodes) => {
+    const positions = { top: 0, bottom: 0 };
+    const elements = {
+      top: allDomNodes.get(0),
+      bottom: allDomNodes.get(0),
+    };
+    allDomNodes.each((_, curNode) => {
+      const nodeTop = Cypress.$(curNode).offset()?.top;
+      if (nodeTop === undefined) {
+        throw new Error("node had no offset");
+      }
+      const nodeHeight = Cypress.$(curNode).height();
+      if (nodeHeight === undefined) {
+        throw new Error("Node had no height");
+      }
+      const nodeBottom = nodeTop + nodeHeight;
+      if (nodeTop < positions.top) {
+        positions.top = nodeTop;
+        elements.top = curNode;
+      }
+      if (nodeBottom > positions.bottom) {
+        positions.bottom = nodeBottom;
+        elements.bottom = curNode;
+      }
+    });
+    return { elements, positions };
+  });
+}
