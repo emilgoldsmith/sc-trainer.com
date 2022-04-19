@@ -10,7 +10,7 @@ import {
 import { buildStates, StateOptions } from "support/state";
 import { paths } from "support/paths";
 import { AUF, PLL, pllToAlgorithmString } from "support/pll";
-import allPllsAttemptedLocalStorage from "fixtures/local-storage/all-plls-attempted.json";
+import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
 
 export const pllTrainerElements = {
   pickTargetParametersPage: buildElementsCategory({
@@ -30,6 +30,7 @@ export const pllTrainerElements = {
     startButton: "start-button",
     instructionsText: "instructions-text",
     learningResources: "learning-resources",
+    editTargetParametersButton: "edit-target-parameters-button",
   }),
   recurringUserStartPage: buildElementsCategory({
     container: "start-page-container",
@@ -45,6 +46,7 @@ export const pllTrainerElements = {
     startButton: "start-button",
     instructionsText: "instructions-text",
     learningResources: "learning-resources",
+    editTargetParametersButton: "edit-target-parameters-button",
   }),
   getReadyState: buildElementsCategory({
     container: "test-running-container-get-ready",
@@ -159,7 +161,7 @@ export const pllTrainerStatesUserDone = buildStates<
 >(
   {
     startPath: paths.pllTrainer,
-    localStorage: allPllsAttemptedLocalStorage,
+    localStorage: fullyPopulatedLocalStorage,
     defaultNavigateOptions: {},
   },
   {
@@ -302,11 +304,16 @@ export const pllTrainerStatesNewUser = buildStates<
     },
     startPage: {
       name: "startPage",
-      getToThatState: () => {
-        pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
+      getToThatState: (getState, options) => {
+        getState("pickTargetParametersPage");
+        pllTrainerElements.pickTargetParametersPage.submitButton
+          .get(options)
+          .click();
       },
       waitForStateToAppear: (options) => {
-        pllTrainerElements.newUserStartPage.container.waitFor(options);
+        pllTrainerElements.newUserStartPage.container
+          .get(options)
+          .scrollTo("top");
         cy.waitForDocumentEventListeners("keyup");
       },
     },

@@ -1,5 +1,6 @@
 {
   "userData": {
+    "version": 2,
     "usersCurrentPLLAlgorithms": {
       "H": "R2 U2 R U2 R2 U2 R2 U2 R U2 R2",
       "Ua": "F2 U' L R' F2 L' R U' F2",
@@ -108,6 +109,7 @@
         { "e": 832, "a": true, "b": 123456, "c": "U2", "d": "U'" },
         { "e": 1500, "a": true, "b": 123456, "c": "", "d": "U" }
       ]
-    }
+    },
+    "usersPLLTargetParameters": { "recognitionTime": 1.7, "tps": 5.1 }
   }
 }

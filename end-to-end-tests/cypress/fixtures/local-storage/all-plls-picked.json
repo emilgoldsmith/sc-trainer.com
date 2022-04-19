@@ -1,5 +1,6 @@
 {
   "userData": {
+    "version": 2,
     "usersCurrentPLLAlgorithms": {
       "H": "R2 U2 R U2 R2 U2 R2 U2 R U2 R2",
       "Ua": "F2 U' L R' F2 L' R U' F2",
@@ -23,6 +24,7 @@
       "V": "R' U R' U' B' R' B2 U' B' U B' R B R",
       "Y": "F2 D R2 U R2 D' R' U' R F2 R' U R"
     },
-    "usersPLLResults": {}
+    "usersPLLResults": {},
+    "usersPLLTargetParameters": null
   }
 }

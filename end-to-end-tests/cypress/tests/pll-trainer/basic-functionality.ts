@@ -59,6 +59,9 @@ describe("PLL Trainer - Basic Functionality", function () {
         pllTrainerElements.newUserStartPage.learningResources
           .get()
           .should("exist");
+        pllTrainerElements.newUserStartPage.editTargetParametersButton
+          .get()
+          .should("exist");
 
         // A smoke test that we have added some links for the cubing terms
         pllTrainerElements.newUserStartPage.container.get().within(() => {
@@ -85,6 +88,9 @@ describe("PLL Trainer - Basic Functionality", function () {
           containerId
         );
         pllTrainerElements.newUserStartPage.startButton.assertConsumableViaVerticalScroll(
+          containerId
+        );
+        pllTrainerElements.newUserStartPage.editTargetParametersButton.assertConsumableViaVerticalScroll(
           containerId
         );
       });
@@ -144,6 +150,9 @@ describe("PLL Trainer - Basic Functionality", function () {
         pllTrainerElements.recurringUserStartPage.learningResources
           .get()
           .should("exist");
+        pllTrainerElements.recurringUserStartPage.editTargetParametersButton
+          .get()
+          .should("exist");
 
         // A smoke test that we have added some links for the cubing terms
         pllTrainerElements.recurringUserStartPage.container.get().within(() => {
@@ -171,6 +180,9 @@ describe("PLL Trainer - Basic Functionality", function () {
           containerSpecifier
         );
         pllTrainerElements.recurringUserStartPage.startButton.assertConsumableViaVerticalScroll(
+          containerSpecifier
+        );
+        pllTrainerElements.recurringUserStartPage.editTargetParametersButton.assertConsumableViaVerticalScroll(
           containerSpecifier
         );
       });
