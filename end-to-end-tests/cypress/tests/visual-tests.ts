@@ -11,7 +11,7 @@ import {
   pllTrainerStatesUserDone,
 } from "./pll-trainer/state-and-elements.helper";
 
-describe.only("Visual Tests", function () {
+describe("Visual Tests", function () {
   beforeEach(function () {
     applyDefaultIntercepts({ extraHtmlModifiers: [addPercyCanvasStyleFixers] });
   });
