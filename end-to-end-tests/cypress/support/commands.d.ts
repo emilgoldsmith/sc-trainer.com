@@ -264,7 +264,9 @@ declare namespace Cypress {
 
     percySnapshotWithProperName(
       name: string,
-      options?: import("@percy/core").SnapshotOptions
+      options?: import("@percy/core").SnapshotOptions & {
+        ensureFullHeightIsCaptured?: boolean;
+      }
     ): void;
 
     setCurrentTestCase(

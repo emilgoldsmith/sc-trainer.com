@@ -19,21 +19,14 @@ describe("Visual Tests", function () {
     it("looks right", function () {
       pllTrainerStatesNewUser.pickTargetParametersPage.reloadAndNavigateTo();
       cy.percySnapshotWithProperName(
-        "PLL Trainer Pick Target Parameters Page Top"
-      );
-      pllTrainerElements.pickTargetParametersPage.container
-        .get()
-        .scrollTo("bottom");
-      pllTrainerElements.pickTargetParametersPage.submitButton.assertShows();
-      cy.percySnapshotWithProperName(
-        "PLL Trainer Pick Target Parameters Page Bottom"
+        "PLL Trainer Pick Target Parameters Page",
+        { ensureFullHeightIsCaptured: true }
       );
       pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
       pllTrainerElements.newUserStartPage.container.waitFor();
-      cy.percySnapshotWithProperName("PLL Trainer Start Page New User Top");
-      pllTrainerElements.newUserStartPage.container.get().scrollTo("bottom");
-      pllTrainerElements.newUserStartPage.editTargetParametersButton.assertShows();
-      cy.percySnapshotWithProperName("PLL Trainer Start Page New User Bottom");
+      cy.percySnapshotWithProperName("PLL Trainer Start Page New User", {
+        ensureFullHeightIsCaptured: true,
+      });
       // Use a "done" user from here
       pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
       cy.clock();
@@ -172,16 +165,9 @@ describe("Visual Tests", function () {
       pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
         retainCurrentLocalStorage: true,
       });
-      cy.percySnapshotWithProperName(
-        "PLL Trainer Recurring User Start Page Top"
-      );
-      pllTrainerElements.recurringUserStartPage.container
-        .get()
-        .scrollTo("bottom");
-      pllTrainerElements.recurringUserStartPage.editTargetParametersButton.assertShows();
-      cy.percySnapshotWithProperName(
-        "PLL Trainer Recurring User Start Page Bottom"
-      );
+      cy.percySnapshotWithProperName("PLL Trainer Recurring User Start Page", {
+        ensureFullHeightIsCaptured: true,
+      });
 
       // Just an assurance that our AUFs and cases are displaying correctly.
       cy.clearLocalStorage();
