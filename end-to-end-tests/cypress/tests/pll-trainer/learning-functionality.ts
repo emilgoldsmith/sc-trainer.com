@@ -30,59 +30,59 @@ describe("PLL Trainer - Learning Functionality", function () {
   });
 
   describe("Pick Target Parameters Page", function () {
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    const elems = pllTrainerElements.pickTargetParametersPage;
+
     it("has all the correct elements", function () {
-      pllTrainerElements.pickTargetParametersPage.explanation.assertConsumableViaVerticalScroll(
-        pllTrainerElements.pickTargetParametersPage.container.specifier
+      elems.explanation.assertConsumableViaVerticalScroll(
+        elems.container.specifier
       );
-      pllTrainerElements.pickTargetParametersPage.recognitionTimeInput.assertConsumableViaVerticalScroll(
-        pllTrainerElements.pickTargetParametersPage.container.specifier
+      elems.recognitionTimeInput.assertConsumableViaVerticalScroll(
+        elems.container.specifier
       );
-      pllTrainerElements.pickTargetParametersPage.targetTPSInput.assertConsumableViaVerticalScroll(
-        pllTrainerElements.pickTargetParametersPage.container.specifier
+      elems.targetTPSInput.assertConsumableViaVerticalScroll(
+        elems.container.specifier
       );
-      pllTrainerElements.pickTargetParametersPage.submitButton.assertConsumableViaVerticalScroll(
-        pllTrainerElements.pickTargetParametersPage.container.specifier
+      elems.submitButton.assertConsumableViaVerticalScroll(
+        elems.container.specifier
       );
       cy.assertNoHorizontalScrollbar();
     });
 
     it("has the correct default values", function () {
-      pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
-        .get()
-        .should("have.value", "2");
-      pllTrainerElements.pickTargetParametersPage.targetTPSInput
-        .get()
-        .should("have.value", "2.5");
+      elems.recognitionTimeInput.get().should("have.value", "2");
+      elems.targetTPSInput.get().should("have.value", "2.5");
     });
 
     it("correctly inputs decimal inputs, including making commas periods", function () {
-      pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+      elems.recognitionTimeInput
         .get()
         .type("{selectall}{backspace}13.5")
         .should("have.value", "13.5");
-      pllTrainerElements.pickTargetParametersPage.targetTPSInput
+      elems.targetTPSInput
         .get()
         .type("{selectall}{backspace}23.7")
         .should("have.value", "23.7");
-      pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+      elems.recognitionTimeInput
         .get()
         .type("{selectall}{backspace}1,3")
         .should("have.value", "1.3");
-      pllTrainerElements.pickTargetParametersPage.targetTPSInput
+      elems.targetTPSInput
         .get()
         .type("{selectall}{backspace}2,9")
         .should("have.value", "2.9");
     });
 
+    it("displays decimal keyboard on mobile devices", function () {
+      elems.recognitionTimeInput
+        .get()
+        .should("have.attr", "inputmode", "decimal");
+      elems.targetTPSInput.get().should("have.attr", "inputmode", "decimal");
+    });
+
     it("displays error exactly if there's an invalid number", function () {
-      testInput(
-        pllTrainerElements.pickTargetParametersPage.recognitionTimeInput,
-        pllTrainerElements.pickTargetParametersPage.recognitionTimeError
-      );
-      testInput(
-        pllTrainerElements.pickTargetParametersPage.targetTPSInput,
-        pllTrainerElements.pickTargetParametersPage.tpsError
-      );
+      testInput(elems.recognitionTimeInput, elems.recognitionTimeError);
+      testInput(elems.targetTPSInput, elems.tpsError);
 
       function testInput(inputElement: Element, expectedError: Element) {
         inputElement.get().type("{selectall}{backspace}abc").blur();
@@ -98,6 +98,49 @@ describe("PLL Trainer - Learning Functionality", function () {
         expectedError.assertShows();
       }
     });
+
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    [
+      {
+        method: "submit button",
+        submit: () => elems.submitButton.get().click(),
+      },
+      {
+        method: "enter in recognition time input",
+        submit: () => elems.recognitionTimeInput.get().type("{enter}"),
+      },
+      {
+        method: "enter in tps input",
+        submit: () => elems.targetTPSInput.get().type("{enter}"),
+      },
+    ].forEach(({ method, submit }) =>
+      it(
+        "submits exactly when there are no errors, using " + method,
+        function () {
+          makeInvalid(elems.recognitionTimeInput, elems.recognitionTimeError);
+          submit();
+          elems.container.assertShows();
+          makeInvalid(elems.targetTPSInput, elems.tpsError);
+          submit();
+          elems.container.assertShows();
+          makeValid(elems.recognitionTimeInput, elems.recognitionTimeError);
+          submit();
+          elems.container.assertShows();
+          makeValid(elems.targetTPSInput, elems.tpsError);
+          submit();
+          pllTrainerElements.newUserStartPage.container.assertShows();
+
+          function makeInvalid(inputElement: Element, errorElement: Element) {
+            inputElement.get().type("abc");
+            errorElement.waitFor();
+          }
+          function makeValid(inputElement: Element, errorElement: Element) {
+            inputElement.get().type("{selectall}{backspace}2.0");
+            errorElement.assertDoesntExist();
+          }
+        }
+      )
+    );
   });
 
   describe("New User Start Page", function () {

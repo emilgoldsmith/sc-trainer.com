@@ -126,7 +126,8 @@ type Msg
 
 
 type TransitionMsg
-    = GetReadyForTest
+    = UpdateTargetParameters { newTargetRecognitionTime : Float, newTargetTps : Float }
+    | GetReadyForTest
     | StartTest StartTestData
     | EndTest { testTimestamp : Time.Posix } TimeInterval
     | EnableEvaluateResultTransitions
@@ -165,6 +166,23 @@ update shared msg model =
     case msg of
         TransitionMsg transition ->
             case transition of
+                UpdateTargetParameters { newTargetRecognitionTime, newTargetTps } ->
+                    let
+                        ( _, stateCmd ) =
+                            ((states shared).startPage ()).init
+                    in
+                    ( { model | trainerState = StartPage }
+                    , Effect.fromCmd stateCmd
+                      -- , Effect.fromShared <|
+                      --     Shared.ModifyUser
+                      --         (User.changePLLTargetParameters
+                      --             { targetRecognitionTimeInSeconds = newTargetRecognitionTime
+                      --             , targetTps = newTargetTps
+                      --             }
+                      --             |> userModificationThatAlwaysSucceeds
+                      --         )
+                    )
+
                 GetReadyForTest ->
                     let
                         ( stateModel, stateCmd ) =
@@ -526,6 +544,11 @@ recordPLLTestResultWithErrorHandling pll testResult user =
                     )
 
 
+userModificationThatAlwaysSucceeds : (User -> User) -> (User -> ( User, Maybe { errorMessage : String } ))
+userModificationThatAlwaysSucceeds fn =
+    fn >> (\newUser -> ( newUser, Nothing ))
+
+
 
 -- SUBSCRIPTIONS
 
@@ -606,7 +629,7 @@ states shared =
         always <|
             PLLTrainer.States.PickTargetParametersPage.state
                 shared
-                { submit = NoOp
+                { submit = TransitionMsg << UpdateTargetParameters
                 }
                 (StateMsg << PickTargetParametersMsg)
     , startPage =
