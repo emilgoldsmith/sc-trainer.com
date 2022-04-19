@@ -1,11 +1,11 @@
 import { applyDefaultIntercepts } from "support/interceptors";
 import { Key } from "support/keys";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
-import { paths } from "support/paths";
 import { AUF, PLL, pllToAlgorithmString } from "support/pll";
 import {
   getReadyWaitTime,
   pllTrainerElements,
+  pllTrainerStatesNewUser,
 } from "../state-and-elements.helper";
 
 forceReloadAndNavigateIfDotOnlyIsUsed();
@@ -35,10 +35,9 @@ describe("Algorithm Trainer Dynamic Viewport Tests", function () {
   });
   context("touch screen", function () {
     beforeEach(function () {
-      // This really shouldn't make a difference but for some reason local storage is persisting across tests
-      // Maybe it's because we're using config overrides, it seems like the only difference...
-      cy.clearLocalStorage();
-      cy.visit(paths.pllTrainer, { onBeforeLoad: simulateIsTouchScreen });
+      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
+        onBeforeLoad: simulateIsTouchScreen,
+      });
       cy.clock();
     });
     context("large viewport", largeViewportConfigOverride, function () {
@@ -59,10 +58,7 @@ describe("Algorithm Trainer Dynamic Viewport Tests", function () {
   context("non touch screen", function () {
     /** For a non touch screen we should always show shortcuts as they must have a keyboard */
     beforeEach(function () {
-      // This really shouldn't make a difference but for some reason local storage is persisting across tests
-      // Maybe it's because we're using config overrides, it seems like the only difference...
-      cy.clearLocalStorage();
-      cy.visit(paths.pllTrainer);
+      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
       cy.clock();
     });
     context("large viewport", largeViewportConfigOverride, function () {

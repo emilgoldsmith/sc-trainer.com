@@ -9,6 +9,7 @@ export function setForceReloadAndNavigate(): void {
 export type StateOptions = {
   log?: boolean;
   retainCurrentLocalStorage?: boolean;
+  onBeforeLoad?: (window: Window) => void;
 };
 export interface StateCache<
   ExtraNavigateOptions extends Record<string, unknown>
@@ -99,7 +100,12 @@ class StateCacheImplementation<
       () => {
         if (options?.retainCurrentLocalStorage !== true && this.localStorage)
           cy.setLocalStorage(this.localStorage);
-        cy.visit(this.startPath, { log: false });
+        cy.visit(this.startPath, {
+          log: false,
+          ...(options?.onBeforeLoad === undefined
+            ? {}
+            : { onBeforeLoad: options.onBeforeLoad }),
+        });
         this.navigateFromStart(options);
       }
     );
