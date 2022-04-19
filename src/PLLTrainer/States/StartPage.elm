@@ -172,6 +172,12 @@ view shared transitions =
                                 [ text "And just generally make sure you drill you algorithms until you can do them without looking!" ]
                             ]
                         ]
+                    , UI.viewDivider shared.palette
+                    , UI.viewButton.large
+                        [ testid "edit-target-parameters-button"
+                        , centerX
+                        ]
+                        { onPress = Nothing, color = shared.palette.primary, label = always <| text "Edit Target Parameters" }
                     ]
     }
 
