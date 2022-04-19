@@ -689,7 +689,21 @@ const percySnapshotWithProperName: Cypress.Chainable<undefined>["percySnapshotWi
   });
   const width = Cypress.config().viewportWidth;
   const properName = `${name}-${width}`;
-  cy.percySnapshot(properName, options);
+
+  if (options?.ensureFullHeightIsCaptured) {
+    cy.document({ log: false }).then((document) => {
+      const documentHeight = Cypress.$(document).height();
+      if (documentHeight === undefined)
+        throw new Error("document height is undefined");
+
+      return cy.percySnapshot(properName, {
+        ...options,
+        minHeight: documentHeight,
+      });
+    });
+  } else {
+    cy.percySnapshot(properName, options);
+  }
 };
 Cypress.Commands.add(
   "percySnapshotWithProperName",
