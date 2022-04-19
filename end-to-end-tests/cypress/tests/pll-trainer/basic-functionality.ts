@@ -222,41 +222,54 @@ describe("PLL Trainer - Basic Functionality", function () {
     });
     it("doesn't display statistics when local storage only has picked but not attempted plls", function () {
       cy.setLocalStorage(allPllsPickedLocalStorage);
-      cy.visit(paths.pllTrainer);
+      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
+        retainCurrentLocalStorage: true,
+      });
       pllTrainerElements.newUserStartPage.welcomeText.assertShows();
       pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
     });
 
     it("displays welcome text on first visit, and after nearly completed but cancelled test, but not after completing a test fully", function () {
       // Assert no statistics on first visit
-      cy.visit(paths.pllTrainer);
+      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
       pllTrainerElements.newUserStartPage.welcomeText.assertShows();
       pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
 
       // Nearly finish a test
-      pllTrainerStatesNewUser.pickAlgorithmPageAfterUnrecoverable.reloadAndNavigateTo();
+      pllTrainerStatesNewUser.pickAlgorithmPageAfterUnrecoverable.reloadAndNavigateTo(
+        { targetParametersPicked: true, retainCurrentLocalStorage: true }
+      );
 
       // Assert still no statistics
-      cy.visit(paths.pllTrainer);
+      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
+        retainCurrentLocalStorage: true,
+        targetParametersPicked: true,
+      });
       pllTrainerElements.newUserStartPage.welcomeText.assertShows();
       pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
 
       // Finish a test
-      pllTrainerStatesNewUser.correctPage.reloadAndNavigateTo();
+      pllTrainerStatesNewUser.correctPage.reloadAndNavigateTo({
+        retainCurrentLocalStorage: true,
+        targetParametersPicked: true,
+      });
 
       // Assert statistics now show
-      cy.visit(paths.pllTrainer);
+      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
+        retainCurrentLocalStorage: true,
+        targetParametersPicked: true,
+      });
       pllTrainerElements.recurringUserStartPage.averageTime.assertShows();
       pllTrainerElements.newUserStartPage.welcomeText.assertDoesntExist();
     });
 
     it("it displays first 1, then 2, then 3, and then 3 results in worst cases for the first 4 algorithms encountered", function () {
-      cy.visit(paths.pllTrainer);
-      pllTrainerElements.newUserStartPage.container.waitFor();
+      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
       // Ensure it starts off with no elements
       pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
 
       completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Aa, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: true,
         aufs: [],
         correct: true,
@@ -264,6 +277,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       assertListHasLength(1);
 
       completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Ab, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: true,
         aufs: [],
         correct: true,
@@ -271,6 +285,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       assertListHasLength(2);
 
       completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.H, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: true,
         aufs: [],
         correct: true,
@@ -278,6 +293,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       assertListHasLength(3);
 
       completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Ga, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: true,
         aufs: [],
         correct: true,
@@ -285,7 +301,9 @@ describe("PLL Trainer - Basic Functionality", function () {
       assertListHasLength(3);
 
       function assertListHasLength(length: number): void {
-        cy.visit(paths.pllTrainer);
+        pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
+          retainCurrentLocalStorage: true,
+        });
         pllTrainerElements.recurringUserStartPage.worstCaseListItem
           .get()
           .should("have.length", length);
@@ -298,6 +316,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       const HAlgorithmLength = 7;
       const ZAlgorithmLength = 9;
       completePLLTestInMilliseconds(1500, PLL.Aa, {
+        targetParametersPicked: false,
         firstEncounterWithThisPLL: true,
         // Try with no AUFs
         aufs: [],
@@ -312,6 +331,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         ],
       });
       completePLLTestInMilliseconds(2000, PLL.Aa, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         // Try with a preAUF
         aufs: [AUF.U, AUF.none],
@@ -330,6 +350,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         ],
       });
       completePLLTestInMilliseconds(1000, PLL.Aa, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         // Try with a postAUF
         aufs: [AUF.none, AUF.U2],
@@ -350,6 +371,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       // Ensure with a fourth attempt that only the most recent 3 attempts
       // are taken into account
       completePLLTestInMilliseconds(1000, PLL.Aa, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         // Try with both AUFs
         aufs: [AUF.UPrime, AUF.U],
@@ -368,6 +390,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         ],
       });
       completePLLTestInMilliseconds(2000, PLL.H, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: true,
         aufs: [],
         correct: true,
@@ -390,6 +413,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       });
       // Test that DNFs work as we want them to
       completePLLTestInMilliseconds(2000, PLL.Aa, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         aufs: [AUF.U2, AUF.UPrime],
         correct: false,
@@ -407,6 +431,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         ],
       });
       completePLLTestInMilliseconds(2000, PLL.Aa, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         aufs: [AUF.U2, AUF.none],
         correct: true,
@@ -424,6 +449,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         ],
       });
       completePLLTestInMilliseconds(1000, PLL.Aa, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         aufs: [AUF.none, AUF.none],
         correct: true,
@@ -441,6 +467,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         ],
       });
       completePLLTestInMilliseconds(3000, PLL.Aa, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         aufs: [AUF.U, AUF.UPrime],
         correct: true,
@@ -467,6 +494,7 @@ describe("PLL Trainer - Basic Functionality", function () {
        * difference it makes is changing the post-AUF
        */
       completePLLTestInMilliseconds(2000, PLL.H, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         // These AUFs actually cancel out and should result in a 0-AUF case
         // and calculated as such
@@ -493,6 +521,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         ],
       });
       completePLLTestInMilliseconds(2000, PLL.H, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         // These should partially cancel out and just add a single postAUF
         aufs: [AUF.U2, AUF.UPrime],
@@ -519,6 +548,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         ],
       });
       completePLLTestInMilliseconds(2000, PLL.H, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         // This should predictably just add a single turn
         aufs: [AUF.none, AUF.U],
@@ -550,6 +580,7 @@ describe("PLL Trainer - Basic Functionality", function () {
        * symmetries seem handled too
        */
       completePLLTestInMilliseconds(5000, PLL.Z, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: true,
         aufs: [],
         correct: true,
@@ -579,6 +610,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         ],
       });
       completePLLTestInMilliseconds(5000, PLL.Z, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         // We check that it can indeed get +2
         aufs: [AUF.U, AUF.UPrime],
@@ -612,6 +644,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         ],
       });
       completePLLTestInMilliseconds(5000, PLL.Z, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         // We check that a U2 postAUF gets correctly cancelled out
         // as one could then just do U' as the preAUF and it's only +1
@@ -659,7 +692,9 @@ describe("PLL Trainer - Basic Functionality", function () {
           | { pll: PLL; dnf: true }
         )[];
       }): void {
-        cy.visit(paths.pllTrainer);
+        pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
+          retainCurrentLocalStorage: true,
+        });
         pllTrainerElements.recurringUserStartPage.worstCaseListItem
           .get()
           .should("have.length", worstCasesFromWorstToBetter.length)
@@ -704,7 +739,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       const AaAlgorithmLength = 10;
       const GaAlgorithmLength = 15;
       const totalPLLCases = 21;
-      cy.visit(paths.pllTrainer);
+      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
       pllTrainerElements.newUserStartPage.container.waitFor();
       pllTrainerElements.recurringUserStartPage.numCasesTried.assertDoesntExist();
       pllTrainerElements.recurringUserStartPage.numCasesNotYetTried.assertDoesntExist();
@@ -712,6 +747,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       pllTrainerElements.recurringUserStartPage.averageTPS.assertDoesntExist();
 
       completePLLTestInMilliseconds(1000, PLL.Aa, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: true,
         aufs: [AUF.UPrime, AUF.none],
         correct: true,
@@ -724,6 +760,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       });
 
       completePLLTestInMilliseconds(2000, PLL.Ab, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: true,
         aufs: [],
         correct: false,
@@ -738,6 +775,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       });
 
       completePLLTestInMilliseconds(2000, PLL.Ga, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: true,
         // TODO: This corresponds to no AUFs for first case as we can't really set
         // aufs on the first attempt, we should really fix that
@@ -755,6 +793,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       });
 
       completePLLTestInMilliseconds(1000, PLL.Ga, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         aufs: [],
         correct: true,
@@ -775,11 +814,13 @@ describe("PLL Trainer - Basic Functionality", function () {
       // Now we make sure that it only counts the last three by going up
       // to 4 tests on Ga
       completePLLTestInMilliseconds(2000, PLL.Ga, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         aufs: [AUF.none, AUF.U],
         correct: true,
       });
       completePLLTestInMilliseconds(3000, PLL.Ga, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         aufs: [AUF.UPrime, AUF.U2],
         correct: true,
@@ -812,7 +853,9 @@ describe("PLL Trainer - Basic Functionality", function () {
           eachCasePrecomputed.map((x) => x.averageTPS)
         );
         const numNotYetTried = totalPLLCases - numTried;
-        cy.visit(paths.pllTrainer);
+        pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
+          retainCurrentLocalStorage: true,
+        });
         pllTrainerElements.recurringUserStartPage.numCasesTried
           .get()
           .should("include.text", ": " + numTried.toString());
@@ -849,12 +892,15 @@ describe("PLL Trainer - Basic Functionality", function () {
         modified: string;
       };
       completePLLTestInMilliseconds(1000, PLL.Aa, {
+        targetParametersPicked: false,
         firstEncounterWithThisPLL: true,
         aufs: [AUF.U2, AUF.UPrime],
         correct: true,
         overrideDefaultAlgorithm: pllToAlgorithmString[PLL.Aa],
       });
-      cy.visit(paths.pllTrainer);
+      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
+        retainCurrentLocalStorage: true,
+      });
       pllTrainerElements.recurringUserStartPage.worstCaseListItem
         .get()
         .invoke("text")
@@ -862,12 +908,15 @@ describe("PLL Trainer - Basic Functionality", function () {
 
       cy.clearLocalStorage();
       completePLLTestInMilliseconds(1000, PLL.Aa, {
+        targetParametersPicked: false,
         firstEncounterWithThisPLL: true,
         aufs: [AUF.U2, AUF.UPrime],
         correct: true,
         overrideDefaultAlgorithm: "y' " + pllToAlgorithmString[PLL.Aa] + " y2",
       });
-      cy.visit(paths.pllTrainer);
+      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
+        retainCurrentLocalStorage: true,
+      });
       pllTrainerElements.recurringUserStartPage.worstCaseListItem
         .get()
         .invoke("text")
@@ -954,6 +1003,7 @@ describe("PLL Trainer - Basic Functionality", function () {
           };
           // First we input the desired algorithm as our chosen one
           completePLLTestInMilliseconds(1000, pll, {
+            targetParametersPicked: false,
             firstEncounterWithThisPLL: true,
             correct: true,
             overrideDefaultAlgorithm: algorithmWithRotation,
@@ -961,6 +1011,7 @@ describe("PLL Trainer - Basic Functionality", function () {
           });
           // Then we run the test with that algorithm being used
           completePLLTestInMilliseconds(1000, pll, {
+            targetParametersPicked: true,
             firstEncounterWithThisPLL: false,
             correct: true,
             aufs: [],
@@ -973,6 +1024,7 @@ describe("PLL Trainer - Basic Functionality", function () {
           cy.clearLocalStorage();
           // First we input the desired algorithm as our chosen one
           completePLLTestInMilliseconds(1000, pll, {
+            targetParametersPicked: false,
             firstEncounterWithThisPLL: true,
             correct: true,
             overrideDefaultAlgorithm: algorithmWithoutRotation,
@@ -980,6 +1032,7 @@ describe("PLL Trainer - Basic Functionality", function () {
           });
           // Then we run the test with that algorithm being used
           completePLLTestInMilliseconds(1000, pll, {
+            targetParametersPicked: true,
             firstEncounterWithThisPLL: false,
             correct: true,
             aufs: [],
@@ -1010,20 +1063,30 @@ describe("PLL Trainer - Basic Functionality", function () {
       const firstAlgorithm = "R2 U' R' U' R U R U R U' R";
       const secondAlgorithm = "R2 U' R2 S R2 S' U R2";
 
-      runTest({ algorithm: firstAlgorithm, firstEncounterWithThisPLL: true });
+      runTest({
+        algorithm: firstAlgorithm,
+        targetParametersPicked: false,
+        firstEncounterWithThisPLL: true,
+      });
       // We only record on the second attempt because on the first attempt the app still doesn't
       // know which algorithm you use so it wouldn't make a difference making the test meaningless
       runTest({
         algorithm: firstAlgorithm,
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         cubeAlias: "firstCube",
       });
 
       cy.clearLocalStorage();
 
-      runTest({ algorithm: secondAlgorithm, firstEncounterWithThisPLL: true });
       runTest({
         algorithm: secondAlgorithm,
+        targetParametersPicked: false,
+        firstEncounterWithThisPLL: true,
+      });
+      runTest({
+        algorithm: secondAlgorithm,
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: false,
         cubeAlias: "secondCube",
       });
@@ -1039,13 +1102,16 @@ describe("PLL Trainer - Basic Functionality", function () {
       function runTest<Key extends keyof Aliases>({
         algorithm,
         cubeAlias,
+        targetParametersPicked,
         firstEncounterWithThisPLL,
       }: {
         algorithm: string;
         cubeAlias?: Key;
+        targetParametersPicked: boolean;
         firstEncounterWithThisPLL: boolean;
       }) {
         completePLLTestInMilliseconds(1000, pll, {
+          targetParametersPicked,
           firstEncounterWithThisPLL,
           aufs,
           correct: true,
@@ -1109,6 +1175,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         const internalInitialAUFs = [AUF.none, AUF.none] as const;
         cy.clearLocalStorage();
         completePLLTestInMilliseconds(testResultTime, pll, {
+          targetParametersPicked: false,
           firstEncounterWithThisPLL: true,
           aufs: internalInitialAUFs,
           correct: false,
@@ -1126,12 +1193,14 @@ describe("PLL Trainer - Basic Functionality", function () {
           .then((actualAUFs) => {
             cy.clearLocalStorage();
             completePLLTestInMilliseconds(testResultTime, pll, {
+              targetParametersPicked: false,
               firstEncounterWithThisPLL: true,
               aufs: internalInitialAUFs,
               correct: true,
               overrideDefaultAlgorithm: algorithm,
             });
             completePLLTestInMilliseconds(testResultTime, pll, {
+              targetParametersPicked: true,
               firstEncounterWithThisPLL: false,
               aufs: actualAUFs,
               correct: true,
@@ -1146,7 +1215,9 @@ describe("PLL Trainer - Basic Functionality", function () {
                   pllTrainerElements.testRunning.testCase
                 ).setAlias<Aliases, "cubeAfter">("cubeAfter"),
             });
-            cy.visit(paths.pllTrainer);
+            pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
+              retainCurrentLocalStorage: true,
+            });
             pllTrainerElements.recurringUserStartPage.worstCaseListItem
               .get()
               .invoke("text")
@@ -1181,6 +1252,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       // H PERM TESTS - Full symmetry
       // First we make sure the algorithm is picked so AUFs are predictable
       completePLLTestInMilliseconds(1000, PLL.H, {
+        targetParametersPicked: false,
         firstEncounterWithThisPLL: true,
         aufs: [],
         correct: true,
@@ -1207,6 +1279,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       // Z PERM TESTS - Half symmetry
       // Again make sure algorithm is picked
       completePLLTestInMilliseconds(1000, PLL.Z, {
+        targetParametersPicked: true,
         firstEncounterWithThisPLL: true,
         aufs: [],
         correct: true,
@@ -1240,6 +1313,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         aufToExpect: [AUF, AUF];
       }) {
         completePLLTestInMilliseconds(1000, pll, {
+          targetParametersPicked: true,
           firstEncounterWithThisPLL: false,
           aufs: aufToSet,
           correct: false,
@@ -2083,7 +2157,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         solvedFront: string;
         solvedBack: string;
       };
-      cy.visit(paths.pllTrainer);
+      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
       getStringRepresentationOfCube(
         pllTrainerElements.newUserStartPage.cubeStartState
       ).setAlias<Aliases, "solvedFront">("solvedFront");
@@ -2112,7 +2186,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         solvedFront: string;
         solvedBack: string;
       };
-      cy.visit(paths.pllTrainer);
+      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
       getStringRepresentationOfCube(
         pllTrainerElements.newUserStartPage.cubeStartState
       ).setAlias<Aliases, "solvedFront">("solvedFront");
