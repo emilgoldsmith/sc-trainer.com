@@ -204,6 +204,6 @@ RUN ln -s /test-and-linters/node_modules/.bin/elm-test /usr/local/bin/elm-test
 RUN ln -s /test-and-linters/node_modules/.bin/elm-format /usr/local/bin/elm-format
 RUN ln -s /test-and-linters/node_modules/.bin/elm-verify-examples /usr/local/bin/elm-verify-examples
 RUN ln -s /test-and-linters/node_modules/.bin/elm-analyse /usr/local/bin/elm-analyse
-RUN ln -s /test-and-linters/node_modules/.bin/elm-docs-compile /usr/local/bin/elm-docs-compile
+RUN ln -s /test-and-linters/node_modules/.bin/elm-doc-preview /usr/local/bin/elm-doc-preview
 
 USER $USERNAME
