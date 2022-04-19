@@ -12,29 +12,29 @@ import User exposing (User)
 user : Fuzz.Fuzzer User
 user =
     let
-        changePLLOperations =
+        changePLLOperationsFuzzer =
             Fuzz.list <| Fuzz.map2 User.changePLLAlgorithm pll algorithm
 
-        recordResultOperations =
+        recordResultOperationsFuzzer =
             Fuzz.list <| Fuzz.map2 User.recordPLLTestResult pll testResult
     in
     Fuzz.constant User.new
         |> Fuzz.map2
-            (\changePLLOperations_ curUser ->
+            (\changePLLOperations curUser ->
                 List.foldl
                     (\operation user_ -> operation user_)
                     curUser
-                    changePLLOperations_
+                    changePLLOperations
             )
-            changePLLOperations
+            changePLLOperationsFuzzer
         |> Fuzz.map2
-            (\recordResultOperations_ curUser ->
+            (\recordResultOperations curUser ->
                 List.foldl
                     (\operation user_ -> operation user_ |> Result.withDefault user_)
                     curUser
-                    recordResultOperations_
+                    recordResultOperations
             )
-            recordResultOperations
+            recordResultOperationsFuzzer
         |> Fuzz.map3
             (\recognitionTime tps ->
                 User.changePLLTargetParameters { targetRecognitionTimeInSeconds = recognitionTime, targetTps = tps }
