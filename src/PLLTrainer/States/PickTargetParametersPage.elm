@@ -5,8 +5,8 @@ import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
-import Html
 import Html.Attributes
+import Key
 import PLLTrainer.State
 import Shared
 import UI
@@ -33,7 +33,11 @@ state shared transitions toMsg =
 
 
 type alias Transitions msg =
-    { submit : msg
+    { submit :
+        { newTargetRecognitionTime : Float
+        , newTargetTps : Float
+        }
+        -> msg
     }
 
 
@@ -65,6 +69,7 @@ init shared =
 type Msg
     = UpdateRecognitionTime String
     | UpdateTPS String
+    | NoOp
 
 
 update : Msg -> Model -> Model
@@ -75,6 +80,9 @@ update msg model =
 
         UpdateTPS nextTPS ->
             { model | targetTps = processFloatStringInput nextTPS }
+
+        NoOp ->
+            model
 
 
 processFloatStringInput : String -> String
@@ -103,6 +111,20 @@ view :
 view shared transitions toMsg model =
     { overlays = View.buildOverlays []
     , body =
+        let
+            submitMsg =
+                Maybe.map2
+                    (\recognition tps ->
+                        Just <|
+                            transitions.submit
+                                { newTargetRecognitionTime = recognition
+                                , newTargetTps = tps
+                                }
+                    )
+                    (String.toFloat model.targetRecognitionTimeInSeconds)
+                    (String.toFloat model.targetTps)
+                    |> Maybe.withDefault (Just <| toMsg NoOp)
+        in
         View.FullScreen <|
             el
                 [ testid "pick-target-parameters-container"
@@ -142,6 +164,7 @@ view shared transitions toMsg model =
                         { testId = "recognition-time-input"
                         , errorTestId = "recognition-time-error"
                         , onChange = toMsg << UpdateRecognitionTime
+                        , onEnter = submitMsg
                         , inputContent = model.targetRecognitionTimeInSeconds
                         , label = "Recognition Time"
                         , palette = shared.palette
@@ -153,6 +176,7 @@ view shared transitions toMsg model =
                         { testId = "target-TPS-input"
                         , errorTestId = "tps-error"
                         , onChange = toMsg << UpdateTPS
+                        , onEnter = submitMsg
                         , inputContent = model.targetTps
                         , label = "TPS"
                         , palette = shared.palette
@@ -161,9 +185,9 @@ view shared transitions toMsg model =
                         , maxExpectedMainDigits = 2
                         }
                     , UI.viewButton.large [ testid "submit-button", centerX ]
-                        { onPress = Nothing
-                        , color = shared.palette.primary
+                        { color = shared.palette.primary
                         , label = always (text "Submit")
+                        , onPress = submitMsg
                         }
                     ]
     }
@@ -173,6 +197,7 @@ targetFloatInput :
     { testId : String
     , errorTestId : String
     , onChange : String -> msg
+    , onEnter : Maybe msg
     , inputContent : String
     , label : String
     , palette : UI.Palette
@@ -197,6 +222,14 @@ targetFloatInput params =
                         el [ testid params.errorTestId, Font.color params.palette.errorText ] <|
                             text "Invalid Number"
                     }
+
+        maybeOnEnterStyling =
+            case params.onEnter of
+                Just msg ->
+                    [ Key.onEnter msg ]
+
+                Nothing ->
+                    []
     in
     column
         [ centerX
@@ -204,6 +237,7 @@ targetFloatInput params =
         ]
         [ Input.text
             (maybeExtraErrorStyling
+                ++ maybeOnEnterStyling
                 ++ [ testid params.testId
                    , htmlAttribute <| Html.Attributes.attribute "inputmode" "decimal"
                    , width <| px (45 + 10 * params.maxExpectedMainDigits + round params.unitWidth)
