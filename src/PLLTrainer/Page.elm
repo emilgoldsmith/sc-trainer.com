@@ -127,6 +127,7 @@ type Msg
 
 type TransitionMsg
     = UpdateTargetParameters { newTargetRecognitionTime : Float, newTargetTps : Float }
+    | GoToEditTargetParameters
     | GetReadyForTest
     | StartTest StartTestData
     | EndTest { testTimestamp : Time.Posix } TimeInterval
@@ -172,15 +173,26 @@ update shared msg model =
                             ((states shared).startPage ()).init
                     in
                     ( { model | trainerState = StartPage }
+                    , Effect.batch
+                        [ Effect.fromCmd stateCmd
+                        , Effect.fromShared <|
+                            Shared.ModifyUser
+                                (User.changePLLTargetParameters
+                                    { targetRecognitionTimeInSeconds = newTargetRecognitionTime
+                                    , targetTps = newTargetTps
+                                    }
+                                    |> userModificationThatAlwaysSucceeds
+                                )
+                        ]
+                    )
+
+                GoToEditTargetParameters ->
+                    let
+                        ( stateModel, stateCmd ) =
+                            ((states shared).pickTargetParametersPage ()).init
+                    in
+                    ( { model | trainerState = PickTargetParametersPage stateModel }
                     , Effect.fromCmd stateCmd
-                      -- , Effect.fromShared <|
-                      --     Shared.ModifyUser
-                      --         (User.changePLLTargetParameters
-                      --             { targetRecognitionTimeInSeconds = newTargetRecognitionTime
-                      --             , targetTps = newTargetTps
-                      --             }
-                      --             |> userModificationThatAlwaysSucceeds
-                      --         )
                     )
 
                 GetReadyForTest ->
@@ -637,6 +649,7 @@ states shared =
             PLLTrainer.States.StartPage.state
                 shared
                 { startTest = TransitionMsg GetReadyForTest
+                , editTargetParameters = TransitionMsg GoToEditTargetParameters
                 , noOp = NoOp
                 }
     , testRunning =
