@@ -2,7 +2,6 @@ import {
   addPercyCanvasStyleFixers,
   applyDefaultIntercepts,
 } from "support/interceptors";
-import { paths } from "support/paths";
 import { AUF, PLL } from "support/pll";
 import {
   completePLLTestInMilliseconds,
@@ -12,16 +11,32 @@ import {
   pllTrainerStatesUserDone,
 } from "./pll-trainer/state-and-elements.helper";
 
-describe("Visual Tests", function () {
+describe.only("Visual Tests", function () {
   beforeEach(function () {
     applyDefaultIntercepts({ extraHtmlModifiers: [addPercyCanvasStyleFixers] });
   });
   describe("PLL Trainer", function () {
     it("looks right", function () {
+      pllTrainerStatesNewUser.pickTargetParametersPage.reloadAndNavigateTo();
+      cy.percySnapshotWithProperName(
+        "PLL Trainer Pick Target Parameters Page Top"
+      );
+      pllTrainerElements.pickTargetParametersPage.container
+        .get()
+        .scrollTo("bottom");
+      pllTrainerElements.pickTargetParametersPage.submitButton.assertShows();
+      cy.percySnapshotWithProperName(
+        "PLL Trainer Pick Target Parameters Page Bottom"
+      );
+      pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
+      pllTrainerElements.newUserStartPage.container.waitFor();
+      cy.percySnapshotWithProperName("PLL Trainer Start Page New User Top");
+      pllTrainerElements.newUserStartPage.container.get().scrollTo("bottom");
+      pllTrainerElements.newUserStartPage.editTargetParametersButton.assertShows();
+      cy.percySnapshotWithProperName("PLL Trainer Start Page New User Bottom");
+      // Use a "done" user from here
       pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
       cy.clock();
-      pllTrainerElements.newUserStartPage.container.waitFor();
-      cy.percySnapshotWithProperName("PLL Trainer Start Page");
       pllTrainerElements.newUserStartPage.startButton.get().click();
       pllTrainerElements.getReadyState.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer Get Ready Screen");
@@ -154,9 +169,19 @@ describe("Visual Tests", function () {
         aufs: [],
         correct: true,
       });
-      cy.visit(paths.pllTrainer);
-      pllTrainerElements.recurringUserStartPage.container.waitFor();
-      cy.percySnapshotWithProperName("PLL Trainer Recurring User Start Page");
+      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
+        retainCurrentLocalStorage: true,
+      });
+      cy.percySnapshotWithProperName(
+        "PLL Trainer Recurring User Start Page Top"
+      );
+      pllTrainerElements.recurringUserStartPage.container
+        .get()
+        .scrollTo("bottom");
+      pllTrainerElements.recurringUserStartPage.editTargetParametersButton.assertShows();
+      cy.percySnapshotWithProperName(
+        "PLL Trainer Recurring User Start Page Bottom"
+      );
 
       // Just an assurance that our AUFs and cases are displaying correctly.
       cy.clearLocalStorage();
