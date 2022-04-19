@@ -14,7 +14,7 @@ export interface StateCache<
   ExtraNavigateOptions extends Record<string, unknown>
 > {
   populateCache(): void;
-  restoreState(options?: StateOptions): void;
+  restoreState(options?: StateOptions & ExtraNavigateOptions): void;
   reloadAndNavigateTo(options?: StateOptions & ExtraNavigateOptions): void;
 }
 
