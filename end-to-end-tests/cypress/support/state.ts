@@ -108,15 +108,21 @@ class StateCacheImplementation<
   private navigateFromStart(
     options?: StateOptions & ExtraNavigateOptions
   ): void {
-    this.getToThatState(this.getStateByNavigate.bind(this), options);
+    this.getToThatState(
+      (key) => this.getStateByNavigate(key, options),
+      options
+    );
     this.waitForStateToAppear({ log: false });
   }
 
-  private getStateByNavigate(key: Keys): void {
+  private getStateByNavigate(
+    key: Keys,
+    options?: StateOptions & ExtraNavigateOptions
+  ): void {
     if (this.otherCaches === undefined) {
       throw new Error("otherCaches not defined when it should be");
     }
-    this.otherCaches[key].navigateFromStart();
+    this.otherCaches[key].navigateFromStart(options);
   }
 
   setOtherCaches(

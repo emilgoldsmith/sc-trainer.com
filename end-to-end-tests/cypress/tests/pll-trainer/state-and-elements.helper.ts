@@ -299,12 +299,22 @@ export const pllTrainerStatesNewUser = buildStates<
   | "correctPage"
   | "typeOfWrongPage"
   | "wrongPage",
+  | ({
+      targetParametersPicked: boolean;
+    } & (
+      | {
+          case: [AUF, PLL, AUF];
+          algorithm: string;
+        }
+      // eslint-disable-next-line @typescript-eslint/ban-types
+      | {}
+    ))
   // We override the error on the {} type here as the Record<string, never>
   // or Record<string, unknown> break code in different ways and since
   // this generic is always used for & types then it doesn't actually seem to
   // be an issue.
   // eslint-disable-next-line @typescript-eslint/ban-types
-  { case: [AUF, PLL, AUF]; algorithm: string } | {}
+  | {}
 >(
   { startPath: paths.pllTrainer, defaultNavigateOptions: {}, localStorage: {} },
   {
@@ -318,10 +328,18 @@ export const pllTrainerStatesNewUser = buildStates<
     startPage: {
       name: "startPage",
       getToThatState: (getState, options) => {
-        getState("pickTargetParametersPage");
-        pllTrainerElements.pickTargetParametersPage.submitButton
-          .get(options)
-          .click();
+        if (
+          options &&
+          "targetParametersPicked" in options &&
+          options.targetParametersPicked === true
+        ) {
+          // Don't do anything as we should already be here when parameters are picked
+        } else {
+          getState("pickTargetParametersPage");
+          pllTrainerElements.pickTargetParametersPage.submitButton
+            .get(options)
+            .click();
+        }
       },
       waitForStateToAppear: (options) => {
         pllTrainerElements.newUserStartPage.container
@@ -476,6 +494,7 @@ export function completePLLTestInMilliseconds(
   pll: PLL,
   params: {
     firstEncounterWithThisPLL: boolean;
+    targetParametersPicked: boolean;
     aufs: readonly [AUF, AUF] | readonly [];
     overrideDefaultAlgorithm?: string;
     startPageCallback?: () => void;
@@ -484,6 +503,7 @@ export function completePLLTestInMilliseconds(
 ): void {
   const {
     firstEncounterWithThisPLL,
+    targetParametersPicked,
     aufs,
     correct,
     overrideDefaultAlgorithm,
@@ -491,7 +511,10 @@ export function completePLLTestInMilliseconds(
     testRunningCallback,
   } = params;
   const [preAUF, postAUF] = [aufs[0] ?? AUF.none, aufs[1] ?? AUF.none];
-  cy.visit(paths.pllTrainer);
+  pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
+    retainCurrentLocalStorage: true,
+    targetParametersPicked,
+  });
   cy.clock();
   pllTrainerElements.newUserStartPage.container.waitFor();
   startPageCallback?.();
