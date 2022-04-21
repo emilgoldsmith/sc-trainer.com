@@ -7,6 +7,6 @@ describe("Main Smoke Test", function () {
     // We run this in staging and production and we don't want it to count into the statistics and dirty them
     interceptHtml(removeAnalyticsScripts);
     cy.visit(paths.pllTrainer);
-    pllTrainerElements.newUserStartPage.container.assertShows();
+    pllTrainerElements.pickTargetParametersPage.container.assertShows();
   });
 });
