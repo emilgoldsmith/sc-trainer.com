@@ -6,6 +6,7 @@ import {
   anyErrorMessage,
   errorMessageElement,
   optionalElement,
+  buildRootCategory,
 } from "support/elements";
 import { buildStates, StateOptions } from "support/state";
 import { paths } from "support/paths";
@@ -13,6 +14,14 @@ import { AUF, PLL, pllToAlgorithmString } from "support/pll";
 import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
 
 export const pllTrainerElements = {
+  root: buildRootCategory({
+    testId: "pll-trainer-root",
+    stateAttributeValues: {
+      startPage: "start-page",
+      newCasePage: "new-case-page",
+      getReadyState: "get-ready-state",
+    },
+  }),
   pickTargetParametersPage: buildElementsCategory({
     container: "pick-target-parameters-container",
     explanation: "explanation",
@@ -47,6 +56,11 @@ export const pllTrainerElements = {
     instructionsText: "instructions-text",
     learningResources: "learning-resources",
     editTargetParametersButton: "edit-target-parameters-button",
+  }),
+  newCasePage: buildElementsCategory({
+    container: "new-case-page",
+    explanation: "new-case-explanation",
+    startTestButton: "start-test-button",
   }),
   getReadyState: buildElementsCategory({
     container: "test-running-container-get-ready",
@@ -290,6 +304,7 @@ export const pllTrainerStatesUserDone = buildStates<
 export const pllTrainerStatesNewUser = buildStates<
   | "pickTargetParametersPage"
   | "startPage"
+  | "newCasePage"
   | "getReadyState"
   | "testRunning"
   | "evaluateResult"
@@ -300,10 +315,11 @@ export const pllTrainerStatesNewUser = buildStates<
   | "typeOfWrongPage"
   | "wrongPage",
   | ({
-      targetParametersPicked: boolean;
+      targetParametersPicked?: boolean;
+      isNewCase?: boolean;
     } & (
       | {
-          case: [AUF, PLL, AUF];
+          case: readonly [AUF, PLL, AUF];
           algorithm: string;
         }
       // eslint-disable-next-line @typescript-eslint/ban-types
@@ -348,6 +364,18 @@ export const pllTrainerStatesNewUser = buildStates<
         cy.waitForDocumentEventListeners("keyup");
       },
     },
+    newCasePage: {
+      name: "newCasePage",
+      getToThatState: (getState, options) => {
+        getState("startPage");
+        pllTrainerElements.newUserStartPage.startButton
+          .get(options)
+          .click(options);
+      },
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.newCasePage.container.waitFor(options);
+      },
+    },
     getReadyState: {
       name: "getReadyState",
       getToThatState: (getState, options) => {
@@ -355,6 +383,11 @@ export const pllTrainerStatesNewUser = buildStates<
         pllTrainerElements.newUserStartPage.startButton
           .get(options)
           .click(options);
+        if (
+          options && "isNewCase" in options ? options.isNewCase === true : true
+        ) {
+          pllTrainerElements.newCasePage.startTestButton.get().click();
+        }
       },
       waitForStateToAppear: (options) => {
         pllTrainerElements.getReadyState.container.waitFor(options);
@@ -370,9 +403,17 @@ export const pllTrainerStatesNewUser = buildStates<
         pllTrainerElements.newUserStartPage.startButton
           .get(options)
           .click(options);
+        if (
+          options && "isNewCase" in options ? options.isNewCase === true : true
+        ) {
+          pllTrainerElements.newCasePage.startTestButton.get().click();
+        }
         pllTrainerElements.getReadyState.container.waitFor(options);
         cy.tick(getReadyWaitTime, options);
         cy.clock().then((clock) => clock.restore());
+        pllTrainerElements.testRunning.container.waitFor(options);
+        if (options && "case" in options && options.case !== undefined)
+          cy.setCurrentTestCase(options.case);
       },
       waitForStateToAppear: (options) => {
         pllTrainerElements.testRunning.container.waitFor(options);
@@ -395,8 +436,6 @@ export const pllTrainerStatesNewUser = buildStates<
         // We need to have time mocked from test running
         // to programatically pass through the ignoring key presses phase
         getState("testRunning");
-        if (options && "case" in options && options.case !== undefined)
-          cy.setCurrentTestCase(options.case);
         cy.clock();
         cy.pressKey(Key.space, options);
         pllTrainerElements.evaluateResult.container.waitFor(options);
@@ -519,6 +558,9 @@ export function completePLLTestInMilliseconds(
   pllTrainerElements.newUserStartPage.container.waitFor();
   startPageCallback?.();
   pllTrainerElements.newUserStartPage.startButton.get().click();
+  if (firstEncounterWithThisPLL) {
+    pllTrainerElements.newCasePage.startTestButton.get().click();
+  }
   pllTrainerElements.getReadyState.container.waitFor();
   cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();

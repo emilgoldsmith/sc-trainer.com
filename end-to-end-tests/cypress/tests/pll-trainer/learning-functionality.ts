@@ -596,14 +596,20 @@ describe("PLL Trainer - Learning Functionality", function () {
         // Note we use reload here as we don't want restore to save an old state of the
         // model that doesn't include the plls picked
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
-          { retainCurrentLocalStorage: true }
+          { retainCurrentLocalStorage: true, case: [AUF.none, PLL.H, AUF.none] }
         );
 
         pllTrainerElements.evaluateResult.correctButton.get().click();
         pllTrainerElements.correctPage.container.assertShows();
 
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
-          { retainCurrentLocalStorage: true, targetParametersPicked: true }
+          {
+            retainCurrentLocalStorage: true,
+            targetParametersPicked: true,
+            // Just ensure it is not the same as above so that new case shows
+            case: [AUF.none, PLL.Ga, AUF.none],
+            isNewCase: true,
+          }
         );
 
         pllTrainerElements.evaluateResult.wrongButton.get().click();
@@ -627,9 +633,13 @@ describe("PLL Trainer - Learning Functionality", function () {
 
         // Revisit, try again but now we should skip it for same case
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
-          { retainCurrentLocalStorage: true, targetParametersPicked: true }
+          {
+            retainCurrentLocalStorage: true,
+            targetParametersPicked: true,
+            case: correctBranchCase,
+            isNewCase: false,
+          }
         );
-        cy.setCurrentTestCase(correctBranchCase);
 
         pllTrainerElements.evaluateResult.correctButton.get().click();
         pllTrainerElements.correctPage.container.assertShows();
@@ -637,9 +647,7 @@ describe("PLL Trainer - Learning Functionality", function () {
         // ---------------------------------------------------
         // Now we try it with a wrong route
         // ---------------------------------------------------
-        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState(
-          { retainCurrentLocalStorage: true, targetParametersPicked: true }
-        );
+        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
 
         const wrongBranchCase = [AUF.none, PLL.H, AUF.none] as const;
         const wrongBranchAlgorithm = pllToAlgorithmString[PLL.H];
@@ -655,9 +663,13 @@ describe("PLL Trainer - Learning Functionality", function () {
 
         // Revisit, try again but now we should skip it for same case
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
-          { retainCurrentLocalStorage: true, targetParametersPicked: true }
+          {
+            retainCurrentLocalStorage: true,
+            targetParametersPicked: true,
+            case: wrongBranchCase,
+            isNewCase: false,
+          }
         );
-        cy.setCurrentTestCase(wrongBranchCase);
 
         pllTrainerElements.evaluateResult.wrongButton.get().click();
         pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
