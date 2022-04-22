@@ -208,6 +208,33 @@ export function buildGlobalsCategory<keys extends string>(
   return Cypress._.mapValues(specifiers, buildElement);
 }
 
+export function buildRootCategory<keys extends string>(statesAndId: {
+  testId: ElementSpecifier;
+  stateAttributeValues: {
+    [key in keys]: string;
+  };
+}): {
+  getStateAttributeValue: (options?: {
+    log?: boolean;
+    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  }) => Cypress.Chainable<string>;
+  stateAttributeValues: {
+    [key in keys]: string;
+  };
+} {
+  const { testId, stateAttributeValues } = statesAndId;
+  const stateAttributeName = "__test-helper__state";
+  return {
+    getStateAttributeValue(options?: {
+      log?: boolean;
+      withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+    }) {
+      return getBySpecifier(testId, options).invoke("attr", stateAttributeName);
+    },
+    stateAttributeValues,
+  };
+}
+
 function buildElement(specifier: ElementSpecifier): InternalElement {
   return {
     get: buildGetter(specifier),
