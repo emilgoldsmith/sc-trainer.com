@@ -598,7 +598,10 @@ describe("PLL Trainer - Learning Functionality", function () {
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
           {
             retainCurrentLocalStorage: true,
-            navigateOptions: { case: [AUF.none, PLL.H, AUF.none] },
+            navigateOptions: {
+              case: [AUF.none, PLL.H, AUF.none],
+              algorithm: pllToAlgorithmString[PLL.H],
+            },
           }
         );
 
