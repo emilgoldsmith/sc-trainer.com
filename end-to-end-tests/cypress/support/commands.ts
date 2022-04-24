@@ -703,7 +703,9 @@ const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] = f
         const setCurrentTestCasePort = ports.setCurrentTestCasePort;
         if (!setCurrentTestCasePort)
           throw new Error(
-            "setCurrentTestCase port is not exposed for some reason"
+            `setCurrentTestCase port is not exposed for some reason. The port keys are: ${JSON.stringify(
+              Object.keys(ports)
+            )}`
           );
         setCurrentTestCasePort.send(jsonValue);
       });
@@ -717,6 +719,38 @@ const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] = f
   );
 };
 Cypress.Commands.add("setCurrentTestCase", setCurrentTestCase);
+
+const overrideNextTestCase: Cypress.Chainable<undefined>["overrideNextTestCase"] = function ([
+  preAuf,
+  pll,
+  postAuf,
+]) {
+  const jsonValue = [
+    aufToAlgorithmString[preAuf],
+    pllToPllLetters[pll],
+    aufToAlgorithmString[postAuf],
+  ];
+  cy.withOverallNameLogged(
+    {
+      displayName: "OVERRIDE NEXT TEST CASE",
+      message: JSON.stringify(jsonValue),
+    },
+    () => {
+      cy.getCustomWindow({ log: false }).then((window) => {
+        const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+        const overrideNextTestCasePort = ports.overrideNextTestCasePort;
+        if (!overrideNextTestCasePort)
+          throw new Error(
+            `overrideNextTestCase port is not exposed for some reason. The port keys are: ${JSON.stringify(
+              Object.keys(ports)
+            )}`
+          );
+        overrideNextTestCasePort.send(jsonValue);
+      });
+    }
+  );
+};
+Cypress.Commands.add("overrideNextTestCase", overrideNextTestCase);
 
 const setExtraAlgToApplyToAllCubes: Cypress.Chainable<undefined>["setExtraAlgToApplyToAllCubes"] = function (
   alg

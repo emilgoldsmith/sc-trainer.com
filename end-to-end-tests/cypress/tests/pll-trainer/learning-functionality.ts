@@ -224,12 +224,12 @@ describe("PLL Trainer - Learning Functionality", function () {
 
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
-      pllTrainerElements.testRunning.container.assertShows();
+      pllTrainerElements.newCasePage.container.assertShows();
     });
 
     it("starts when pressing the begin button", function () {
       pllTrainerElements.newUserStartPage.startButton.get().click();
-      pllTrainerElements.getReadyState.container.assertShows();
+      pllTrainerElements.newCasePage.container.assertShows();
     });
 
     it("doesn't start test when pressing any other keys", function () {
@@ -323,11 +323,11 @@ describe("PLL Trainer - Learning Functionality", function () {
 
             targetContainer.assertShows();
 
+            cy.overrideNextTestCase(testCase);
             startNextTestButton.get().click();
             pllTrainerElements.getReadyState.container.waitFor();
             cy.tick(getReadyWaitTime);
             pllTrainerElements.testRunning.container.waitFor();
-            cy.setCurrentTestCase(testCase);
 
             cy.mouseClickScreen("center");
             pllTrainerElements.evaluateResult.container.waitFor();

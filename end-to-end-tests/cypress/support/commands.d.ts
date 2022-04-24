@@ -277,6 +277,14 @@ declare namespace Cypress {
       ]
     ): void;
 
+    overrideNextTestCase(
+      testCase: readonly [
+        import("./pll").AUF,
+        import("./pll").PLL,
+        import("./pll").AUF
+      ]
+    ): void;
+
     setLocalStorage(storageState: { [key: string]: any }): void;
 
     setExtraAlgToApplyToAllCubes(alg: string): void;

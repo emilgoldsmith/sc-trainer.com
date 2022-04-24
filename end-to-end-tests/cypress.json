@@ -7,6 +7,7 @@
   "viewportWidth": 375,
   "viewportHeight": 667,
   "videoUploadOnPasses": false,
+  "video": false,
   "retries": {
     "runMode": 2,
     "openMode": 0

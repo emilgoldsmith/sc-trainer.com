@@ -58,7 +58,7 @@ export const pllTrainerElements = {
     editTargetParametersButton: "edit-target-parameters-button",
   }),
   newCasePage: buildElementsCategory({
-    container: "new-case-page",
+    container: "new-case-page-container",
     explanation: "new-case-explanation",
     startTestButton: "start-test-button",
   }),
@@ -356,6 +356,8 @@ export const pllTrainerStatesNewUser = buildStates<
             .get(options)
             .click();
         }
+        if (options && "case" in options && options.case !== undefined)
+          cy.overrideNextTestCase(options.case);
       },
       waitForStateToAppear: (options) => {
         pllTrainerElements.newUserStartPage.container
@@ -550,6 +552,8 @@ export function completePLLTestInMilliseconds(
     testRunningCallback,
   } = params;
   const [preAUF, postAUF] = [aufs[0] ?? AUF.none, aufs[1] ?? AUF.none];
+  const testCase = [preAUF, pll, postAUF] as const;
+
   pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
     retainCurrentLocalStorage: true,
     targetParametersPicked,
@@ -557,6 +561,7 @@ export function completePLLTestInMilliseconds(
   cy.clock();
   pllTrainerElements.newUserStartPage.container.waitFor();
   startPageCallback?.();
+  cy.overrideNextTestCase(testCase);
   pllTrainerElements.newUserStartPage.startButton.get().click();
   if (firstEncounterWithThisPLL) {
     pllTrainerElements.newCasePage.startTestButton.get().click();
@@ -564,7 +569,6 @@ export function completePLLTestInMilliseconds(
   pllTrainerElements.getReadyState.container.waitFor();
   cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();
-  cy.setCurrentTestCase([preAUF, pll, postAUF]);
   cy.tick(milliseconds);
   testRunningCallback?.();
   cy.pressKey(Key.space);
