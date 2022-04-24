@@ -15,8 +15,14 @@ export interface StateCache<
   ExtraNavigateOptions extends Record<string, unknown>
 > {
   populateCache(): void;
-  restoreState(options?: StateOptions & ExtraNavigateOptions): void;
-  reloadAndNavigateTo(options?: StateOptions & ExtraNavigateOptions): void;
+  restoreState(
+    options?: StateOptions & {
+      navigateOptionsForNavigateOverrides?: ExtraNavigateOptions;
+    }
+  ): void;
+  reloadAndNavigateTo(
+    options?: StateOptions & { navigateOptions?: ExtraNavigateOptions }
+  ): void;
 }
 
 class StateCacheImplementation<
@@ -33,7 +39,7 @@ class StateCacheImplementation<
     private startPath: string,
     private getToThatState: (
       getState: (key: Keys) => void,
-      options?: StateOptions & ExtraNavigateOptions
+      options?: StateOptions & { navigateOptions?: ExtraNavigateOptions }
     ) => void,
     private defaultNavigateOptions: ExtraNavigateOptions,
     private waitForStateToAppear: (options?: StateOptions) => void,
@@ -76,9 +82,22 @@ class StateCacheImplementation<
     this.otherCaches[key].restoreState();
   }
 
-  restoreState(options?: StateOptions & ExtraNavigateOptions): void {
+  restoreState(
+    options?: StateOptions & {
+      navigateOptionsInCaseOfNavigateOverload?: ExtraNavigateOptions;
+    }
+  ): void {
     if (forceReloadAndNavigate) {
       cy.log("RELOADING INSTEAD OF RESTORE");
+
+      if (options && "navigateOptionsInCaseOfNavigateOverload" in options) {
+        const { navigateOptionsInCaseOfNavigateOverload, ...rest } = options;
+
+        return this.reloadAndNavigateTo({
+          ...rest,
+          navigateOptions: navigateOptionsInCaseOfNavigateOverload,
+        });
+      }
       return this.reloadAndNavigateTo(options);
     }
     if (this.elmModel === null)
@@ -91,7 +110,9 @@ class StateCacheImplementation<
     this.waitForStateToAppear(options);
   }
 
-  reloadAndNavigateTo(options?: StateOptions & ExtraNavigateOptions): void {
+  reloadAndNavigateTo(
+    options?: StateOptions & { navigateOptions?: ExtraNavigateOptions }
+  ): void {
     cy.withOverallNameLogged(
       {
         displayName: "NAVIGATING TO",
@@ -112,7 +133,7 @@ class StateCacheImplementation<
   }
 
   private navigateFromStart(
-    options?: StateOptions & ExtraNavigateOptions
+    options?: StateOptions & { navigateOptions?: ExtraNavigateOptions }
   ): void {
     this.getToThatState(
       (key) => this.getStateByNavigate(key, options),
@@ -123,7 +144,7 @@ class StateCacheImplementation<
 
   private getStateByNavigate(
     key: Keys,
-    options?: StateOptions & ExtraNavigateOptions
+    options?: StateOptions & { navigateOptions?: ExtraNavigateOptions }
   ): void {
     if (this.otherCaches === undefined) {
       throw new Error("otherCaches not defined when it should be");
@@ -158,7 +179,7 @@ export function buildStates<
       name: string;
       getToThatState: (
         getState: (key: Keys) => void,
-        options?: StateOptions & ExtraNavigateOptions
+        options?: StateOptions & { navigateOptions?: ExtraNavigateOptions }
       ) => void;
       waitForStateToAppear: (options?: StateOptions) => void;
     };

@@ -596,7 +596,10 @@ describe("PLL Trainer - Learning Functionality", function () {
         // Note we use reload here as we don't want restore to save an old state of the
         // model that doesn't include the plls picked
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
-          { retainCurrentLocalStorage: true, case: [AUF.none, PLL.H, AUF.none] }
+          {
+            retainCurrentLocalStorage: true,
+            navigateOptions: { case: [AUF.none, PLL.H, AUF.none] },
+          }
         );
 
         pllTrainerElements.evaluateResult.correctButton.get().click();
@@ -605,10 +608,12 @@ describe("PLL Trainer - Learning Functionality", function () {
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
           {
             retainCurrentLocalStorage: true,
-            targetParametersPicked: true,
-            // Just ensure it is not the same as above so that new case shows
-            case: [AUF.none, PLL.Ga, AUF.none],
-            isNewCase: true,
+            navigateOptions: {
+              targetParametersPicked: true,
+              // Just ensure it is not the same as above so that new case shows
+              case: [AUF.none, PLL.Ga, AUF.none],
+              isNewCase: true,
+            },
           }
         );
 
@@ -635,9 +640,11 @@ describe("PLL Trainer - Learning Functionality", function () {
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
           {
             retainCurrentLocalStorage: true,
-            targetParametersPicked: true,
-            case: correctBranchCase,
-            isNewCase: false,
+            navigateOptions: {
+              targetParametersPicked: true,
+              case: correctBranchCase,
+              isNewCase: false,
+            },
           }
         );
 
@@ -665,9 +672,11 @@ describe("PLL Trainer - Learning Functionality", function () {
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
           {
             retainCurrentLocalStorage: true,
-            targetParametersPicked: true,
-            case: wrongBranchCase,
-            isNewCase: false,
+            navigateOptions: {
+              targetParametersPicked: true,
+              case: wrongBranchCase,
+              isNewCase: false,
+            },
           }
         );
 

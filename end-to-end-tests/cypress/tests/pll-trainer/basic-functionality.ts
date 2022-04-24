@@ -237,13 +237,16 @@ describe("PLL Trainer - Basic Functionality", function () {
 
       // Nearly finish a test
       pllTrainerStatesNewUser.pickAlgorithmPageAfterUnrecoverable.reloadAndNavigateTo(
-        { targetParametersPicked: true, retainCurrentLocalStorage: true }
+        {
+          navigateOptions: { targetParametersPicked: true },
+          retainCurrentLocalStorage: true,
+        }
       );
 
       // Assert still no statistics
       pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
         retainCurrentLocalStorage: true,
-        targetParametersPicked: true,
+        navigateOptions: { targetParametersPicked: true },
       });
       pllTrainerElements.newUserStartPage.welcomeText.assertShows();
       pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
@@ -251,13 +254,13 @@ describe("PLL Trainer - Basic Functionality", function () {
       // Finish a test
       pllTrainerStatesNewUser.correctPage.reloadAndNavigateTo({
         retainCurrentLocalStorage: true,
-        targetParametersPicked: true,
+        navigateOptions: { targetParametersPicked: true },
       });
 
       // Assert statistics now show
       pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
         retainCurrentLocalStorage: true,
-        targetParametersPicked: true,
+        navigateOptions: { targetParametersPicked: true },
       });
       pllTrainerElements.recurringUserStartPage.averageTime.assertShows();
       pllTrainerElements.newUserStartPage.welcomeText.assertDoesntExist();
