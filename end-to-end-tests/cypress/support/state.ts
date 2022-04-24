@@ -163,7 +163,7 @@ class StateCacheImplementation<
 
 export function buildStates<
   Keys extends string,
-  ExtraNavigateOptions extends Record<string, unknown> = Record<never, never>
+  ExtraNavigateOptions extends Record<string, unknown> = Record<string, never>
 >(
   {
     startPath,

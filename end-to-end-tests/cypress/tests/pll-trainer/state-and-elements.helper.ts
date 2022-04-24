@@ -316,23 +316,18 @@ export const pllTrainerStatesNewUser = buildStates<
   | "correctPage"
   | "typeOfWrongPage"
   | "wrongPage",
-  | ({
-      targetParametersPicked?: boolean;
-      isNewCase?: boolean;
-    } & (
-      | {
-          case: readonly [AUF, PLL, AUF];
-          algorithm: string;
-        }
-      // eslint-disable-next-line @typescript-eslint/ban-types
-      | {}
-    ))
-  // We override the error on the {} type here as the Record<string, never>
-  // or Record<string, unknown> break code in different ways and since
-  // this generic is always used for & types then it doesn't actually seem to
-  // be an issue.
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  | {}
+  // Separation of type arguments here but nearly looks like a continued intersection
+  // type, therefore this comment
+  {
+    targetParametersPicked?: boolean;
+    isNewCase?: boolean;
+  } & (
+    | {
+        case: readonly [AUF, PLL, AUF];
+        algorithm: string;
+      }
+    | { __placeholderForTypeSafety?: unknown }
+  )
 >(
   { startPath: paths.pllTrainer, defaultNavigateOptions: {}, localStorage: {} },
   {
