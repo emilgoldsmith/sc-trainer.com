@@ -2,7 +2,7 @@ module User exposing
     ( User
     , new
     , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
-    , hasAttemptedAPLLTestCase, getPLLTargetParameters, changePLLTargetParameters
+    , hasAttemptedPLL, hasAttemptedAnyPLLTestCase, getPLLTargetParameters, changePLLTargetParameters
     , hasChosenPLLTargetParameters, cubeTheme
     , TestResult(..), testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
@@ -25,7 +25,7 @@ module User exposing
 # Getters And Setters
 
 @docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
-@docs hasAttemptedAPLLTestCase, getPLLTargetParameters, changePLLTargetParameters
+@docs hasAttemptedPLL, hasAttemptedAnyPLLTestCase, getPLLTargetParameters, changePLLTargetParameters
 @docs hasChosenPLLTargetParameters, cubeTheme
 
 
@@ -186,14 +186,24 @@ hasChosenPLLAlgorithmFor pll user =
         |> Maybe.withDefault False
 
 
+{-| If the user has attempted the specific pll
+-}
+hasAttemptedPLL : PLL -> User -> Bool
+hasAttemptedPLL pll user =
+    user
+        |> getPLLData
+        |> getPLLResults pll
+        |> Maybe.map (List.isEmpty >> not)
+        |> Maybe.withDefault False
+
+
 {-| If the user has attempted any PLL yet
 -}
-hasAttemptedAPLLTestCase : User -> Bool
-hasAttemptedAPLLTestCase user =
+hasAttemptedAnyPLLTestCase : User -> Bool
+hasAttemptedAnyPLLTestCase user =
     PLL.all
         |> List.Nonempty.toList
-        |> List.filterMap (\pll -> getPLLResults pll (getPLLData user))
-        |> List.any (List.isEmpty >> not)
+        |> List.any (\pll -> hasAttemptedPLL pll user)
 
 
 {-| Get the algorithm the user uses for this PLL

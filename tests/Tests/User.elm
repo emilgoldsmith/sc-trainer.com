@@ -20,13 +20,13 @@ helperTests =
             [ test "should return false for a new user" <|
                 \_ ->
                     User.new
-                        |> User.hasAttemptedAPLLTestCase
+                        |> User.hasAttemptedAnyPLLTestCase
                         |> Expect.false "a new user has not attempted a pll test case"
             , fuzz Fuzz.Extra.pll "should return false for a user that only picked algorithms but didn't yet attempt a test case" <|
                 \pll ->
                     User.new
                         |> User.changePLLAlgorithm pll Algorithm.empty
-                        |> User.hasAttemptedAPLLTestCase
+                        |> User.hasAttemptedAnyPLLTestCase
                         |> Expect.false "user only picked algorithms didn't attempt a case yet"
             , fuzz Fuzz.Extra.pll "should return true when there is a recorded test for a pll" <|
                 \pll ->
@@ -35,7 +35,7 @@ helperTests =
                         |> User.recordPLLTestResult
                             pll
                             (wrongResult ( AUF.Halfway, AUF.CounterClockwise ))
-                        |> Result.map User.hasAttemptedAPLLTestCase
+                        |> Result.map User.hasAttemptedAnyPLLTestCase
                         |> Expect.equal (Ok True)
             ]
         , describe "pllStatistics"

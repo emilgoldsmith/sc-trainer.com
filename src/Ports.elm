@@ -1,4 +1,4 @@
-port module Ports exposing (logError, onTESTONLYSetCubeSizeOverride, onTESTONLYSetExtraAlgToApplyToAllCubes, onTESTONLYSetTestCase, updateStoredUser)
+port module Ports exposing (logError, onTESTONLYOverrideNextTestCase, onTESTONLYSetCubeSizeOverride, onTESTONLYSetExtraAlgToApplyToAllCubes, onTESTONLYSetTestCase, updateStoredUser)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
@@ -55,6 +55,14 @@ port setCurrentTestCasePort : (Json.Decode.Value -> msg) -> Sub msg
 onTESTONLYSetTestCase : (Result Json.Decode.Error TestCase -> msg) -> Sub msg
 onTESTONLYSetTestCase toMsg =
     setCurrentTestCasePort (Json.Decode.decodeValue testCaseDecoder >> toMsg)
+
+
+port overrideNextTestCasePort : (Json.Decode.Value -> msg) -> Sub msg
+
+
+onTESTONLYOverrideNextTestCase : (Result Json.Decode.Error TestCase -> msg) -> Sub msg
+onTESTONLYOverrideNextTestCase toMsg =
+    overrideNextTestCasePort (Json.Decode.decodeValue testCaseDecoder >> toMsg)
 
 
 testCaseDecoder : Json.Decode.Decoder TestCase
