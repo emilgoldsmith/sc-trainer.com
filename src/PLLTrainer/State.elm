@@ -1,6 +1,7 @@
 module PLLTrainer.State exposing (State, View, element, sandbox, stateViewToGlobalView, static)
 
 import Browser.Events
+import Element
 import Json.Decode
 import Key exposing (Key)
 import PLLTrainer.Subscription
@@ -86,12 +87,13 @@ element =
     identity
 
 
-stateViewToGlobalView : Maybe String -> PLLTrainer.Subscription.Subscription msg -> View msg -> View.View msg
-stateViewToGlobalView pageSubtitle subscription { overlays, body } =
+stateViewToGlobalView : Maybe String -> PLLTrainer.Subscription.Subscription msg -> List (Element.Attribute msg) -> View msg -> View.View msg
+stateViewToGlobalView pageSubtitle subscription extraTopLevelAttributes { overlays, body } =
     { topLevelEventListeners =
         View.buildTopLevelEventListeners <|
             PLLTrainer.Subscription.getTopLevelEventListeners subscription
     , overlays = overlays
+    , extraTopLevelAttributes = extraTopLevelAttributes
     , body = body
     , pageSubtitle = pageSubtitle
     }

@@ -145,20 +145,14 @@ describe("Visual Tests", function () {
       );
 
       completePLLTestInMilliseconds(1000, PLL.Ga, {
-        targetParametersPicked: true,
-        firstEncounterWithThisPLL: true,
         aufs: [],
         correct: true,
       });
       completePLLTestInMilliseconds(1000, PLL.H, {
-        targetParametersPicked: true,
-        firstEncounterWithThisPLL: true,
         aufs: [],
         correct: false,
       });
       completePLLTestInMilliseconds(2340, PLL.Aa, {
-        targetParametersPicked: true,
-        firstEncounterWithThisPLL: true,
         aufs: [],
         correct: true,
       });
@@ -172,15 +166,11 @@ describe("Visual Tests", function () {
       // Just an assurance that our AUFs and cases are displaying correctly.
       cy.clearLocalStorage();
       completePLLTestInMilliseconds(1000, PLL.Ua, {
-        targetParametersPicked: false,
-        firstEncounterWithThisPLL: true,
         aufs: [],
         overrideDefaultAlgorithm: "M2 U M' U2 M U M2",
         correct: true,
       });
       completePLLTestInMilliseconds(1000, PLL.Ua, {
-        targetParametersPicked: true,
-        firstEncounterWithThisPLL: false,
         aufs: [AUF.U, AUF.U2],
         correct: false,
         wrongPageCallback: () =>
@@ -189,16 +179,12 @@ describe("Visual Tests", function () {
 
       cy.clearLocalStorage();
       completePLLTestInMilliseconds(1000, PLL.Ua, {
-        targetParametersPicked: false,
-        firstEncounterWithThisPLL: true,
         aufs: [],
         // Use an algorithm that has a different preAUF but same postAUF
         overrideDefaultAlgorithm: "R2 U' S' U2' S U' R2",
         correct: true,
       });
       completePLLTestInMilliseconds(1000, PLL.Ua, {
-        targetParametersPicked: true,
-        firstEncounterWithThisPLL: false,
         // This same case corresponds to [Ua] U' with the standard slice algorithm
         aufs: [AUF.U, AUF.U2],
         correct: false,
@@ -211,15 +197,11 @@ describe("Visual Tests", function () {
       // Now let's test some postAUFs with the Gc algorithm
       cy.clearLocalStorage();
       completePLLTestInMilliseconds(1000, PLL.Gc, {
-        targetParametersPicked: false,
-        firstEncounterWithThisPLL: true,
         aufs: [],
         overrideDefaultAlgorithm: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
         correct: true,
       });
       completePLLTestInMilliseconds(1000, PLL.Gc, {
-        targetParametersPicked: true,
-        firstEncounterWithThisPLL: false,
         aufs: [AUF.UPrime, AUF.none],
         correct: false,
         wrongPageCallback: () =>
@@ -228,16 +210,12 @@ describe("Visual Tests", function () {
 
       cy.clearLocalStorage();
       completePLLTestInMilliseconds(1000, PLL.Gc, {
-        targetParametersPicked: false,
-        firstEncounterWithThisPLL: true,
         aufs: [],
         // Use an algorithm that has same preAUF but different postAUF
         overrideDefaultAlgorithm: "(y) R2' u' (R U' R U R') u R2 (y) R U' R'",
         correct: true,
       });
       completePLLTestInMilliseconds(1000, PLL.Gc, {
-        targetParametersPicked: true,
-        firstEncounterWithThisPLL: false,
         // This same case corresponds to U' [Gc] U' with the previous algorithm
         aufs: [AUF.UPrime, AUF.none],
         correct: false,

@@ -208,28 +208,43 @@ export function buildGlobalsCategory<keys extends string>(
   return Cypress._.mapValues(specifiers, buildElement);
 }
 
-export function buildRootCategory<keys extends string>(statesAndId: {
+export function buildRootCategory<
+  StateValues extends Record<string, string>
+>(statesAndId: {
   testId: ElementSpecifier;
-  stateAttributeValues: {
-    [key in keys]: string;
-  };
+  stateAttributeValues: StateValues;
 }): {
   getStateAttributeValue: (options?: {
     log?: boolean;
     withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
   }) => Cypress.Chainable<string>;
-  stateAttributeValues: {
-    [key in keys]: string;
-  };
+  waitForStateChangeAwayFrom: (
+    stateValue: StateValues[keyof StateValues],
+    options?: {
+      log?: boolean;
+      withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+    }
+  ) => void;
+  stateAttributeValues: StateValues;
 } {
   const { testId, stateAttributeValues } = statesAndId;
   const stateAttributeName = "__test-helper__state";
+  function getStateAttributeValue(options?: {
+    log?: boolean;
+    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  }): Cypress.Chainable<string> {
+    return getBySpecifier(testId, options).invoke("attr", stateAttributeName);
+  }
   return {
-    getStateAttributeValue(options?: {
-      log?: boolean;
-      withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-    }) {
-      return getBySpecifier(testId, options).invoke("attr", stateAttributeName);
+    getStateAttributeValue,
+    waitForStateChangeAwayFrom(
+      stateValue: StateValues[keyof StateValues],
+      options?: {
+        log?: boolean;
+        withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+      }
+    ) {
+      getStateAttributeValue(options).should("not.equal", stateValue);
     },
     stateAttributeValues,
   };
