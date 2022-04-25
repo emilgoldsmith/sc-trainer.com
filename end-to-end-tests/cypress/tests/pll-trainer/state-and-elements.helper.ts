@@ -17,10 +17,17 @@ export const pllTrainerElements = {
   root: buildRootCategory({
     testId: "pll-trainer-root",
     stateAttributeValues: {
+      pickTargetParametersPage: "pick-target-parameters-page",
       startPage: "start-page",
       newCasePage: "new-case-page",
       getReadyState: "get-ready-state",
-    },
+      testRunningState: "test-running-state",
+      evaluateResultPage: "evaluate-result-page",
+      typeOfWrongPage: "type-of-wrong-page",
+      pickAlgorithmPage: "pick-algorithm-page",
+      correctPage: "correct-page",
+      wrongPage: "wrong-page",
+    } as const,
   }),
   pickTargetParametersPage: buildElementsCategory({
     container: "pick-target-parameters-container",
@@ -548,8 +555,6 @@ export function completePLLTestInMilliseconds(
   milliseconds: number,
   pll: PLL,
   params: {
-    firstEncounterWithThisPLL: boolean;
-    targetParametersPicked: boolean;
     aufs: readonly [AUF, AUF] | readonly [];
     overrideDefaultAlgorithm?: string;
     startPageCallback?: () => void;
@@ -557,8 +562,6 @@ export function completePLLTestInMilliseconds(
   } & ({ correct: true } | { correct: false; wrongPageCallback?: () => void })
 ): void {
   const {
-    firstEncounterWithThisPLL,
-    targetParametersPicked,
     aufs,
     correct,
     overrideDefaultAlgorithm,
@@ -568,18 +571,32 @@ export function completePLLTestInMilliseconds(
   const [preAUF, postAUF] = [aufs[0] ?? AUF.none, aufs[1] ?? AUF.none];
   const testCase = [preAUF, pll, postAUF] as const;
 
-  pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
-    retainCurrentLocalStorage: true,
-    navigateOptions: { targetParametersPicked },
+  cy.visit(paths.pllTrainer);
+  pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+    if (
+      stateValue ===
+      pllTrainerElements.root.stateAttributeValues.pickTargetParametersPage
+    ) {
+      pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
+    }
   });
+
   cy.clock();
   pllTrainerElements.newUserStartPage.container.waitFor();
   startPageCallback?.();
   cy.overrideNextTestCase(testCase);
   pllTrainerElements.newUserStartPage.startButton.get().click();
-  if (firstEncounterWithThisPLL) {
-    pllTrainerElements.newCasePage.startTestButton.get().click();
-  }
+  pllTrainerElements.root.waitForStateChangeAwayFrom(
+    pllTrainerElements.root.stateAttributeValues.startPage
+  );
+
+  pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+    if (
+      stateValue === pllTrainerElements.root.stateAttributeValues.newCasePage
+    ) {
+      pllTrainerElements.newCasePage.startTestButton.get().click();
+    }
+  });
   pllTrainerElements.getReadyState.container.waitFor();
   cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();
@@ -591,17 +608,28 @@ export function completePLLTestInMilliseconds(
   cy.clock().then((clock) => clock.restore());
   if (correct) {
     pllTrainerElements.evaluateResult.correctButton.get().click();
+    pllTrainerElements.root.waitForStateChangeAwayFrom(
+      pllTrainerElements.root.stateAttributeValues.evaluateResultPage
+    );
   } else {
     pllTrainerElements.evaluateResult.wrongButton.get().click();
     pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+    pllTrainerElements.root.waitForStateChangeAwayFrom(
+      pllTrainerElements.root.stateAttributeValues.typeOfWrongPage
+    );
   }
-  if (firstEncounterWithThisPLL) {
-    pllTrainerElements.pickAlgorithmPage.algorithmInput
-      .get()
-      .type(
-        (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
-      );
-  }
+  pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+    if (
+      stateValue ===
+      pllTrainerElements.root.stateAttributeValues.pickAlgorithmPage
+    ) {
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type(
+          (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
+        );
+    }
+  });
   if (correct) pllTrainerElements.correctPage.container.waitFor();
   else {
     pllTrainerElements.wrongPage.container.waitFor();

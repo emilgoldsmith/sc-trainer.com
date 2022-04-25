@@ -3,8 +3,11 @@ module PLLTrainer.Page exposing (Model, Msg, page)
 import AUF
 import AUF.Extra
 import Algorithm exposing (Algorithm)
+import Css
 import Cube exposing (Cube)
 import Effect exposing (Effect)
+import Element
+import Html.Attributes
 import Json.Decode
 import PLL exposing (PLL)
 import PLLTrainer.State
@@ -662,13 +665,28 @@ view shared model =
         stateView =
             handleStateViewBoilerplate shared model
 
+        testOnlyStateAttributeValue =
+            getTestOnlyStateAttributeValue model
+
+        extraTopLevelAttributes =
+            [ Css.testid "pll-trainer-root"
+            , Element.htmlAttribute <|
+                Html.Attributes.attribute
+                    "__test-helper__state"
+                    testOnlyStateAttributeValue
+            ]
+
         subscription =
             handleStateSubscriptionsBoilerplate shared model
 
         pageSubtitle =
             Nothing
     in
-    PLLTrainer.State.stateViewToGlobalView pageSubtitle subscription stateView
+    PLLTrainer.State.stateViewToGlobalView
+        pageSubtitle
+        subscription
+        extraTopLevelAttributes
+        stateView
 
 
 
@@ -980,14 +998,50 @@ handleStateViewBoilerplate shared model =
         EvaluateResult stateModel extraState ->
             ((states shared).evaluateResult model extraState).view stateModel
 
+        TypeOfWrongPage extraState ->
+            ((states shared).typeOfWrongPage model extraState).view ()
+
         PickAlgorithmPage stateModel extraState ->
             ((states shared).pickAlgorithmPage model extraState).view stateModel
 
         CorrectPage ->
             ((states shared).correctPage ()).view ()
 
-        TypeOfWrongPage extraState ->
-            ((states shared).typeOfWrongPage model extraState).view ()
-
         WrongPage ->
             ((states shared).wrongPage model ()).view ()
+
+
+getTestOnlyStateAttributeValue : Model -> String
+getTestOnlyStateAttributeValue model =
+    case model.trainerState of
+        PickTargetParametersPage _ ->
+            "pick-target-parameters-page"
+
+        StartPage ->
+            "start-page"
+
+        NewCasePage _ ->
+            "new-case-page"
+
+        TestRunning _ extraState ->
+            case extraState of
+                GettingReadyExtraState _ ->
+                    "get-ready-state"
+
+                TestRunningExtraState _ ->
+                    "test-running-state"
+
+        EvaluateResult _ _ ->
+            "evaluate-result-page"
+
+        TypeOfWrongPage _ ->
+            "type-of-wrong-page"
+
+        PickAlgorithmPage _ _ ->
+            "pick-algorithm-page"
+
+        CorrectPage ->
+            "correct-page"
+
+        WrongPage ->
+            "wrong-page"

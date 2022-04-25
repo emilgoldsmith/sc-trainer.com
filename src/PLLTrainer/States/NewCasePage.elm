@@ -2,7 +2,6 @@ module PLLTrainer.States.NewCasePage exposing (Transitions, state)
 
 import Css exposing (testid)
 import Element exposing (..)
-import FeedbackButton
 import Key
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
@@ -44,7 +43,7 @@ type alias Transitions msg =
 
 view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> PLLTrainer.State.View msg
 view viewportSize palette hardwareAvailable transitions =
-    { overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
+    { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
             column
