@@ -242,6 +242,52 @@ describe("PLL Trainer - Learning Functionality", function () {
     });
   });
 
+  describe("New Case Page", function () {
+    beforeEach(function () {
+      pllTrainerStatesNewUser.newCasePage.restoreState();
+    });
+
+    it("has all the correct elements", function () {
+      pllTrainerElements.newCasePage.assertAllShow();
+    });
+
+    it("sizes elements reasonably", function () {
+      cy.assertNoHorizontalScrollbar();
+      cy.assertNoVerticalScrollbar();
+    });
+
+    it("starts test when pressing space", function () {
+      cy.pressKey(Key.space);
+      pllTrainerElements.getReadyState.container.assertShows();
+    });
+
+    it("starts when pressing the begin button", function () {
+      pllTrainerElements.newCasePage.startTestButton.get().click();
+      pllTrainerElements.getReadyState.container.assertShows();
+    });
+
+    it("doesn't start test when pressing any other keys", function () {
+      cy.pressKey(Key.a);
+      pllTrainerElements.newCasePage.container.assertShows();
+      cy.pressKey(Key.x);
+      pllTrainerElements.newCasePage.container.assertShows();
+      cy.pressKey(Key.capsLock);
+      pllTrainerElements.newCasePage.container.assertShows();
+    });
+
+    it("goes from start page to new case page for new user", function () {
+      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
+      pllTrainerElements.newUserStartPage.startButton.get().click();
+      pllTrainerElements.newCasePage.container.assertShows();
+    });
+
+    it("goes from start page to get ready state for done user", function () {
+      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
+      pllTrainerElements.newUserStartPage.startButton.get().click();
+      pllTrainerElements.getReadyState.container.assertShows();
+    });
+  });
+
   describe("Algorithm Picker", function () {
     beforeEach(function () {
       pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.restoreState();
