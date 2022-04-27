@@ -76,6 +76,14 @@
       }
 
       /**
+       * HACKY REMOVAL OF SPACE DEFAULT THAT MAKES PAGE SCROLL AS WE DON'T LIKE IT
+       * AND ELM DOESN'T SUPPORT PREVENTING DEFAULT ON BROWSER.ON EVENTS
+       */
+      document.addEventListener("keydown", function (e) {
+        if (e.code === "Space") e.preventDefault();
+      });
+
+      /**
        * RENDER ELM APP
        */
       const userKeyLocalStorage = "userData";
