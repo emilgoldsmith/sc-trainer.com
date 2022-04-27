@@ -2,19 +2,19 @@ module PLLTrainer.States.NewCasePage exposing (Transitions, state)
 
 import Css exposing (testid)
 import Element exposing (..)
+import Element.Font as Font
 import Key
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
 import Shared
 import UI
 import View
-import ViewportSize exposing (ViewportSize)
 
 
 state : Shared.Model -> Transitions msg -> PLLTrainer.State.State msg () ()
-state { viewportSize, palette, hardwareAvailable } transitions =
+state { palette, hardwareAvailable } transitions =
     PLLTrainer.State.static
-        { view = view viewportSize palette hardwareAvailable transitions
+        { view = view palette hardwareAvailable transitions
         , nonRepeatedKeyUpHandler =
             Just <|
                 \key ->
@@ -41,8 +41,8 @@ type alias Transitions msg =
 -- VIEW
 
 
-view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> PLLTrainer.State.View msg
-view viewportSize palette hardwareAvailable transitions =
+view : UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> PLLTrainer.State.View msg
+view palette hardwareAvailable transitions =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -52,10 +52,19 @@ view viewportSize palette hardwareAvailable transitions =
                 , centerY
                 , width (fill |> maximum 700)
                 , UI.paddingAll.veryLarge
-                , spacing (ViewportSize.minDimension viewportSize // 20)
+                , UI.spacingVertical.small
                 ]
-                [ paragraph [ testid "new-case-explanation", centerX, UI.fontSize.large ]
-                    [ text "A new case is coming up"
+                [ textColumn
+                    [ testid "new-case-explanation"
+                    , width fill
+                    , centerX
+                    , UI.fontSize.medium
+                    , UI.spacingVertical.small
+                    ]
+                    [ paragraph [ UI.fontSize.veryLarge, Font.center, centerX ] [ text "New Case Coming Up" ]
+                    , paragraph []
+                        [ text "Pay extra attention for this next case, as it will be used to determine how well you know it from before. Don't worry if you make a mistake though, the app will figure out that you have learned the case in time as you keep proving it."
+                        ]
                     ]
                 , PLLTrainer.ButtonWithShortcut.view
                     hardwareAvailable
@@ -63,10 +72,10 @@ view viewportSize palette hardwareAvailable transitions =
                     , centerX
                     ]
                     { onPress = Just transitions.startTest
-                    , labelText = "Next"
+                    , labelText = "Start"
                     , keyboardShortcut = Key.Space
                     , color = palette.primary
                     }
-                    (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 20)
+                    UI.viewButton.large
                 ]
     }

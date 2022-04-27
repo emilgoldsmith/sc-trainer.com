@@ -237,7 +237,7 @@ view currentTestCase testResult toMsg shared model =
                     , width (fill |> maximum 700)
                     , UI.fontSize.medium
                     ]
-                    [ column
+                    [ textColumn
                         [ testid "explanation-text"
                         , centerX
                         , Font.center
