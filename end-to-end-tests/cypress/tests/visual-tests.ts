@@ -27,6 +27,9 @@ describe("Visual Tests", function () {
       cy.percySnapshotWithProperName("PLL Trainer Start Page New User", {
         ensureFullHeightIsCaptured: true,
       });
+      pllTrainerElements.newUserStartPage.startButton.get().click();
+      pllTrainerElements.newCasePage.container.waitFor();
+      cy.percySnapshotWithProperName("PLL Trainer New Case Page");
       // Use a "done" user from here
       pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
       cy.clock();
