@@ -256,6 +256,8 @@ declare namespace Cypress {
 
     assertNoVerticalScrollbar(): void;
 
+    assertThereIsVerticalScrollbar(): void;
+
     assertNoHorizontalScrollbar(): void;
 
     touchScreen(position: Cypress.PositionType): void;

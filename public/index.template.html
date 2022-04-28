@@ -77,11 +77,17 @@
 
       /**
        * HACKY REMOVAL OF SPACE DEFAULT THAT MAKES PAGE SCROLL AS WE DON'T LIKE IT
-       * AND ELM DOESN'T SUPPORT PREVENTING DEFAULT ON BROWSER.ON EVENTS
+       * AND ELM DOESN'T SUPPORT PREVENTING DEFAULT ON BROWSER.ON EVENTS.
+       * FOR SOME WEIRD REASON IT BREAKS CYPRESS IF ANY EVENT LISTENER
+       * IS ADDED TO THE DOCUMENT EVEN IF IT DOES NOTHING SO WE ONLY
+       * DO IT OUTSIDE OF CYPRESS TESTS WHERE MANUAL TESTING HAS VERIFIED
+       * IT DOESNT CAUSE ANY ISSUES
        */
-      document.addEventListener("keydown", function (e) {
-        if (e.code === "Space") e.preventDefault();
-      });
+      if (!window.Cypress) {
+        document.addEventListener("keydown", function (e) {
+          if (e.code === "Space") e.preventDefault();
+        });
+      }
 
       /**
        * RENDER ELM APP
