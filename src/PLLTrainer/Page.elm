@@ -244,8 +244,7 @@ update shared msg model =
 
                             else
                                 ((states shared).testRunning gettingReadyExtraState).init
-                                    |> Tuple.mapFirst TestRunning
-                                    |> Tuple.mapFirst (\fn -> fn gettingReadyExtraState)
+                                    |> Tuple.mapFirst (\stateModel -> TestRunning stateModel gettingReadyExtraState)
                     in
                     ( { model
                         | trainerState = trainerState

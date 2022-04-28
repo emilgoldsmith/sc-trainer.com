@@ -323,8 +323,7 @@ export const pllTrainerStatesNewUser = buildStates<
   | "correctPage"
   | "typeOfWrongPage"
   | "wrongPage",
-  // Separation of type arguments here but nearly looks like a continued intersection
-  // type, therefore this comment
+  // Just highlighting the separation of these two type arguments
   {
     targetParametersPicked?: boolean;
     isNewCase?: boolean;
@@ -348,11 +347,7 @@ export const pllTrainerStatesNewUser = buildStates<
     startPage: {
       name: "startPage",
       getToThatState: (getState, options) => {
-        if (
-          options?.navigateOptions &&
-          "targetParametersPicked" in options.navigateOptions &&
-          options.navigateOptions.targetParametersPicked === true
-        ) {
+        if (options?.navigateOptions?.targetParametersPicked) {
           // Don't do anything as we should already be here when parameters are picked
         } else {
           getState("pickTargetParametersPage");
@@ -389,16 +384,14 @@ export const pllTrainerStatesNewUser = buildStates<
     getReadyState: {
       name: "getReadyState",
       getToThatState: (getState, options) => {
-        getState("startPage");
-        pllTrainerElements.newUserStartPage.startButton
-          .get(options)
-          .click(options);
-        if (
-          options?.navigateOptions && "isNewCase" in options.navigateOptions
-            ? options.navigateOptions.isNewCase === true
-            : true
-        ) {
+        if (options?.navigateOptions?.isNewCase ?? true) {
+          getState("newCasePage");
           pllTrainerElements.newCasePage.startTestButton.get().click();
+        } else {
+          getState("startPage");
+          pllTrainerElements.newUserStartPage.startButton
+            .get(options)
+            .click(options);
         }
       },
       waitForStateToAppear: (options) => {
@@ -408,24 +401,22 @@ export const pllTrainerStatesNewUser = buildStates<
     testRunning: {
       name: "testRunning",
       getToThatState: (getState, options) => {
-        // We need to have time mocked from start page
-        // to programatically pass through the get ready page
-        getState("startPage");
-        cy.clock();
-        pllTrainerElements.newUserStartPage.startButton
-          .get(options)
-          .click(options);
-        if (
-          options?.navigateOptions && "isNewCase" in options.navigateOptions
-            ? options.navigateOptions.isNewCase === true
-            : true
-        ) {
+        // We need to have time mocked before entering the get
+        // ready page in order to programatically pass through it
+        if (options?.navigateOptions?.isNewCase ?? true) {
+          getState("newCasePage");
+          cy.clock();
           pllTrainerElements.newCasePage.startTestButton.get().click();
+        } else {
+          getState("startPage");
+          cy.clock();
+          pllTrainerElements.newUserStartPage.startButton
+            .get(options)
+            .click(options);
         }
         pllTrainerElements.getReadyState.container.waitFor(options);
         cy.tick(getReadyWaitTime, options);
         cy.clock().then((clock) => clock.restore());
-        pllTrainerElements.testRunning.container.waitFor(options);
       },
       waitForStateToAppear: (options) => {
         pllTrainerElements.testRunning.container.waitFor(options);
@@ -570,13 +561,11 @@ export function completePLLTestInMilliseconds(
   } = params;
   const [preAUF, postAUF] = [aufs[0] ?? AUF.none, aufs[1] ?? AUF.none];
   const testCase = [preAUF, pll, postAUF] as const;
+  const { stateAttributeValues } = pllTrainerElements.root;
 
   cy.visit(paths.pllTrainer);
   pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
-    if (
-      stateValue ===
-      pllTrainerElements.root.stateAttributeValues.pickTargetParametersPage
-    ) {
+    if (stateValue === stateAttributeValues.pickTargetParametersPage) {
       pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
     }
   });
@@ -587,13 +576,11 @@ export function completePLLTestInMilliseconds(
   cy.overrideNextTestCase(testCase);
   pllTrainerElements.newUserStartPage.startButton.get().click();
   pllTrainerElements.root.waitForStateChangeAwayFrom(
-    pllTrainerElements.root.stateAttributeValues.startPage
+    stateAttributeValues.startPage
   );
 
   pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
-    if (
-      stateValue === pllTrainerElements.root.stateAttributeValues.newCasePage
-    ) {
+    if (stateValue === stateAttributeValues.newCasePage) {
       pllTrainerElements.newCasePage.startTestButton.get().click();
     }
   });
@@ -609,20 +596,17 @@ export function completePLLTestInMilliseconds(
   if (correct) {
     pllTrainerElements.evaluateResult.correctButton.get().click();
     pllTrainerElements.root.waitForStateChangeAwayFrom(
-      pllTrainerElements.root.stateAttributeValues.evaluateResultPage
+      stateAttributeValues.evaluateResultPage
     );
   } else {
     pllTrainerElements.evaluateResult.wrongButton.get().click();
     pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
     pllTrainerElements.root.waitForStateChangeAwayFrom(
-      pllTrainerElements.root.stateAttributeValues.typeOfWrongPage
+      stateAttributeValues.typeOfWrongPage
     );
   }
   pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
-    if (
-      stateValue ===
-      pllTrainerElements.root.stateAttributeValues.pickAlgorithmPage
-    ) {
+    if (stateValue === stateAttributeValues.pickAlgorithmPage) {
       pllTrainerElements.pickAlgorithmPage.algorithmInput
         .get()
         .type(
