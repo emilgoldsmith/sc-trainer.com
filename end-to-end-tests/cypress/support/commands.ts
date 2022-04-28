@@ -500,7 +500,7 @@ const assertNoHorizontalScrollbar: Cypress.Chainable<undefined>["assertNoHorizon
     },
     (consolePropsSetter) => {
       cy.document({ log: false }).then((document) =>
-        cy.window({ log: false }).should((window) => {
+        cy.window({ log: false }).then((window) => {
           const windowWidth = Cypress.$(window).width();
           if (windowWidth === undefined)
             throw new Error("Window width is undefined");
@@ -569,7 +569,7 @@ const assertNoVerticalScrollbar: Cypress.Chainable<undefined>["assertNoVerticalS
     (consolePropsSetter) => {
       // Initial simple check
       cy.document({ log: false }).then((document) =>
-        cy.window({ log: false }).should((window) => {
+        cy.window({ log: false }).then((window) => {
           const windowHeight = Cypress.$(window).height();
           if (windowHeight === undefined)
             throw new Error("Window height is undefined");
@@ -611,7 +611,7 @@ const assertThereIsVerticalScrollbar: Cypress.Chainable<undefined>["assertThereI
     (consolePropsSetter) => {
       // Initial simple check
       cy.document({ log: false }).then((document) =>
-        cy.window({ log: false }).should((window) => {
+        cy.window({ log: false }).then((window) => {
           const windowHeight = Cypress.$(window).height();
           if (windowHeight === undefined)
             throw new Error("Window height is undefined");
@@ -623,7 +623,7 @@ const assertThereIsVerticalScrollbar: Cypress.Chainable<undefined>["assertThereI
           // The previous check won't necessarily work for elements with position fixed or absolute
           // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
 
-          getTopAndBottomElements().then(({ positions, elements }) => {
+          getTopAndBottomElements().should(({ positions, elements }) => {
             consolePropsSetter({
               "Furthest Up": elements.top,
               "Furthest Down": elements.bottom,
