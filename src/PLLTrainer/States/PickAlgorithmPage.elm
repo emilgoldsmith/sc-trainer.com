@@ -242,6 +242,7 @@ view currentTestCase testResult toMsg shared model =
                         , centerX
                         , Font.center
                         , UI.spacingAll.verySmall
+                        , width fill
                         ]
                         [ paragraph
                             [ UI.fontSize.veryLarge
