@@ -6,6 +6,7 @@ import {
   anyErrorMessage,
   errorMessageElement,
   optionalElement,
+  buildRootCategory,
 } from "support/elements";
 import { buildStates, StateOptions } from "support/state";
 import { paths } from "support/paths";
@@ -13,6 +14,21 @@ import { AUF, PLL, pllToAlgorithmString } from "support/pll";
 import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
 
 export const pllTrainerElements = {
+  root: buildRootCategory({
+    testId: "pll-trainer-root",
+    stateAttributeValues: {
+      pickTargetParametersPage: "pick-target-parameters-page",
+      startPage: "start-page",
+      newCasePage: "new-case-page",
+      getReadyState: "get-ready-state",
+      testRunningState: "test-running-state",
+      evaluateResultPage: "evaluate-result-page",
+      typeOfWrongPage: "type-of-wrong-page",
+      pickAlgorithmPage: "pick-algorithm-page",
+      correctPage: "correct-page",
+      wrongPage: "wrong-page",
+    } as const,
+  }),
   pickTargetParametersPage: buildElementsCategory({
     container: "pick-target-parameters-container",
     explanation: "explanation",
@@ -47,6 +63,11 @@ export const pllTrainerElements = {
     instructionsText: "instructions-text",
     learningResources: "learning-resources",
     editTargetParametersButton: "edit-target-parameters-button",
+  }),
+  newCasePage: buildElementsCategory({
+    container: "new-case-page-container",
+    explanation: "new-case-explanation",
+    startTestButton: "start-test-button",
   }),
   getReadyState: buildElementsCategory({
     container: "test-running-container-get-ready",
@@ -168,7 +189,10 @@ export const pllTrainerStatesUserDone = buildStates<
   {
     startPage: {
       name: "startPage",
-      getToThatState: () => {},
+      getToThatState: (_, options) => {
+        if (options?.navigateOptions?.case !== undefined)
+          cy.overrideNextTestCase(options.navigateOptions.case);
+      },
       waitForStateToAppear: (options) => {
         pllTrainerElements.recurringUserStartPage.container.waitFor(options);
         cy.waitForDocumentEventListeners("keyup");
@@ -233,7 +257,6 @@ export const pllTrainerStatesUserDone = buildStates<
         // We need to have time mocked from test running
         // to programatically pass through the ignoring transitions phase
         getState("testRunning");
-        if (options?.case !== undefined) cy.setCurrentTestCase(options.case);
         cy.clock();
         cy.pressKey(Key.space, options);
         pllTrainerElements.evaluateResult.container.waitFor(options);
@@ -290,6 +313,7 @@ export const pllTrainerStatesUserDone = buildStates<
 export const pllTrainerStatesNewUser = buildStates<
   | "pickTargetParametersPage"
   | "startPage"
+  | "newCasePage"
   | "getReadyState"
   | "testRunning"
   | "evaluateResult"
@@ -299,22 +323,17 @@ export const pllTrainerStatesNewUser = buildStates<
   | "correctPage"
   | "typeOfWrongPage"
   | "wrongPage",
-  | ({
-      targetParametersPicked: boolean;
-    } & (
-      | {
-          case: [AUF, PLL, AUF];
-          algorithm: string;
-        }
-      // eslint-disable-next-line @typescript-eslint/ban-types
-      | {}
-    ))
-  // We override the error on the {} type here as the Record<string, never>
-  // or Record<string, unknown> break code in different ways and since
-  // this generic is always used for & types then it doesn't actually seem to
-  // be an issue.
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  | {}
+  // Just highlighting the separation of these two type arguments
+  {
+    targetParametersPicked?: boolean;
+    isNewCase?: boolean;
+  } & (
+    | {
+        case: readonly [AUF, PLL, AUF];
+        algorithm: string;
+      }
+    | { __placeholderForTypeSafety?: unknown }
+  )
 >(
   { startPath: paths.pllTrainer, defaultNavigateOptions: {}, localStorage: {} },
   {
@@ -328,11 +347,7 @@ export const pllTrainerStatesNewUser = buildStates<
     startPage: {
       name: "startPage",
       getToThatState: (getState, options) => {
-        if (
-          options &&
-          "targetParametersPicked" in options &&
-          options.targetParametersPicked === true
-        ) {
+        if (options?.navigateOptions?.targetParametersPicked) {
           // Don't do anything as we should already be here when parameters are picked
         } else {
           getState("pickTargetParametersPage");
@@ -340,6 +355,12 @@ export const pllTrainerStatesNewUser = buildStates<
             .get(options)
             .click();
         }
+        if (
+          options?.navigateOptions &&
+          "case" in options.navigateOptions &&
+          options.navigateOptions.case !== undefined
+        )
+          cy.overrideNextTestCase(options.navigateOptions.case);
       },
       waitForStateToAppear: (options) => {
         pllTrainerElements.newUserStartPage.container
@@ -348,13 +369,30 @@ export const pllTrainerStatesNewUser = buildStates<
         cy.waitForDocumentEventListeners("keyup");
       },
     },
-    getReadyState: {
-      name: "getReadyState",
+    newCasePage: {
+      name: "newCasePage",
       getToThatState: (getState, options) => {
         getState("startPage");
         pllTrainerElements.newUserStartPage.startButton
           .get(options)
           .click(options);
+      },
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.newCasePage.container.waitFor(options);
+      },
+    },
+    getReadyState: {
+      name: "getReadyState",
+      getToThatState: (getState, options) => {
+        if (options?.navigateOptions?.isNewCase ?? true) {
+          getState("newCasePage");
+          pllTrainerElements.newCasePage.startTestButton.get().click();
+        } else {
+          getState("startPage");
+          pllTrainerElements.newUserStartPage.startButton
+            .get(options)
+            .click(options);
+        }
       },
       waitForStateToAppear: (options) => {
         pllTrainerElements.getReadyState.container.waitFor(options);
@@ -363,13 +401,19 @@ export const pllTrainerStatesNewUser = buildStates<
     testRunning: {
       name: "testRunning",
       getToThatState: (getState, options) => {
-        // We need to have time mocked from start page
-        // to programatically pass through the get ready page
-        getState("startPage");
-        cy.clock();
-        pllTrainerElements.newUserStartPage.startButton
-          .get(options)
-          .click(options);
+        // We need to have time mocked before entering the get
+        // ready page in order to programatically pass through it
+        if (options?.navigateOptions?.isNewCase ?? true) {
+          getState("newCasePage");
+          cy.clock();
+          pllTrainerElements.newCasePage.startTestButton.get().click();
+        } else {
+          getState("startPage");
+          cy.clock();
+          pllTrainerElements.newUserStartPage.startButton
+            .get(options)
+            .click(options);
+        }
         pllTrainerElements.getReadyState.container.waitFor(options);
         cy.tick(getReadyWaitTime, options);
         cy.clock().then((clock) => clock.restore());
@@ -395,8 +439,6 @@ export const pllTrainerStatesNewUser = buildStates<
         // We need to have time mocked from test running
         // to programatically pass through the ignoring key presses phase
         getState("testRunning");
-        if (options && "case" in options && options.case !== undefined)
-          cy.setCurrentTestCase(options.case);
         cy.clock();
         cy.pressKey(Key.space, options);
         pllTrainerElements.evaluateResult.container.waitFor(options);
@@ -424,10 +466,19 @@ export const pllTrainerStatesNewUser = buildStates<
       name: "correctPage",
       getToThatState: (getState, options) => {
         getState("pickAlgorithmPageAfterCorrect");
-        cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
+        const { case: caseToSet, algorithm } =
+          options?.navigateOptions &&
+          "case" in options.navigateOptions &&
+          options.navigateOptions.case !== undefined
+            ? options.navigateOptions
+            : {
+                case: [AUF.none, PLL.Aa, AUF.none] as const,
+                algorithm: pllToAlgorithmString[PLL.Aa],
+              };
+        cy.setCurrentTestCase(caseToSet);
         pllTrainerElements.pickAlgorithmPage.algorithmInput
           .get(options)
-          .type(pllToAlgorithmString[PLL.Aa] + "{enter}", {
+          .type(algorithm + "{enter}", {
             ...options,
             delay: 0,
           });
@@ -467,8 +518,10 @@ export const pllTrainerStatesNewUser = buildStates<
       getToThatState: (getState, options) => {
         getState("pickAlgorithmPageAfterUnrecoverable");
         const { case: caseToSet, algorithm } =
-          options && "case" in options && options.case !== undefined
-            ? options
+          options?.navigateOptions &&
+          "case" in options.navigateOptions &&
+          options.navigateOptions.case !== undefined
+            ? options.navigateOptions
             : {
                 case: [AUF.none, PLL.Aa, AUF.none] as const,
                 algorithm: pllToAlgorithmString[PLL.Aa],
@@ -493,8 +546,6 @@ export function completePLLTestInMilliseconds(
   milliseconds: number,
   pll: PLL,
   params: {
-    firstEncounterWithThisPLL: boolean;
-    targetParametersPicked: boolean;
     aufs: readonly [AUF, AUF] | readonly [];
     overrideDefaultAlgorithm?: string;
     startPageCallback?: () => void;
@@ -502,8 +553,6 @@ export function completePLLTestInMilliseconds(
   } & ({ correct: true } | { correct: false; wrongPageCallback?: () => void })
 ): void {
   const {
-    firstEncounterWithThisPLL,
-    targetParametersPicked,
     aufs,
     correct,
     overrideDefaultAlgorithm,
@@ -511,18 +560,33 @@ export function completePLLTestInMilliseconds(
     testRunningCallback,
   } = params;
   const [preAUF, postAUF] = [aufs[0] ?? AUF.none, aufs[1] ?? AUF.none];
-  pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
-    retainCurrentLocalStorage: true,
-    targetParametersPicked,
+  const testCase = [preAUF, pll, postAUF] as const;
+  const { stateAttributeValues } = pllTrainerElements.root;
+
+  cy.visit(paths.pllTrainer);
+  pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+    if (stateValue === stateAttributeValues.pickTargetParametersPage) {
+      pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
+    }
   });
+
   cy.clock();
   pllTrainerElements.newUserStartPage.container.waitFor();
   startPageCallback?.();
+  cy.overrideNextTestCase(testCase);
   pllTrainerElements.newUserStartPage.startButton.get().click();
+  pllTrainerElements.root.waitForStateChangeAwayFrom(
+    stateAttributeValues.startPage
+  );
+
+  pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+    if (stateValue === stateAttributeValues.newCasePage) {
+      pllTrainerElements.newCasePage.startTestButton.get().click();
+    }
+  });
   pllTrainerElements.getReadyState.container.waitFor();
   cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();
-  cy.setCurrentTestCase([preAUF, pll, postAUF]);
   cy.tick(milliseconds);
   testRunningCallback?.();
   cy.pressKey(Key.space);
@@ -531,17 +595,25 @@ export function completePLLTestInMilliseconds(
   cy.clock().then((clock) => clock.restore());
   if (correct) {
     pllTrainerElements.evaluateResult.correctButton.get().click();
+    pllTrainerElements.root.waitForStateChangeAwayFrom(
+      stateAttributeValues.evaluateResultPage
+    );
   } else {
     pllTrainerElements.evaluateResult.wrongButton.get().click();
     pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+    pllTrainerElements.root.waitForStateChangeAwayFrom(
+      stateAttributeValues.typeOfWrongPage
+    );
   }
-  if (firstEncounterWithThisPLL) {
-    pllTrainerElements.pickAlgorithmPage.algorithmInput
-      .get()
-      .type(
-        (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
-      );
-  }
+  pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+    if (stateValue === stateAttributeValues.pickAlgorithmPage) {
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type(
+          (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
+        );
+    }
+  });
   if (correct) pllTrainerElements.correctPage.container.waitFor();
   else {
     pllTrainerElements.wrongPage.container.waitFor();

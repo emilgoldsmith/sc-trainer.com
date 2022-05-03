@@ -114,44 +114,46 @@ const setAlias = function (
 };
 Cypress.Commands.add("setAlias", { prevSubject: true }, setAlias);
 
-const pressKey: Cypress.Chainable<undefined>["pressKey"] = function (
-  key,
-  options
-) {
-  const event = buildKeyboardEvent(key, false);
-  const handleKeyPress = () => {
-    cy.document({ log: false })
-      .trigger("keydown", { ...event, log: false })
-      .trigger("keypress", { ...event, log: false })
-      .trigger("keyup", { ...event, log: false });
+Cypress.Commands.add(
+  "pressKey",
+  { prevSubject: ["optional", "element"] },
+  (subject, key, options) => {
+    const event = buildKeyboardEvent(key, false);
+    const handleKeyPress = () => {
+      (subject ?? cy.document({ log: false }))
+        .trigger("keydown", { ...event, log: false })
+        .trigger("keypress", { ...event, log: false })
+        .trigger("keyup", { ...event, log: false });
 
-    // We need it here as otherwise the event loop doesn't fire
-    // properly which makes things such as asserting that a keypress
-    // did NOT trigger an event fail as it doesn't wait for the event
-    // loop without this.
-    // This for example has incorrectly passed when a transition actually
-    // was happening, which this fixes:
-    // cy.pressKey(keyThatShouldHaveNoEffect);
-    // pllTrainerElements.originalPage.assertShows();
-    //
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(0, { log: false });
-  };
-  if (options?.log === false) {
-    handleKeyPress();
-    return;
+      // We need it here as otherwise the event loop doesn't fire
+      // properly which makes things such as asserting that a keypress
+      // did NOT trigger an event fail as it doesn't wait for the event
+      // loop without this.
+      // This for example has incorrectly passed when a transition actually
+      // was happening, which this fixes:
+      // cy.pressKey(keyThatShouldHaveNoEffect);
+      // pllTrainerElements.originalPage.assertShows();
+      //
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(0, { log: false });
+    };
+    if (options?.log === false) {
+      handleKeyPress();
+      return;
+    }
+    cy.withOverallNameLogged(
+      {
+        name: "pressKey",
+        displayName: "PRESS KEY",
+        message: `'${getKeyValue(key)}' ${
+          subject ? "with target" : "without any dom target"
+        }`,
+        consoleProps: () => ({ event, subject }),
+      },
+      handleKeyPress
+    );
   }
-  cy.withOverallNameLogged(
-    {
-      name: "pressKey",
-      displayName: "PRESS KEY",
-      message: `'${getKeyValue(key)}' without any dom target`,
-      consoleProps: () => ({ event }),
-    },
-    handleKeyPress
-  );
-};
-Cypress.Commands.add("pressKey", pressKey);
+);
 
 function buildKeyboardEvent(
   key: Key,
@@ -498,7 +500,7 @@ const assertNoHorizontalScrollbar: Cypress.Chainable<undefined>["assertNoHorizon
     },
     (consolePropsSetter) => {
       cy.document({ log: false }).then((document) =>
-        cy.window({ log: false }).should((window) => {
+        cy.window({ log: false }).then((window) => {
           const windowWidth = Cypress.$(window).width();
           if (windowWidth === undefined)
             throw new Error("Window width is undefined");
@@ -507,52 +509,47 @@ const assertNoHorizontalScrollbar: Cypress.Chainable<undefined>["assertNoHorizon
             Cypress.$(document).width(),
             "document width at most window width"
           ).to.be.at.most(windowWidth);
+          // The previous check won't necessarily work for elements with position fixed or absolute
+          // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
+
+          cy.get(":not(style,script)").should((allDomNodes) => {
+            const minMax = { left: 0, right: 0 };
+            const consoleProps = {
+              "Furthest Left": allDomNodes.get(0),
+              "Furthest Right": allDomNodes.get(0),
+            };
+            allDomNodes.each((_, curNode) => {
+              const nodeLeft = Cypress.$(curNode).offset()?.left;
+              if (nodeLeft === undefined) {
+                throw new Error("node had no offset");
+              }
+              const nodeWidth = Cypress.$(curNode).width();
+              if (nodeWidth === undefined) {
+                throw new Error("Node had no width");
+              }
+              const nodeRight = nodeLeft + nodeWidth;
+              if (nodeLeft < minMax.left) {
+                minMax.left = nodeLeft;
+                consoleProps["Furthest Left"] = curNode;
+              }
+              if (nodeRight > minMax.right) {
+                minMax.right = nodeRight;
+                consoleProps["Furthest Right"] = curNode;
+              }
+              minMax.left = Math.min(minMax.left, nodeLeft);
+            });
+            consolePropsSetter(consoleProps);
+            expect(
+              minMax.left,
+              "furthest left element should be within window"
+            ).to.be.at.least(0);
+            expect(
+              minMax.right,
+              "furthest right element should be within window"
+            ).to.be.at.most(windowWidth);
+          });
         })
       );
-      // The previous check won't necessarily work for elements with position fixed or absolute
-      // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
-      cy.window({ log: false }).then((window) => {
-        const windowWidth = Cypress.$(window).width();
-        if (windowWidth === undefined)
-          throw new Error("Window width is undefined");
-
-        cy.get(":not(style,script)").should((allDomNodes) => {
-          const minMax = { left: 0, right: 0 };
-          const consoleProps = {
-            "Furthest Left": allDomNodes.get(0),
-            "Furthest Right": allDomNodes.get(0),
-          };
-          allDomNodes.each((_, curNode) => {
-            const nodeLeft = Cypress.$(curNode).offset()?.left;
-            if (nodeLeft === undefined) {
-              throw new Error("node had no offset");
-            }
-            const nodeWidth = Cypress.$(curNode).width();
-            if (nodeWidth === undefined) {
-              throw new Error("Node had no width");
-            }
-            const nodeRight = nodeLeft + nodeWidth;
-            if (nodeLeft < minMax.left) {
-              minMax.left = nodeLeft;
-              consoleProps["Furthest Left"] = curNode;
-            }
-            if (nodeRight > minMax.right) {
-              minMax.right = nodeRight;
-              consoleProps["Furthest Right"] = curNode;
-            }
-            minMax.left = Math.min(minMax.left, nodeLeft);
-          });
-          consolePropsSetter(consoleProps);
-          expect(
-            minMax.left,
-            "furthest left element should be within window"
-          ).to.be.at.least(0);
-          expect(
-            minMax.right,
-            "furthest right element should be within window"
-          ).to.be.at.most(windowWidth);
-        });
-      });
     }
   );
 };
@@ -572,7 +569,7 @@ const assertNoVerticalScrollbar: Cypress.Chainable<undefined>["assertNoVerticalS
     (consolePropsSetter) => {
       // Initial simple check
       cy.document({ log: false }).then((document) =>
-        cy.window({ log: false }).should((window) => {
+        cy.window({ log: false }).then((window) => {
           const windowHeight = Cypress.$(window).height();
           if (windowHeight === undefined)
             throw new Error("Window height is undefined");
@@ -580,35 +577,72 @@ const assertNoVerticalScrollbar: Cypress.Chainable<undefined>["assertNoVerticalS
             Cypress.$(document).height(),
             "document height at most window height"
           ).to.be.at.most(windowHeight);
+          // The previous check won't necessarily work for elements with position fixed or absolute
+          // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
+          getTopAndBottomElements().then(({ positions, elements }) => {
+            consolePropsSetter({
+              "Furthest Up": elements.top,
+              "Furthest Down": elements.bottom,
+            });
+            expect(
+              positions.top,
+              "furthest up element should be within window"
+            ).to.be.at.least(0);
+            expect(
+              positions.bottom,
+              "furthest down element should be within window"
+            ).to.be.at.most(windowHeight);
+          });
         })
       );
-      // The previous check won't necessarily work for elements with position fixed or absolute
-      // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
-      cy.window({ log: false }).then((window) => {
-        const windowHeight = Cypress.$(window).height();
-        if (windowHeight === undefined)
-          throw new Error("Window height is undefined");
-
-        getTopAndBottomElements().then(({ positions, elements }) => {
-          consolePropsSetter({
-            "Furthest Up": elements.top,
-            "Furthest Down": elements.bottom,
-          });
-          expect(
-            positions.top,
-            "furthest up element should be within window"
-          ).to.be.at.least(0);
-          expect(
-            positions.bottom,
-            "furthest down element should be within window"
-          ).to.be.at.most(windowHeight);
-        });
-      });
     }
   );
 };
 
 Cypress.Commands.add("assertNoVerticalScrollbar", assertNoVerticalScrollbar);
+
+const assertThereIsVerticalScrollbar: Cypress.Chainable<undefined>["assertThereIsVerticalScrollbar"] = function () {
+  cy.withOverallNameLogged(
+    {
+      name: "assertThereIsVerticalScrollbar",
+      displayName: "ASSERT SCROLLBAR",
+      message: "vertical required",
+    },
+    (consolePropsSetter) => {
+      // Initial simple check
+      cy.document({ log: false }).then((document) =>
+        cy.window({ log: false }).then((window) => {
+          const windowHeight = Cypress.$(window).height();
+          if (windowHeight === undefined)
+            throw new Error("Window height is undefined");
+          if (Cypress.$(document).height() ?? -1 > windowHeight) {
+            // Document is higher than window so we don't need to do a more thorough check there
+            // should be a vertical scrollbar
+            return;
+          }
+          // The previous check won't necessarily work for elements with position fixed or absolute
+          // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
+
+          getTopAndBottomElements().should(({ positions, elements }) => {
+            consolePropsSetter({
+              "Furthest Up": elements.top,
+              "Furthest Down": elements.bottom,
+            });
+            expect(
+              positions.top < 0 || positions.bottom > windowHeight,
+              "furthest up element should be above window or furthest down below window"
+            ).to.be.true;
+          });
+        })
+      );
+    }
+  );
+};
+
+Cypress.Commands.add(
+  "assertThereIsVerticalScrollbar",
+  assertThereIsVerticalScrollbar
+);
 
 const touchScreen: Cypress.Chainable<undefined>["touchScreen"] = function (
   position
@@ -703,7 +737,9 @@ const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] = f
         const setCurrentTestCasePort = ports.setCurrentTestCasePort;
         if (!setCurrentTestCasePort)
           throw new Error(
-            "setCurrentTestCase port is not exposed for some reason"
+            `setCurrentTestCase port is not exposed for some reason. The port keys are: ${JSON.stringify(
+              Object.keys(ports)
+            )}`
           );
         setCurrentTestCasePort.send(jsonValue);
       });
@@ -717,6 +753,38 @@ const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] = f
   );
 };
 Cypress.Commands.add("setCurrentTestCase", setCurrentTestCase);
+
+const overrideNextTestCase: Cypress.Chainable<undefined>["overrideNextTestCase"] = function ([
+  preAuf,
+  pll,
+  postAuf,
+]) {
+  const jsonValue = [
+    aufToAlgorithmString[preAuf],
+    pllToPllLetters[pll],
+    aufToAlgorithmString[postAuf],
+  ];
+  cy.withOverallNameLogged(
+    {
+      displayName: "OVERRIDE NEXT TEST CASE",
+      message: JSON.stringify(jsonValue),
+    },
+    () => {
+      cy.getCustomWindow({ log: false }).then((window) => {
+        const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+        const overrideNextTestCasePort = ports.overrideNextTestCasePort;
+        if (!overrideNextTestCasePort)
+          throw new Error(
+            `overrideNextTestCase port is not exposed for some reason. The port keys are: ${JSON.stringify(
+              Object.keys(ports)
+            )}`
+          );
+        overrideNextTestCasePort.send(jsonValue);
+      });
+    }
+  );
+};
+Cypress.Commands.add("overrideNextTestCase", overrideNextTestCase);
 
 const setExtraAlgToApplyToAllCubes: Cypress.Chainable<undefined>["setExtraAlgToApplyToAllCubes"] = function (
   alg

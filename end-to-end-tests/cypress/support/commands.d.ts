@@ -256,6 +256,8 @@ declare namespace Cypress {
 
     assertNoVerticalScrollbar(): void;
 
+    assertThereIsVerticalScrollbar(): void;
+
     assertNoHorizontalScrollbar(): void;
 
     touchScreen(position: Cypress.PositionType): void;
@@ -270,6 +272,14 @@ declare namespace Cypress {
     ): void;
 
     setCurrentTestCase(
+      testCase: readonly [
+        import("./pll").AUF,
+        import("./pll").PLL,
+        import("./pll").AUF
+      ]
+    ): void;
+
+    overrideNextTestCase(
       testCase: readonly [
         import("./pll").AUF,
         import("./pll").PLL,

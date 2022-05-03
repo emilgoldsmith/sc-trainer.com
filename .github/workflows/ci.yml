@@ -272,7 +272,7 @@ jobs:
         run: >
           ./node_modules/.bin/cypress run
           --browser ${{ matrix.platform.browser }}
-          --config "viewportWidth=${{ matrix.sizeRelevant.viewportWidth }},viewportHeight=${{ matrix.sizeRelevant.viewportHeight }},baseUrl=http://sctrainer-server:${{ env.PORT }},ignoreTestFiles=[\"**/*.helper.ts\",\"**/visual-tests.ts\",\"${{ matrix.sizeRelevant.ignoredSpecs }}\"]"
+          --config "viewportWidth=${{ matrix.sizeRelevant.viewportWidth }},viewportHeight=${{ matrix.sizeRelevant.viewportHeight }},baseUrl=http://sctrainer-server:${{ env.PORT }},ignoreTestFiles=[\"**/*.helper.ts\",\"**/visual-tests.ts\",\"${{ matrix.sizeRelevant.ignoredSpecs }}\"],video=true"
           --spec cypress/tests/**/*.ts,${{ matrix.sizeRelevant.extraSpecs[0] }},${{ matrix.sizeRelevant.extraSpecs[1] }},${{ matrix.sizeRelevant.extraSpecs[2] }}
 
       - name: Upload recorded videos

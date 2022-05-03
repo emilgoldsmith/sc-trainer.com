@@ -104,6 +104,8 @@ function checkWhetherShortcutsDisplay(
   matcher: "match" | "not.match",
   method: "useKeyboard" | "useMouseAndButtons"
 ) {
+  const testCase = [AUF.none, PLL.Aa, AUF.none] as const;
+  cy.overrideNextTestCase(testCase);
   // Ensure that it's a fresh user
   pllTrainerElements.newUserStartPage.welcomeText.waitFor();
   pllTrainerElements.newUserStartPage.startButton
@@ -117,10 +119,23 @@ function checkWhetherShortcutsDisplay(
   } else {
     pllTrainerElements.newUserStartPage.startButton.get().click();
   }
+
+  pllTrainerElements.newCasePage.container.waitFor();
+  pllTrainerElements.newCasePage.startTestButton
+    .get()
+    .invoke("text")
+    .should(matcher, buildShortcutRegex("Space"));
+
+  if (method === "useKeyboard") {
+    // Note this also checks the space shortcut actually works as the label implies
+    cy.pressKey(Key.space);
+  } else {
+    pllTrainerElements.newCasePage.startTestButton.get().click();
+  }
+
   pllTrainerElements.getReadyState.container.waitFor();
   cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();
-  cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
   if (method === "useKeyboard") {
     cy.pressKey(Key.space);
   } else {
@@ -162,6 +177,7 @@ function checkWhetherShortcutsDisplay(
     .invoke("text")
     .should(matcher, buildShortcutRegex("Space"));
 
+  cy.overrideNextTestCase(testCase);
   if (method === "useKeyboard") {
     // Note this also checks the space shortcut actually works as the label implies
     cy.pressKey(Key.space);
@@ -171,7 +187,6 @@ function checkWhetherShortcutsDisplay(
   pllTrainerElements.getReadyState.container.waitFor();
   cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();
-  cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
 
   // And now we go back to evaluateResult so we can do the wrong path
   if (method === "useKeyboard") {
@@ -219,6 +234,7 @@ function checkWhetherShortcutsDisplay(
     });
   });
 
+  cy.overrideNextTestCase(testCase);
   // And then we test wrong page works as intended too
   pllTrainerElements.wrongPage.nextButton
     .get()

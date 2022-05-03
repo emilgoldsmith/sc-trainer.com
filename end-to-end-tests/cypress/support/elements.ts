@@ -26,6 +26,11 @@ export type Element = {
 
 type InternalElement = Element & { meta: ElementMeta };
 
+type Options = {
+  log?: boolean;
+  withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+};
+
 function getTestId(specifier: ElementSpecifier): string | null {
   if (typeof specifier === "object") {
     return specifier.testId;
@@ -92,15 +97,9 @@ export function buildElementsCategory<keys extends string>(
   function buildWithinContainer<T>(
     builder: (
       specifier: ElementSpecifier
-    ) => (options?: {
-      log?: boolean;
-      withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-    }) => Cypress.Chainable<T>,
+    ) => (options?: Options) => Cypress.Chainable<T>,
     specifier: ElementSpecifier
-  ): (options?: {
-    log?: boolean;
-    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-  }) => Cypress.Chainable<T> {
+  ): (options?: Options) => Cypress.Chainable<T> {
     const fn = builder(specifier);
     return function (...args: Parameters<ReturnType<typeof buildGetter>>) {
       return getContainer({ log: false }).then((containerElement) => {
@@ -119,18 +118,12 @@ export function buildElementsCategory<keys extends string>(
       specifier: ElementSpecifier
     ) => (
       scrollableContainerSpecifier: ElementSpecifier,
-      options?: {
-        log?: boolean;
-        withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-      }
+      options?: Options
     ) => Cypress.Chainable<T>,
     specifier: ElementSpecifier
   ): (
     scrollableContainerSpecifier: ElementSpecifier,
-    options?: {
-      log?: boolean;
-      withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-    }
+    options?: Options
   ) => Cypress.Chainable<T> {
     const fn = builder(specifier);
     return function (
@@ -208,6 +201,38 @@ export function buildGlobalsCategory<keys extends string>(
   return Cypress._.mapValues(specifiers, buildElement);
 }
 
+export function buildRootCategory<
+  StateValues extends Record<string, string>
+>(statesAndId: {
+  testId: ElementSpecifier;
+  stateAttributeValues: StateValues;
+}): {
+  getStateAttributeValue: (options?: Options) => Cypress.Chainable<string>;
+  waitForStateChangeAwayFrom: (
+    stateValue: StateValues[keyof StateValues],
+    options?: Options
+  ) => void;
+  stateAttributeValues: StateValues;
+} {
+  const { testId, stateAttributeValues } = statesAndId;
+  const stateAttributeName = "__test-helper__state";
+  function getStateAttributeValue(
+    options?: Options
+  ): Cypress.Chainable<string> {
+    return getBySpecifier(testId, options).invoke("attr", stateAttributeName);
+  }
+  return {
+    getStateAttributeValue,
+    waitForStateChangeAwayFrom(
+      stateValue: StateValues[keyof StateValues],
+      options?: Options
+    ) {
+      getStateAttributeValue(options).should("not.equal", stateValue);
+    },
+    stateAttributeValues,
+  };
+}
+
 function buildElement(specifier: ElementSpecifier): InternalElement {
   return {
     get: buildGetter(specifier),
@@ -228,13 +253,7 @@ function buildElement(specifier: ElementSpecifier): InternalElement {
   };
 }
 
-function getBySpecifier(
-  specifier: ElementSpecifier,
-  options?: {
-    log?: boolean;
-    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-  }
-) {
+function getBySpecifier(specifier: ElementSpecifier, options?: Options) {
   const testType = getMeta(specifier).testType;
   return cy.getByTestId(
     getTestId(specifier),
@@ -248,46 +267,31 @@ function getBySpecifier(
 }
 
 function buildVisibleAsserter(specifier: ElementSpecifier) {
-  return function (options?: {
-    log?: boolean;
-    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-  }) {
+  return function (options?: Options) {
     return getBySpecifier(specifier, options).should("be.visible");
   };
 }
 
 function buildNotExistAsserter(specifier: ElementSpecifier) {
-  return function (options?: {
-    log?: boolean;
-    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-  }) {
+  return function (options?: Options) {
     return getBySpecifier(specifier, options).should("not.exist");
   };
 }
 
 function buildWaiter(specifier: ElementSpecifier) {
-  return function (options?: {
-    log?: boolean;
-    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-  }) {
+  return function (options?: Options) {
     return getBySpecifier(specifier, options);
   };
 }
 
 function buildGetter(specifier: ElementSpecifier) {
-  return function (options?: {
-    log?: boolean;
-    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-  }) {
+  return function (options?: Options) {
     return getBySpecifier(specifier, options);
   };
 }
 
 function buildAssertIsFocused(specifier: ElementSpecifier) {
-  return function (options?: {
-    log?: boolean;
-    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-  }) {
+  return function (options?: Options) {
     const assertIsFocused = () =>
       getBySpecifier(specifier, { ...options, log: false })
         .invoke("attr", "id")
@@ -317,10 +321,7 @@ function buildAssertIsFocused(specifier: ElementSpecifier) {
 }
 
 function buildContainedByWindow(specifier: ElementSpecifier) {
-  return function (options?: {
-    log?: boolean;
-    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-  }) {
+  return function (options?: Options) {
     return getBySpecifier(specifier, options).then((instructionsElement) => {
       const instructionsTop = instructionsElement.offset()?.top;
       if (instructionsTop === undefined) {
@@ -347,10 +348,7 @@ function buildContainedByWindow(specifier: ElementSpecifier) {
 }
 
 function buildContainedByWindowAsserter(specifier: ElementSpecifier) {
-  return function (options?: {
-    log?: boolean;
-    withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-  }) {
+  return function (options?: Options) {
     return getBySpecifier(specifier, options).then((instructionsElement) => {
       const instructionsTop = instructionsElement.offset()?.top;
       if (instructionsTop === undefined) {
@@ -383,10 +381,7 @@ function buildContainedByWindowAsserter(specifier: ElementSpecifier) {
 function buildConsumableViaVerticalScrollAsserter(specifier: ElementSpecifier) {
   return function (
     scrollableContainerSpecifier: ElementSpecifier,
-    options?: {
-      log?: boolean;
-      withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-    }
+    options?: Options
   ) {
     function getContainer() {
       // We don't want the within here as it's usually used on the container
@@ -450,10 +445,7 @@ function buildConsumableViaHorizontalScrollAsserter(
 ) {
   return function (
     scrollableContainerSpecifier: ElementSpecifier,
-    options?: {
-      log?: boolean;
-      withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
-    }
+    options?: Options
   ) {
     function getContainer() {
       // We don't want the within here as it's usually used on the container

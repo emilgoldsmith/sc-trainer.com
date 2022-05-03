@@ -3,13 +3,17 @@ module PLLTrainer.Page exposing (Model, Msg, page)
 import AUF
 import AUF.Extra
 import Algorithm exposing (Algorithm)
+import Css
 import Cube exposing (Cube)
 import Effect exposing (Effect)
+import Element
+import Html.Attributes
 import Json.Decode
 import PLL exposing (PLL)
 import PLLTrainer.State
 import PLLTrainer.States.CorrectPage
 import PLLTrainer.States.EvaluateResult
+import PLLTrainer.States.NewCasePage
 import PLLTrainer.States.PickAlgorithmPage
 import PLLTrainer.States.PickTargetParametersPage
 import PLLTrainer.States.StartPage
@@ -48,12 +52,16 @@ type alias Model =
     { trainerState : TrainerState
     , expectedCubeState : Cube
     , currentTestCase : TestCase
+    , tESTONLY :
+        { nextTestCaseOverride : Maybe TestCase
+        }
     }
 
 
 type TrainerState
     = PickTargetParametersPage PLLTrainer.States.PickTargetParametersPage.Model
     | StartPage
+    | NewCasePage NewCaseExtraState
     | TestRunning (PLLTrainer.States.TestRunning.Model Msg) TestRunningExtraState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
     | PickAlgorithmPage PLLTrainer.States.PickAlgorithmPage.Model PickAlgorithmExtraState
@@ -62,8 +70,12 @@ type TrainerState
     | WrongPage
 
 
+type alias NewCaseExtraState =
+    { generator : PLLTrainer.TestCase.Generator }
+
+
 type TestRunningExtraState
-    = GettingReadyExtraState
+    = GettingReadyExtraState PLLTrainer.TestCase.Generator
     | TestRunningExtraState { testTimestamp : Time.Posix, memoizedCube : Cube }
 
 
@@ -99,6 +111,9 @@ init shared =
       -- possibly need a Maybe or a difficult tagged type. A placeholder
       -- seems the best option of these right now
       , currentTestCase = placeholderTestCase
+      , tESTONLY =
+            { nextTestCaseOverride = Nothing
+            }
       }
     , Effect.none
     )
@@ -128,7 +143,9 @@ type Msg
 type TransitionMsg
     = SubmitNewTargetParameters { newTargetRecognitionTime : Float, newTargetTps : Float }
     | GoToEditTargetParameters
-    | GetReadyForTest
+      -- Pass in Nothing when sending it and the time is generated internally
+    | InitiateTest (Maybe Time.Posix)
+    | NewCaseGetReadyForTest PLLTrainer.TestCase.Generator
     | StartTest StartTestData
     | EndTest { testTimestamp : Time.Posix } TimeInterval
     | EnableEvaluateResultTransitions
@@ -149,6 +166,7 @@ type StateMsg
 
 type InternalMsg
     = TESTONLYSetTestCase (Result Json.Decode.Error TestCase)
+    | TESTONLYOverrideNextTestCase (Result Json.Decode.Error TestCase)
     | TESTONLYSetExtraAlgToApplyToAllCubes (Result Algorithm.FromStringError Algorithm)
     | TESTONLYSetCubeSizeOverride (Maybe Int)
 
@@ -157,8 +175,8 @@ type InternalMsg
 order of generation of the different outside effects
 -}
 type StartTestData
-    = NothingGenerated
-    | TimestampGenerated Time.Posix
+    = NothingGenerated PLLTrainer.TestCase.Generator
+    | TimestampGenerated PLLTrainer.TestCase.Generator Time.Posix
     | EverythingGenerated Time.Posix TestCase
 
 
@@ -195,29 +213,72 @@ update shared msg model =
                     , Effect.fromCmd stateCmd
                     )
 
-                GetReadyForTest ->
+                InitiateTest Nothing ->
+                    ( model
+                    , Effect.fromCmd <|
+                        Task.perform (Just >> InitiateTest >> TransitionMsg) Time.now
+                    )
+
+                InitiateTest (Just now) ->
                     let
-                        ( stateModel, stateCmd ) =
-                            ((states shared).testRunning GettingReadyExtraState).init
+                        oldTestOnly =
+                            model.tESTONLY
+
+                        generator =
+                            PLLTrainer.TestCase.generate
+                                { now = now
+                                , testOnlyOverride = oldTestOnly.nextTestCaseOverride
+                                }
+                                shared.user
+
+                        newCaseExtraState =
+                            { generator = generator }
+
+                        gettingReadyExtraState =
+                            GettingReadyExtraState generator
+
+                        ( trainerState, stateCmd ) =
+                            if PLLTrainer.TestCase.isNewCaseGenerator generator then
+                                ((states shared).newCasePage newCaseExtraState).init
+                                    |> Tuple.mapFirst (always <| NewCasePage newCaseExtraState)
+
+                            else
+                                ((states shared).testRunning gettingReadyExtraState).init
+                                    |> Tuple.mapFirst (\stateModel -> TestRunning stateModel gettingReadyExtraState)
                     in
-                    ( { model | trainerState = TestRunning stateModel GettingReadyExtraState }
+                    ( { model
+                        | trainerState = trainerState
+                        , tESTONLY = { oldTestOnly | nextTestCaseOverride = Nothing }
+                      }
                     , Effect.fromCmd stateCmd
                     )
 
-                StartTest NothingGenerated ->
+                NewCaseGetReadyForTest generator ->
+                    let
+                        gettingReadyExtraState =
+                            GettingReadyExtraState generator
+
+                        ( stateModel, stateCmd ) =
+                            ((states shared).testRunning gettingReadyExtraState).init
+                    in
+                    ( { model | trainerState = TestRunning stateModel gettingReadyExtraState }
+                    , Effect.fromCmd stateCmd
+                    )
+
+                StartTest (NothingGenerated generator) ->
                     ( model
                     , Effect.fromCmd <|
                         Task.perform
-                            (TransitionMsg << StartTest << TimestampGenerated)
+                            (TransitionMsg << StartTest << TimestampGenerated generator)
                             Time.now
                     )
 
-                StartTest (TimestampGenerated testTimestamp) ->
+                StartTest (TimestampGenerated generator testTimestamp) ->
                     ( model
                     , Effect.fromCmd <|
                         Random.generate
                             (TransitionMsg << StartTest << EverythingGenerated testTimestamp)
-                            (PLLTrainer.TestCase.generate testTimestamp shared.user)
+                            (PLLTrainer.TestCase.getGenerator generator)
                     )
 
                 StartTest (EverythingGenerated testTimestamp testCase) ->
@@ -507,6 +568,22 @@ update shared msg model =
                             )
                     )
 
+                TESTONLYOverrideNextTestCase (Ok testCaseOverride) ->
+                    let
+                        oldTestOnly =
+                            model.tESTONLY
+                    in
+                    ( { model | tESTONLY = { oldTestOnly | nextTestCaseOverride = Just testCaseOverride } }, Effect.none )
+
+                TESTONLYOverrideNextTestCase (Err decodeError) ->
+                    ( model
+                    , Effect.fromCmd <|
+                        Ports.logError
+                            ("Error in test only override next test case: "
+                                ++ Json.Decode.errorToString decodeError
+                            )
+                    )
+
                 TESTONLYSetExtraAlgToApplyToAllCubes (Ok algorithm) ->
                     ( model, Effect.fromShared (Shared.TESTONLYSetExtraAlgToApplyToAllCubes algorithm) )
 
@@ -571,6 +648,7 @@ subscriptions shared model =
         [ handleStateSubscriptionsBoilerplate shared model
             |> PLLTrainer.Subscription.getSub
         , Ports.onTESTONLYSetTestCase (InternalMsg << TESTONLYSetTestCase)
+        , Ports.onTESTONLYOverrideNextTestCase (InternalMsg << TESTONLYOverrideNextTestCase)
         , Ports.onTESTONLYSetExtraAlgToApplyToAllCubes (InternalMsg << TESTONLYSetExtraAlgToApplyToAllCubes)
         , Ports.onTESTONLYSetCubeSizeOverride (InternalMsg << TESTONLYSetCubeSizeOverride)
         ]
@@ -586,13 +664,28 @@ view shared model =
         stateView =
             handleStateViewBoilerplate shared model
 
+        testOnlyStateAttributeValue =
+            getTestOnlyStateAttributeValue model
+
+        extraTopLevelAttributes =
+            [ Css.testid "pll-trainer-root"
+            , Element.htmlAttribute <|
+                Html.Attributes.attribute
+                    "__test-helper__state"
+                    testOnlyStateAttributeValue
+            ]
+
         subscription =
             handleStateSubscriptionsBoilerplate shared model
 
         pageSubtitle =
             Nothing
     in
-    PLLTrainer.State.stateViewToGlobalView pageSubtitle subscription stateView
+    PLLTrainer.State.stateViewToGlobalView
+        pageSubtitle
+        subscription
+        extraTopLevelAttributes
+        stateView
 
 
 
@@ -613,6 +706,7 @@ states :
                 PLLTrainer.States.PickTargetParametersPage.Model
                 ()
         , startPage : StateBuilder () () ()
+        , newCasePage : StateBuilder () () NewCaseExtraState
         , testRunning :
             StateBuilder
                 PLLTrainer.States.TestRunning.Msg
@@ -648,8 +742,15 @@ states shared =
         always <|
             PLLTrainer.States.StartPage.state
                 shared
-                { startTest = TransitionMsg GetReadyForTest
+                { startTest = TransitionMsg (InitiateTest Nothing)
                 , editTargetParameters = TransitionMsg GoToEditTargetParameters
+                , noOp = NoOp
+                }
+    , newCasePage =
+        \{ generator } ->
+            PLLTrainer.States.NewCasePage.state
+                shared
+                { startTest = TransitionMsg <| NewCaseGetReadyForTest generator
                 , noOp = NoOp
                 }
     , testRunning =
@@ -657,9 +758,9 @@ states shared =
             let
                 argument =
                     case extraState of
-                        GettingReadyExtraState ->
+                        GettingReadyExtraState generator ->
                             PLLTrainer.States.TestRunning.GetReadyArgument
-                                { startTest = TransitionMsg <| StartTest NothingGenerated }
+                                { startTest = TransitionMsg <| StartTest <| NothingGenerated generator }
 
                         TestRunningExtraState { memoizedCube, testTimestamp } ->
                             PLLTrainer.States.TestRunning.TestRunningArgument
@@ -703,7 +804,7 @@ states shared =
         always <|
             PLLTrainer.States.CorrectPage.state
                 shared
-                { startTest = TransitionMsg GetReadyForTest
+                { startTest = TransitionMsg (InitiateTest Nothing)
                 , noOp = NoOp
                 }
     , typeOfWrongPage =
@@ -722,7 +823,7 @@ states shared =
         \model _ ->
             PLLTrainer.States.WrongPage.state
                 shared
-                { startNextTest = TransitionMsg GetReadyForTest
+                { startNextTest = TransitionMsg (InitiateTest Nothing)
                 , noOp = NoOp
                 }
                 { expectedCubeState = model.expectedCubeState
@@ -803,10 +904,13 @@ trainerStateToString trainerState =
         StartPage ->
             "StartPage"
 
+        NewCasePage _ ->
+            "NewCasePage"
+
         TestRunning _ extraState ->
             "TestRunning: "
                 ++ (case extraState of
-                        GettingReadyExtraState ->
+                        GettingReadyExtraState _ ->
                             "GettingReadyExtraState"
 
                         TestRunningExtraState { testTimestamp } ->
@@ -853,6 +957,9 @@ handleStateSubscriptionsBoilerplate shared model =
         StartPage ->
             ((states shared).startPage ()).subscriptions ()
 
+        NewCasePage extraState ->
+            ((states shared).newCasePage extraState).subscriptions ()
+
         TestRunning stateModel extraState ->
             ((states shared).testRunning extraState).subscriptions stateModel
 
@@ -881,11 +988,17 @@ handleStateViewBoilerplate shared model =
         StartPage ->
             ((states shared).startPage ()).view ()
 
+        NewCasePage extraState ->
+            ((states shared).newCasePage extraState).view ()
+
         TestRunning stateModel extraState ->
             ((states shared).testRunning extraState).view stateModel
 
         EvaluateResult stateModel extraState ->
             ((states shared).evaluateResult model extraState).view stateModel
+
+        TypeOfWrongPage extraState ->
+            ((states shared).typeOfWrongPage model extraState).view ()
 
         PickAlgorithmPage stateModel extraState ->
             ((states shared).pickAlgorithmPage model extraState).view stateModel
@@ -893,8 +1006,41 @@ handleStateViewBoilerplate shared model =
         CorrectPage ->
             ((states shared).correctPage ()).view ()
 
-        TypeOfWrongPage extraState ->
-            ((states shared).typeOfWrongPage model extraState).view ()
-
         WrongPage ->
             ((states shared).wrongPage model ()).view ()
+
+
+getTestOnlyStateAttributeValue : Model -> String
+getTestOnlyStateAttributeValue model =
+    case model.trainerState of
+        PickTargetParametersPage _ ->
+            "pick-target-parameters-page"
+
+        StartPage ->
+            "start-page"
+
+        NewCasePage _ ->
+            "new-case-page"
+
+        TestRunning _ extraState ->
+            case extraState of
+                GettingReadyExtraState _ ->
+                    "get-ready-state"
+
+                TestRunningExtraState _ ->
+                    "test-running-state"
+
+        EvaluateResult _ _ ->
+            "evaluate-result-page"
+
+        TypeOfWrongPage _ ->
+            "type-of-wrong-page"
+
+        PickAlgorithmPage _ _ ->
+            "pick-algorithm-page"
+
+        CorrectPage ->
+            "correct-page"
+
+        WrongPage ->
+            "wrong-page"

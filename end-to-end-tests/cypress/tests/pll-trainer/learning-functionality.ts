@@ -224,12 +224,12 @@ describe("PLL Trainer - Learning Functionality", function () {
 
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
-      pllTrainerElements.testRunning.container.assertShows();
+      pllTrainerElements.newCasePage.container.assertShows();
     });
 
     it("starts when pressing the begin button", function () {
       pllTrainerElements.newUserStartPage.startButton.get().click();
-      pllTrainerElements.getReadyState.container.assertShows();
+      pllTrainerElements.newCasePage.container.assertShows();
     });
 
     it("doesn't start test when pressing any other keys", function () {
@@ -239,6 +239,52 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.newUserStartPage.container.assertShows();
       cy.pressKey(Key.capsLock);
       pllTrainerElements.newUserStartPage.container.assertShows();
+    });
+  });
+
+  describe("New Case Page", function () {
+    beforeEach(function () {
+      pllTrainerStatesNewUser.newCasePage.restoreState();
+    });
+
+    it("has all the correct elements", function () {
+      pllTrainerElements.newCasePage.assertAllShow();
+    });
+
+    it("sizes elements reasonably", function () {
+      cy.assertNoHorizontalScrollbar();
+      cy.assertNoVerticalScrollbar();
+    });
+
+    it("starts test when pressing space", function () {
+      cy.pressKey(Key.space);
+      pllTrainerElements.getReadyState.container.assertShows();
+    });
+
+    it("starts when pressing the begin button", function () {
+      pllTrainerElements.newCasePage.startTestButton.get().click();
+      pllTrainerElements.getReadyState.container.assertShows();
+    });
+
+    it("doesn't start test when pressing any other keys", function () {
+      cy.pressKey(Key.a);
+      pllTrainerElements.newCasePage.container.assertShows();
+      cy.pressKey(Key.x);
+      pllTrainerElements.newCasePage.container.assertShows();
+      cy.pressKey(Key.capsLock);
+      pllTrainerElements.newCasePage.container.assertShows();
+    });
+
+    it("goes from start page to new case page for new user", function () {
+      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
+      pllTrainerElements.newUserStartPage.startButton.get().click();
+      pllTrainerElements.newCasePage.container.assertShows();
+    });
+
+    it("goes from start page to get ready state for done user", function () {
+      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
+      pllTrainerElements.newUserStartPage.startButton.get().click();
+      pllTrainerElements.getReadyState.container.assertShows();
     });
   });
 
@@ -323,11 +369,11 @@ describe("PLL Trainer - Learning Functionality", function () {
 
             targetContainer.assertShows();
 
+            cy.overrideNextTestCase(testCase);
             startNextTestButton.get().click();
             pllTrainerElements.getReadyState.container.waitFor();
             cy.tick(getReadyWaitTime);
             pllTrainerElements.testRunning.container.waitFor();
-            cy.setCurrentTestCase(testCase);
 
             cy.mouseClickScreen("center");
             pllTrainerElements.evaluateResult.container.waitFor();
@@ -596,14 +642,28 @@ describe("PLL Trainer - Learning Functionality", function () {
         // Note we use reload here as we don't want restore to save an old state of the
         // model that doesn't include the plls picked
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
-          { retainCurrentLocalStorage: true }
+          {
+            retainCurrentLocalStorage: true,
+            navigateOptions: {
+              case: [AUF.none, PLL.H, AUF.none],
+              algorithm: pllToAlgorithmString[PLL.H],
+            },
+          }
         );
 
         pllTrainerElements.evaluateResult.correctButton.get().click();
         pllTrainerElements.correctPage.container.assertShows();
 
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
-          { retainCurrentLocalStorage: true, targetParametersPicked: true }
+          {
+            retainCurrentLocalStorage: true,
+            navigateOptions: {
+              targetParametersPicked: true,
+              // Just ensure it is not the same as above so that new case shows
+              case: [AUF.none, PLL.Ga, AUF.none],
+              isNewCase: true,
+            },
+          }
         );
 
         pllTrainerElements.evaluateResult.wrongButton.get().click();
@@ -627,9 +687,15 @@ describe("PLL Trainer - Learning Functionality", function () {
 
         // Revisit, try again but now we should skip it for same case
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
-          { retainCurrentLocalStorage: true, targetParametersPicked: true }
+          {
+            retainCurrentLocalStorage: true,
+            navigateOptions: {
+              targetParametersPicked: true,
+              case: correctBranchCase,
+              isNewCase: false,
+            },
+          }
         );
-        cy.setCurrentTestCase(correctBranchCase);
 
         pllTrainerElements.evaluateResult.correctButton.get().click();
         pllTrainerElements.correctPage.container.assertShows();
@@ -637,9 +703,7 @@ describe("PLL Trainer - Learning Functionality", function () {
         // ---------------------------------------------------
         // Now we try it with a wrong route
         // ---------------------------------------------------
-        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState(
-          { retainCurrentLocalStorage: true, targetParametersPicked: true }
-        );
+        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
 
         const wrongBranchCase = [AUF.none, PLL.H, AUF.none] as const;
         const wrongBranchAlgorithm = pllToAlgorithmString[PLL.H];
@@ -655,9 +719,15 @@ describe("PLL Trainer - Learning Functionality", function () {
 
         // Revisit, try again but now we should skip it for same case
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
-          { retainCurrentLocalStorage: true, targetParametersPicked: true }
+          {
+            retainCurrentLocalStorage: true,
+            navigateOptions: {
+              targetParametersPicked: true,
+              case: wrongBranchCase,
+              isNewCase: false,
+            },
+          }
         );
-        cy.setCurrentTestCase(wrongBranchCase);
 
         pllTrainerElements.evaluateResult.wrongButton.get().click();
         pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();

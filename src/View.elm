@@ -19,6 +19,7 @@ type alias View msg =
     { pageSubtitle : Maybe String
     , topLevelEventListeners : TopLevelEventListeners msg
     , overlays : Overlays msg
+    , extraTopLevelAttributes : List (Element.Attribute msg)
     , body : Body msg
     }
 
@@ -85,6 +86,7 @@ placeholder pageName =
     { pageSubtitle = Just pageName
     , topLevelEventListeners = buildTopLevelEventListeners []
     , overlays = buildOverlays []
+    , extraTopLevelAttributes = []
     , body = WithNavigation <| Element.text pageName
     }
 
@@ -94,27 +96,31 @@ none =
     { pageSubtitle = Nothing
     , topLevelEventListeners = buildTopLevelEventListeners []
     , overlays = buildOverlays []
+    , extraTopLevelAttributes = []
     , body = Custom Element.none
     }
 
 
 map : (a -> b) -> View a -> View b
-map fn { pageSubtitle, body, topLevelEventListeners, overlays } =
+map fn { pageSubtitle, body, topLevelEventListeners, extraTopLevelAttributes, overlays } =
     { pageSubtitle = pageSubtitle
     , topLevelEventListeners = mapTopLevelEventListeners fn topLevelEventListeners
     , overlays = mapOverlays fn overlays
+    , extraTopLevelAttributes = List.map (Element.mapAttribute fn) extraTopLevelAttributes
     , body = mapBody fn body
     }
 
 
 toBrowserDocument : View msg -> Browser.Document msg
-toBrowserDocument { pageSubtitle, body, topLevelEventListeners, overlays } =
+toBrowserDocument { pageSubtitle, body, topLevelEventListeners, extraTopLevelAttributes, overlays } =
     let
         appTitle =
             "Speedcubing Trainer"
 
         topLevelAttributes =
-            topLevelEventListenersToElement topLevelEventListeners ++ overlaysToElement overlays
+            topLevelEventListenersToElement topLevelEventListeners
+                ++ overlaysToElement overlays
+                ++ extraTopLevelAttributes
     in
     { title =
         Maybe.map
