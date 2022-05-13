@@ -97,7 +97,7 @@ jobs:
         continue-on-error: true
 
       - name: Build and Push CI Container image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         if: ${{ steps.ci-container-up-to-date.outcome == 'failure' }}
         with:
           push: true
@@ -111,7 +111,7 @@ jobs:
         continue-on-error: true
 
       - name: Build and Push CI Chrome image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         if: ${{ steps.ci-chrome-up-to-date.outcome == 'failure' }}
         with:
           push: true
@@ -125,7 +125,7 @@ jobs:
         continue-on-error: true
 
       - name: Build and Push Production image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         if: ${{ steps.production-up-to-date.outcome == 'failure' }}
         with:
           push: true
