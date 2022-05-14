@@ -25,6 +25,7 @@ export const pllTrainerElements = {
       evaluateResultPage: "evaluate-result-page",
       typeOfWrongPage: "type-of-wrong-page",
       pickAlgorithmPage: "pick-algorithm-page",
+      algorithmDrillerPage: "algorithm-driller-page",
       correctPage: "correct-page",
       wrongPage: "wrong-page",
     } as const,
@@ -160,6 +161,11 @@ export const pllTrainerElements = {
     algorithmDoesntMatchCaseError: optionalElement(
       errorMessageElement("algorithm-doesnt-match-case")
     ),
+  }),
+  algorithmDrillerPage: buildElementsCategory({
+    container: "algorithm-driller-page-container",
+    explanation: "algorithm-driller-explanation",
+    startTestButton: "start-test-button",
   }),
   globals: buildGlobalsCategory({
     anyErrorMessage: anyErrorMessage(),
@@ -318,6 +324,7 @@ export const pllTrainerStatesNewUser = buildStates<
   | "testRunning"
   | "evaluateResult"
   | "evaluateResultAfterIgnoringTransitions"
+  | "algorithmDrillerPage"
   | "pickAlgorithmPageAfterCorrect"
   | "pickAlgorithmPageAfterUnrecoverable"
   | "correctPage"
@@ -513,8 +520,8 @@ export const pllTrainerStatesNewUser = buildStates<
         pllTrainerElements.pickAlgorithmPage.wrongText.waitFor(options);
       },
     },
-    wrongPage: {
-      name: "wrongPage",
+    algorithmDrillerPage: {
+      name: "algorithmDrillerPage",
       getToThatState: (getState, options) => {
         getState("pickAlgorithmPageAfterUnrecoverable");
         const { case: caseToSet, algorithm } =
@@ -533,6 +540,16 @@ export const pllTrainerStatesNewUser = buildStates<
             ...options,
             delay: 0,
           });
+      },
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.algorithmDrillerPage.container.waitFor(options);
+        cy.waitForDocumentEventListeners("keyup");
+      },
+    },
+    wrongPage: {
+      name: "wrongPage",
+      getToThatState: (getState) => {
+        getState("algorithmDrillerPage");
       },
       waitForStateToAppear: (options?: StateOptions) => {
         pllTrainerElements.wrongPage.container.waitFor(options);
