@@ -12,6 +12,7 @@ import Json.Decode
 import PLL exposing (PLL)
 import PLLTrainer.State
 import PLLTrainer.States.AlgorithmDrillerExplanationPage
+import PLLTrainer.States.AlgorithmDrillerStatusPage
 import PLLTrainer.States.CorrectPage
 import PLLTrainer.States.EvaluateResult
 import PLLTrainer.States.NewCasePage
@@ -67,6 +68,7 @@ type TrainerState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
     | PickAlgorithmPage PLLTrainer.States.PickAlgorithmPage.Model PickAlgorithmExtraState
     | AlgorithmDrillerExplanationPage
+    | AlgorithmDrillerStatusPage
     | CorrectPage
     | TypeOfWrongPage TypeOfWrongExtraState
     | WrongPage
@@ -153,6 +155,7 @@ type TransitionMsg
     | EnableEvaluateResultTransitions
     | EvaluateCorrect { testTimestamp : Time.Posix, result : TimeInterval }
     | AlgorithmPicked ( TrainerState, Effect Msg ) User.TestResult Algorithm
+    | StartAlgorithmDrills
     | EvaluateWrong { testTimestamp : Time.Posix }
     | WrongButNoMoveApplied { testResult : User.TestResult }
     | WrongButExpectedStateWasReached { testResult : User.TestResult }
@@ -454,6 +457,9 @@ update shared msg model =
                                 ]
                             )
 
+                StartAlgorithmDrills ->
+                    ( { model | trainerState = AlgorithmDrillerStatusPage }, Effect.none )
+
                 WrongButNoMoveApplied { testResult } ->
                     withNewUserPostEvaluateHandling
                         { nextCubeState =
@@ -710,6 +716,9 @@ type alias StateBuilder localMsg model extraState =
 
 states :
     Shared.Model
+    -- Note that we don't pass in the model here but only to the ones
+    -- that need it since some states want to be able to be instantiated
+    -- without a model in place, for example in the init function
     ->
         { pickTargetParametersPage :
             StateBuilder
@@ -737,7 +746,8 @@ states :
                     PLLTrainer.States.PickAlgorithmPage.Msg
                     PLLTrainer.States.PickAlgorithmPage.Model
                     PickAlgorithmExtraState
-        , algorithmDrillerPage : Model -> StateBuilder () () ()
+        , algorithmDrillerExplanationPage : Model -> StateBuilder () () ()
+        , algorithmDrillerStatusPage : Model -> StateBuilder () () ()
         , correctPage : StateBuilder () () ()
         , typeOfWrongPage : Model -> StateBuilder () () TypeOfWrongExtraState
         , wrongPage : Model -> StateBuilder () () ()
@@ -812,14 +822,22 @@ states shared =
                 , noOp = NoOp
                 }
                 (StateMsg << PickAlgorithmMsg)
-    , algorithmDrillerPage =
+    , algorithmDrillerExplanationPage =
         \model _ ->
             PLLTrainer.States.AlgorithmDrillerExplanationPage.state
+                shared
+                { startDrills = TransitionMsg StartAlgorithmDrills
+                , noOp = NoOp
+                }
+                { testCase = model.currentTestCase }
+    , algorithmDrillerStatusPage =
+        \model _ ->
+            PLLTrainer.States.AlgorithmDrillerStatusPage.state
                 shared
                 { startTest = TransitionMsg (InitiateTest Nothing)
                 , noOp = NoOp
                 }
-                { testCase = model.currentTestCase }
+                { expectedCube = model.expectedCubeState }
     , correctPage =
         always <|
             PLLTrainer.States.CorrectPage.state
@@ -952,6 +970,9 @@ trainerStateToString trainerState =
         AlgorithmDrillerExplanationPage ->
             "AlgorithmDrillerExplanationPage"
 
+        AlgorithmDrillerStatusPage ->
+            "AlgorithmDrillerStatusPage"
+
         CorrectPage ->
             "CorrectPage"
 
@@ -993,7 +1014,10 @@ handleStateSubscriptionsBoilerplate shared model =
             ((states shared).pickAlgorithmPage model extraState).subscriptions stateModel
 
         AlgorithmDrillerExplanationPage ->
-            ((states shared).algorithmDrillerPage model ()).subscriptions ()
+            ((states shared).algorithmDrillerExplanationPage model ()).subscriptions ()
+
+        AlgorithmDrillerStatusPage ->
+            ((states shared).algorithmDrillerStatusPage model ()).subscriptions ()
 
         CorrectPage ->
             ((states shared).correctPage ()).subscriptions ()
@@ -1030,7 +1054,10 @@ handleStateViewBoilerplate shared model =
             ((states shared).pickAlgorithmPage model extraState).view stateModel
 
         AlgorithmDrillerExplanationPage ->
-            ((states shared).algorithmDrillerPage model ()).view ()
+            ((states shared).algorithmDrillerExplanationPage model ()).view ()
+
+        AlgorithmDrillerStatusPage ->
+            ((states shared).algorithmDrillerStatusPage model ()).view ()
 
         CorrectPage ->
             ((states shared).correctPage ()).view ()
@@ -1069,7 +1096,10 @@ getTestOnlyStateAttributeValue model =
             "pick-algorithm-page"
 
         AlgorithmDrillerExplanationPage ->
-            "algorithm-driller-page"
+            "algorithm-driller-explanation-page"
+
+        AlgorithmDrillerStatusPage ->
+            "algorithm-driller-status-page"
 
         CorrectPage ->
             "correct-page"
