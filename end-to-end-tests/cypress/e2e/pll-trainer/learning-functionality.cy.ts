@@ -745,22 +745,23 @@ describe("PLL Trainer - Learning Functionality", function () {
     });
 
     it("looks right", function () {
-      elements.explanation.assertConsumableViaVerticalScroll(
-        elements.container.specifier
-      );
-      elements.caseToDrill.assertConsumableViaVerticalScroll(
-        elements.container.specifier
-      );
-      elements.algorithmToDrill.assertConsumableViaVerticalScroll(
-        elements.container.specifier
-      );
-      elements.continueButton.assertConsumableViaVerticalScroll(
+      elements.assertAllConsumableViaVerticalScroll(
         elements.container.specifier
       );
     });
 
     it("sizes elements correctly", function () {
       cy.assertNoHorizontalScrollbar();
+    });
+
+    it("continues to driller state page on button click", function () {
+      elements.continueButton.get().click();
+      pllTrainerElements.algorithmDrillerStatusPage.container.assertShows();
+    });
+
+    it("continues to driller state page on space bar press", function () {
+      cy.pressKey(Key.space);
+      pllTrainerElements.algorithmDrillerStatusPage.container.assertShows();
     });
   });
 });

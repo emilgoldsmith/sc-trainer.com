@@ -90,6 +90,9 @@ export function buildElementsCategory<keys extends string>(
 ): {
   container: Element;
   assertAllShow: () => void;
+  assertAllConsumableViaVerticalScroll: (
+    scrollableContainerSpecifier: ElementSpecifier
+  ) => void;
 } & {
   [key in keys]: Element;
 } {
@@ -186,6 +189,16 @@ export function buildElementsCategory<keys extends string>(
       Cypress._.forEach(
         elements,
         (elem) => elem.meta.optional === false && elem.assertShows()
+      );
+    },
+    assertAllConsumableViaVerticalScroll(
+      scrollableContainerSpecifier: ElementSpecifier
+    ) {
+      Cypress._.forEach(
+        elements,
+        (elem) =>
+          elem.meta.optional === false &&
+          elem.assertConsumableViaVerticalScroll(scrollableContainerSpecifier)
       );
     },
   };
