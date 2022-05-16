@@ -736,16 +736,27 @@ describe("PLL Trainer - Learning Functionality", function () {
       });
     });
   });
-  describe("Algorithm Driller", function () {
+  describe("Algorithm Driller Explanation Page", function () {
     // eslint-disable-next-line mocha/no-setup-in-describe
-    const elements = pllTrainerElements.algorithmDrillerPage;
+    const elements = pllTrainerElements.algorithmDrillerExplanationPage;
 
     beforeEach(function () {
-      pllTrainerStatesNewUser.algorithmDrillerPage.restoreState();
+      pllTrainerStatesNewUser.algorithmDrillerExplanationPage.restoreState();
     });
 
     it("looks right", function () {
-      elements.assertAllShow();
+      elements.explanation.assertConsumableViaVerticalScroll(
+        elements.container.specifier
+      );
+      elements.caseToDrill.assertConsumableViaVerticalScroll(
+        elements.container.specifier
+      );
+      elements.algorithmToDrill.assertConsumableViaVerticalScroll(
+        elements.container.specifier
+      );
+      elements.continueButton.assertConsumableViaVerticalScroll(
+        elements.container.specifier
+      );
     });
 
     it("sizes elements correctly", function () {

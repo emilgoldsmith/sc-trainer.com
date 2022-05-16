@@ -11,7 +11,7 @@ import Html.Attributes
 import Json.Decode
 import PLL exposing (PLL)
 import PLLTrainer.State
-import PLLTrainer.States.AlgorithmDrillerPage
+import PLLTrainer.States.AlgorithmDrillerExplanationPage
 import PLLTrainer.States.CorrectPage
 import PLLTrainer.States.EvaluateResult
 import PLLTrainer.States.NewCasePage
@@ -66,7 +66,7 @@ type TrainerState
     | TestRunning (PLLTrainer.States.TestRunning.Model Msg) TestRunningExtraState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
     | PickAlgorithmPage PLLTrainer.States.PickAlgorithmPage.Model PickAlgorithmExtraState
-    | AlgorithmDrillerPage
+    | AlgorithmDrillerExplanationPage
     | CorrectPage
     | TypeOfWrongPage TypeOfWrongExtraState
     | WrongPage
@@ -591,7 +591,7 @@ withNewUserPostEvaluateHandling { finalState, nextCubeState, testResult } model 
                 finalState
 
             else
-                ( AlgorithmDrillerPage, Effect.none )
+                ( AlgorithmDrillerExplanationPage, Effect.none )
 
         withEverythingIncluded =
             if
@@ -737,7 +737,7 @@ states :
                     PLLTrainer.States.PickAlgorithmPage.Msg
                     PLLTrainer.States.PickAlgorithmPage.Model
                     PickAlgorithmExtraState
-        , algorithmDrillerPage : StateBuilder () () ()
+        , algorithmDrillerPage : Model -> StateBuilder () () ()
         , correctPage : StateBuilder () () ()
         , typeOfWrongPage : Model -> StateBuilder () () TypeOfWrongExtraState
         , wrongPage : Model -> StateBuilder () () ()
@@ -813,12 +813,13 @@ states shared =
                 }
                 (StateMsg << PickAlgorithmMsg)
     , algorithmDrillerPage =
-        \_ ->
-            PLLTrainer.States.AlgorithmDrillerPage.state
+        \model _ ->
+            PLLTrainer.States.AlgorithmDrillerExplanationPage.state
                 shared
                 { startTest = TransitionMsg (InitiateTest Nothing)
                 , noOp = NoOp
                 }
+                { testCase = model.currentTestCase }
     , correctPage =
         always <|
             PLLTrainer.States.CorrectPage.state
@@ -948,8 +949,8 @@ trainerStateToString trainerState =
         PickAlgorithmPage _ _ ->
             "PickAlgorithmPage"
 
-        AlgorithmDrillerPage ->
-            "AlgorithmDrillerPage"
+        AlgorithmDrillerExplanationPage ->
+            "AlgorithmDrillerExplanationPage"
 
         CorrectPage ->
             "CorrectPage"
@@ -991,8 +992,8 @@ handleStateSubscriptionsBoilerplate shared model =
         PickAlgorithmPage stateModel extraState ->
             ((states shared).pickAlgorithmPage model extraState).subscriptions stateModel
 
-        AlgorithmDrillerPage ->
-            ((states shared).algorithmDrillerPage ()).subscriptions ()
+        AlgorithmDrillerExplanationPage ->
+            ((states shared).algorithmDrillerPage model ()).subscriptions ()
 
         CorrectPage ->
             ((states shared).correctPage ()).subscriptions ()
@@ -1028,8 +1029,8 @@ handleStateViewBoilerplate shared model =
         PickAlgorithmPage stateModel extraState ->
             ((states shared).pickAlgorithmPage model extraState).view stateModel
 
-        AlgorithmDrillerPage ->
-            ((states shared).algorithmDrillerPage ()).view ()
+        AlgorithmDrillerExplanationPage ->
+            ((states shared).algorithmDrillerPage model ()).view ()
 
         CorrectPage ->
             ((states shared).correctPage ()).view ()
@@ -1067,7 +1068,7 @@ getTestOnlyStateAttributeValue model =
         PickAlgorithmPage _ _ ->
             "pick-algorithm-page"
 
-        AlgorithmDrillerPage ->
+        AlgorithmDrillerExplanationPage ->
             "algorithm-driller-page"
 
         CorrectPage ->

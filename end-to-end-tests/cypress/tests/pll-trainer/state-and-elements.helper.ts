@@ -162,9 +162,18 @@ export const pllTrainerElements = {
       errorMessageElement("algorithm-doesnt-match-case")
     ),
   }),
-  algorithmDrillerPage: buildElementsCategory({
-    container: "algorithm-driller-page-container",
+  algorithmDrillerExplanationPage: buildElementsCategory({
+    container: "algorithm-driller-explanation-page-container",
     explanation: "algorithm-driller-explanation",
+    caseToDrill: cubeElement("case-to-drill"),
+    algorithmToDrill: "algorithm-to-drill",
+    continueButton: "continue-button",
+  }),
+  algorithmDrillerStatusPage: buildElementsCategory({
+    container: "algorithm-driller-status-page-container",
+    correctConsecutiveAttemptsLeft: "correct-consecutive-attempts-left",
+    expectedCubeStateFront: cubeElement("expected-cube-state-front"),
+    expectedCubeStateBack: cubeElement("expected-cube-state-back"),
     startTestButton: "start-test-button",
   }),
   globals: buildGlobalsCategory({
@@ -324,7 +333,8 @@ export const pllTrainerStatesNewUser = buildStates<
   | "testRunning"
   | "evaluateResult"
   | "evaluateResultAfterIgnoringTransitions"
-  | "algorithmDrillerPage"
+  | "algorithmDrillerExplanationPage"
+  | "algorithmDrillerStatusPage"
   | "pickAlgorithmPageAfterCorrect"
   | "pickAlgorithmPageAfterUnrecoverable"
   | "correctPage"
@@ -520,8 +530,8 @@ export const pllTrainerStatesNewUser = buildStates<
         pllTrainerElements.pickAlgorithmPage.wrongText.waitFor(options);
       },
     },
-    algorithmDrillerPage: {
-      name: "algorithmDrillerPage",
+    algorithmDrillerExplanationPage: {
+      name: "algorithmDrillerExplanationPage",
       getToThatState: (getState, options) => {
         getState("pickAlgorithmPageAfterUnrecoverable");
         const { case: caseToSet, algorithm } =
@@ -542,14 +552,31 @@ export const pllTrainerStatesNewUser = buildStates<
           });
       },
       waitForStateToAppear: (options) => {
-        pllTrainerElements.algorithmDrillerPage.container.waitFor(options);
+        pllTrainerElements.algorithmDrillerExplanationPage.container.waitFor(
+          options
+        );
+        cy.waitForDocumentEventListeners("keyup");
+      },
+    },
+    algorithmDrillerStatusPage: {
+      name: "algorithmDrillerStatusPage",
+      getToThatState: (getState, options) => {
+        getState("algorithmDrillerExplanationPage");
+        pllTrainerElements.algorithmDrillerExplanationPage.continueButton
+          .get(options)
+          .click(options);
+      },
+      waitForStateToAppear: (options) => {
+        pllTrainerElements.algorithmDrillerStatusPage.container.waitFor(
+          options
+        );
         cy.waitForDocumentEventListeners("keyup");
       },
     },
     wrongPage: {
       name: "wrongPage",
       getToThatState: (getState) => {
-        getState("algorithmDrillerPage");
+        getState("algorithmDrillerStatusPage");
       },
       waitForStateToAppear: (options?: StateOptions) => {
         pllTrainerElements.wrongPage.container.waitFor(options);
