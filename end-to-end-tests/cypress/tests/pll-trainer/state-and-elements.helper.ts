@@ -27,6 +27,7 @@ export const pllTrainerElements = {
       pickAlgorithmPage: "pick-algorithm-page",
       algorithmDrillerExplanationPage: "algorithm-driller-explanation-page",
       algorithmDrillerStatusPage: "algorithm-driller-status-page",
+      algorithmDrillerSuccessPage: "algorithm-driller-success-page",
       correctPage: "correct-page",
       wrongPage: "wrong-page",
     } as const,
@@ -175,6 +176,11 @@ export const pllTrainerElements = {
     correctConsecutiveAttemptsLeft: "correct-consecutive-attempts-left",
     expectedCubeStateFront: cubeElement("expected-cube-state-front"),
     expectedCubeStateBack: cubeElement("expected-cube-state-back"),
+    nextTestButton: "next-test-button",
+  }),
+  algorithmDrillerSuccessPage: buildElementsCategory({
+    container: "algorithm-driller-success-page-container",
+    explanation: "driller-success-explanation",
     nextTestButton: "next-test-button",
   }),
   globals: buildGlobalsCategory({
