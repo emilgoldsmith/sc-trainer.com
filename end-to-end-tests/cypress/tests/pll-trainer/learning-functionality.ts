@@ -7,6 +7,7 @@ import {
   pllToAlgorithmString,
 } from "support/pll";
 import {
+  fromGetReadyForTestThroughEvaluateResult,
   getReadyWaitTime,
   pllTrainerElements,
   pllTrainerStatesNewUser,
@@ -780,6 +781,34 @@ describe("PLL Trainer - Learning Functionality", function () {
     it("sizes elements correctly", function () {
       cy.assertNoHorizontalScrollbar();
       cy.assertNoVerticalScrollbar();
+    });
+
+    it("displays correct consecutive attempts left correctly", function () {
+      elements.correctConsecutiveAttemptsLeft.get().should("have.text", "3");
+
+      doOneDrillTestLoop(true);
+      elements.correctConsecutiveAttemptsLeft.get().should("have.text", "2");
+
+      doOneDrillTestLoop(false);
+      elements.correctConsecutiveAttemptsLeft.get().should("have.text", "3");
+
+      doOneDrillTestLoop(true);
+      elements.correctConsecutiveAttemptsLeft.get().should("have.text", "2");
+
+      doOneDrillTestLoop(true);
+      elements.correctConsecutiveAttemptsLeft.get().should("have.text", "1");
+
+      // doOneDrillTestLoop(true);
+      // TODO: Assert we reach success page here
+
+      function doOneDrillTestLoop(correct: boolean): void {
+        fromGetReadyForTestThroughEvaluateResult({
+          correct,
+          milliseconds: 500,
+          navigateToGetReadyState: () => elements.nextTestButton.get().click(),
+        });
+        elements.container.waitFor();
+      }
     });
   });
 });

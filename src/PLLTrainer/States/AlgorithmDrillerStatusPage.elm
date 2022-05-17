@@ -43,6 +43,7 @@ type alias Transitions msg =
 
 type alias Arguments =
     { expectedCube : Cube
+    , correctAttemptsLeft : Int
     }
 
 
@@ -51,7 +52,7 @@ type alias Arguments =
 
 
 view : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
-view shared transitions { expectedCube } =
+view shared transitions { expectedCube, correctAttemptsLeft } =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -70,7 +71,8 @@ view shared transitions { expectedCube } =
                     , Font.center
                     ]
                     [ el [ testid "correct-consecutive-attempts-left" ] <|
-                        text "3"
+                        text <|
+                            String.fromInt correctAttemptsLeft
                     , text " Correct Attempts Remaining"
                     ]
                 , paragraph
@@ -102,7 +104,7 @@ view shared transitions { expectedCube } =
                     ]
                 , PLLTrainer.ButtonWithShortcut.view
                     shared.hardwareAvailable
-                    [ testid "start-test-button"
+                    [ testid "next-test-button"
                     , centerX
                     ]
                     { onPress = Just transitions.startTest

@@ -25,7 +25,8 @@ export const pllTrainerElements = {
       evaluateResultPage: "evaluate-result-page",
       typeOfWrongPage: "type-of-wrong-page",
       pickAlgorithmPage: "pick-algorithm-page",
-      algorithmDrillerPage: "algorithm-driller-page",
+      algorithmDrillerExplanationPage: "algorithm-driller-explanation-page",
+      algorithmDrillerStatusPage: "algorithm-driller-status-page",
       correctPage: "correct-page",
       wrongPage: "wrong-page",
     } as const,
@@ -174,7 +175,7 @@ export const pllTrainerElements = {
     correctConsecutiveAttemptsLeft: "correct-consecutive-attempts-left",
     expectedCubeStateFront: cubeElement("expected-cube-state-front"),
     expectedCubeStateBack: cubeElement("expected-cube-state-back"),
-    startTestButton: "start-test-button",
+    nextTestButton: "next-test-button",
   }),
   globals: buildGlobalsCategory({
     anyErrorMessage: anyErrorMessage(),
@@ -614,20 +615,58 @@ export function completePLLTestInMilliseconds(
     }
   });
 
-  cy.clock();
   pllTrainerElements.newUserStartPage.container.waitFor();
   startPageCallback?.();
   cy.overrideNextTestCase(testCase);
-  pllTrainerElements.newUserStartPage.startButton.get().click();
-  pllTrainerElements.root.waitForStateChangeAwayFrom(
-    stateAttributeValues.startPage
-  );
+  fromGetReadyForTestThroughEvaluateResult({
+    correct,
+    milliseconds,
+    navigateToGetReadyState: () => {
+      pllTrainerElements.newUserStartPage.startButton.get().click();
+      pllTrainerElements.root.waitForStateChangeAwayFrom(
+        stateAttributeValues.startPage
+      );
 
+      pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+        if (stateValue === stateAttributeValues.newCasePage) {
+          pllTrainerElements.newCasePage.startTestButton.get().click();
+        }
+      });
+    },
+    ...(testRunningCallback === undefined ? {} : { testRunningCallback }),
+  });
   pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
-    if (stateValue === stateAttributeValues.newCasePage) {
-      pllTrainerElements.newCasePage.startTestButton.get().click();
+    if (stateValue === stateAttributeValues.pickAlgorithmPage) {
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type(
+          (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
+        );
     }
   });
+  if (correct) pllTrainerElements.correctPage.container.waitFor();
+  else {
+    pllTrainerElements.wrongPage.container.waitFor();
+    params.wrongPageCallback?.();
+  }
+}
+
+export function fromGetReadyForTestThroughEvaluateResult({
+  milliseconds,
+  correct,
+  navigateToGetReadyState,
+  testRunningCallback,
+}: {
+  milliseconds: number;
+  correct: boolean;
+  navigateToGetReadyState: () => void;
+  testRunningCallback?: () => void;
+}): void {
+  const { stateAttributeValues } = pllTrainerElements.root;
+
+  cy.clock();
+  navigateToGetReadyState();
+
   pllTrainerElements.getReadyState.container.waitFor();
   cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();
@@ -648,19 +687,5 @@ export function completePLLTestInMilliseconds(
     pllTrainerElements.root.waitForStateChangeAwayFrom(
       stateAttributeValues.typeOfWrongPage
     );
-  }
-  pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
-    if (stateValue === stateAttributeValues.pickAlgorithmPage) {
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type(
-          (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
-        );
-    }
-  });
-  if (correct) pllTrainerElements.correctPage.container.waitFor();
-  else {
-    pllTrainerElements.wrongPage.container.waitFor();
-    params.wrongPageCallback?.();
   }
 }
