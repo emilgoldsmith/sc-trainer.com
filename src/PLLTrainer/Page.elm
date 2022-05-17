@@ -13,6 +13,7 @@ import PLL exposing (PLL)
 import PLLTrainer.State
 import PLLTrainer.States.AlgorithmDrillerExplanationPage
 import PLLTrainer.States.AlgorithmDrillerStatusPage
+import PLLTrainer.States.AlgorithmDrillerSuccessPage
 import PLLTrainer.States.CorrectPage
 import PLLTrainer.States.EvaluateResult
 import PLLTrainer.States.NewCasePage
@@ -75,6 +76,7 @@ type TrainerState
     | PickAlgorithmPage PLLTrainer.States.PickAlgorithmPage.Model PickAlgorithmExtraState
     | AlgorithmDrillerExplanationPage
     | AlgorithmDrillerStatusPage
+    | AlgorithmDrillerSuccessPage
     | CorrectPage
     | TypeOfWrongPage TypeOfWrongExtraState
     | WrongPage
@@ -627,20 +629,34 @@ withNewUserPostEvaluateHandling { finalState, nextCubeState, testResult } model 
                 Just nextCube ->
                     { model | expectedCubeState = nextCube }
 
-        withDrillerIncluded =
+        ( withDrillerIncluded, newDrillerState ) =
             if
                 User.hasAttemptedPLL
                     (PLLTrainer.TestCase.pll model.currentTestCase)
                     shared.user
             then
-                if model.maybeDrillerState == Nothing then
-                    finalState
+                case model.maybeDrillerState of
+                    Nothing ->
+                        ( finalState, Nothing )
 
-                else
-                    ( AlgorithmDrillerStatusPage, Effect.none )
+                    Just { correctAttemptsLeft } ->
+                        case testResult of
+                            User.Correct _ ->
+                                if correctAttemptsLeft > 1 then
+                                    ( ( AlgorithmDrillerStatusPage, Effect.none )
+                                    , Just { correctAttemptsLeft = correctAttemptsLeft - 1 }
+                                    )
+
+                                else
+                                    ( ( AlgorithmDrillerSuccessPage, Effect.none ), Nothing )
+
+                            User.Wrong _ ->
+                                ( ( AlgorithmDrillerStatusPage, Effect.none )
+                                , Just { correctAttemptsLeft = correctAttemptsRequiredForDriller }
+                                )
 
             else
-                ( AlgorithmDrillerExplanationPage, Effect.none )
+                ( ( AlgorithmDrillerExplanationPage, Effect.none ), Nothing )
 
         withEverythingIncluded =
             if
@@ -663,18 +679,6 @@ withNewUserPostEvaluateHandling { finalState, nextCubeState, testResult } model 
                 ( PickAlgorithmPage stateModel extraState
                 , Effect.fromCmd stateCmd
                 )
-
-        newDrillerState =
-            model.maybeDrillerState
-                |> Maybe.map
-                    (\{ correctAttemptsLeft } ->
-                        case testResult of
-                            User.Correct _ ->
-                                { correctAttemptsLeft = correctAttemptsLeft - 1 }
-
-                            User.Wrong _ ->
-                                { correctAttemptsLeft = correctAttemptsRequiredForDriller }
-                    )
     in
     ( { modelWithUpdatedCube
         | trainerState = Tuple.first withEverythingIncluded
@@ -804,6 +808,7 @@ states :
                     PickAlgorithmExtraState
         , algorithmDrillerExplanationPage : Model -> StateBuilder () () ()
         , algorithmDrillerStatusPage : Model -> StateBuilder () () ()
+        , algorithmDrillerSuccessPage : StateBuilder () () ()
         , correctPage : StateBuilder () () ()
         , typeOfWrongPage : Model -> StateBuilder () () TypeOfWrongExtraState
         , wrongPage : Model -> StateBuilder () () ()
@@ -898,6 +903,13 @@ states shared =
                     model.maybeDrillerState
                         |> Maybe.map .correctAttemptsLeft
                         |> Maybe.withDefault correctAttemptsRequiredForDriller
+                }
+    , algorithmDrillerSuccessPage =
+        always <|
+            PLLTrainer.States.AlgorithmDrillerSuccessPage.state
+                shared
+                { startTest = TransitionMsg (InitiateTest Nothing)
+                , noOp = NoOp
                 }
     , correctPage =
         always <|
@@ -1034,6 +1046,9 @@ trainerStateToString trainerState =
         AlgorithmDrillerStatusPage ->
             "AlgorithmDrillerStatusPage"
 
+        AlgorithmDrillerSuccessPage ->
+            "AlgorithmDrillerSuccessPage"
+
         CorrectPage ->
             "CorrectPage"
 
@@ -1080,6 +1095,9 @@ handleStateSubscriptionsBoilerplate shared model =
         AlgorithmDrillerStatusPage ->
             ((states shared).algorithmDrillerStatusPage model ()).subscriptions ()
 
+        AlgorithmDrillerSuccessPage ->
+            ((states shared).algorithmDrillerSuccessPage ()).subscriptions ()
+
         CorrectPage ->
             ((states shared).correctPage ()).subscriptions ()
 
@@ -1116,6 +1134,9 @@ handleStateViewBoilerplate shared model =
 
         AlgorithmDrillerExplanationPage ->
             ((states shared).algorithmDrillerExplanationPage model ()).view ()
+
+        AlgorithmDrillerSuccessPage ->
+            ((states shared).algorithmDrillerSuccessPage ()).view ()
 
         AlgorithmDrillerStatusPage ->
             ((states shared).algorithmDrillerStatusPage model ()).view ()
@@ -1161,6 +1182,9 @@ getTestOnlyStateAttributeValue model =
 
         AlgorithmDrillerStatusPage ->
             "algorithm-driller-status-page"
+
+        AlgorithmDrillerSuccessPage ->
+            "algorithm-driller-success-page"
 
         CorrectPage ->
             "correct-page"

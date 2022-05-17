@@ -798,8 +798,8 @@ describe("PLL Trainer - Learning Functionality", function () {
       doOneDrillTestLoop(true);
       elements.correctConsecutiveAttemptsLeft.get().should("have.text", "1");
 
-      // doOneDrillTestLoop(true);
-      // TODO: Assert we reach success page here
+      doOneDrillTestLoop(true);
+      pllTrainerElements.algorithmDrillerSuccessPage.container.assertShows();
 
       function doOneDrillTestLoop(correct: boolean): void {
         fromGetReadyForTestThroughEvaluateResult({
@@ -807,7 +807,6 @@ describe("PLL Trainer - Learning Functionality", function () {
           milliseconds: 500,
           navigateToGetReadyState: () => elements.nextTestButton.get().click(),
         });
-        elements.container.waitFor();
       }
     });
   });
