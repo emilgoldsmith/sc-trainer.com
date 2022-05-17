@@ -54,10 +54,16 @@ type alias Model =
     { trainerState : TrainerState
     , expectedCubeState : Cube
     , currentTestCase : TestCase
+    , maybeDrillerState : Maybe { correctAttemptsLeft : Int }
     , tESTONLY :
         { nextTestCaseOverride : Maybe TestCase
         }
     }
+
+
+correctAttemptsRequiredForDriller : Int
+correctAttemptsRequiredForDriller =
+    3
 
 
 type TrainerState
@@ -107,6 +113,7 @@ init shared =
                 PickTargetParametersPage
                     (Tuple.first ((states shared).pickTargetParametersPage ()).init)
       , expectedCubeState = Cube.solved
+      , maybeDrillerState = Nothing
 
       -- This is just a placeholder as new test cases are always generated
       -- just before the test is run, and this way we avoid a more complex
@@ -156,6 +163,8 @@ type TransitionMsg
     | EvaluateCorrect { testTimestamp : Time.Posix, result : TimeInterval }
     | AlgorithmPicked ( TrainerState, Effect Msg ) User.TestResult Algorithm
     | StartAlgorithmDrills
+      -- Pass in Nothing when sending it and the time is generated internally
+    | InitiateAlgorithmDrillerTest (Maybe Time.Posix)
     | EvaluateWrong { testTimestamp : Time.Posix }
     | WrongButNoMoveApplied { testResult : User.TestResult }
     | WrongButExpectedStateWasReached { testResult : User.TestResult }
@@ -232,7 +241,7 @@ update shared msg model =
                         generator =
                             PLLTrainer.TestCase.generate
                                 { now = now
-                                , testOnlyOverride = oldTestOnly.nextTestCaseOverride
+                                , overrideWithConstantValue = oldTestOnly.nextTestCaseOverride
                                 }
                                 shared.user
 
@@ -366,6 +375,7 @@ update shared msg model =
                                 User.hasChosenPLLAlgorithmFor
                                     (PLLTrainer.TestCase.pll model.currentTestCase)
                                     shared.user
+                                    && (model.maybeDrillerState == Nothing)
                             then
                                 Effect.fromShared <|
                                     Shared.ModifyUser <|
@@ -405,6 +415,7 @@ update shared msg model =
                         User.hasChosenPLLAlgorithmFor
                             (PLLTrainer.TestCase.pll model.currentTestCase)
                             shared.user
+                            && (model.maybeDrillerState == Nothing)
                       then
                         Effect.fromShared <|
                             Shared.ModifyUser <|
@@ -458,7 +469,35 @@ update shared msg model =
                             )
 
                 StartAlgorithmDrills ->
-                    ( { model | trainerState = AlgorithmDrillerStatusPage }, Effect.none )
+                    ( { model
+                        | trainerState = AlgorithmDrillerStatusPage
+                        , maybeDrillerState = Just { correctAttemptsLeft = correctAttemptsRequiredForDriller }
+                      }
+                    , Effect.none
+                    )
+
+                InitiateAlgorithmDrillerTest Nothing ->
+                    ( model
+                    , Effect.fromCmd <|
+                        Task.perform (Just >> InitiateAlgorithmDrillerTest >> TransitionMsg) Time.now
+                    )
+
+                InitiateAlgorithmDrillerTest (Just now) ->
+                    let
+                        generator =
+                            PLLTrainer.TestCase.generate
+                                { now = now
+                                , overrideWithConstantValue = Just model.currentTestCase
+                                }
+                                shared.user
+
+                        extraState =
+                            GettingReadyExtraState generator
+
+                        ( stateModel, stateCmd ) =
+                            ((states shared).testRunning extraState).init
+                    in
+                    ( { model | trainerState = TestRunning stateModel extraState }, Effect.fromCmd stateCmd )
 
                 WrongButNoMoveApplied { testResult } ->
                     withNewUserPostEvaluateHandling
@@ -594,7 +633,11 @@ withNewUserPostEvaluateHandling { finalState, nextCubeState, testResult } model 
                     (PLLTrainer.TestCase.pll model.currentTestCase)
                     shared.user
             then
-                finalState
+                if model.maybeDrillerState == Nothing then
+                    finalState
+
+                else
+                    ( AlgorithmDrillerStatusPage, Effect.none )
 
             else
                 ( AlgorithmDrillerExplanationPage, Effect.none )
@@ -620,9 +663,22 @@ withNewUserPostEvaluateHandling { finalState, nextCubeState, testResult } model 
                 ( PickAlgorithmPage stateModel extraState
                 , Effect.fromCmd stateCmd
                 )
+
+        newDrillerState =
+            model.maybeDrillerState
+                |> Maybe.map
+                    (\{ correctAttemptsLeft } ->
+                        case testResult of
+                            User.Correct _ ->
+                                { correctAttemptsLeft = correctAttemptsLeft - 1 }
+
+                            User.Wrong _ ->
+                                { correctAttemptsLeft = correctAttemptsRequiredForDriller }
+                    )
     in
     ( { modelWithUpdatedCube
         | trainerState = Tuple.first withEverythingIncluded
+        , maybeDrillerState = newDrillerState
       }
     , Tuple.second withEverythingIncluded
     )
@@ -834,10 +890,15 @@ states shared =
         \model _ ->
             PLLTrainer.States.AlgorithmDrillerStatusPage.state
                 shared
-                { startTest = TransitionMsg (InitiateTest Nothing)
+                { startTest = TransitionMsg (InitiateAlgorithmDrillerTest Nothing)
                 , noOp = NoOp
                 }
-                { expectedCube = model.expectedCubeState }
+                { expectedCube = model.expectedCubeState
+                , correctAttemptsLeft =
+                    model.maybeDrillerState
+                        |> Maybe.map .correctAttemptsLeft
+                        |> Maybe.withDefault correctAttemptsRequiredForDriller
+                }
     , correctPage =
         always <|
             PLLTrainer.States.CorrectPage.state

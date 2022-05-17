@@ -106,14 +106,14 @@ replaceInternalGenerator newInternalGenerator oldGenerator =
             AlreadyAttempted newInternalGenerator
 
 
-generate : { now : Time.Posix, testOnlyOverride : Maybe TestCase } -> User -> Generator
-generate { now, testOnlyOverride } user =
+generate : { now : Time.Posix, overrideWithConstantValue : Maybe TestCase } -> User -> Generator
+generate { now, overrideWithConstantValue } user =
     let
         { pllGenerator, generatorType } =
-            generatePLL { now = now, testOnlyOverride = testOnlyOverride } user
+            generatePLL { now = now, overrideWithConstantValue = overrideWithConstantValue } user
 
         testCaseGenerator =
-            case testOnlyOverride of
+            case overrideWithConstantValue of
                 Just testCaseOverride ->
                     Random.constant testCaseOverride
 
@@ -128,11 +128,11 @@ generate { now, testOnlyOverride } user =
 
 
 generatePLL :
-    { now : Time.Posix, testOnlyOverride : Maybe TestCase }
+    { now : Time.Posix, overrideWithConstantValue : Maybe TestCase }
     -> User
     -> { pllGenerator : Random.Generator PLL, generatorType : Generator }
-generatePLL { now, testOnlyOverride } user =
-    case testOnlyOverride of
+generatePLL { now, overrideWithConstantValue } user =
+    case overrideWithConstantValue of
         Just testCaseOverride ->
             let
                 testCaseGenerator =
