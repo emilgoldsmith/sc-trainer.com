@@ -2,7 +2,7 @@ module PLLTrainer.States.AlgorithmDrillerSuccessPage exposing (Transitions, stat
 
 import Css exposing (testid)
 import Element exposing (..)
-import FeedbackButton
+import Element.Font as Font
 import Key
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
@@ -44,18 +44,31 @@ type alias Transitions msg =
 
 view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> PLLTrainer.State.View msg
 view viewportSize palette hardwareAvailable transitions =
-    { overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
+    { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
             column
                 [ testid "algorithm-driller-success-page-container"
                 , centerX
                 , centerY
-                , spacing (ViewportSize.minDimension viewportSize // 20)
+                , spacing (ViewportSize.minDimension viewportSize // 10)
+                , UI.paddingAll.veryLarge
                 ]
-                [ paragraph [ testid "driller-success-explanation" ]
-                    [ text "placeholder"
+                [ paragraph
+                    [ centerX
+                    , Font.center
+                    , Font.bold
+                    , Font.size (ViewportSize.minDimension viewportSize // 10)
                     ]
+                    [ text "Success!"
+                    ]
+                , paragraph
+                    [ testid "driller-success-explanation"
+                    , centerX
+                    , Font.center
+                    , Font.size (ViewportSize.minDimension viewportSize // 20)
+                    ]
+                    [ text "Awesome, you now have a fundamental grasp of the case. Continue to return to the normal practice flow of cases" ]
                 , PLLTrainer.ButtonWithShortcut.view
                     hardwareAvailable
                     [ testid "next-test-button"
@@ -66,6 +79,6 @@ view viewportSize palette hardwareAvailable transitions =
                     , keyboardShortcut = Key.Space
                     , color = palette.primary
                     }
-                    (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 20)
+                    (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 10)
                 ]
     }

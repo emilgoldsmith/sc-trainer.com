@@ -810,4 +810,22 @@ describe("PLL Trainer - Learning Functionality", function () {
       }
     });
   });
+
+  describe("Algorithm Driller Success Page", function () {
+    // eslint-disable-next-line mocha/no-setup-in-describe
+    const elements = pllTrainerElements.algorithmDrillerSuccessPage;
+
+    beforeEach(function () {
+      pllTrainerStatesNewUser.algorithmDrillerSuccessPage.restoreState();
+    });
+
+    it("looks right", function () {
+      elements.assertAllShow();
+    });
+
+    it("sizes elements correctly", function () {
+      cy.assertNoHorizontalScrollbar();
+      cy.assertNoVerticalScrollbar();
+    });
+  });
 });

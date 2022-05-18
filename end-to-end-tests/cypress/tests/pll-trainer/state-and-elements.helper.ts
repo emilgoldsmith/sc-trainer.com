@@ -342,6 +342,7 @@ export const pllTrainerStatesNewUser = buildStates<
   | "evaluateResultAfterIgnoringTransitions"
   | "algorithmDrillerExplanationPage"
   | "algorithmDrillerStatusPage"
+  | "algorithmDrillerSuccessPage"
   | "pickAlgorithmPageAfterCorrect"
   | "pickAlgorithmPageAfterUnrecoverable"
   | "correctPage"
@@ -580,12 +581,32 @@ export const pllTrainerStatesNewUser = buildStates<
         cy.waitForDocumentEventListeners("keyup");
       },
     },
-    wrongPage: {
-      name: "wrongPage",
-      getToThatState: (getState) => {
+    algorithmDrillerSuccessPage: {
+      name: "algorithmDrillerSuccessPage",
+      getToThatState: (getState, options) => {
         getState("algorithmDrillerStatusPage");
+        for (let i = 0; i < 3; i++) {
+          fromGetReadyForTestThroughEvaluateResult({
+            correct: true,
+            milliseconds: 500,
+            navigateToGetReadyState: () =>
+              pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
+                .get(options)
+                .click(options),
+          });
+        }
       },
       waitForStateToAppear: (options?: StateOptions) => {
+        pllTrainerElements.algorithmDrillerSuccessPage.container.waitFor(
+          options
+        );
+        cy.waitForDocumentEventListeners("keyup");
+      },
+    },
+    wrongPage: {
+      name: "wrongPage",
+      getToThatState: () => {},
+      waitForStateToAppear(options) {
         pllTrainerElements.wrongPage.container.waitFor(options);
         cy.waitForDocumentEventListeners("keyup");
       },
