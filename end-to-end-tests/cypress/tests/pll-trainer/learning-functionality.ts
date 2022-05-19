@@ -827,5 +827,19 @@ describe("PLL Trainer - Learning Functionality", function () {
       cy.assertNoHorizontalScrollbar();
       cy.assertNoVerticalScrollbar();
     });
+
+    it("starts new test on button click", function () {
+      elements.nextTestButton.get().click();
+      // Since it's a new user and this was the first case they learned,
+      // the learning algorithm should always present a new case afterwards
+      pllTrainerElements.newCasePage.container.assertShows();
+    });
+
+    it("starts new test on space bar press", function () {
+      cy.pressKey(Key.space);
+      // Since it's a new user and this was the first case they learned,
+      // the learning algorithm should always present a new case afterwards
+      pllTrainerElements.newCasePage.container.assertShows();
+    });
   });
 });
