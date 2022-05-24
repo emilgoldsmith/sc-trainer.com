@@ -3,7 +3,9 @@ module AUF.Extra exposing (DetectAUFsError(..), detectAUFs)
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
 import Cube
+import List.Extra
 import List.Nonempty
+import List.Nonempty.Extra
 
 
 type DetectAUFsError
@@ -14,55 +16,43 @@ detectAUFs : { toMatchTo : Algorithm, toDetectFor : Algorithm } -> Result Detect
 detectAUFs { toMatchTo, toDetectFor } =
     let
         allAUFPairs =
-            List.Nonempty.concatMap
-                (\preAUF ->
-                    List.Nonempty.map
-                        (Tuple.pair preAUF)
-                        AUF.all
-                )
+            List.Nonempty.Extra.lift2 Tuple.pair
+                AUF.all
                 AUF.all
                 |> List.Nonempty.toList
-
-        matches =
-            List.filter
-                (\aufs ->
-                    Cube.algorithmResultsAreEquivalentIndependentOfFinalRotation
-                        toMatchTo
-                        (Cube.addAUFsToAlgorithm aufs toDetectFor)
-                )
-                allAUFPairs
-                |> List.sortWith
-                    (\a b ->
-                        let
-                            turnCountOrder =
-                                -- Better the lower turn count
-                                compare (countAUFTurns a) (countAUFTurns b)
-
-                            numPreAUFsOrder =
-                                -- Better the less pre aufs
-                                compare (countPreAUFs a) (countPreAUFs b)
-
-                            numCounterClockwisesOrder =
-                                -- Better the less counter clockwise turns
-                                compare (countCounterClockwises a) (countCounterClockwises b)
-
-                            specialCaseOrder =
-                                -- Just to be fully determined we prefer [U, U'] over [U', U]
-                                compare (countCounterClockwiseBeforeClockwise a) (countCounterClockwiseBeforeClockwise b)
-                        in
-                        [ turnCountOrder, numPreAUFsOrder, numCounterClockwisesOrder, specialCaseOrder ]
-                            -- Just pick the first one that's not EQ
-                            |> List.filter ((/=) EQ)
-                            |> List.head
-                            |> Maybe.withDefault EQ
-                    )
     in
-    case matches of
-        [] ->
-            Err NoAUFsMakeThemMatch
+    allAUFPairs
+        |> List.sortWith
+            (\a b ->
+                let
+                    turnCountOrder =
+                        -- Better the lower turn count
+                        compare (countAUFTurns a) (countAUFTurns b)
 
-        x :: _ ->
-            Ok x
+                    numPreAUFsOrder =
+                        -- Better the less pre aufs
+                        compare (countPreAUFs a) (countPreAUFs b)
+
+                    numCounterClockwisesOrder =
+                        -- Better the less counter clockwise turns
+                        compare (countCounterClockwises a) (countCounterClockwises b)
+
+                    specialCaseOrder =
+                        -- Just to be fully determined we prefer [U, U'] over [U', U]
+                        compare (countCounterClockwiseBeforeClockwise a) (countCounterClockwiseBeforeClockwise b)
+                in
+                [ turnCountOrder, numPreAUFsOrder, numCounterClockwisesOrder, specialCaseOrder ]
+                    -- Just pick the first one that's not EQ
+                    |> List.Extra.find ((/=) EQ)
+                    |> Maybe.withDefault EQ
+            )
+        |> List.Extra.find
+            (\aufs ->
+                Cube.algorithmResultsAreEquivalentIndependentOfFinalRotation
+                    toMatchTo
+                    (Cube.addAUFsToAlgorithm aufs toDetectFor)
+            )
+        |> Result.fromMaybe NoAUFsMakeThemMatch
 
 
 countAUFTurns : ( AUF, AUF ) -> Float
