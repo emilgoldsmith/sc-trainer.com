@@ -2,6 +2,7 @@ module Algorithm.Extra exposing (complexity, complexityAdjustedTPS)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
+import Cube
 
 
 complexityAdjustedTPS : { milliseconds : Int } -> ( AUF, AUF ) -> Algorithm -> Float
@@ -26,7 +27,7 @@ complexity aufs algorithm =
                 |> Algorithm.fromTurnList
     in
     withYRotationsTrimmed
-        |> AUF.addToAlgorithm aufs
+        |> Cube.addAUFsToAlgorithm aufs
         |> Algorithm.toTurnList
         |> List.length
         |> toFloat

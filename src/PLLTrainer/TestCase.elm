@@ -26,7 +26,7 @@ build preAUF_ pll_ postAUF_ =
 
         ( optimizedPreAUF, optimizedPostAUF ) =
             AUF.Extra.detectAUFs
-                { toMatchTo = AUF.addToAlgorithm ( preAUF_, postAUF_ ) pllAlgorithm
+                { toMatchTo = Cube.addAUFsToAlgorithm ( preAUF_, postAUF_ ) pllAlgorithm
                 , toDetectFor = pllAlgorithm
                 }
                 -- This should never be an error but this is a sensible default in case
@@ -45,7 +45,7 @@ toAlg user (TestCase ( preAUF_, pll_, postAUF_ )) =
                 |> Cube.makeAlgorithmMaintainOrientation
     in
     baseAlgorithm
-        |> AUF.addToAlgorithm ( preAUF_, postAUF_ )
+        |> Cube.addAUFsToAlgorithm ( preAUF_, postAUF_ )
 
 
 {-| A cube that would be solved by this test case
