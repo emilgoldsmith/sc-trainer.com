@@ -4,6 +4,7 @@ import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
 import Json.Decode
 import Json.Encode
+import List.Extra
 import List.Nonempty
 import PLL exposing (PLL)
 import PLLTrainer.TestCase exposing (TestCase)
@@ -99,23 +100,8 @@ pllDecoder =
 
 stringToPll : String -> Maybe PLL
 stringToPll stringValue =
-    let
-        allPllLetters =
-            List.Nonempty.map
-                (\pll -> ( pll, PLL.getLetters pll ))
-                PLL.all
-                -- Make it a list so we can do a proper filter on it
-                |> List.Nonempty.toList
-
-        matches =
-            List.filter (Tuple.second >> (==) stringValue) allPllLetters
-    in
-    case matches of
-        -- No matches and we don't do anything
-        [] ->
-            Nothing
-
-        -- There shouldn't ever be several matches but in case there
-        -- are we just pick the first one
-        ( pll, _ ) :: _ ->
-            Just pll
+    PLL.all
+        |> List.Nonempty.toList
+        |> List.map (\pll -> ( pll, PLL.getLetters pll ))
+        |> List.Extra.find (Tuple.second >> (==) stringValue)
+        |> Maybe.map Tuple.first
