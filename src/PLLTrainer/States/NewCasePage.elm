@@ -63,7 +63,9 @@ view palette hardwareAvailable transitions =
                     ]
                     [ paragraph [ UI.fontSize.veryLarge, Font.center, centerX ] [ text "New Case Coming Up" ]
                     , paragraph []
-                        [ text "Pay extra attention for this next case, as it will be used to determine how well you know it from before. Don't worry if you make a mistake though, the app will figure out that you have learned the case in time as you keep proving it."
+                        [ text "A new case can either be an entirely new PLL, a new recognition angle of a known PLL, or a new AUF for a known PLL. You should "
+                        , el [ Font.bold ] <| text "pay extra attention for this next case"
+                        , text ", as it will be used to determine how well you know it from before. Don't worry if you make a mistake though, the app will figure out that you have learned the case in time as you keep proving it."
                         ]
                     ]
                 , PLLTrainer.ButtonWithShortcut.view
