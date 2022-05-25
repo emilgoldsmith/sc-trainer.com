@@ -89,7 +89,7 @@ const getSingleAlias: Cypress.Chainable<undefined>["getSingleAlias"] = function 
         const value = aliases[alias];
         if (value === undefined) {
           throw new Error(
-            `Alias ${alias} was undefined when fetched with getSingleAlias`
+            `Alias ${alias.toString()} was undefined when fetched with getSingleAlias`
           );
         }
         return value;
