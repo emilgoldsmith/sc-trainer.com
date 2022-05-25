@@ -71,6 +71,8 @@ class StateCacheImplementation<
           this.elmModel = elmModel;
           consolePropsSetter({ "Elm Model": elmModel });
         });
+        // When restoring in the future we want to be restoring this local storage here
+        this.localStorage = localStorage;
         cy.clearLocalStorage();
       }
     );
