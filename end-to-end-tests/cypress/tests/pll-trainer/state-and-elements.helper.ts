@@ -621,6 +621,7 @@ export function completePLLTestInMilliseconds(
     aufs: readonly [AUF, AUF] | readonly [];
     overrideDefaultAlgorithm?: string;
     startPageCallback?: () => void;
+    newCasePageCallback?: () => void;
     testRunningCallback?: () => void;
   } & ({ correct: true } | { correct: false; wrongPageCallback?: () => void })
 ): void {
@@ -629,6 +630,7 @@ export function completePLLTestInMilliseconds(
     correct,
     overrideDefaultAlgorithm,
     startPageCallback,
+    newCasePageCallback,
     testRunningCallback,
   } = params;
   const [preAUF, postAUF] = [aufs[0] ?? AUF.none, aufs[1] ?? AUF.none];
@@ -655,6 +657,11 @@ export function completePLLTestInMilliseconds(
       );
 
       pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+        // It is purposeful this is here before we know if new case page is actually
+        // displaying, as we want to allow for assert doesn't exist in the callback
+        // and also for it to error if you try finding new case page in a case where
+        // it doesn't display
+        newCasePageCallback?.();
         if (stateValue === stateAttributeValues.newCasePage) {
           pllTrainerElements.newCasePage.startTestButton.get().click();
         }

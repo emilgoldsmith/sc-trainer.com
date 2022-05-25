@@ -1,4 +1,4 @@
-module Tests.User exposing (helperTests, serializationTests)
+module Tests.User exposing (correctResult, helperTests, serializationTests, wrongResult)
 
 import AUF exposing (AUF)
 import Algorithm

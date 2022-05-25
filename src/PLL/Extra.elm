@@ -1,28 +1,16 @@
-module AUF.Extra exposing (DetectAUFsError(..), detectAUFs)
+module PLL.Extra exposing (getPreferredEquivalentAUFs)
 
 import AUF exposing (AUF)
-import Algorithm exposing (Algorithm)
-import Cube
 import List.Extra
 import List.Nonempty
-import List.Nonempty.Extra
+import PLL exposing (PLL)
 
 
-type DetectAUFsError
-    = NoAUFsMakeThemMatch
-
-
-detectAUFs : { toMatchTo : Algorithm, toDetectFor : Algorithm } -> Result DetectAUFsError ( AUF, AUF )
-detectAUFs { toMatchTo, toDetectFor } =
-    let
-        allAUFPairs =
-            List.Nonempty.Extra.lift2 Tuple.pair
-                AUF.all
-                AUF.all
-                |> List.Nonempty.toList
-    in
-    allAUFPairs
-        |> List.sortWith
+getPreferredEquivalentAUFs : ( AUF, PLL, AUF ) -> ( AUF, AUF )
+getPreferredEquivalentAUFs testCase =
+    testCase
+        |> PLL.getAllEquivalentAUFs
+        |> List.Nonempty.sortWith
             (\a b ->
                 let
                     turnCountOrder =
@@ -46,13 +34,7 @@ detectAUFs { toMatchTo, toDetectFor } =
                     |> List.Extra.find ((/=) EQ)
                     |> Maybe.withDefault EQ
             )
-        |> List.Extra.find
-            (\aufs ->
-                Cube.algorithmResultsAreEquivalentIndependentOfFinalRotation
-                    toMatchTo
-                    (Cube.addAUFsToAlgorithm aufs toDetectFor)
-            )
-        |> Result.fromMaybe NoAUFsMakeThemMatch
+        |> List.Nonempty.head
 
 
 countAUFTurns : ( AUF, AUF ) -> Float
