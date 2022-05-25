@@ -1,7 +1,6 @@
 module PLLTrainer.Page exposing (Model, Msg, page)
 
 import AUF
-import AUF.Extra
 import Algorithm exposing (Algorithm)
 import Css
 import Cube exposing (Cube)
@@ -431,15 +430,15 @@ update shared msg model =
 
                 AlgorithmPicked nextTrainerState testResult algorithm ->
                     case
-                        AUF.Extra.detectAUFs
+                        Cube.detectAUFs
                             { toMatchTo = PLLTrainer.TestCase.toAlg shared.user model.currentTestCase
                             , toDetectFor = algorithm
                             }
                     of
-                        Err AUF.Extra.NoAUFsMakeThemMatch ->
+                        Nothing ->
                             ( model, Effect.fromCmd <| Ports.logError "the algorithm picked didn't match the case" )
 
-                        Ok ( correctedPreAUF, correctedPostAUF ) ->
+                        Just ( correctedPreAUF, correctedPostAUF ) ->
                             let
                                 correctedTestCase =
                                     PLLTrainer.TestCase.build
@@ -656,7 +655,14 @@ withNewUserPostEvaluateHandling { finalState, nextCubeState, testResult } model 
                                 )
 
             else
-                ( ( AlgorithmDrillerExplanationPage, Effect.none ), Nothing )
+                ( case testResult of
+                    User.Correct _ ->
+                        finalState
+
+                    User.Wrong _ ->
+                        ( AlgorithmDrillerExplanationPage, Effect.none )
+                , Nothing
+                )
 
         withEverythingIncluded =
             if

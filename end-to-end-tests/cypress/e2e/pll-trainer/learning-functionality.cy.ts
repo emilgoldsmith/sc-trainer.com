@@ -7,6 +7,7 @@ import {
   pllToAlgorithmString,
 } from "support/pll";
 import {
+  completePLLTestInMilliseconds,
   fromGetReadyForTestThroughEvaluateResult,
   getReadyWaitTime,
   pllTrainerElements,
@@ -277,15 +278,94 @@ describe("PLL Trainer - Learning Functionality", function () {
     });
 
     it("goes from start page to new case page for new user", function () {
-      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
+      pllTrainerStatesNewUser.startPage.restoreState();
       pllTrainerElements.newUserStartPage.startButton.get().click();
       pllTrainerElements.newCasePage.container.assertShows();
     });
 
     it("goes from start page to get ready state for done user", function () {
-      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
+      pllTrainerStatesUserDone.startPage.restoreState();
       pllTrainerElements.newUserStartPage.startButton.get().click();
       pllTrainerElements.getReadyState.container.assertShows();
+    });
+
+    it("displays new case page exactly when a new pll, pre- or postAUF is next", function () {
+      // Make sure local storage is correct
+      pllTrainerStatesNewUser.startPage.restoreState();
+
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.none, AUF.none],
+        correct: true,
+        // This is a completely new user so new case page should display
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertShows();
+        },
+      });
+
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.U, AUF.none],
+        correct: true,
+        // This is a new preAUF so should display new case page
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertShows();
+        },
+      });
+
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.U, AUF.none],
+        correct: true,
+        // This is the same case as last time so no new case page should display
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertDoesntExist();
+        },
+      });
+
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.U, AUF.U2],
+        correct: true,
+        // This is a new postAUF even with known preAUF so should still display new case page
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertShows();
+        },
+      });
+
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.none, AUF.U2],
+        correct: true,
+        // This is a case that hasn't been seen before, but each type of pre- and post-AUF
+        // have been tested independently so it shouldn't count as a new case
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertDoesntExist();
+        },
+      });
+
+      completePLLTestInMilliseconds(500, PLL.H, {
+        aufs: [AUF.U, AUF.none],
+        correct: true,
+        // New PLL so should display
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertShows();
+        },
+      });
+
+      completePLLTestInMilliseconds(500, PLL.H, {
+        aufs: [AUF.none, AUF.U],
+        correct: true,
+        // H perm is fully symmetrical so preAUF and postAUF are equivalent in that sense
+        // and this shouldn't be a new case
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertDoesntExist();
+        },
+      });
+
+      completePLLTestInMilliseconds(500, PLL.H, {
+        aufs: [AUF.U2, AUF.none],
+        correct: true,
+        // This is a different combination though so should display the new case page
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertShows();
+        },
+      });
     });
   });
 

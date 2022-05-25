@@ -2,9 +2,10 @@ module User exposing
     ( User
     , new
     , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
-    , hasAttemptedPLL, hasAttemptedAnyPLLTestCase, getPLLTargetParameters, changePLLTargetParameters
+    , hasAttemptedPLL, hasAttemptedPLLPreAUF, hasAttemptedPLLPostAUF, hasAttemptedAnyPLLTestCase, hasUnattemptedPLLCasesLeft, getPLLTargetParameters, changePLLTargetParameters
     , hasChosenPLLTargetParameters, cubeTheme
-    , TestResult(..), testTimestamp, RecordResultError(..), recordPLLTestResult
+    , getAllResultsForPLL
+    , TestResult(..), testResultPreAUF, testResultPostAUF, testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
     , serialize, deserialize
     )
@@ -25,13 +26,14 @@ module User exposing
 # Getters And Setters
 
 @docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
-@docs hasAttemptedPLL, hasAttemptedAnyPLLTestCase, getPLLTargetParameters, changePLLTargetParameters
+@docs hasAttemptedPLL, hasAttemptedPLLPreAUF, hasAttemptedPLLPostAUF, hasAttemptedAnyPLLTestCase, hasUnattemptedPLLCasesLeft, getPLLTargetParameters, changePLLTargetParameters
 @docs hasChosenPLLTargetParameters, cubeTheme
+@docs getAllResultsForPLL
 
 
 # Event Handling
 
-@docs TestResult, testTimestamp, RecordResultError, recordPLLTestResult
+@docs TestResult, testResultPreAUF, testResultPostAUF, testTimestamp, RecordResultError, recordPLLTestResult
 
 
 # Statistics
@@ -52,6 +54,7 @@ import Cube.Advanced
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import List.Extra
 import List.Nonempty
 import PLL exposing (PLL)
 import Time
@@ -119,6 +122,30 @@ type TestResult
         }
 
 
+{-| The preAUF for a given test result
+-}
+testResultPreAUF : TestResult -> AUF
+testResultPreAUF result =
+    case result of
+        Correct { preAUF } ->
+            preAUF
+
+        Wrong { preAUF } ->
+            preAUF
+
+
+{-| The postAUF for a given test result
+-}
+testResultPostAUF : TestResult -> AUF
+testResultPostAUF result =
+    case result of
+        Correct { postAUF } ->
+            postAUF
+
+        Wrong { postAUF } ->
+            postAUF
+
+
 {-| Get the timestamp of a given test result
 -}
 testTimestamp : TestResult -> Time.Posix
@@ -184,6 +211,56 @@ hasChosenPLLAlgorithmFor pll user =
     getPLLAlgorithm pll user
         |> Maybe.map (always True)
         |> Maybe.withDefault False
+
+
+{-| Whether the user has attempted the PLL with the given
+preAUF
+-}
+hasAttemptedPLLPreAUF : PLL -> AUF -> User -> Bool
+hasAttemptedPLLPreAUF pll auf user =
+    user
+        |> getPLLData
+        |> getPLLResults pll
+        |> Maybe.withDefault []
+        |> List.map testResultPreAUF
+        |> List.member auf
+
+
+{-| Whether the user has attempted the PLL with the given
+postAUF
+-}
+hasAttemptedPLLPostAUF : PLL -> AUF -> User -> Bool
+hasAttemptedPLLPostAUF pll auf user =
+    user
+        |> getPLLData
+        |> getPLLResults pll
+        |> Maybe.withDefault []
+        |> List.map testResultPostAUF
+        |> List.member auf
+
+
+{-| There are preAUFs or postAUFs still left to learn for at least
+some plls
+-}
+hasUnattemptedPLLCasesLeft : User -> Bool
+hasUnattemptedPLLCasesLeft user =
+    PLL.all
+        |> List.Nonempty.any (hasUnattemptedCasesLeft user)
+
+
+hasUnattemptedCasesLeft : User -> PLL -> Bool
+hasUnattemptedCasesLeft user pll =
+    user
+        |> getPLLData
+        |> getPLLResults pll
+        |> Maybe.withDefault []
+        |> List.map (\result -> ( testResultPreAUF result, testResultPostAUF result ))
+        |> List.unzip
+        |> Tuple.mapBoth List.Extra.unique List.Extra.unique
+        |> Tuple.mapBoth
+            (\x -> List.length x < List.Nonempty.length AUF.all)
+            (\x -> List.length x < List.Nonempty.length AUF.all)
+        |> (\( a, b ) -> a || b)
 
 
 {-| If the user has attempted the specific pll
@@ -254,6 +331,17 @@ changePLLTargetParameters { targetRecognitionTimeInSeconds, targetTps } =
 hasChosenPLLTargetParameters : User -> Bool
 hasChosenPLLTargetParameters =
     getInternalPLLTargetParameters >> (/=) Nothing
+
+
+{-| Returns a list of all test results for the pll
+-}
+getAllResultsForPLL : PLL -> User -> List TestResult
+getAllResultsForPLL pll user =
+    user
+        |> getPLLData
+        |> getSpecificPLLData pll
+        |> Maybe.map Tuple.second
+        |> Maybe.withDefault []
 
 
 {-| Describes the statistics we compute on a pll.
