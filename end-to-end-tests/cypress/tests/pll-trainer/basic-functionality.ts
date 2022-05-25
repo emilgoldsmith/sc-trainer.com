@@ -7,7 +7,6 @@ import {
   completePLLTestInMilliseconds,
   getReadyWaitTime,
 } from "./state-and-elements.helper";
-import { Element } from "support/elements";
 import { paths } from "support/paths";
 import { applyDefaultIntercepts } from "support/interceptors";
 import {
@@ -19,7 +18,11 @@ import {
 } from "support/pll";
 import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
-import { canvasOrThrow, isCanvasBlank } from "support/html-helpers";
+import {
+  assertCubeMatchesAlias,
+  assertNonFalsyStringsDifferent,
+  assertNonFalsyStringsEqual,
+} from "support/assertions";
 
 forceReloadAndNavigateIfDotOnlyIsUsed();
 
@@ -961,9 +964,9 @@ describe("PLL Trainer - Basic Functionality", function () {
             correct: true,
             aufs: [],
             testRunningCallback: () =>
-              getStringRepresentationOfCube(
-                pllTrainerElements.testRunning.testCase
-              ).setAlias<Aliases, "withRotation">("withRotation"),
+              pllTrainerElements.testRunning.testCase
+                .getStringRepresentationOfCube()
+                .setAlias<Aliases, "withRotation">("withRotation"),
           });
 
           cy.clearLocalStorage();
@@ -978,9 +981,9 @@ describe("PLL Trainer - Basic Functionality", function () {
             correct: true,
             aufs: [],
             testRunningCallback: () =>
-              getStringRepresentationOfCube(
-                pllTrainerElements.testRunning.testCase
-              ).setAlias<Aliases, "withoutRotation">("withoutRotation"),
+              pllTrainerElements.testRunning.testCase
+                .getStringRepresentationOfCube()
+                .setAlias<Aliases, "withoutRotation">("withoutRotation"),
           });
 
           cy.getAliases<Aliases>().then(({ withRotation, withoutRotation }) => {
@@ -1047,16 +1050,16 @@ describe("PLL Trainer - Basic Functionality", function () {
             ? {}
             : {
                 testRunningCallback: () =>
-                  getStringRepresentationOfCube(
-                    pllTrainerElements.testRunning.testCase
-                  ).setAlias<
-                    Aliases,
-                    Key
-                    // Be cheeky with the types here to make it work. It could potentially
-                    // introduce some problems down the line for sure but I don't see a much
-                    // better choice and at least it's in the tests
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  >(cubeAlias as any),
+                  pllTrainerElements.testRunning.testCase
+                    .getStringRepresentationOfCube()
+                    .setAlias<
+                      Aliases,
+                      Key
+                      // Be cheeky with the types here to make it work. It could potentially
+                      // introduce some problems down the line for sure but I don't see a much
+                      // better choice and at least it's in the tests
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    >(cubeAlias as any),
               }),
         });
       }
@@ -1106,9 +1109,9 @@ describe("PLL Trainer - Basic Functionality", function () {
           correct: false,
           overrideDefaultAlgorithm: algorithm,
           testRunningCallback: () =>
-            getStringRepresentationOfCube(
-              pllTrainerElements.testRunning.testCase
-            ).setAlias<Aliases, "cubeBefore">("cubeBefore"),
+            pllTrainerElements.testRunning.testCase
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "cubeBefore">("cubeBefore"),
           wrongPageCallback: () =>
             parseAUFsFromWrongPage().setAlias<Aliases, "actualAUF">(
               "actualAUF"
@@ -1132,9 +1135,9 @@ describe("PLL Trainer - Basic Functionality", function () {
                   .invoke("text")
                   .setAlias<Aliases, "statsBefore">("statsBefore"),
               testRunningCallback: () =>
-                getStringRepresentationOfCube(
-                  pllTrainerElements.testRunning.testCase
-                ).setAlias<Aliases, "cubeAfter">("cubeAfter"),
+                pllTrainerElements.testRunning.testCase
+                  .getStringRepresentationOfCube()
+                  .setAlias<Aliases, "cubeAfter">("cubeAfter"),
             });
             pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
               retainCurrentLocalStorage: true,
@@ -1904,12 +1907,12 @@ describe("PLL Trainer - Basic Functionality", function () {
       // Go to evaluate to get the "original" cube state
       pllTrainerStatesUserDone.evaluateResultAfterIgnoringTransitions.restoreState();
       cy.log("GETTING ORIGINAL CUBE STRINGS");
-      getStringRepresentationOfCube(
-        pllTrainerElements.evaluateResult.expectedCubeFront
-      ).setAlias<Aliases, "originalCubeFront">("originalCubeFront");
-      getStringRepresentationOfCube(
-        pllTrainerElements.evaluateResult.expectedCubeBack
-      ).setAlias<Aliases, "originalCubeBack">("originalCubeBack");
+      pllTrainerElements.evaluateResult.expectedCubeFront
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "originalCubeFront">("originalCubeFront");
+      pllTrainerElements.evaluateResult.expectedCubeBack
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "originalCubeBack">("originalCubeBack");
       // Run another test case
       pllTrainerElements.evaluateResult.correctButton.get().click();
       cy.clock();
@@ -1920,12 +1923,12 @@ describe("PLL Trainer - Basic Functionality", function () {
       cy.mouseClickScreen("center");
       // We're back at Evaluate Result
       cy.log("GETTING NEXT CUBE STRINGS");
-      getStringRepresentationOfCube(
-        pllTrainerElements.evaluateResult.expectedCubeFront
-      ).setAlias<Aliases, "nextCubeFront">("nextCubeFront");
-      getStringRepresentationOfCube(
-        pllTrainerElements.evaluateResult.expectedCubeBack
-      ).setAlias<Aliases, "nextCubeBack">("nextCubeBack");
+      pllTrainerElements.evaluateResult.expectedCubeFront
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "nextCubeFront">("nextCubeFront");
+      pllTrainerElements.evaluateResult.expectedCubeBack
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "nextCubeBack">("nextCubeBack");
       // Navigate to Type Of Wrong for the tests
       cy.tick(500);
       pllTrainerElements.evaluateResult.wrongButton.get().click();
@@ -1976,12 +1979,12 @@ describe("PLL Trainer - Basic Functionality", function () {
         front: string;
         back: string;
       };
-      getStringRepresentationOfCube(
-        pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
-      ).setAlias<Aliases, "front">("front");
-      getStringRepresentationOfCube(
-        pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
-      ).setAlias<Aliases, "back">("back");
+      pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "front">("front");
+      pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "back">("back");
 
       pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
 
@@ -2000,12 +2003,12 @@ describe("PLL Trainer - Basic Functionality", function () {
         front: string;
         back: string;
       };
-      getStringRepresentationOfCube(
-        pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
-      ).setAlias<Aliases, "front">("front");
-      getStringRepresentationOfCube(
-        pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
-      ).setAlias<Aliases, "back">("back");
+      pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "front">("front");
+      pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "back">("back");
 
       cy.pressKey(Key.one);
 
@@ -2024,12 +2027,12 @@ describe("PLL Trainer - Basic Functionality", function () {
         front: string;
         back: string;
       };
-      getStringRepresentationOfCube(
-        pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
-      ).setAlias<Aliases, "front">("front");
-      getStringRepresentationOfCube(
-        pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateBack
-      ).setAlias<Aliases, "back">("back");
+      pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "front">("front");
+      pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateBack
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "back">("back");
 
       pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
 
@@ -2048,12 +2051,12 @@ describe("PLL Trainer - Basic Functionality", function () {
         front: string;
         back: string;
       };
-      getStringRepresentationOfCube(
-        pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
-      ).setAlias<Aliases, "front">("front");
-      getStringRepresentationOfCube(
-        pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateBack
-      ).setAlias<Aliases, "back">("back");
+      pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "front">("front");
+      pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateBack
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "back">("back");
 
       cy.pressKey(Key.two);
 
@@ -2073,13 +2076,13 @@ describe("PLL Trainer - Basic Functionality", function () {
         solvedBack: string;
       };
       pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
-      getStringRepresentationOfCube(
-        pllTrainerElements.newUserStartPage.cubeStartState
-      ).setAlias<Aliases, "solvedFront">("solvedFront");
+      pllTrainerElements.newUserStartPage.cubeStartState
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "solvedFront">("solvedFront");
       cy.setExtraAlgToApplyToAllCubes("y2");
-      getStringRepresentationOfCube(
-        pllTrainerElements.newUserStartPage.cubeStartState
-      ).setAlias<Aliases, "solvedBack">("solvedBack");
+      pllTrainerElements.newUserStartPage.cubeStartState
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "solvedBack">("solvedBack");
       cy.setExtraAlgToApplyToAllCubes("");
 
       pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
@@ -2102,13 +2105,13 @@ describe("PLL Trainer - Basic Functionality", function () {
         solvedBack: string;
       };
       pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
-      getStringRepresentationOfCube(
-        pllTrainerElements.newUserStartPage.cubeStartState
-      ).setAlias<Aliases, "solvedFront">("solvedFront");
+      pllTrainerElements.newUserStartPage.cubeStartState
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "solvedFront">("solvedFront");
       cy.setExtraAlgToApplyToAllCubes("y2");
-      getStringRepresentationOfCube(
-        pllTrainerElements.newUserStartPage.cubeStartState
-      ).setAlias<Aliases, "solvedBack">("solvedBack");
+      pllTrainerElements.newUserStartPage.cubeStartState
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "solvedBack">("solvedBack");
       cy.setExtraAlgToApplyToAllCubes("");
 
       pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
@@ -2156,13 +2159,13 @@ describe("PLL Trainer - Basic Functionality", function () {
 
       // Check that the test case cube is actually displaying the case that was tested
       pllTrainerStatesUserDone.testRunning.restoreState();
-      getStringRepresentationOfCube(
-        pllTrainerElements.testRunning.testCase
-      ).setAlias<Aliases, "testCaseFront">("testCaseFront");
+      pllTrainerElements.testRunning.testCase
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "testCaseFront">("testCaseFront");
       cy.setExtraAlgToApplyToAllCubes("y2");
-      getStringRepresentationOfCube(
-        pllTrainerElements.testRunning.testCase
-      ).setAlias<Aliases, "testCaseBack">("testCaseBack");
+      pllTrainerElements.testRunning.testCase
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "testCaseBack">("testCaseBack");
       cy.setExtraAlgToApplyToAllCubes("");
 
       cy.clock();
@@ -2268,30 +2271,6 @@ function getTestRunningWithMaxLengthTimer() {
   pllTrainerElements.testRunning.timer.get().should("have.text", "15:00:00.0");
 }
 
-function getStringRepresentationOfCube(
-  element: Element
-): Cypress.Chainable<string> {
-  // Standardize the size of the canvas so that string representations are comparable
-  cy.setCubeSizeOverride(50);
-  return element
-    .get()
-    .find("canvas")
-    .should((jqueryElement) => {
-      expect(
-        isCanvasBlank(canvasOrThrow(jqueryElement)),
-        "canvas not to be blank"
-      ).to.be.false;
-    })
-    .then((jqueryElement) => {
-      const canvasElement: HTMLCanvasElement = canvasOrThrow(jqueryElement);
-
-      const dataUrl = canvasElement.toDataURL();
-
-      cy.setCubeSizeOverride(null);
-      return cy.wrap(dataUrl);
-    });
-}
-
 /**
  * This is no longer relevant as we migrated to using WebGL, but it's
  * worth keeping here in case we want to use something similar again in the future
@@ -2337,27 +2316,6 @@ function getStringRepresentationOfCube(
 //   return html.replaceAll(/<svg.*?>.*?<\/svg>/g, "");
 // }
 
-function assertCubeMatchesAlias<
-  Aliases extends Record<string, unknown>,
-  Key extends keyof Aliases
->(alias: Key, element: Element): void {
-  getStringRepresentationOfCube(element).should((actualCubeString) => {
-    cy.getSingleAlias<Aliases, Key>(alias).then((wronglyTypedArg) => {
-      if (typeof wronglyTypedArg !== "string") {
-        throw new Error("Alias was not a string. Alias name was " + alias);
-      }
-      const expectedCubeString: string = wronglyTypedArg;
-      assertNonFalsyStringsEqual(
-        actualCubeString,
-        expectedCubeString,
-        "cube string (first) should equal " +
-          alias +
-          " (second) string representation"
-      );
-    });
-  });
-}
-
 function testCaseToWrongPageRegex(testCase: readonly [AUF, PLL, AUF]): RegExp {
   const firstAufString = aufToAlgorithmString[testCase[0]];
   const secondAufString = aufToAlgorithmString[testCase[2]];
@@ -2368,54 +2326,4 @@ function testCaseToWrongPageRegex(testCase: readonly [AUF, PLL, AUF]): RegExp {
       secondAufString && String.raw`\s+${secondAufString}\b`,
     ].join("")
   );
-}
-
-function assertNonFalsyStringsEqual(
-  first: string | undefined | null,
-  second: string | undefined | null,
-  msg: string
-): void {
-  if (first === undefined || first === null) {
-    expect.fail("First string in `" + msg + "` was " + JSON.stringify(first));
-  }
-  if (second === undefined || second === null) {
-    expect.fail("Second string in `" + msg + "` was " + JSON.stringify(first));
-  }
-  if (first !== second) {
-    console.log(msg);
-    console.log("It failed so we are logging the strings here:");
-    console.log("First:");
-    console.log(first);
-    console.log("Second:");
-    console.log(second);
-  }
-  // Don't do a expect().equal as the diff isn't useful anyway
-  // and it takes a long time to generate it due to the large strings
-  // We just deal with a boolean and a custom message instead
-  expect(first === second, msg).to.be.true;
-}
-
-function assertNonFalsyStringsDifferent(
-  first: string | undefined | null,
-  second: string | undefined | null,
-  msg: string
-): void {
-  if (first === undefined || first === null) {
-    expect.fail("First string in `" + msg + "` was " + JSON.stringify(first));
-  }
-  if (second === undefined || second === null) {
-    expect.fail("Second string in `" + msg + "` was " + JSON.stringify(first));
-  }
-  if (first === second) {
-    console.log(msg);
-    console.log("It failed so we are logging the strings here:");
-    console.log("First:");
-    console.log(first);
-    console.log("Second:");
-    console.log(second);
-  }
-  // Don't do a expect().equal as the diff isn't useful anyway
-  // and it takes a long time to generate it due to the large strings
-  // We just deal with a boolean and a custom message instead
-  expect(first !== second, msg).to.be.true;
 }

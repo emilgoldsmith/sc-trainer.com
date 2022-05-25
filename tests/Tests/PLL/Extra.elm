@@ -1,8 +1,6 @@
 module Tests.PLL.Extra exposing (getPreferredEquivalentAUFsTests)
 
 import AUF exposing (AUF)
-import Algorithm
-import Cube
 import Expect
 import Fuzz
 import Fuzz.Extra

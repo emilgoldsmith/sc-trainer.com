@@ -19,6 +19,7 @@ import { paths } from "support/paths";
 import { Key } from "support/keys";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
 import { Element } from "support/elements";
+import { assertCubeMatchesAlias } from "support/assertions";
 
 forceReloadAndNavigateIfDotOnlyIsUsed();
 
@@ -817,6 +818,7 @@ describe("PLL Trainer - Learning Functionality", function () {
       });
     });
   });
+
   describe("Algorithm Driller Explanation Page", function () {
     // eslint-disable-next-line mocha/no-setup-in-describe
     const elements = pllTrainerElements.algorithmDrillerExplanationPage;
@@ -863,7 +865,10 @@ describe("PLL Trainer - Learning Functionality", function () {
       cy.assertNoVerticalScrollbar();
     });
 
-    it("displays correct consecutive attempts left correctly", function () {
+    it("displays correct consecutive attempts left correctly, and test after success page is different from drill case", function () {
+      type Aliases = {
+        drillCube: string;
+      };
       elements.correctConsecutiveAttemptsLeft.get().should("have.text", "3");
 
       doOneDrillTestLoop(true);
@@ -881,11 +886,44 @@ describe("PLL Trainer - Learning Functionality", function () {
       doOneDrillTestLoop(true);
       pllTrainerElements.algorithmDrillerSuccessPage.container.assertShows();
 
+      fromGetReadyForTestThroughEvaluateResult({
+        correct: true,
+        milliseconds: 500,
+        navigateToGetReadyState: () => {
+          pllTrainerElements.algorithmDrillerSuccessPage.nextTestButton
+            .get()
+            .click();
+          pllTrainerElements.root.waitForStateChangeAwayFrom(
+            pllTrainerElements.root.stateAttributeValues
+              .algorithmDrillerSuccessPage
+          );
+          pllTrainerElements.root
+            .getStateAttributeValue()
+            .then((stateAttributeValue) => {
+              if (
+                stateAttributeValue ===
+                pllTrainerElements.root.stateAttributeValues.newCasePage
+              ) {
+                pllTrainerElements.newCasePage.startTestButton.get().click();
+              }
+            });
+        },
+        testRunningCallback: () =>
+          assertCubeMatchesAlias<Aliases, "drillCube">(
+            "drillCube",
+            pllTrainerElements.testRunning.testCase
+          ),
+      });
+
       function doOneDrillTestLoop(correct: boolean): void {
         fromGetReadyForTestThroughEvaluateResult({
           correct,
           milliseconds: 500,
           navigateToGetReadyState: () => elements.nextTestButton.get().click(),
+          testRunningCallback: () =>
+            pllTrainerElements.testRunning.testCase
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "drillCube">("drillCube"),
         });
       }
     });

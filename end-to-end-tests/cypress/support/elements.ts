@@ -1,3 +1,5 @@
+import { canvasOrThrow, isCanvasBlank } from "./html-helpers";
+
 type TestType = "error-message" | "cube";
 
 type ElementMeta = {
@@ -21,6 +23,9 @@ export type Element = {
   >;
   isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
   assertIsFocused: ReturnType<typeof buildAssertIsFocused>;
+  getStringRepresentationOfCube: ReturnType<
+    typeof buildGetStringRepresentationOfCube
+  >;
   specifier: ElementSpecifier;
 };
 
@@ -177,6 +182,10 @@ export function buildElementsCategory<keys extends string>(
           specifier
         ),
         assertIsFocused: buildWithinContainer(buildAssertIsFocused, specifier),
+        getStringRepresentationOfCube: buildWithinContainer(
+          buildGetStringRepresentationOfCube,
+          specifier
+        ),
         specifier,
         meta: getMeta(specifier),
       };
@@ -220,7 +229,9 @@ export function buildRootCategory<
   testId: ElementSpecifier;
   stateAttributeValues: StateValues;
 }): {
-  getStateAttributeValue: (options?: Options) => Cypress.Chainable<string>;
+  getStateAttributeValue: (
+    options?: Options
+  ) => Cypress.Chainable<StateValues[keyof StateValues]>;
   waitForStateChangeAwayFrom: (
     stateValue: StateValues[keyof StateValues],
     options?: Options
@@ -231,7 +242,7 @@ export function buildRootCategory<
   const stateAttributeName = "__test-helper__state";
   function getStateAttributeValue(
     options?: Options
-  ): Cypress.Chainable<string> {
+  ): Cypress.Chainable<StateValues[keyof StateValues]> {
     return getBySpecifier(testId, options).invoke("attr", stateAttributeName);
   }
   return {
@@ -261,6 +272,9 @@ function buildElement(specifier: ElementSpecifier): InternalElement {
     ),
     isContainedByWindow: buildContainedByWindow(specifier),
     assertIsFocused: buildAssertIsFocused(specifier),
+    getStringRepresentationOfCube: buildGetStringRepresentationOfCube(
+      specifier
+    ),
     specifier,
     meta: getMeta(specifier),
   };
@@ -330,6 +344,37 @@ function buildAssertIsFocused(specifier: ElementSpecifier) {
       },
       assertIsFocused
     );
+  };
+}
+
+function buildGetStringRepresentationOfCube(
+  specifier: ElementSpecifier
+): (options?: Options) => Cypress.Chainable<string> {
+  return function (options?: Options) {
+    if (typeof specifier === "string" || specifier.meta.testType !== "cube") {
+      throw new Error(
+        "You can only call getStringRepresentationOfCube on a cube element"
+      );
+    }
+
+    // Standardize the size of the canvas so that string representations are comparable
+    cy.setCubeSizeOverride(50);
+    return getBySpecifier(specifier, options)
+      .find("canvas")
+      .should((jqueryElement) => {
+        expect(
+          isCanvasBlank(canvasOrThrow(jqueryElement)),
+          "canvas not to be blank"
+        ).to.be.false;
+      })
+      .then((jqueryElement) => {
+        const canvasElement: HTMLCanvasElement = canvasOrThrow(jqueryElement);
+
+        const dataUrl = canvasElement.toDataURL();
+
+        cy.setCubeSizeOverride(null);
+        return cy.wrap(dataUrl);
+      });
   };
 }
 
