@@ -846,6 +846,102 @@ describe("PLL Trainer - Learning Functionality", function () {
       cy.pressKey(Key.space);
       pllTrainerElements.algorithmDrillerStatusPage.container.assertShows();
     });
+
+    it("goes to driller when a new case is not solved correctly", function () {
+      cy.clearLocalStorage();
+      // Driller first time pll is encountered
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        correct: false,
+        aufs: [AUF.none, AUF.none],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+      });
+      // Driller when new pre-AUF for the pll is encountered despite pll itself being seen before
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        correct: false,
+        aufs: [AUF.U, AUF.none],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+      });
+      // Driller when new post-AUF for the pll is encountered despite pll itself being seen before
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        correct: false,
+        aufs: [AUF.none, AUF.UPrime],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+      });
+      // No driller when both pre-AUF and post-AUF are seen before even if not in this combination
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        correct: false,
+        aufs: [AUF.U, AUF.UPrime],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
+      });
+    });
+
+    it("doesn't go to driller if new case solved quickly and correctly", function () {
+      cy.clearLocalStorage();
+      // No driller first time pll is encountered
+      completePLLTestInMilliseconds(100, PLL.Ga, {
+        correct: true,
+        aufs: [AUF.U2, AUF.U2],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
+      });
+      // No driller when new pre-AUF for the pll is encountered despite pll itself being seen before
+      completePLLTestInMilliseconds(100, PLL.Ga, {
+        correct: true,
+        aufs: [AUF.UPrime, AUF.U2],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
+      });
+      // No driller when new post-AUF for the pll is encountered despite pll itself being seen before
+      completePLLTestInMilliseconds(100, PLL.Ga, {
+        correct: true,
+        aufs: [AUF.U2, AUF.none],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
+      });
+      // No driller when both pre-AUF and post-AUF are seen before even if not in this combination
+      completePLLTestInMilliseconds(100, PLL.Ga, {
+        correct: true,
+        aufs: [AUF.UPrime, AUF.none],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
+      });
+    });
+
+    it("goes to driller when a new case is solved correctly but slowly", function () {
+      cy.clearLocalStorage();
+      // Driller first time pll is encountered
+      completePLLTestInMilliseconds(10000, PLL.Aa, {
+        correct: true,
+        aufs: [AUF.UPrime, AUF.UPrime],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+      });
+      // Driller when new pre-AUF for the pll is encountered despite pll itself being seen before
+      completePLLTestInMilliseconds(10000, PLL.Aa, {
+        correct: true,
+        aufs: [AUF.none, AUF.UPrime],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+      });
+      // Driller when new post-AUF for the pll is encountered despite pll itself being seen before
+      completePLLTestInMilliseconds(10000, PLL.Aa, {
+        correct: true,
+        aufs: [AUF.UPrime, AUF.U2],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+      });
+      // No driller when both pre-AUF and post-AUF are seen before even if not in this combination
+      completePLLTestInMilliseconds(10000, PLL.Aa, {
+        correct: true,
+        aufs: [AUF.none, AUF.U2],
+        algorithmDrillerExplanationPageCallback: () =>
+          pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
+      });
+    });
   });
 
   describe("Algorithm Driller Status Page", function () {

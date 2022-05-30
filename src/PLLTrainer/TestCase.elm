@@ -1,4 +1,4 @@
-module PLLTrainer.TestCase exposing (Generator, TestCase, build, generate, getGenerator, isNewCaseGenerator, pll, postAUF, preAUF, toAlg, toCube)
+module PLLTrainer.TestCase exposing (Generator, TestCase, build, generate, getGenerator, isNewCaseGenerator, pll, postAUF, preAUF, toAlg, toCube, toTriple)
 
 import AUF exposing (AUF)
 import Algorithm
@@ -35,6 +35,11 @@ toAlg user (TestCase ( preAUF_, pll_, postAUF_ )) =
     in
     baseAlgorithm
         |> Cube.addAUFsToAlgorithm ( preAUF_, postAUF_ )
+
+
+toTriple : TestCase -> ( AUF, PLL, AUF )
+toTriple (TestCase triple) =
+    triple
 
 
 {-| A cube that would be solved by this test case
@@ -97,19 +102,11 @@ replaceInternalGenerator newInternalGenerator oldGenerator =
 
 buildConstantGenerator : User -> TestCase -> Generator
 buildConstantGenerator user testCase =
-    if testCaseHasNewPartForUser user testCase then
+    if User.pllTestCaseIsNewForUser (toTriple testCase) user then
         NewCase (Random.constant testCase)
 
     else
         AlreadyAttempted (Random.constant testCase)
-
-
-testCaseHasNewPartForUser : User -> TestCase -> Bool
-testCaseHasNewPartForUser user testCase =
-    not
-        (User.hasAttemptedPLLPreAUF (pll testCase) (preAUF testCase) user
-            && User.hasAttemptedPLLPostAUF (pll testCase) (postAUF testCase) user
-        )
 
 
 shouldGenerateNewCase : User -> Bool
@@ -122,7 +119,7 @@ shouldGenerateNewCase user =
                 AUF.all
     in
     allTestCases
-        |> List.Nonempty.all (testCaseHasNewPartForUser user)
+        |> List.Nonempty.any (\testCase -> User.pllTestCaseIsNewForUser (toTriple testCase) user)
 
 
 buildNewCaseGenerator : User -> Generator

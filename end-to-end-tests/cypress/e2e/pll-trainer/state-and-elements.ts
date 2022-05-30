@@ -623,7 +623,19 @@ export function completePLLTestInMilliseconds(
     startPageCallback?: () => void;
     newCasePageCallback?: () => void;
     testRunningCallback?: () => void;
-  } & ({ correct: true } | { correct: false; wrongPageCallback?: () => void })
+  } & (
+    | { correct: true; algorithmDrillerExplanationPageCallback?: () => void }
+    | ({ correct: false } & (
+        | {
+            wrongPageCallback?: () => void;
+            algorithmDrillerExplanationPageCallback?: never;
+          }
+        | {
+            wrongPageCallback?: never;
+            algorithmDrillerExplanationPageCallback?: () => void;
+          }
+      ))
+  )
 ): void {
   const {
     aufs,
@@ -678,9 +690,9 @@ export function completePLLTestInMilliseconds(
         );
     }
   });
-  if (correct) pllTrainerElements.correctPage.container.waitFor();
-  else {
-    pllTrainerElements.wrongPage.container.waitFor();
+  if (correct || "algorithmDrillerExplanationPageCallback" in params) {
+    params.algorithmDrillerExplanationPageCallback?.();
+  } else {
     params.wrongPageCallback?.();
   }
 }
