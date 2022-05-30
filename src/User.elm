@@ -2,9 +2,8 @@ module User exposing
     ( User
     , new
     , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
-    , hasAttemptedPLL, hasAttemptedPLLPreAUF, hasAttemptedPLLPostAUF, hasAttemptedAnyPLLTestCase, hasUnattemptedPLLCasesLeft, getPLLTargetParameters, changePLLTargetParameters
+    , hasAttemptedAnyPLLTestCase, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
     , hasChosenPLLTargetParameters, cubeTheme
-    , getAllResultsForPLL
     , TestResult(..), testResultPreAUF, testResultPostAUF, testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
     , serialize, deserialize
@@ -26,9 +25,8 @@ module User exposing
 # Getters And Setters
 
 @docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
-@docs hasAttemptedPLL, hasAttemptedPLLPreAUF, hasAttemptedPLLPostAUF, hasAttemptedAnyPLLTestCase, hasUnattemptedPLLCasesLeft, getPLLTargetParameters, changePLLTargetParameters
+@docs hasAttemptedAnyPLLTestCase, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
 @docs hasChosenPLLTargetParameters, cubeTheme
-@docs getAllResultsForPLL
 
 
 # Event Handling
@@ -54,7 +52,6 @@ import Cube.Advanced
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
-import List.Extra
 import List.Nonempty
 import PLL exposing (PLL)
 import Time
@@ -213,9 +210,6 @@ hasChosenPLLAlgorithmFor pll user =
         |> Maybe.withDefault False
 
 
-{-| Whether the user has attempted the PLL with the given
-preAUF
--}
 hasAttemptedPLLPreAUF : PLL -> AUF -> User -> Bool
 hasAttemptedPLLPreAUF pll auf user =
     user
@@ -226,9 +220,6 @@ hasAttemptedPLLPreAUF pll auf user =
         |> List.member auf
 
 
-{-| Whether the user has attempted the PLL with the given
-postAUF
--}
 hasAttemptedPLLPostAUF : PLL -> AUF -> User -> Bool
 hasAttemptedPLLPostAUF pll auf user =
     user
@@ -239,28 +230,14 @@ hasAttemptedPLLPostAUF pll auf user =
         |> List.member auf
 
 
-{-| There are preAUFs or postAUFs still left to learn for at least
-some plls
+{-| Whether this test case should be considered new for the user.
+This usually means either the PLL is being seen for the first time,
+or the recognition angle or final AUF is being seen for the first time
 -}
-hasUnattemptedPLLCasesLeft : User -> Bool
-hasUnattemptedPLLCasesLeft user =
-    PLL.all
-        |> List.Nonempty.any (hasUnattemptedCasesLeft user)
-
-
-hasUnattemptedCasesLeft : User -> PLL -> Bool
-hasUnattemptedCasesLeft user pll =
-    user
-        |> getPLLData
-        |> getPLLResults pll
-        |> Maybe.withDefault []
-        |> List.map (\result -> ( testResultPreAUF result, testResultPostAUF result ))
-        |> List.unzip
-        |> Tuple.mapBoth List.Extra.unique List.Extra.unique
-        |> Tuple.mapBoth
-            (\x -> List.length x < List.Nonempty.length AUF.all)
-            (\x -> List.length x < List.Nonempty.length AUF.all)
-        |> (\( a, b ) -> a || b)
+pllTestCaseIsNewForUser : ( AUF, PLL, AUF ) -> User -> Bool
+pllTestCaseIsNewForUser ( preAUF, pll, postAUF ) user =
+    not (hasAttemptedPLLPreAUF pll preAUF user)
+        || not (hasAttemptedPLLPostAUF pll postAUF user)
 
 
 {-| If the user has attempted the specific pll
@@ -270,8 +247,8 @@ hasAttemptedPLL pll user =
     user
         |> getPLLData
         |> getPLLResults pll
-        |> Maybe.map (List.isEmpty >> not)
-        |> Maybe.withDefault False
+        |> Maybe.withDefault []
+        |> (List.isEmpty >> not)
 
 
 {-| If the user has attempted any PLL yet
@@ -331,17 +308,6 @@ changePLLTargetParameters { targetRecognitionTimeInSeconds, targetTps } =
 hasChosenPLLTargetParameters : User -> Bool
 hasChosenPLLTargetParameters =
     getInternalPLLTargetParameters >> (/=) Nothing
-
-
-{-| Returns a list of all test results for the pll
--}
-getAllResultsForPLL : PLL -> User -> List TestResult
-getAllResultsForPLL pll user =
-    user
-        |> getPLLData
-        |> getSpecificPLLData pll
-        |> Maybe.map Tuple.second
-        |> Maybe.withDefault []
 
 
 {-| Describes the statistics we compute on a pll.
