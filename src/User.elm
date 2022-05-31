@@ -237,7 +237,8 @@ or the recognition angle or final AUF is being seen for the first time
 pllTestCaseIsNewForUser : ( AUF, PLL, AUF ) -> User -> Bool
 pllTestCaseIsNewForUser ( preAUF, pll, postAUF ) user =
     not (hasAttemptedPLLPreAUF pll preAUF user)
-        || not (hasAttemptedPLLPostAUF pll postAUF user)
+        -- We consider the no AUF postAUF redundant as it's simply not making a move
+        || (postAUF /= AUF.None && not (hasAttemptedPLLPostAUF pll postAUF user))
 
 
 {-| If the user has attempted the specific pll

@@ -294,75 +294,94 @@ describe("PLL Trainer - Learning Functionality", function () {
       // Make sure local storage is correct
       pllTrainerStatesNewUser.startPage.restoreState();
 
+      cy.log("This is a completely new user so new case page should display");
       completePLLTestInMilliseconds(500, PLL.Aa, {
-        aufs: [AUF.none, AUF.none],
+        aufs: [AUF.UPrime, AUF.UPrime],
         correct: true,
-        // This is a completely new user so new case page should display
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertShows();
         },
       });
 
+      cy.log("This is a new preAUF so should display new case page");
       completePLLTestInMilliseconds(500, PLL.Aa, {
-        aufs: [AUF.U, AUF.none],
+        aufs: [AUF.U, AUF.UPrime],
         correct: true,
-        // This is a new preAUF so should display new case page
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertShows();
         },
       });
 
+      cy.log(
+        "This is the same case as last time so no new case page should display"
+      );
       completePLLTestInMilliseconds(500, PLL.Aa, {
-        aufs: [AUF.U, AUF.none],
+        aufs: [AUF.U, AUF.UPrime],
         correct: true,
-        // This is the same case as last time so no new case page should display
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertDoesntExist();
         },
       });
 
+      cy.log(
+        "This is a new postAUF even with known preAUF so should still display new case page"
+      );
       completePLLTestInMilliseconds(500, PLL.Aa, {
         aufs: [AUF.U, AUF.U2],
         correct: true,
-        // This is a new postAUF even with known preAUF so should still display new case page
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertShows();
         },
       });
 
+      cy.log(
+        "This is a case that hasn't been seen before, but each type of pre- and post-AUF have been tested independently so it shouldn't count as a new case"
+      );
       completePLLTestInMilliseconds(500, PLL.Aa, {
-        aufs: [AUF.none, AUF.U2],
+        aufs: [AUF.UPrime, AUF.U2],
         correct: true,
-        // This is a case that hasn't been seen before, but each type of pre- and post-AUF
-        // have been tested independently so it shouldn't count as a new case
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertDoesntExist();
         },
       });
 
+      cy.log(
+        "This is the first time there is no postAUF, and while this is a \"new\" case we don't want to count it as it's simply the act of not making a move. Also note that the preAUF is of course seen before otherwise it would be a new case"
+      );
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.UPrime, AUF.none],
+        correct: true,
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertDoesntExist();
+        },
+      });
+
+      cy.log("New PLL so should display");
       completePLLTestInMilliseconds(500, PLL.H, {
         aufs: [AUF.U, AUF.none],
         correct: true,
-        // New PLL so should display
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertShows();
         },
       });
 
+      cy.log(
+        "H perm is fully symmetrical so preAUF and postAUF are equivalent in that sense and this shouldn't be a new case"
+      );
       completePLLTestInMilliseconds(500, PLL.H, {
         aufs: [AUF.none, AUF.U],
         correct: true,
-        // H perm is fully symmetrical so preAUF and postAUF are equivalent in that sense
-        // and this shouldn't be a new case
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertDoesntExist();
         },
       });
 
+      cy.log(
+        "This is a different combination though so should display the new case page"
+      );
       completePLLTestInMilliseconds(500, PLL.H, {
         aufs: [AUF.U2, AUF.none],
         correct: true,
-        // This is a different combination though so should display the new case page
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertShows();
         },
@@ -913,34 +932,112 @@ describe("PLL Trainer - Learning Functionality", function () {
 
     it("goes to driller when a new case is solved correctly but slowly", function () {
       cy.clearLocalStorage();
-      // Driller first time pll is encountered
-      completePLLTestInMilliseconds(10000, PLL.Aa, {
-        correct: true,
-        aufs: [AUF.UPrime, AUF.UPrime],
-        algorithmDrillerExplanationPageCallback: () =>
-          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
-      });
-      // Driller when new pre-AUF for the pll is encountered despite pll itself being seen before
-      completePLLTestInMilliseconds(10000, PLL.Aa, {
-        correct: true,
-        aufs: [AUF.none, AUF.UPrime],
-        algorithmDrillerExplanationPageCallback: () =>
-          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
-      });
-      // Driller when new post-AUF for the pll is encountered despite pll itself being seen before
-      completePLLTestInMilliseconds(10000, PLL.Aa, {
-        correct: true,
-        aufs: [AUF.UPrime, AUF.U2],
-        algorithmDrillerExplanationPageCallback: () =>
-          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
-      });
-      // No driller when both pre-AUF and post-AUF are seen before even if not in this combination
-      completePLLTestInMilliseconds(10000, PLL.Aa, {
-        correct: true,
-        aufs: [AUF.none, AUF.U2],
-        algorithmDrillerExplanationPageCallback: () =>
-          pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
-      });
+
+      cy.withOverallNameLogged(
+        { message: "Driller first time pll is encountered" },
+        () => {
+          completePLLTestInMilliseconds(10000, PLL.Gb, {
+            correct: true,
+            aufs: [AUF.UPrime, AUF.UPrime],
+            algorithmDrillerExplanationPageCallback: () =>
+              pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+          });
+        }
+      );
+      cy.withOverallNameLogged(
+        {
+          message:
+            "Driller when new pre-AUF for the pll is encountered despite pll itself being seen before",
+        },
+        () => {
+          completePLLTestInMilliseconds(10000, PLL.Gb, {
+            correct: true,
+            aufs: [AUF.none, AUF.UPrime],
+            algorithmDrillerExplanationPageCallback: () =>
+              pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+          });
+        }
+      );
+      cy.withOverallNameLogged(
+        {
+          message:
+            "Driller when new post-AUF for the pll is encountered despite pll itself being seen before",
+        },
+        () => {
+          completePLLTestInMilliseconds(10000, PLL.Gb, {
+            correct: true,
+            aufs: [AUF.UPrime, AUF.U2],
+            algorithmDrillerExplanationPageCallback: () =>
+              pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+          });
+        }
+      );
+      cy.withOverallNameLogged(
+        {
+          message:
+            "No driller when both pre-AUF and post-AUF are seen before even if not in this combination",
+        },
+        () => {
+          completePLLTestInMilliseconds(10000, PLL.Gb, {
+            correct: true,
+            aufs: [AUF.none, AUF.U2],
+            algorithmDrillerExplanationPageCallback: () =>
+              pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
+          });
+        }
+      );
+    });
+
+    it("goes to driller correctly for edge cases", function () {
+      cy.clearLocalStorage();
+
+      cy.withOverallNameLogged(
+        { message: "First time it's encountered we definitely drill" },
+        () => {
+          completePLLTestInMilliseconds(10000, PLL.H, {
+            correct: false,
+            aufs: [AUF.UPrime, AUF.UPrime],
+            algorithmDrillerExplanationPageCallback: () =>
+              pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+          });
+        }
+      );
+
+      cy.withOverallNameLogged(
+        {
+          message:
+            "We don't drill on an equivalent (due to symmetry of the case) set of AUFs",
+        },
+        () => {
+          completePLLTestInMilliseconds(10000, PLL.H, {
+            correct: false,
+            aufs: [AUF.none, AUF.U2],
+            algorithmDrillerExplanationPageCallback: () =>
+              pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
+          });
+        }
+      );
+
+      cy.withOverallNameLogged(
+        {
+          message:
+            "We don't drill if it's a known preAUF and an unknown \"none\" post-AUF this is because that just means not to make a move in the end which shouldn't be considered new",
+        },
+        () => {
+          completePLLTestInMilliseconds(10000, PLL.Ga, {
+            correct: false,
+            aufs: [AUF.U, AUF.U],
+            algorithmDrillerExplanationPageCallback: () =>
+              pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+          });
+          completePLLTestInMilliseconds(10000, PLL.Ga, {
+            correct: false,
+            aufs: [AUF.U, AUF.none],
+            algorithmDrillerExplanationPageCallback: () =>
+              pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
+          });
+        }
+      );
     });
   });
 

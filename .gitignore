@@ -11,6 +11,8 @@ main.min.js
 .temp_command_output
 # Cypress screenshots
 end-to-end-tests/cypress/screenshots
+# Cypress downloads
+end-to-end-tests/cypress/downloads
 # Our built code
 build
 # Local development feature flags
