@@ -54,8 +54,8 @@ export function assertCubeMatchesAlias<
   Aliases extends Record<string, unknown>,
   Key extends keyof Aliases
 >(alias: Key, element: Element): void {
-  element.getStringRepresentationOfCube().should((actualCubeString) => {
-    cy.getSingleAlias<Aliases, Key>(alias).then((wronglyTypedArg) => {
+  element.getStringRepresentationOfCube().then((actualCubeString) => {
+    cy.getSingleAlias<Aliases, Key>(alias).should((wronglyTypedArg) => {
       if (typeof wronglyTypedArg !== "string") {
         throw new Error("Alias was not a string. Alias name was " + alias);
       }

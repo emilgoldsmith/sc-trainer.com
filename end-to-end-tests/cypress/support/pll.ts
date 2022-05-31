@@ -13,6 +13,7 @@ export enum PLL {
   Jb,
   Ua,
   Ga,
+  Gb,
   Gc,
   V,
   Z,
@@ -33,31 +34,25 @@ export const pllToPllLetters: { [key in PLL]: string } = {
   [PLL.Jb]: "Jb",
   [PLL.Ua]: "Ua",
   [PLL.Ga]: "Ga",
+  [PLL.Gb]: "Gb",
   [PLL.Gc]: "Gc",
   [PLL.V]: "V",
   [PLL.Z]: "Z",
 };
 
+// All these algorithms are verified to have the same AUFs as
+// the ones the app use through a test in support-tests
 export const pllToAlgorithmString: { [key in PLL]: string } = {
-  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_a
   [PLL.Aa]: "(x) R' U R' D2 R U' R' D2 R2 (x')",
-  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#A_Permutation_:_b
   [PLL.Ab]: "(x) R D' R U2 R' D R U2 R2 (x')",
-  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#E_Permutation
-  [PLL.E]: "(y x') (R U' R' D) (R U R' D') (R U R' D) (R U' R' D') (x)",
-  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#H_Permutation
+  [PLL.E]: "D R' D2 F' D L D' F D2 R D' F' L' F",
   [PLL.H]: "M2' U M2' U2 M2' U M2'",
-  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#J_Permutation_:_b
-  [PLL.Jb]: "(y2) R' U L U' R U2' L' U L U2 L'",
-  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#U_Permutation_:_a
-  [PLL.Ua]: "R2 U' R' U' R U R U R U' R",
-  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#G_Permutation_:_a
-  [PLL.Ga]: "(y) R2 U (R' U R' U') R U' R2 (D U' R' U) R D'",
-  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#G_Permutation_:_c
-  [PLL.Gc]: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
-  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#V_Permutation
-  [PLL.V]: "(y) R U' R U R' D R D' R U' D R2 U R2 D' R2",
-  // Taken from https://www.speedsolving.com/wiki/index.php/PLL#Z_Permutation
+  [PLL.Jb]: "B2 (L U L') B2 (R D' R D) R2",
+  [PLL.Ua]: "F2 U' (L R') F2 (L' R) U' F2",
+  [PLL.Ga]: "F2' D (R' U R' U' R) D' F2 L' U L",
+  [PLL.Gb]: "R' U' R B2 D (L' U L U' L) D' B2",
+  [PLL.Gc]: "R2' D' F U' F U F' D R2 B U' B'",
+  [PLL.V]: "R' U R' U' B' R' B2 U' B' U B' R B R",
   [PLL.Z]: "M2 U2 M U' M2 U' M2 U' M",
 };
 
