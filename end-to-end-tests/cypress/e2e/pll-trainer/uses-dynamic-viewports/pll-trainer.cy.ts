@@ -6,7 +6,7 @@ import {
   getReadyWaitTime,
   pllTrainerElements,
   pllTrainerStatesNewUser,
-} from "../state-and-elements.helper";
+} from "../state-and-elements";
 
 forceReloadAndNavigateIfDotOnlyIsUsed();
 

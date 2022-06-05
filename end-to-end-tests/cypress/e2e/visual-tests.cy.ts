@@ -9,7 +9,7 @@ import {
   pllTrainerElements,
   pllTrainerStatesNewUser,
   pllTrainerStatesUserDone,
-} from "./pll-trainer/state-and-elements.helper";
+} from "./pll-trainer/state-and-elements";
 
 describe("Visual Tests", function () {
   beforeEach(function () {

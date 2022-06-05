@@ -6,7 +6,7 @@ import {
   pllTrainerStatesNewUser,
   completePLLTestInMilliseconds,
   getReadyWaitTime,
-} from "./state-and-elements.helper";
+} from "./state-and-elements";
 import { Element } from "support/elements";
 import { paths } from "support/paths";
 import { applyDefaultIntercepts } from "support/interceptors";
