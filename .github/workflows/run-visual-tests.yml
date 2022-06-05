@@ -155,4 +155,4 @@ jobs:
           ./node_modules/.bin/cypress run
           --browser chrome
           --config "viewportWidth=${{ matrix.sizes.width }},viewportHeight=${{ matrix.sizes.height }},baseUrl=http://sctrainer-server:${{ env.PORT }}"
-          --spec cypress/tests/visual-tests.ts
+          --spec cypress/e2e/visual-tests.cy.ts
