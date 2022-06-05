@@ -704,12 +704,12 @@ const percySnapshotWithProperName: Cypress.Chainable<undefined>["percySnapshotWi
   const properName = `${name}-${width}`;
 
   if (options?.ensureFullHeightIsCaptured) {
-    getTopAndBottomElements().then(({ positions }) =>
+    getTopAndBottomElements().then(({ positions }) => {
       cy.percySnapshot(properName, {
-        ...options,
+        ...Cypress._.omit(options, "ensureFullHeightIsCaptured"),
         minHeight: positions.bottom,
-      })
-    );
+      });
+    });
   } else {
     cy.percySnapshot(properName, options);
   }
