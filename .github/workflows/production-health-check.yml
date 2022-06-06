@@ -56,7 +56,7 @@ jobs:
         run: >
           ./node_modules/.bin/cypress run
           --browser chrome
-          --config "baseUrl=https://www.sc-trainer.com,integrationFolder=cypress/smoke-tests"
+          --config "baseUrl=https://www.sc-trainer.com,e2e.specPattern=cypress/smoke-tests"
 
       - name: Upload recorded videos
         uses: actions/upload-artifact@v3
