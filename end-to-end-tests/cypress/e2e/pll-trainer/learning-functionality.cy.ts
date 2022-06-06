@@ -13,7 +13,7 @@ import {
   pllTrainerElements,
   pllTrainerStatesNewUser,
   pllTrainerStatesUserDone,
-} from "./state-and-elements.helper";
+} from "./state-and-elements";
 import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 import { paths } from "support/paths";
 import { Key } from "support/keys";

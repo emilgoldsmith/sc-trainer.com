@@ -89,7 +89,7 @@ const getSingleAlias: Cypress.Chainable<undefined>["getSingleAlias"] = function 
         const value = aliases[alias];
         if (value === undefined) {
           throw new Error(
-            `Alias ${alias} was undefined when fetched with getSingleAlias`
+            `Alias ${alias.toString()} was undefined when fetched with getSingleAlias`
           );
         }
         return value;
@@ -704,12 +704,12 @@ const percySnapshotWithProperName: Cypress.Chainable<undefined>["percySnapshotWi
   const properName = `${name}-${width}`;
 
   if (options?.ensureFullHeightIsCaptured) {
-    getTopAndBottomElements().then(({ positions }) =>
+    getTopAndBottomElements().then(({ positions }) => {
       cy.percySnapshot(properName, {
-        ...options,
+        ...Cypress._.omit(options, "ensureFullHeightIsCaptured"),
         minHeight: positions.bottom,
-      })
-    );
+      });
+    });
   } else {
     cy.percySnapshot(properName, options);
   }

@@ -1,11 +1,11 @@
 {
   "devDependencies": {
-    "@percy/cli": "^1.0.4",
+    "@percy/cli": "^1.2.1",
     "@percy/cypress": "^3.1.1",
     "@sinonjs/fake-timers": "^8.1.0",
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^5.9.1",
-    "cypress": "^9.7.0",
+    "cypress": "^10.0.2",
     "eslint": "7",
     "eslint-config-esnext": "^4.1.0",
     "eslint-config-prettier": "^8.2.0",
@@ -15,6 +15,6 @@
     "eslint-plugin-mocha": "^8.1.0",
     "keycode-js": "^3.1.0",
     "prettier": "^2.2.1",
-    "typescript": "^4.6.4"
+    "typescript": "^4.7.3"
   }
 }

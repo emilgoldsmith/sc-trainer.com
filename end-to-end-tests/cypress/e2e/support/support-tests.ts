@@ -4,7 +4,7 @@ import { PLL, pllToPllLetters } from "support/pll";
 import {
   completePLLTestInMilliseconds,
   pllTrainerElements,
-} from "tests/pll-trainer/state-and-elements.helper";
+} from "e2e/pll-trainer/state-and-elements";
 
 // Taken from https://www.petermorlion.com/iterating-a-typescript-enum/
 function enumKeys<

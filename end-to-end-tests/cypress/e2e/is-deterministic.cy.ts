@@ -2,7 +2,7 @@ import { applyDefaultIntercepts } from "support/interceptors";
 import {
   pllTrainerElements,
   pllTrainerStatesUserDone,
-} from "./pll-trainer/state-and-elements.helper";
+} from "./pll-trainer/state-and-elements";
 
 type Aliases = { first: string; second: string; third: string };
 describe("randomness", function () {

@@ -1,6 +1,6 @@
 import { interceptHtml, removeAnalyticsScripts } from "support/interceptors";
 import { paths } from "support/paths";
-import { pllTrainerElements } from "tests/pll-trainer/state-and-elements.helper";
+import { pllTrainerElements } from "e2e/pll-trainer/state-and-elements";
 
 describe("Main Smoke Test", function () {
   it("fetches the index without an error and displays the start page of the pll trainer", function () {
