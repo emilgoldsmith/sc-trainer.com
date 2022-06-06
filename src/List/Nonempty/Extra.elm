@@ -1,6 +1,12 @@
-module List.Nonempty.Extra exposing (lift2, lift3)
+module List.Nonempty.Extra exposing (find, lift2, lift3)
 
+import List.Extra
 import List.Nonempty
+
+
+find : (a -> Bool) -> List.Nonempty.Nonempty a -> Maybe a
+find fn list =
+    List.Extra.find fn (List.Nonempty.toList list)
 
 
 lift2 :

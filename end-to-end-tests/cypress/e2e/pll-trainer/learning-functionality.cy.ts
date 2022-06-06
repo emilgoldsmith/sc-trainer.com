@@ -19,7 +19,7 @@ import { paths } from "support/paths";
 import { Key } from "support/keys";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
 import { Element } from "support/elements";
-import { assertCubeMatchesAlias } from "support/assertions";
+import { assertCubeIsDifferentFromAlias } from "support/assertions";
 
 forceReloadAndNavigateIfDotOnlyIsUsed();
 
@@ -1102,7 +1102,7 @@ describe("PLL Trainer - Learning Functionality", function () {
             });
         },
         testRunningCallback: () =>
-          assertCubeMatchesAlias<Aliases, "drillCube">(
+          assertCubeIsDifferentFromAlias<Aliases, "drillCube">(
             "drillCube",
             pllTrainerElements.testRunning.testCase
           ),
