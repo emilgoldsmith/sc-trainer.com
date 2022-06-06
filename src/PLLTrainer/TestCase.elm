@@ -109,7 +109,7 @@ buildConstantGenerator user testCase =
         AlreadyAttempted (Random.constant testCase)
 
 
-shouldGenerateNewCase : User -> Bool
+shouldGenerateNewCase : User -> Maybe TestCase
 shouldGenerateNewCase user =
     let
         allTestCases =
@@ -119,12 +119,7 @@ shouldGenerateNewCase user =
                 AUF.all
     in
     allTestCases
-        |> List.Nonempty.any (\testCase -> User.pllTestCaseIsNewForUser (toTriple testCase) user)
-
-
-buildNewCaseGenerator : User -> Generator
-buildNewCaseGenerator user =
-    buildConstantGenerator user (TestCase ( AUF.Clockwise, PLL.Aa, AUF.Clockwise ))
+        |> List.Nonempty.Extra.find (\testCase -> User.pllTestCaseIsNewForUser (toTriple testCase) user)
 
 
 generate : { now : Time.Posix, overrideWithConstantValue : Maybe TestCase } -> User -> Generator
@@ -134,22 +129,23 @@ generate { now, overrideWithConstantValue } user =
             buildConstantGenerator user testCaseOverride
 
         Nothing ->
-            if shouldGenerateNewCase user then
-                buildNewCaseGenerator user
+            case shouldGenerateNewCase user of
+                Just newCase ->
+                    buildConstantGenerator user newCase
 
-            else
-                let
-                    { pllGenerator, generatorType } =
-                        generatePLL { now = now } user
+                Nothing ->
+                    let
+                        { pllGenerator, generatorType } =
+                            generatePLL { now = now } user
 
-                    testCaseGenerator =
-                        Random.map TestCase <|
-                            Random.map3 (\a b c -> ( a, b, c ))
-                                (List.Nonempty.sample AUF.all)
-                                pllGenerator
-                                (List.Nonempty.sample AUF.all)
-                in
-                replaceInternalGenerator testCaseGenerator generatorType
+                        testCaseGenerator =
+                            Random.map TestCase <|
+                                Random.map3 (\a b c -> ( a, b, c ))
+                                    (List.Nonempty.sample AUF.all)
+                                    pllGenerator
+                                    (List.Nonempty.sample AUF.all)
+                    in
+                    replaceInternalGenerator testCaseGenerator generatorType
 
 
 generatePLL :

@@ -65,7 +65,10 @@ view palette hardwareAvailable transitions =
                     , paragraph []
                         [ text "A new case can either be an entirely new PLL, a new recognition angle of a known PLL, or a new AUF for a known PLL. You should "
                         , el [ Font.bold ] <| text "pay extra attention for this next case"
-                        , text ", as it will be used to determine how well you know it from before. Don't worry if you make a mistake though, the app will figure out that you have learned the case in time as you keep proving it."
+                        , text ", as it will be used to determine how well you know it from before. Don't worry if you make a mistake though, the app will figure out that you have learned the case when it is tested again later."
+                        ]
+                    , paragraph []
+                        [ text "If you're curious, the reason we even include the AUF at the end of a PLL as a new case, is because we want to incentivize thinking about and practicing how to finger trick each AUF. A bad final AUF can have a surprisingly big impact on your final time."
                         ]
                     ]
                 , PLLTrainer.ButtonWithShortcut.view

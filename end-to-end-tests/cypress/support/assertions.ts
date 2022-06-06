@@ -54,19 +54,43 @@ export function assertCubeMatchesAlias<
   Aliases extends Record<string, unknown>,
   Key extends keyof Aliases
 >(alias: Key, element: Element): void {
-  element.getStringRepresentationOfCube().then((actualCubeString) => {
-    cy.getSingleAlias<Aliases, Key>(alias).should((wronglyTypedArg) => {
-      if (typeof wronglyTypedArg !== "string") {
-        throw new Error("Alias was not a string. Alias name was " + alias);
-      }
-      const expectedCubeString: string = wronglyTypedArg;
-      assertNonFalsyStringsEqual(
-        actualCubeString,
-        expectedCubeString,
-        "cube string (first) should equal " +
-          alias +
-          " (second) string representation"
-      );
+  return buildCubeAndAliasMatcher<Aliases, Key>(assertNonFalsyStringsEqual)(
+    alias,
+    element
+  );
+}
+
+export function assertCubeIsDifferentFromAlias<
+  Aliases extends Record<string, unknown>,
+  Key extends keyof Aliases
+>(alias: Key, element: Element): void {
+  return buildCubeAndAliasMatcher<Aliases, Key>(assertNonFalsyStringsDifferent)(
+    alias,
+    element
+  );
+}
+
+function buildCubeAndAliasMatcher<
+  Aliases extends Record<string, unknown>,
+  Key extends keyof Aliases
+>(
+  matcher: typeof assertNonFalsyStringsDifferent
+): (alias: Key, element: Element) => void {
+  return function (alias, element) {
+    element.getStringRepresentationOfCube().then((actualCubeString) => {
+      cy.getSingleAlias<Aliases, Key>(alias).should((wronglyTypedArg) => {
+        if (typeof wronglyTypedArg !== "string") {
+          throw new Error("Alias was not a string. Alias name was " + alias);
+        }
+        const expectedCubeString: string = wronglyTypedArg;
+        matcher(
+          actualCubeString,
+          expectedCubeString,
+          "cube string (first) should equal " +
+            alias +
+            " (second) string representation"
+        );
+      });
     });
-  });
+  };
 }
