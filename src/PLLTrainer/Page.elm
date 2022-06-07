@@ -183,7 +183,7 @@ type StateMsg
 type InternalMsg
     = TESTONLYSetTestCase (Result Json.Decode.Error TestCase)
     | TESTONLYOverrideNextTestCase (Result Json.Decode.Error TestCase)
-    | TESTONLYSetExtraAlgToApplyToAllCubes (Result Algorithm.FromStringError Algorithm)
+    | TESTONLYOverrideCubeDisplayAngle (Maybe Cube.DisplayAngle)
     | TESTONLYSetCubeSizeOverride (Maybe Int)
 
 
@@ -544,25 +544,8 @@ update shared msg model =
                             )
                     )
 
-                TESTONLYSetExtraAlgToApplyToAllCubes (Ok algorithm) ->
-                    ( model, Effect.fromShared (Shared.TESTONLYSetExtraAlgToApplyToAllCubes algorithm) )
-
-                TESTONLYSetExtraAlgToApplyToAllCubes (Err error) ->
-                    case error of
-                        Algorithm.EmptyAlgorithm ->
-                            ( model
-                            , Effect.fromShared
-                                (Shared.TESTONLYSetExtraAlgToApplyToAllCubes Algorithm.empty)
-                            )
-
-                        _ ->
-                            ( model
-                            , Effect.fromCmd <|
-                                Ports.logError
-                                    ("Error in test only set extra alg to apply to all cubes: "
-                                        ++ Algorithm.debugFromStringError error
-                                    )
-                            )
+                TESTONLYOverrideCubeDisplayAngle newDisplayAngle ->
+                    ( model, Effect.fromShared (Shared.TESTONLYOverrideDisplayAngle newDisplayAngle) )
 
                 TESTONLYSetCubeSizeOverride size ->
                     ( model, Effect.fromShared (Shared.TESTONLYSetCubeSizeOverride size) )
@@ -735,7 +718,7 @@ subscriptions shared model =
             |> PLLTrainer.Subscription.getSub
         , Ports.onTESTONLYSetTestCase (InternalMsg << TESTONLYSetTestCase)
         , Ports.onTESTONLYOverrideNextTestCase (InternalMsg << TESTONLYOverrideNextTestCase)
-        , Ports.onTESTONLYSetExtraAlgToApplyToAllCubes (InternalMsg << TESTONLYSetExtraAlgToApplyToAllCubes)
+        , Ports.onTESTONLYOverrideCubeDisplayAngle (InternalMsg << TESTONLYOverrideCubeDisplayAngle)
         , Ports.onTESTONLYSetCubeSizeOverride (InternalMsg << TESTONLYSetCubeSizeOverride)
         ]
 

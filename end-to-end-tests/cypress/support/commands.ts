@@ -786,21 +786,20 @@ const overrideNextTestCase: Cypress.Chainable<undefined>["overrideNextTestCase"]
 };
 Cypress.Commands.add("overrideNextTestCase", overrideNextTestCase);
 
-const setExtraAlgToApplyToAllCubes: Cypress.Chainable<undefined>["setExtraAlgToApplyToAllCubes"] = function (
-  alg
+const overrideCubeDisplayAngle: Cypress.Chainable<undefined>["overrideCubeDisplayAngle"] = function (
+  displayAngle
 ) {
   cy.withOverallNameLogged(
-    { displayName: "SET EXTRA ALG", message: alg },
+    { displayName: "OVERRIDE CUBE DISPLAY ANGLE", message: displayAngle },
     () => {
       cy.getCustomWindow({ log: false }).then((window) => {
         const ports = window.END_TO_END_TEST_HELPERS.getPorts();
-        const setExtraAlgToApplyToAllCubesPort =
-          ports.setExtraAlgToApplyToAllCubesPort;
-        if (!setExtraAlgToApplyToAllCubesPort)
+        const overrideCubeDisplayAnglePort = ports.overrideCubeDisplayAnglePort;
+        if (!overrideCubeDisplayAnglePort)
           throw new Error(
-            "setExtraAlgToApplyToAllCubes port is not exposed for some reason"
+            "overrideCubeDisplayAngle port is not exposed for some reason"
           );
-        setExtraAlgToApplyToAllCubesPort.send(alg);
+        overrideCubeDisplayAnglePort.send(displayAngle);
       });
       // Release control of the thread to let the render loop do it's thing
       // eslint-disable-next-line cypress/no-unnecessary-waiting
@@ -814,10 +813,7 @@ const setExtraAlgToApplyToAllCubes: Cypress.Chainable<undefined>["setExtraAlgToA
     }
   );
 };
-Cypress.Commands.add(
-  "setExtraAlgToApplyToAllCubes",
-  setExtraAlgToApplyToAllCubes
-);
+Cypress.Commands.add("overrideCubeDisplayAngle", overrideCubeDisplayAngle);
 
 const setCubeSizeOverride: Cypress.Chainable<undefined>["setCubeSizeOverride"] = function (
   size

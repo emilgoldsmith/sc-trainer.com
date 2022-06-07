@@ -1,7 +1,8 @@
-port module Ports exposing (logError, onTESTONLYOverrideNextTestCase, onTESTONLYSetCubeSizeOverride, onTESTONLYSetExtraAlgToApplyToAllCubes, onTESTONLYSetTestCase, updateStoredUser)
+port module Ports exposing (logError, onTESTONLYOverrideCubeDisplayAngle, onTESTONLYOverrideNextTestCase, onTESTONLYSetCubeSizeOverride, onTESTONLYSetTestCase, updateStoredUser)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
+import Cube
 import Json.Decode
 import Json.Encode
 import List.Extra
@@ -34,12 +35,28 @@ port logError : String -> Cmd msg
 -- TEST ONLY PORTS
 
 
-port setExtraAlgToApplyToAllCubesPort : (String -> msg) -> Sub msg
+port overrideCubeDisplayAnglePort : (Maybe String -> msg) -> Sub msg
 
 
-onTESTONLYSetExtraAlgToApplyToAllCubes : (Result Algorithm.FromStringError Algorithm -> msg) -> Sub msg
-onTESTONLYSetExtraAlgToApplyToAllCubes toMsg =
-    setExtraAlgToApplyToAllCubesPort (Algorithm.fromString >> toMsg)
+onTESTONLYOverrideCubeDisplayAngle : (Maybe Cube.DisplayAngle -> msg) -> Sub msg
+onTESTONLYOverrideCubeDisplayAngle toMsg =
+    overrideCubeDisplayAnglePort (parseDisplayAngle >> toMsg)
+
+
+parseDisplayAngle : Maybe String -> Maybe Cube.DisplayAngle
+parseDisplayAngle string =
+    case Maybe.map String.toLower string of
+        Just "ufr" ->
+            Just Cube.ufrDisplayAngle
+
+        Just "ubl" ->
+            Just Cube.ublDisplayAngle
+
+        Just "dbl" ->
+            Just Cube.dblDisplayAngle
+
+        _ ->
+            Nothing
 
 
 port setCubeSizeOverridePort : (Maybe Int -> msg) -> Sub msg
