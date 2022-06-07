@@ -433,6 +433,7 @@ update shared msg model =
                     ( { model
                         | trainerState = AlgorithmDrillerStatusPage
                         , maybeDrillerState = Just { correctAttemptsLeft = correctAttemptsRequiredForDriller }
+                        , expectedCubeState = Cube.solved
                       }
                     , Effect.none
                     )

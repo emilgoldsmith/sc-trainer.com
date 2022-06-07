@@ -1,7 +1,6 @@
 port module Ports exposing (logError, onTESTONLYOverrideCubeDisplayAngle, onTESTONLYOverrideNextTestCase, onTESTONLYSetCubeSizeOverride, onTESTONLYSetTestCase, updateStoredUser)
 
 import AUF exposing (AUF)
-import Algorithm exposing (Algorithm)
 import Cube
 import Json.Decode
 import Json.Encode

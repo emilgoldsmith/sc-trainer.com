@@ -1,6 +1,5 @@
 module ViewCube exposing (view)
 
-import Algorithm
 import Css exposing (htmlCubeTestType)
 import Cube
 import Cube.Advanced

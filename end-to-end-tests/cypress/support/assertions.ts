@@ -80,14 +80,16 @@ function buildCubeAndAliasMatcher<
     element.getStringRepresentationOfCube().then((actualCubeString) => {
       cy.getSingleAlias<Aliases, Key>(alias).should((wronglyTypedArg) => {
         if (typeof wronglyTypedArg !== "string") {
-          throw new Error("Alias was not a string. Alias name was " + alias);
+          throw new Error(
+            "Alias was not a string. Alias name was " + alias.toString()
+          );
         }
         const expectedCubeString: string = wronglyTypedArg;
         matcher(
           actualCubeString,
           expectedCubeString,
           "cube string (first) should equal " +
-            alias +
+            alias.toString() +
             " (second) string representation"
         );
       });
