@@ -19,7 +19,10 @@ import { paths } from "support/paths";
 import { Key } from "support/keys";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
 import { Element } from "support/elements";
-import { assertCubeIsDifferentFromAlias } from "support/assertions";
+import {
+  assertCubeIsDifferentFromAlias,
+  assertCubeMatchesAlias,
+} from "support/assertions";
 
 forceReloadAndNavigateIfDotOnlyIsUsed();
 
@@ -847,9 +850,25 @@ describe("PLL Trainer - Learning Functionality", function () {
     });
 
     it("looks right", function () {
-      elements.assertAllConsumableViaVerticalScroll(
-        elements.container.specifier
-      );
+      cy.clearLocalStorage();
+      type Aliases = { testCaseCube: string };
+      completePLLTestInMilliseconds(1000, PLL.Jb, {
+        correct: false,
+        aufs: [],
+        testRunningCallback: () =>
+          pllTrainerElements.testRunning.testCase
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "testCaseCube">("testCaseCube"),
+        algorithmDrillerExplanationPageCallback: () => {
+          elements.assertAllConsumableViaVerticalScroll(
+            elements.container.specifier
+          );
+          assertCubeMatchesAlias<Aliases, "testCaseCube">(
+            "testCaseCube",
+            elements.caseToDrill
+          );
+        },
+      });
     });
 
     it("sizes elements correctly", function () {
@@ -1119,6 +1138,80 @@ describe("PLL Trainer - Learning Functionality", function () {
               .setAlias<Aliases, "drillCube">("drillCube"),
         });
       }
+    });
+
+    it("displays the cubes correctly", function () {
+      type Aliases = {
+        evaluateResultFront: string;
+        evaluateResultBack: string;
+        solvedFront: string;
+        solvedBack: string;
+      };
+      cy.clearLocalStorage();
+      cy.withOverallNameLogged(
+        {
+          message:
+            "ensure it starts off solved even if expected cube state before drill was not solved",
+        },
+        () => {
+          completePLLTestInMilliseconds(10000, PLL.Gb, {
+            correct: true,
+            aufs: [],
+            startPageCallback: () => {
+              pllTrainerElements.newUserStartPage.cubeStartState
+                .getStringRepresentationOfCube()
+                .setAlias<Aliases, "solvedFront">("solvedFront");
+              cy.overrideCubeDisplayAngle("ubl");
+              pllTrainerElements.newUserStartPage.cubeStartState
+                .getStringRepresentationOfCube()
+                .setAlias<Aliases, "solvedBack">("solvedBack");
+              cy.overrideCubeDisplayAngle(null);
+            },
+            algorithmDrillerStatusPageCallback: () => {
+              assertCubeMatchesAlias<Aliases, "solvedFront">(
+                "solvedFront",
+                elements.expectedCubeStateFront
+              );
+              assertCubeMatchesAlias<Aliases, "solvedBack">(
+                "solvedBack",
+                elements.expectedCubeStateBack
+              );
+            },
+          });
+        }
+      );
+      cy.withOverallNameLogged(
+        {
+          message:
+            "should show expected cube state as it changes after a drill test attempt",
+        },
+        () => {
+          fromGetReadyForTestThroughEvaluateResult({
+            correct: true,
+            milliseconds: 500,
+            navigateToGetReadyState: () =>
+              elements.nextTestButton.get().click(),
+            evaluateResultCallback: () => {
+              pllTrainerElements.evaluateResult.expectedCubeFront
+                .getStringRepresentationOfCube()
+                .setAlias<Aliases, "evaluateResultFront">(
+                  "evaluateResultFront"
+                );
+              pllTrainerElements.evaluateResult.expectedCubeBack
+                .getStringRepresentationOfCube()
+                .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
+            },
+          });
+          assertCubeMatchesAlias<Aliases, "evaluateResultFront">(
+            "evaluateResultFront",
+            elements.expectedCubeStateFront
+          );
+          assertCubeMatchesAlias<Aliases, "evaluateResultBack">(
+            "evaluateResultBack",
+            elements.expectedCubeStateBack
+          );
+        }
+      );
     });
   });
 

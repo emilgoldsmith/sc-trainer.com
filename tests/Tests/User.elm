@@ -293,6 +293,28 @@ serializationTests =
             --                                             }
             --                                         )
             --                                     )
+            --                                 |> Result.andThen
+            --                                     (User.recordPLLTestResult
+            --                                         pll
+            --                                         (User.Correct
+            --                                             { timestamp = Time.millisToPosix 123456
+            --                                             , preAUF = AUF.Clockwise
+            --                                             , postAUF = AUF.Halfway
+            --                                             , resultInMilliseconds = 3736
+            --                                             }
+            --                                         )
+            --                                     )
+            --                                 |> Result.andThen
+            --                                     (User.recordPLLTestResult
+            --                                         pll
+            --                                         (User.Correct
+            --                                             { timestamp = Time.millisToPosix 123456
+            --                                             , preAUF = AUF.CounterClockwise
+            --                                             , postAUF = AUF.None
+            --                                             , resultInMilliseconds = 2009
+            --                                             }
+            --                                         )
+            --                                     )
             --                                 |> Result.withDefault withAlgorithmsChosen
             --                         )
             --                         User.new

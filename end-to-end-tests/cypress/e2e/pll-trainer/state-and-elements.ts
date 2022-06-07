@@ -623,16 +623,23 @@ export function completePLLTestInMilliseconds(
     startPageCallback?: () => void;
     newCasePageCallback?: () => void;
     testRunningCallback?: () => void;
+    evaluateResultCallback?: () => void;
   } & (
-    | { correct: true; algorithmDrillerExplanationPageCallback?: () => void }
+    | {
+        correct: true;
+        algorithmDrillerExplanationPageCallback?: () => void;
+        algorithmDrillerStatusPageCallback?: () => void;
+      }
     | ({ correct: false } & (
         | {
             wrongPageCallback?: () => void;
             algorithmDrillerExplanationPageCallback?: never;
+            algorithmDrillerStatusPageCallback?: never;
           }
         | {
             wrongPageCallback?: never;
             algorithmDrillerExplanationPageCallback?: () => void;
+            algorithmDrillerStatusPageCallback?: () => void;
           }
       ))
   )
@@ -644,6 +651,7 @@ export function completePLLTestInMilliseconds(
     startPageCallback,
     newCasePageCallback,
     testRunningCallback,
+    evaluateResultCallback,
   } = params;
   const [preAUF, postAUF] = [aufs[0] ?? AUF.none, aufs[1] ?? AUF.none];
   const testCase = [preAUF, pll, postAUF] as const;
@@ -680,6 +688,7 @@ export function completePLLTestInMilliseconds(
       });
     },
     ...(testRunningCallback === undefined ? {} : { testRunningCallback }),
+    ...(evaluateResultCallback === undefined ? {} : { evaluateResultCallback }),
   });
   pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
     if (stateValue === stateAttributeValues.pickAlgorithmPage) {
@@ -695,6 +704,12 @@ export function completePLLTestInMilliseconds(
   } else {
     params.wrongPageCallback?.();
   }
+  if ("algorithmDrillerStatusPageCallback" in params) {
+    pllTrainerElements.algorithmDrillerExplanationPage.continueButton
+      .get()
+      .click();
+    params.algorithmDrillerStatusPageCallback?.();
+  }
 }
 
 export function fromGetReadyForTestThroughEvaluateResult({
@@ -702,11 +717,13 @@ export function fromGetReadyForTestThroughEvaluateResult({
   correct,
   navigateToGetReadyState,
   testRunningCallback,
+  evaluateResultCallback,
 }: {
   milliseconds: number;
   correct: boolean;
   navigateToGetReadyState: () => void;
   testRunningCallback?: () => void;
+  evaluateResultCallback?: () => void;
 }): void {
   const { stateAttributeValues } = pllTrainerElements.root;
 
@@ -722,6 +739,7 @@ export function fromGetReadyForTestThroughEvaluateResult({
   pllTrainerElements.evaluateResult.container.waitFor();
   cy.tick(500);
   cy.clock().then((clock) => clock.restore());
+  evaluateResultCallback?.();
   if (correct) {
     pllTrainerElements.evaluateResult.correctButton.get().click();
     pllTrainerElements.root.waitForStateChangeAwayFrom(
