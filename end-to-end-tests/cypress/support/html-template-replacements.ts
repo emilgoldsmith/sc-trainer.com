@@ -12,7 +12,7 @@ export function handleHtmlCypressModifications(html: {
       value:
         JSON.stringify({
           useDebugViewForVisualTesting: true,
-          extraAlgToApplyToAllCubes: "",
+          displayAngleOverride: null,
           sizeOverride: null,
         }) + ",",
     },

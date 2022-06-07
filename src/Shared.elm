@@ -6,7 +6,7 @@ module Shared exposing
     , Msg
     , PublicMsg(..)
     , buildSharedMessage
-    , getExtraAlgToApplyToAllCubes
+    , getDisplayAngleOverride
     , getSizeOverride
     , init
     , shouldUseDebugViewForVisualTesting
@@ -14,8 +14,8 @@ module Shared exposing
     , update
     )
 
-import Algorithm exposing (Algorithm)
 import Browser.Events as Events
+import Cube
 import Json.Decode
 import Key
 import Ports
@@ -36,7 +36,7 @@ type alias Flags =
     , storedUser : Json.Decode.Value
     , cubeViewOptions :
         { useDebugViewForVisualTesting : Bool
-        , extraAlgToApplyToAllCubes : String
+        , displayAngleOverride : Maybe String
         , sizeOverride : Maybe Int
         }
     }
@@ -49,7 +49,7 @@ type alias FeatureFlags =
 type CubeViewOptions
     = CubeViewOptions
         { useDebugViewForVisualTesting : Bool
-        , extraAlgToApplyToAllCubes : Algorithm
+        , displayAngleOverride : Maybe Cube.DisplayAngle
         , sizeOverride : Maybe Int
         }
 
@@ -59,9 +59,9 @@ shouldUseDebugViewForVisualTesting (CubeViewOptions { useDebugViewForVisualTesti
     useDebugViewForVisualTesting
 
 
-getExtraAlgToApplyToAllCubes : CubeViewOptions -> Algorithm
-getExtraAlgToApplyToAllCubes (CubeViewOptions { extraAlgToApplyToAllCubes }) =
-    extraAlgToApplyToAllCubes
+getDisplayAngleOverride : CubeViewOptions -> Maybe Cube.DisplayAngle
+getDisplayAngleOverride (CubeViewOptions { displayAngleOverride }) =
+    displayAngleOverride
 
 
 getSizeOverride : CubeViewOptions -> Maybe Int
@@ -89,18 +89,24 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser, cubeViewO
         builtViewportSize =
             ViewportSize.build viewportSize
 
-        ( extraAlgToApplyToAllCubes, cmd ) =
-            case Algorithm.fromString cubeViewOptions.extraAlgToApplyToAllCubes of
-                Ok alg ->
-                    ( alg, Cmd.none )
+        ( displayAngleOverride, cmd ) =
+            case Maybe.map String.toLower cubeViewOptions.displayAngleOverride of
+                Nothing ->
+                    ( Nothing, Cmd.none )
 
-                Err Algorithm.EmptyAlgorithm ->
-                    ( Algorithm.empty, Cmd.none )
+                Just "ufr" ->
+                    ( Just Cube.ufrDisplayAngle, Cmd.none )
 
-                Err error ->
-                    ( Algorithm.empty
+                Just "ubl" ->
+                    ( Just Cube.ublDisplayAngle, Cmd.none )
+
+                Just "dbl" ->
+                    ( Just Cube.dblDisplayAngle, Cmd.none )
+
+                Just displayAngleString ->
+                    ( Nothing
                     , Ports.logError
-                        ("There was an error with the extra alg to apply to all cubes flag: " ++ Algorithm.debugFromStringError error)
+                        ("unsupported display angle in displayAngleOverride flag: " ++ displayAngleString)
                     )
     in
     ( { viewportSize = builtViewportSize
@@ -120,7 +126,7 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser, cubeViewO
       , cubeViewOptions =
             CubeViewOptions
                 { useDebugViewForVisualTesting = cubeViewOptions.useDebugViewForVisualTesting
-                , extraAlgToApplyToAllCubes = extraAlgToApplyToAllCubes
+                , displayAngleOverride = displayAngleOverride
                 , sizeOverride = cubeViewOptions.sizeOverride
                 }
       }
@@ -188,7 +194,7 @@ type InternalMsg
 
 type PublicMsg
     = ModifyUser (User -> ( User, Maybe { errorMessage : String } ))
-    | TESTONLYSetExtraAlgToApplyToAllCubes Algorithm
+    | TESTONLYOverrideDisplayAngle (Maybe Cube.DisplayAngle)
     | TESTONLYSetCubeSizeOverride (Maybe Int)
 
 
@@ -235,7 +241,7 @@ update _ msg model =
                                 )
                            )
 
-                TESTONLYSetExtraAlgToApplyToAllCubes algorithm ->
+                TESTONLYOverrideDisplayAngle newDisplayAngle ->
                     let
                         (CubeViewOptions cubeViewOptionsRecord) =
                             model.cubeViewOptions
@@ -243,7 +249,7 @@ update _ msg model =
                         newCubeViewOptions =
                             CubeViewOptions
                                 { cubeViewOptionsRecord
-                                    | extraAlgToApplyToAllCubes = algorithm
+                                    | displayAngleOverride = newDisplayAngle
                                 }
                     in
                     ( { model | cubeViewOptions = newCubeViewOptions }, Cmd.none )

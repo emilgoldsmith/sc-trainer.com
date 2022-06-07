@@ -2079,11 +2079,11 @@ describe("PLL Trainer - Basic Functionality", function () {
       pllTrainerElements.newUserStartPage.cubeStartState
         .getStringRepresentationOfCube()
         .setAlias<Aliases, "solvedFront">("solvedFront");
-      cy.setExtraAlgToApplyToAllCubes("y2");
+      cy.overrideCubeDisplayAngle("ubl");
       pllTrainerElements.newUserStartPage.cubeStartState
         .getStringRepresentationOfCube()
         .setAlias<Aliases, "solvedBack">("solvedBack");
-      cy.setExtraAlgToApplyToAllCubes("");
+      cy.overrideCubeDisplayAngle(null);
 
       pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
 
@@ -2108,11 +2108,11 @@ describe("PLL Trainer - Basic Functionality", function () {
       pllTrainerElements.newUserStartPage.cubeStartState
         .getStringRepresentationOfCube()
         .setAlias<Aliases, "solvedFront">("solvedFront");
-      cy.setExtraAlgToApplyToAllCubes("y2");
+      cy.overrideCubeDisplayAngle("ubl");
       pllTrainerElements.newUserStartPage.cubeStartState
         .getStringRepresentationOfCube()
         .setAlias<Aliases, "solvedBack">("solvedBack");
-      cy.setExtraAlgToApplyToAllCubes("");
+      cy.overrideCubeDisplayAngle(null);
 
       pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
 
@@ -2162,11 +2162,11 @@ describe("PLL Trainer - Basic Functionality", function () {
       pllTrainerElements.testRunning.testCase
         .getStringRepresentationOfCube()
         .setAlias<Aliases, "testCaseFront">("testCaseFront");
-      cy.setExtraAlgToApplyToAllCubes("y2");
+      cy.overrideCubeDisplayAngle("ubl");
       pllTrainerElements.testRunning.testCase
         .getStringRepresentationOfCube()
         .setAlias<Aliases, "testCaseBack">("testCaseBack");
-      cy.setExtraAlgToApplyToAllCubes("");
+      cy.overrideCubeDisplayAngle(null);
 
       cy.clock();
       cy.mouseClickScreen("center");

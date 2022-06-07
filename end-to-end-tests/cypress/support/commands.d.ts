@@ -289,7 +289,7 @@ declare namespace Cypress {
 
     setLocalStorage(storageState: { [key: string]: any }): void;
 
-    setExtraAlgToApplyToAllCubes(alg: string): void;
+    overrideCubeDisplayAngle(displayAngle: "ufr" | "ubl" | "dbl" | null): void;
 
     setCubeSizeOverride(size: number | null): void;
   }

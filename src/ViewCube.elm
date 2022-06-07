@@ -24,7 +24,7 @@ view :
         }
     -> Cube.Cube
     -> Element.Element msg
-view options attributes notFinalParameters notFinalCube =
+view options attributes notFinalParameters cube =
     let
         viewFn =
             if Shared.shouldUseDebugViewForVisualTesting options then
@@ -33,21 +33,14 @@ view options attributes notFinalParameters notFinalCube =
             else
                 Cube.Advanced.view
 
-        extraAlgToApplyToAllCubes =
-            Shared.getExtraAlgToApplyToAllCubes options
-
-        -- We use this if else statement to ensure it doesn't break the lazy call when
-        -- we aren't adding an extra alg to all cubes
-        finalCube =
-            if extraAlgToApplyToAllCubes /= Algorithm.empty then
-                Cube.applyAlgorithm extraAlgToApplyToAllCubes notFinalCube
-
-            else
-                notFinalCube
+        withDisplayAngleOverride =
+            Shared.getDisplayAngleOverride options
+                |> Maybe.map (\newDisplayAngle -> { notFinalParameters | displayAngle = newDisplayAngle })
+                |> Maybe.withDefault notFinalParameters
 
         finalParameters =
             Shared.getSizeOverride options
-                |> Maybe.map (\newSize -> { notFinalParameters | pixelSize = newSize })
-                |> Maybe.withDefault notFinalParameters
+                |> Maybe.map (\newSize -> { withDisplayAngleOverride | pixelSize = newSize })
+                |> Maybe.withDefault withDisplayAngleOverride
     in
-    Element.html <| viewFn (htmlCubeTestType :: attributes) finalParameters finalCube
+    Element.html <| viewFn (htmlCubeTestType :: attributes) finalParameters cube
