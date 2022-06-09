@@ -270,7 +270,7 @@ jobs:
         run: >
           ./node_modules/.bin/cypress run
           --browser ${{ matrix.platform.browser }}
-          --config "viewportWidth=${{ matrix.sizeRelevant.viewportWidth }},viewportHeight=${{ matrix.sizeRelevant.viewportHeight }},baseUrl=http://sctrainer-server:${{ env.PORT }},e2e.excludeSpecPattern=[\"**/visual-tests.ts\",\"${{ matrix.sizeRelevant.ignoredSpecs }}\"],video=true"
+          --config '{"viewportWidth": ${{ matrix.sizeRelevant.viewportWidth }}, "viewportHeight": ${{ matrix.sizeRelevant.viewportHeight }}, "baseUrl": "http://sctrainer-server:${{ env.PORT }}", "e2e": {"excludeSpecPattern": ["**/visual-tests.cy.ts", ${{ matrix.sizeRelevant.ignoredSpecs }}]}, "video": true}'
 
       - name: Upload recorded videos
         uses: actions/upload-artifact@v3
