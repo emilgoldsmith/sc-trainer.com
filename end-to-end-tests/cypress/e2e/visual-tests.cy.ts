@@ -5,6 +5,7 @@ import {
 import { AUF, PLL } from "support/pll";
 import {
   completePLLTestInMilliseconds,
+  fromGetReadyForTestThroughEvaluateResult,
   getReadyWaitTime,
   pllTrainerElements,
   pllTrainerStatesNewUser,
@@ -45,7 +46,7 @@ describe("Visual Tests", function () {
       cy.tick(getReadyWaitTime);
       pllTrainerElements.evaluateResult.correctButton.get().click();
       pllTrainerElements.correctPage.container.waitFor();
-      cy.percySnapshotWithProperName("PLL Trainer Correct Page");
+      cy.percySnapshotWithProperName("PLL Trainer Correct Page For Old Case");
       pllTrainerElements.correctPage.nextButton.get().click();
       pllTrainerElements.getReadyState.container.waitFor();
       cy.tick(getReadyWaitTime);
@@ -169,7 +170,9 @@ describe("Visual Tests", function () {
       // Just an assurance that our AUFs and cases are displaying correctly.
       cy.clearLocalStorage();
       completePLLTestInMilliseconds(1000, PLL.Ua, {
-        aufs: [],
+        // This is the AUF that matches the other AUF so that there won't be a driller
+        // but actually the wrong page callback
+        aufs: [AUF.UPrime, AUF.none],
         overrideDefaultAlgorithm: "M2 U M' U2 M U M2",
         correct: true,
       });
@@ -182,7 +185,9 @@ describe("Visual Tests", function () {
 
       cy.clearLocalStorage();
       completePLLTestInMilliseconds(1000, PLL.Ua, {
-        aufs: [],
+        // This is the AUF that matches the other AUF so that there won't be a driller
+        // but actually the wrong page callback
+        aufs: [AUF.U2, AUF.U],
         // Use an algorithm that has a different preAUF but same postAUF
         overrideDefaultAlgorithm: "R2 U' S' U2' S U' R2",
         correct: true,
@@ -200,7 +205,9 @@ describe("Visual Tests", function () {
       // Now let's test some postAUFs with the Gc algorithm
       cy.clearLocalStorage();
       completePLLTestInMilliseconds(1000, PLL.Gc, {
-        aufs: [],
+        // This is the AUF that matches the other AUF so that there won't be a driller
+        // but actually the wrong page callback
+        aufs: [AUF.UPrime, AUF.U],
         overrideDefaultAlgorithm: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
         correct: true,
       });
@@ -213,7 +220,9 @@ describe("Visual Tests", function () {
 
       cy.clearLocalStorage();
       completePLLTestInMilliseconds(1000, PLL.Gc, {
-        aufs: [],
+        // This is the AUF that matches the other AUF so that there won't be a driller
+        // but actually the wrong page callback
+        aufs: [AUF.UPrime, AUF.none],
         // Use an algorithm that has same preAUF but different postAUF
         overrideDefaultAlgorithm: "(y) R2' u' (R U' R U R') u R2 (y) R U' R'",
         correct: true,
@@ -227,6 +236,53 @@ describe("Visual Tests", function () {
             "U' [Gc] U' equivalent with Emil's main algorithm"
           ),
       });
+
+      cy.clearLocalStorage();
+      completePLLTestInMilliseconds(500, PLL.Gc, {
+        aufs: [],
+        correct: true,
+        correctPageCallback: () =>
+          cy.percySnapshotWithProperName("Correct Page For New Case"),
+      });
+
+      cy.clearLocalStorage();
+      completePLLTestInMilliseconds(500, PLL.Gc, {
+        aufs: [],
+        correct: false,
+        algorithmDrillerExplanationPageCallback: () => {
+          pllTrainerElements.algorithmDrillerExplanationPage.container.waitFor();
+          cy.percySnapshotWithProperName(
+            "Algorithm Driller Explanation Page (Wrong Case)"
+          );
+        },
+      });
+
+      cy.clearLocalStorage();
+      completePLLTestInMilliseconds(10000, PLL.Gc, {
+        aufs: [],
+        correct: true,
+        algorithmDrillerExplanationPageCallback: () => {
+          pllTrainerElements.algorithmDrillerExplanationPage.container.waitFor();
+          cy.percySnapshotWithProperName(
+            "Algorithm Driller Explanation Page (Correct Case)"
+          );
+        },
+        algorithmDrillerStatusPageCallback: () =>
+          cy.percySnapshotWithProperName("Algorithm Driller Status Page"),
+      });
+      for (let i = 0; i < 3; i++) {
+        fromGetReadyForTestThroughEvaluateResult({
+          milliseconds: 500,
+          correct: true,
+          navigateToGetReadyState: () =>
+            pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
+              .get()
+              .click(),
+        });
+      }
+
+      pllTrainerElements.algorithmDrillerSuccessPage.container.waitFor();
+      cy.percySnapshotWithProperName("Algorithm Driller Success Page");
     });
   });
 });
