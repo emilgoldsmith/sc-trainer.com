@@ -10,13 +10,13 @@ import PLLTrainer.State
 import Shared
 import UI
 import View
-import ViewportSize exposing (ViewportSize)
+import ViewportSize
 
 
-state : Shared.Model -> Transitions msg -> PLLTrainer.State.State msg () ()
-state { viewportSize, palette, hardwareAvailable } transitions =
+state : Shared.Model -> Arguments -> Transitions msg -> PLLTrainer.State.State msg () ()
+state shared arguments transitions =
     PLLTrainer.State.static
-        { view = view viewportSize palette hardwareAvailable transitions
+        { view = view shared arguments transitions
         , nonRepeatedKeyUpHandler =
             Just <|
                 \key ->
@@ -30,7 +30,12 @@ state { viewportSize, palette, hardwareAvailable } transitions =
 
 
 
--- TRANSITIONS
+-- TRANSITIONS AND ARGUMENTS
+
+
+type alias Arguments =
+    { wasNewCase : Bool
+    }
 
 
 type alias Transitions msg =
@@ -43,39 +48,52 @@ type alias Transitions msg =
 -- VIEW
 
 
-view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg -> PLLTrainer.State.View msg
-view viewportSize palette hardwareAvailable transitions =
-    { overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
+view : Shared.Model -> Arguments -> Transitions msg -> PLLTrainer.State.View msg
+view shared { wasNewCase } transitions =
+    { overlays = View.buildOverlays [ FeedbackButton.overlay shared.viewportSize ]
     , body =
         View.FullScreen <|
             column
                 [ testid "correct-container"
                 , centerX
                 , centerY
-                , spacing (ViewportSize.minDimension viewportSize // 20)
+                , spacing (ViewportSize.minDimension shared.viewportSize // 20)
                 ]
                 [ el
                     [ centerX
-                    , Font.size (ViewportSize.minDimension viewportSize // 20)
+                    , Font.size (ViewportSize.minDimension shared.viewportSize // 20)
                     ]
                   <|
                     text "Correct!"
+                , if wasNewCase then
+                    paragraph
+                        [ testid "good-job-text"
+                        , Font.size (ViewportSize.minDimension shared.viewportSize // 30)
+                        , UI.paddingHorizontal.extremelyLarge
+                        , width (fill |> maximum 1500)
+                        , centerX
+                        ]
+                        [ text "Good Job! This case has been noted as already learned for you, so won't be focused much on until other cases have been learned."
+                        ]
+
+                  else
+                    none
                 , el
                     [ centerX
-                    , Font.size (ViewportSize.minDimension viewportSize // 20)
+                    , Font.size (ViewportSize.minDimension shared.viewportSize // 20)
                     ]
                   <|
                     text "Continue When Ready"
                 , PLLTrainer.ButtonWithShortcut.view
-                    hardwareAvailable
+                    shared.hardwareAvailable
                     [ testid "next-button"
                     , centerX
                     ]
                     { onPress = Just transitions.startTest
                     , labelText = "Next"
                     , keyboardShortcut = Key.Space
-                    , color = palette.primary
+                    , color = shared.palette.primary
                     }
-                    (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 20)
+                    (UI.viewButton.customSize <| ViewportSize.minDimension shared.viewportSize // 20)
                 ]
     }

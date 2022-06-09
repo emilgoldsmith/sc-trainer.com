@@ -392,6 +392,19 @@ describe("PLL Trainer - Learning Functionality", function () {
     });
   });
 
+  describe("Correct Page", function () {
+    it("displays good job text on a new case", function () {
+      pllTrainerStatesNewUser.correctPage.restoreState();
+      pllTrainerElements.correctPage.goodJobText.assertShows();
+    });
+
+    it("doesn't display good job text on a known case", function () {
+      pllTrainerStatesUserDone.correctPage.restoreState();
+      pllTrainerElements.correctPage.container.waitFor();
+      pllTrainerElements.correctPage.goodJobText.assertDoesntExist();
+    });
+  });
+
   describe("Algorithm Picker", function () {
     beforeEach(function () {
       pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.restoreState();

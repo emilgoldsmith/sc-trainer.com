@@ -54,7 +54,7 @@ page shared =
 type alias Model =
     { trainerState : TrainerState
     , expectedCubeState : Cube
-    , currentTestCase : TestCase
+    , currentTestCase : { isNew : Bool, testCase : TestCase }
     , maybeDrillerState : Maybe { correctAttemptsLeft : Int }
     , tESTONLY :
         { nextTestCaseOverride : Maybe TestCase
@@ -123,7 +123,7 @@ init shared =
       -- until after the first test has begun which would then
       -- possibly need a Maybe or a difficult tagged type. A placeholder
       -- seems the best option of these right now
-      , currentTestCase = placeholderTestCase
+      , currentTestCase = { isNew = True, testCase = placeholderTestCase }
       , tESTONLY =
             { nextTestCaseOverride = Nothing
             }
@@ -193,7 +193,7 @@ order of generation of the different outside effects
 type StartTestData
     = NothingGenerated PLLTrainer.TestCase.Generator
     | TimestampGenerated PLLTrainer.TestCase.Generator Time.Posix
-    | EverythingGenerated Time.Posix TestCase
+    | EverythingGenerated Time.Posix { isNew : Bool, testCase : TestCase }
 
 
 update : Shared.Model -> Msg -> Model -> ( Model, Effect Msg )
@@ -293,7 +293,15 @@ update shared msg model =
                     ( model
                     , Effect.fromCmd <|
                         Random.generate
-                            (TransitionMsg << StartTest << EverythingGenerated testTimestamp)
+                            (\testCase ->
+                                TransitionMsg <|
+                                    StartTest <|
+                                        EverythingGenerated
+                                            testTimestamp
+                                            { isNew = PLLTrainer.TestCase.isNewCaseGenerator generator
+                                            , testCase = testCase
+                                            }
+                            )
                             (PLLTrainer.TestCase.getGenerator generator)
                     )
 
@@ -302,7 +310,7 @@ update shared msg model =
                         extraState =
                             TestRunningExtraState
                                 { testTimestamp = testTimestamp
-                                , memoizedCube = PLLTrainer.TestCase.toCube shared.user testCase
+                                , memoizedCube = PLLTrainer.TestCase.toCube shared.user testCase.testCase
                                 }
 
                         ( stateModel, stateCmd ) =
@@ -334,7 +342,7 @@ update shared msg model =
                         , expectedCubeState =
                             model.expectedCubeState
                                 |> Cube.applyAlgorithm
-                                    (PLLTrainer.TestCase.toAlg shared.user model.currentTestCase)
+                                    (PLLTrainer.TestCase.toAlg shared.user model.currentTestCase.testCase)
                       }
                     , Effect.fromCmd <|
                         Cmd.batch
@@ -367,8 +375,8 @@ update shared msg model =
                         testResult =
                             User.Correct
                                 { timestamp = testTimestamp
-                                , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
-                                , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
+                                , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase.testCase
+                                , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase.testCase
                                 , resultInMilliseconds = TimeInterval.asMilliseconds result
                                 }
                     in
@@ -379,8 +387,8 @@ update shared msg model =
                         testResult =
                             User.Wrong
                                 { timestamp = testTimestamp
-                                , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase
-                                , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase
+                                , preAUF = PLLTrainer.TestCase.preAUF model.currentTestCase.testCase
+                                , postAUF = PLLTrainer.TestCase.postAUF model.currentTestCase.testCase
                                 }
                     in
                     handleEvaluate testResult model shared
@@ -388,7 +396,7 @@ update shared msg model =
                 AlgorithmPicked getNextTrainerState testResult algorithm ->
                     case
                         Cube.detectAUFs
-                            { toMatchTo = PLLTrainer.TestCase.toAlg shared.user model.currentTestCase
+                            { toMatchTo = PLLTrainer.TestCase.toAlg shared.user model.currentTestCase.testCase
                             , toDetectFor = algorithm
                             }
                     of
@@ -397,11 +405,17 @@ update shared msg model =
 
                         Just ( correctedPreAUF, correctedPostAUF ) ->
                             let
+                                oldTestCase =
+                                    model.currentTestCase
+
                                 correctedTestCase =
-                                    PLLTrainer.TestCase.build
-                                        correctedPreAUF
-                                        (PLLTrainer.TestCase.pll model.currentTestCase)
-                                        correctedPostAUF
+                                    { oldTestCase
+                                        | testCase =
+                                            PLLTrainer.TestCase.build
+                                                correctedPreAUF
+                                                (PLLTrainer.TestCase.pll model.currentTestCase.testCase)
+                                                correctedPostAUF
+                                    }
 
                                 correctedTestResult =
                                     case testResult of
@@ -420,10 +434,10 @@ update shared msg model =
                                 , Effect.fromShared <|
                                     Shared.ModifyUser
                                         (User.changePLLAlgorithm
-                                            (PLLTrainer.TestCase.pll correctedTestCase)
+                                            (PLLTrainer.TestCase.pll correctedTestCase.testCase)
                                             algorithm
                                             >> recordPLLTestResultWithErrorHandling
-                                                (PLLTrainer.TestCase.pll correctedTestCase)
+                                                (PLLTrainer.TestCase.pll correctedTestCase.testCase)
                                                 correctedTestResult
                                         )
                                 ]
@@ -449,7 +463,7 @@ update shared msg model =
                         generator =
                             PLLTrainer.TestCase.generate
                                 { now = now
-                                , overrideWithConstantValue = Just model.currentTestCase
+                                , overrideWithConstantValue = Just model.currentTestCase.testCase
                                 }
                                 shared.user
 
@@ -468,7 +482,7 @@ update shared msg model =
                             model.expectedCubeState
                                 |> Cube.applyAlgorithm
                                     (Algorithm.inverse <|
-                                        PLLTrainer.TestCase.toAlg shared.user model.currentTestCase
+                                        PLLTrainer.TestCase.toAlg shared.user model.currentTestCase.testCase
                                     )
                       }
                     , Tuple.second nextTrainerState
@@ -498,7 +512,12 @@ update shared msg model =
                 TESTONLYSetTestCase (Ok testCase) ->
                     let
                         withUpdatedTestCase =
-                            { model | currentTestCase = testCase }
+                            { model
+                                | currentTestCase =
+                                    { testCase = testCase
+                                    , isNew = User.pllTestCaseIsNewForUser (PLLTrainer.TestCase.toTriple testCase) shared.user
+                                    }
+                            }
 
                         fullyUpdatedModel =
                             case model.trainerState of
@@ -566,7 +585,7 @@ handleEvaluate testResult model shared =
                 User.Correct _ ->
                     let
                         ( _, stateCmd ) =
-                            ((states shared).correctPage ()).init
+                            ((states shared).correctPage model ()).init
                     in
                     ( CorrectPage, Effect.fromCmd stateCmd )
 
@@ -596,7 +615,7 @@ handleEvaluate testResult model shared =
                             )
 
                 Nothing ->
-                    if not <| User.pllTestCaseIsNewForUser (PLLTrainer.TestCase.toTriple model.currentTestCase) shared.user then
+                    if not model.currentTestCase.isNew then
                         ( always normalCorrectOrWrongState, Nothing )
 
                     else
@@ -622,14 +641,14 @@ handleEvaluate testResult model shared =
                             |> (\x -> ( x, Nothing ))
 
         ( withPickAlgorithmIncluded, maybeRecordResultEffect ) =
-            case User.getPLLAlgorithm (PLLTrainer.TestCase.pll model.currentTestCase) shared.user of
+            case User.getPLLAlgorithm (PLLTrainer.TestCase.pll model.currentTestCase.testCase) shared.user of
                 Just algorithm ->
                     ( withDrillerIncluded algorithm
                     , if model.maybeDrillerState == Nothing then
                         Effect.fromShared <|
                             Shared.ModifyUser <|
                                 recordPLLTestResultWithErrorHandling
-                                    (PLLTrainer.TestCase.pll model.currentTestCase)
+                                    (PLLTrainer.TestCase.pll model.currentTestCase.testCase)
                                     testResult
 
                       else
@@ -802,7 +821,7 @@ states :
         , algorithmDrillerExplanationPage : Model -> StateBuilder () () ()
         , algorithmDrillerStatusPage : Model -> StateBuilder () () ()
         , algorithmDrillerSuccessPage : StateBuilder () () ()
-        , correctPage : StateBuilder () () ()
+        , correctPage : Model -> StateBuilder () () ()
         , typeOfWrongPage : Model -> StateBuilder () () TypeOfWrongExtraState
         , wrongPage : Model -> StateBuilder () () ()
         }
@@ -868,7 +887,7 @@ states shared =
     , pickAlgorithmPage =
         \model { getNextTrainerState, testResult } ->
             PLLTrainer.States.PickAlgorithmPage.state
-                { currentTestCase = model.currentTestCase
+                { currentTestCase = model.currentTestCase.testCase
                 , testCaseResult = testResult
                 }
                 shared
@@ -883,7 +902,7 @@ states shared =
                 { startDrills = TransitionMsg StartAlgorithmDrills
                 , noOp = NoOp
                 }
-                { testCase = model.currentTestCase }
+                { testCase = model.currentTestCase.testCase }
     , algorithmDrillerStatusPage =
         \model _ ->
             PLLTrainer.States.AlgorithmDrillerStatusPage.state
@@ -905,9 +924,10 @@ states shared =
                 , noOp = NoOp
                 }
     , correctPage =
-        always <|
+        \model _ ->
             PLLTrainer.States.CorrectPage.state
                 shared
+                { wasNewCase = model.currentTestCase.isNew }
                 { startTest = TransitionMsg (InitiateTest Nothing)
                 , noOp = NoOp
                 }
@@ -921,7 +941,7 @@ states shared =
                 , noOp = NoOp
                 }
                 { expectedCubeState = model.expectedCubeState
-                , testCase = model.currentTestCase
+                , testCase = model.currentTestCase.testCase
                 }
     , wrongPage =
         \model _ ->
@@ -931,7 +951,7 @@ states shared =
                 , noOp = NoOp
                 }
                 { expectedCubeState = model.expectedCubeState
-                , testCase = model.currentTestCase
+                , testCase = model.currentTestCase.testCase
                 }
     }
 
@@ -1092,7 +1112,7 @@ handleStateSubscriptionsBoilerplate shared model =
             ((states shared).algorithmDrillerSuccessPage ()).subscriptions ()
 
         CorrectPage ->
-            ((states shared).correctPage ()).subscriptions ()
+            ((states shared).correctPage model ()).subscriptions ()
 
         TypeOfWrongPage extraState ->
             ((states shared).typeOfWrongPage model extraState).subscriptions ()
@@ -1135,7 +1155,7 @@ handleStateViewBoilerplate shared model =
             ((states shared).algorithmDrillerStatusPage model ()).view ()
 
         CorrectPage ->
-            ((states shared).correctPage ()).view ()
+            ((states shared).correctPage model ()).view ()
 
         WrongPage ->
             ((states shared).wrongPage model ()).view ()
