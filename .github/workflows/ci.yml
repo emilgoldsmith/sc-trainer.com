@@ -220,11 +220,11 @@ jobs:
             # We include the dynamic viewport tests just one place as it doesn't matter what initial
             # viewport size it is as it's dynamically changed, so no need to include it in several
             # viewport sizes
-            ignoredSpecs: '""'
+            ignoredSpecs:
             deviceName: Macbook 13
           - viewportWidth: 375
             viewportHeight: 667
-            ignoredSpecs: '"**/uses-dynamic-viewports/*"'
+            ignoredSpecs: ', "**/uses-dynamic-viewports/*"'
             deviceName: iPhone 8
     # Dependabot doesn't receive secrets on a push event
     # so can't run our CI, so we just skip CI for it.
@@ -270,7 +270,7 @@ jobs:
         run: >
           ./node_modules/.bin/cypress run
           --browser ${{ matrix.platform.browser }}
-          --config '{"viewportWidth": ${{ matrix.sizeRelevant.viewportWidth }}, "viewportHeight": ${{ matrix.sizeRelevant.viewportHeight }}, "baseUrl": "http://sctrainer-server:${{ env.PORT }}", "e2e": {"excludeSpecPattern": ["**/visual-tests.cy.ts", ${{ matrix.sizeRelevant.ignoredSpecs }}]}, "video": true}'
+          --config '{"viewportWidth": ${{ matrix.sizeRelevant.viewportWidth }}, "viewportHeight": ${{ matrix.sizeRelevant.viewportHeight }}, "baseUrl": "http://sctrainer-server:${{ env.PORT }}", "e2e": {"excludeSpecPattern": ["**/visual-tests.cy.ts" ${{ matrix.sizeRelevant.ignoredSpecs }}]}, "video": true}'
 
       - name: Upload recorded videos
         uses: actions/upload-artifact@v3
