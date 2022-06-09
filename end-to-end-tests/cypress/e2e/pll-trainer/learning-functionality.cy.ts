@@ -858,12 +858,7 @@ describe("PLL Trainer - Learning Functionality", function () {
     // eslint-disable-next-line mocha/no-setup-in-describe
     const elements = pllTrainerElements.algorithmDrillerExplanationPage;
 
-    beforeEach(function () {
-      pllTrainerStatesNewUser.algorithmDrillerExplanationPage.restoreState();
-    });
-
     it("looks right", function () {
-      cy.clearLocalStorage();
       type Aliases = { testCaseCube: string };
       completePLLTestInMilliseconds(1000, PLL.Jb, {
         correct: false,
@@ -885,53 +880,66 @@ describe("PLL Trainer - Learning Functionality", function () {
     });
 
     it("sizes elements correctly", function () {
+      pllTrainerStatesNewUser.algorithmDrillerExplanationPage.restoreState();
       cy.assertNoHorizontalScrollbar();
     });
 
     it("continues to driller state page on button click", function () {
+      pllTrainerStatesNewUser.algorithmDrillerExplanationPage.restoreState();
       elements.continueButton.get().click();
       pllTrainerElements.algorithmDrillerStatusPage.container.assertShows();
     });
 
     it("continues to driller state page on space bar press", function () {
+      pllTrainerStatesNewUser.algorithmDrillerExplanationPage.restoreState();
       cy.pressKey(Key.space);
       pllTrainerElements.algorithmDrillerStatusPage.container.assertShows();
     });
 
-    it("goes to driller when a new case is not solved correctly", function () {
-      cy.clearLocalStorage();
+    it("goes to driller when a new case is not solved correctly and displays exactly wrong text", function () {
       // Driller first time pll is encountered
       completePLLTestInMilliseconds(500, PLL.Aa, {
         correct: false,
         aufs: [AUF.none, AUF.none],
-        algorithmDrillerExplanationPageCallback: () =>
-          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+        algorithmDrillerExplanationPageCallback: () => {
+          elements.wrongText.assertConsumableViaVerticalScroll(
+            elements.container.specifier
+          );
+          elements.correctText.assertDoesntExist();
+        },
       });
       // Driller when new pre-AUF for the pll is encountered despite pll itself being seen before
       completePLLTestInMilliseconds(500, PLL.Aa, {
         correct: false,
         aufs: [AUF.U, AUF.none],
-        algorithmDrillerExplanationPageCallback: () =>
-          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+        algorithmDrillerExplanationPageCallback: () => {
+          elements.wrongText.assertConsumableViaVerticalScroll(
+            elements.container.specifier
+          );
+          elements.correctText.assertDoesntExist();
+        },
       });
       // Driller when new post-AUF for the pll is encountered despite pll itself being seen before
       completePLLTestInMilliseconds(500, PLL.Aa, {
         correct: false,
         aufs: [AUF.none, AUF.UPrime],
-        algorithmDrillerExplanationPageCallback: () =>
-          pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+        algorithmDrillerExplanationPageCallback: () => {
+          elements.wrongText.assertConsumableViaVerticalScroll(
+            elements.container.specifier
+          );
+          elements.correctText.assertDoesntExist();
+        },
       });
       // No driller when both pre-AUF and post-AUF are seen before even if not in this combination
       completePLLTestInMilliseconds(500, PLL.Aa, {
         correct: false,
         aufs: [AUF.U, AUF.UPrime],
         algorithmDrillerExplanationPageCallback: () =>
-          pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
+          elements.container.assertDoesntExist(),
       });
     });
 
     it("doesn't go to driller if new case solved quickly and correctly", function () {
-      cy.clearLocalStorage();
       // No driller first time pll is encountered
       completePLLTestInMilliseconds(100, PLL.Ga, {
         correct: true,
@@ -962,17 +970,19 @@ describe("PLL Trainer - Learning Functionality", function () {
       });
     });
 
-    it("goes to driller when a new case is solved correctly but slowly", function () {
-      cy.clearLocalStorage();
-
+    it("goes to driller when a new case is solved correctly but slowly and displays exactly correct text", function () {
       cy.withOverallNameLogged(
         { message: "Driller first time pll is encountered" },
         () => {
           completePLLTestInMilliseconds(10000, PLL.Gb, {
             correct: true,
             aufs: [AUF.UPrime, AUF.UPrime],
-            algorithmDrillerExplanationPageCallback: () =>
-              pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+            algorithmDrillerExplanationPageCallback: () => {
+              elements.correctText.assertConsumableViaVerticalScroll(
+                elements.container.specifier
+              );
+              elements.wrongText.assertDoesntExist();
+            },
           });
         }
       );
@@ -985,8 +995,12 @@ describe("PLL Trainer - Learning Functionality", function () {
           completePLLTestInMilliseconds(10000, PLL.Gb, {
             correct: true,
             aufs: [AUF.none, AUF.UPrime],
-            algorithmDrillerExplanationPageCallback: () =>
-              pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+            algorithmDrillerExplanationPageCallback: () => {
+              elements.correctText.assertConsumableViaVerticalScroll(
+                elements.container.specifier
+              );
+              elements.wrongText.assertDoesntExist();
+            },
           });
         }
       );
@@ -999,8 +1013,12 @@ describe("PLL Trainer - Learning Functionality", function () {
           completePLLTestInMilliseconds(10000, PLL.Gb, {
             correct: true,
             aufs: [AUF.UPrime, AUF.U2],
-            algorithmDrillerExplanationPageCallback: () =>
-              pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows(),
+            algorithmDrillerExplanationPageCallback: () => {
+              elements.correctText.assertConsumableViaVerticalScroll(
+                elements.container.specifier
+              );
+              elements.wrongText.assertDoesntExist();
+            },
           });
         }
       );
@@ -1014,15 +1032,13 @@ describe("PLL Trainer - Learning Functionality", function () {
             correct: true,
             aufs: [AUF.none, AUF.U2],
             algorithmDrillerExplanationPageCallback: () =>
-              pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist(),
+              elements.container.assertDoesntExist(),
           });
         }
       );
     });
 
     it("goes to driller correctly for edge cases", function () {
-      cy.clearLocalStorage();
-
       cy.withOverallNameLogged(
         { message: "First time it's encountered we definitely drill" },
         () => {
