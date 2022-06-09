@@ -94,6 +94,7 @@ export const pllTrainerElements = {
   }),
   correctPage: buildElementsCategory({
     container: "correct-container",
+    goodJobText: optionalElement("good-job-text"),
     nextButton: "next-button",
   }),
   typeOfWrongPage: buildElementsCategory({

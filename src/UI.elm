@@ -165,6 +165,7 @@ type alias Sizes decorative msg =
     , medium : El.Attr decorative msg
     , large : El.Attr decorative msg
     , veryLarge : El.Attr decorative msg
+    , extremelyLarge : El.Attr decorative msg
     }
 
 
@@ -180,6 +181,7 @@ buildSizes buildAttribute scale =
     , medium = buildAttribute <| scale 1
     , large = buildAttribute <| scale 2
     , veryLarge = buildAttribute <| scale 3
+    , extremelyLarge = buildAttribute <| scale 4
     }
 
 
