@@ -168,6 +168,8 @@ export const pllTrainerElements = {
   algorithmDrillerExplanationPage: buildElementsCategory({
     container: "algorithm-driller-explanation-page-container",
     explanation: "algorithm-driller-explanation",
+    correctText: optionalElement("correct-text"),
+    wrongText: optionalElement("wrong-text"),
     caseToDrill: cubeElement("case-to-drill"),
     algorithmToDrill: "algorithm-to-drill",
     continueButton: "continue-button",

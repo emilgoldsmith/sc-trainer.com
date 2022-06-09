@@ -17,9 +17,9 @@ import ViewCube
 
 
 state : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.State msg () ()
-state shared transitions { testCase } =
+state shared transitions arguments =
     PLLTrainer.State.static
-        { view = view shared transitions testCase
+        { view = view shared transitions arguments
         , nonRepeatedKeyUpHandler =
             Just <|
                 \key ->
@@ -44,6 +44,7 @@ type alias Transitions msg =
 
 type alias Arguments =
     { testCase : PLLTrainer.TestCase.TestCase
+    , wasCorrect : Bool
     }
 
 
@@ -51,8 +52,8 @@ type alias Arguments =
 -- VIEW
 
 
-view : Shared.Model -> Transitions msg -> PLLTrainer.TestCase.TestCase -> PLLTrainer.State.View msg
-view shared transitions testCase =
+view : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
+view shared transitions { testCase, wasCorrect } =
     { overlays = View.buildOverlays []
     , body =
         View.FullScreen <|
@@ -72,9 +73,20 @@ view shared transitions testCase =
                     , UI.fontSize.medium
                     , UI.spacingVertical.small
                     ]
-                    [ paragraph [ UI.fontSize.veryLarge, Font.center, centerX ] [ text "Time To Drill Your Algorithm" ]
+                    [ paragraph [ UI.fontSize.veryLarge, Font.center, centerX ]
+                        [ if wasCorrect then
+                            text "A Bit More Practice Needed"
+
+                          else
+                            text "Time To Drill Your Algorithm"
+                        ]
                     , paragraph []
-                        [ text "It looks like you could use a bit more practice on this case. This is therefore a prompt to just take some time to practice the case and algorithm that you just attempted as is shown below here again. Your aim should be to reach a level of comfort where you can recognize the case confidently, and execute the algorithm fluidly without looking at the cube. We don't recommend continuing on with other cases until you have reached that level of confidence with this new case"
+                        [ if wasCorrect then
+                            el [ testid "correct-text" ] <| text "Good job solving the case correctly! Since you did it slower than your target parameters it seems a bit more practice is needed though, maybe to derust the algorithm or to learn it a bit better. "
+
+                          else
+                            el [ testid "wrong-text" ] <| text "It looks like this case was new to you. "
+                        , text "This is therefore a prompt to just take some time to practice the case and algorithm that you just attempted and is shown below here again. Your aim should be to reach a level of comfort where you can recognize the case confidently, and execute the algorithm fluidly without looking at the cube. We don't recommend continuing on with other cases until you have reached that level of confidence with this case."
                         ]
                     , paragraph []
                         [ text "You are of course welcome to close the app and return when you are ready, but if you have kept the app open and finished practicing feel free to press the continue button. This will lead you to a little test that will time you on this case until you get it correct three times in a row. In addition it only counts a case as correct if executed fast enough for the target parameters you have set for a case being learned. When you have passed three times in a row you will go back into the normal flow of practicing cases."
