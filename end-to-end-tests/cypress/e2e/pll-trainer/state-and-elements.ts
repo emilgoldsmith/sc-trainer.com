@@ -630,6 +630,7 @@ export function completePLLTestInMilliseconds(
   } & (
     | {
         correct: true;
+        correctPageCallback?: () => void;
         algorithmDrillerExplanationPageCallback?: () => void;
         algorithmDrillerStatusPageCallback?: () => void;
       }
@@ -702,15 +703,21 @@ export function completePLLTestInMilliseconds(
         );
     }
   });
-  if (correct || "algorithmDrillerExplanationPageCallback" in params) {
+  if (correct && params.correctPageCallback) {
+    pllTrainerElements.correctPage.container.waitFor();
+    params.correctPageCallback();
+  } else if (!correct && params.wrongPageCallback) {
+    pllTrainerElements.wrongPage.container.waitFor();
+    params.wrongPageCallback();
+  }
+  if ("algorithmDrillerExplanationPageCallback" in params) {
     params.algorithmDrillerExplanationPageCallback?.();
-  } else {
-    params.wrongPageCallback?.();
   }
   if ("algorithmDrillerStatusPageCallback" in params) {
     pllTrainerElements.algorithmDrillerExplanationPage.continueButton
       .get()
       .click();
+    pllTrainerElements.algorithmDrillerStatusPage.container.waitFor();
     params.algorithmDrillerStatusPageCallback?.();
   }
 }
