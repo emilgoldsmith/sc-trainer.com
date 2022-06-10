@@ -349,8 +349,7 @@ export const pllTrainerStatesNewUser = buildStates<
   | "pickAlgorithmPageAfterCorrect"
   | "pickAlgorithmPageAfterUnrecoverable"
   | "correctPage"
-  | "typeOfWrongPage"
-  | "wrongPage",
+  | "typeOfWrongPage",
   // Just highlighting the separation of these two type arguments
   {
     targetParametersPicked?: boolean;
@@ -454,8 +453,27 @@ export const pllTrainerStatesNewUser = buildStates<
     evaluateResult: {
       name: "evaluateResult",
       getToThatState: (getState, options) => {
-        getState("testRunning");
+        // We need to go all the way back here to be able to control the time
+        // the test takes, and we can only control that if we have time mocked
+        // from before the test starts, not by restoring a running test, as that
+        // has failed things by for example triggering the algorithm driller in the past
+        if (options?.navigateOptions?.isNewCase ?? true) {
+          getState("newCasePage");
+          cy.clock();
+          pllTrainerElements.newCasePage.startTestButton.get().click();
+        } else {
+          getState("startPage");
+          cy.clock();
+          pllTrainerElements.newUserStartPage.startButton
+            .get(options)
+            .click(options);
+        }
+        pllTrainerElements.getReadyState.container.waitFor(options);
+        cy.tick(getReadyWaitTime, options);
+        pllTrainerElements.testRunning.container.waitFor();
+        cy.tick(300);
         cy.pressKey(Key.space, options);
+        cy.clock().then((clock) => clock.restore());
       },
       waitForStateToAppear: (options) => {
         pllTrainerElements.evaluateResult.container.waitFor(options);
@@ -464,10 +482,25 @@ export const pllTrainerStatesNewUser = buildStates<
     evaluateResultAfterIgnoringTransitions: {
       name: "evaluateResultAfterIgnoringTransitions",
       getToThatState: (getState, options) => {
-        // We need to have time mocked from test running
-        // to programatically pass through the ignoring key presses phase
-        getState("testRunning");
-        cy.clock();
+        // We need to go all the way back here to be able to control the time
+        // the test takes, and we can only control that if we have time mocked
+        // from before the test starts, not by restoring a running test, as that
+        // has failed things by for example triggering the algorithm driller in the past
+        if (options?.navigateOptions?.isNewCase ?? true) {
+          getState("newCasePage");
+          cy.clock();
+          pllTrainerElements.newCasePage.startTestButton.get().click();
+        } else {
+          getState("startPage");
+          cy.clock();
+          pllTrainerElements.newUserStartPage.startButton
+            .get(options)
+            .click(options);
+        }
+        pllTrainerElements.getReadyState.container.waitFor(options);
+        cy.tick(getReadyWaitTime, options);
+        pllTrainerElements.testRunning.container.waitFor();
+        cy.tick(300);
         cy.pressKey(Key.space, options);
         pllTrainerElements.evaluateResult.container.waitFor(options);
         cy.tick(300, options);
@@ -603,14 +636,6 @@ export const pllTrainerStatesNewUser = buildStates<
         pllTrainerElements.algorithmDrillerSuccessPage.container.waitFor(
           options
         );
-        cy.waitForDocumentEventListeners("keyup");
-      },
-    },
-    wrongPage: {
-      name: "wrongPage",
-      getToThatState: () => {},
-      waitForStateToAppear(options) {
-        pllTrainerElements.wrongPage.container.waitFor(options);
         cy.waitForDocumentEventListeners("keyup");
       },
     },

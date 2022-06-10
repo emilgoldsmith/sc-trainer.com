@@ -704,8 +704,9 @@ describe("PLL Trainer - Basic Functionality", function () {
     });
     it("displays the global statistics correctly", function () {
       // Taken from pllToAlgorithmString
+      // It counts the first x rotation but not the last one
       const AaAlgorithmLength = 10;
-      const GaAlgorithmLength = 15;
+      const GaAlgorithmLength = 12;
       const totalPLLCases = 21;
       pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
       pllTrainerElements.newUserStartPage.container.waitFor();
@@ -739,8 +740,6 @@ describe("PLL Trainer - Basic Functionality", function () {
       });
 
       completePLLTestInMilliseconds(2000, PLL.Ga, {
-        // TODO: This corresponds to no AUFs for first case as we can't really set
-        // aufs on the first attempt, we should really fix that
         aufs: [AUF.U, AUF.U2],
         correct: true,
       });
@@ -750,7 +749,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         numTried: 3,
         casesWithLastThreeCasesValid: [
           [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
-          [{ timeMs: 2000, turns: GaAlgorithmLength }],
+          [{ timeMs: 2000, turns: GaAlgorithmLength + 2 }],
         ],
       });
 
@@ -765,7 +764,7 @@ describe("PLL Trainer - Basic Functionality", function () {
         casesWithLastThreeCasesValid: [
           [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
           [
-            { timeMs: 2000, turns: GaAlgorithmLength },
+            { timeMs: 2000, turns: GaAlgorithmLength + 2 },
             { timeMs: 1000, turns: GaAlgorithmLength },
           ],
         ],
@@ -1079,12 +1078,12 @@ describe("PLL Trainer - Basic Functionality", function () {
       assertFirstAttemptIsCalculatedSameAsSecondAttempt({
         pll: PLL.Gc,
         // Emil's main Gc algorithm (maybe standard?)
-        algorithm: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
+        algorithm: "R2 U' R U' R U R' U R2 D' U R U' R' D",
       });
       assertFirstAttemptIsCalculatedSameAsSecondAttempt({
         pll: PLL.Gc,
         // An algorithm with a different postAUF but same preAUF
-        algorithm: "(y) R2' u' (R U' R U R') u R2 (y) R U' R'",
+        algorithm: "R2' Uw' R U' R U R' Uw R2 y R U' R' y'",
       });
 
       function assertFirstAttemptIsCalculatedSameAsSecondAttempt({
@@ -1112,10 +1111,11 @@ describe("PLL Trainer - Basic Functionality", function () {
             pllTrainerElements.testRunning.testCase
               .getStringRepresentationOfCube()
               .setAlias<Aliases, "cubeBefore">("cubeBefore"),
-          wrongPageCallback: () =>
-            parseAUFsFromWrongPage().setAlias<Aliases, "actualAUF">(
+          algorithmDrillerExplanationPageCallback: () =>
+            parseAUFsFromDrillerExplanationPage(algorithm).setAlias<
+              Aliases,
               "actualAUF"
-            ),
+            >("actualAUF"),
         });
         cy.getSingleAlias<Aliases, "actualAUF">("actualAUF")
           .then((actualAUFs) => {
@@ -1235,8 +1235,22 @@ describe("PLL Trainer - Basic Functionality", function () {
         completePLLTestInMilliseconds(1000, pll, {
           aufs: aufToSet,
           correct: false,
-          wrongPageCallback: () => {
-            parseAUFsFromWrongPage().should("deep.equal", aufToExpect);
+          algorithmDrillerExplanationPageCallback: () => {
+            pllTrainerElements.root
+              .getStateAttributeValue()
+              .then((stateAttribute) => {
+                if (
+                  stateAttribute ===
+                  pllTrainerElements.root.stateAttributeValues
+                    .algorithmDrillerExplanationPage
+                ) {
+                  parseAUFsFromDrillerExplanationPage(
+                    pllToAlgorithmString[pll]
+                  ).should("deep.equal", aufToExpect);
+                } else {
+                  parseAUFsFromWrongPage().should("deep.equal", aufToExpect);
+                }
+              });
           },
         });
       }
@@ -1264,10 +1278,62 @@ describe("PLL Trainer - Basic Functionality", function () {
               case "U'":
                 return AUF.UPrime;
               default:
+                if (maybeText && !maybeText.includes("U")) {
+                  throw new Error(
+                    "only AUFs on U face supported right now in parseAUFsFromWrongPage, auf was: " +
+                      maybeText.toString()
+                  );
+                }
                 return AUF.none;
             }
           });
           if (aufs.length !== 2) {
+            throw new Error(
+              "There must be exactly 2 elements in the aufs tuple. There instead were " +
+                aufs.length.toString()
+            );
+          }
+          return aufs as [AUF, AUF];
+        });
+    }
+    function parseAUFsFromDrillerExplanationPage(
+      algorithm: string
+    ): Cypress.Chainable<[AUF, AUF]> {
+      // This is preeeetttyyy brittle sadly, so if someone finds a better way to accomplish
+      // this testing go for it!
+      return pllTrainerElements.algorithmDrillerExplanationPage.algorithmToDrill
+        .get()
+        .invoke("text")
+        .then((displayedAlgorithm) => {
+          const aufStrings: (string | undefined)[] = displayedAlgorithm
+            .split(algorithm)
+            .map((x) => x.trim());
+          const aufs = aufStrings.map((maybeText) => {
+            switch (maybeText) {
+              case "U":
+                return AUF.U;
+              case "U2":
+                return AUF.U2;
+              case "U'":
+                return AUF.UPrime;
+              default:
+                if (maybeText && !maybeText.includes("U")) {
+                  console.log("algorithm", algorithm);
+                  console.log("displayedAlgorithm", displayedAlgorithm);
+                  console.log("aufStrings", aufStrings);
+                  throw new Error(
+                    "only AUFs on U face supported right now in parseAUFsFromDrillerExplanationPage, auf was: " +
+                      maybeText.toString()
+                  );
+                }
+                return AUF.none;
+            }
+          });
+          if (aufs.length !== 2) {
+            console.log("algorithm", algorithm);
+            console.log("displayedAlgorithm", displayedAlgorithm);
+            console.log("aufStrings", aufStrings);
+            console.log("aufs", aufs);
             throw new Error(
               "There must be exactly 2 elements in the aufs tuple. There instead were " +
                 aufs.length.toString()
@@ -2181,6 +2247,7 @@ describe("PLL Trainer - Basic Functionality", function () {
       // to it instead of the solved cube with inverse test case
       pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
 
+      cy.overrideDisplayCubeAnnotations(false);
       assertCubeMatchesAlias<Aliases, "testCaseFront">(
         "testCaseFront",
         pllTrainerElements.wrongPage.testCaseFront

@@ -190,6 +190,8 @@ type InternalMsg
     | TESTONLYOverrideNextTestCase (Result Json.Decode.Error TestCase)
     | TESTONLYOverrideCubeDisplayAngle (Maybe Cube.DisplayAngle)
     | TESTONLYSetCubeSizeOverride (Maybe Int)
+    | TESTONLYOverrideDisplayCubeAnnotations (Maybe Bool)
+    | TESTONLYSetPLLAlgorithm ( Result Json.Decode.Error PLL, Result Algorithm.FromStringError Algorithm )
 
 
 {-| We use this structure to make sure there is a set
@@ -575,6 +577,46 @@ update shared msg model =
                 TESTONLYSetCubeSizeOverride size ->
                     ( model, Effect.fromShared (Shared.TESTONLYSetCubeSizeOverride size) )
 
+                TESTONLYOverrideDisplayCubeAnnotations displayAnnotations ->
+                    ( model, Effect.fromShared (Shared.TESTONLYOverrideDisplayCubeAnnotations displayAnnotations) )
+
+                TESTONLYSetPLLAlgorithm ( Err pllError, _ ) ->
+                    ( model
+                    , Effect.fromCmd <|
+                        Ports.logError
+                            ("Error in pll decode of test only set pll algorithm: "
+                                ++ Json.Decode.errorToString pllError
+                            )
+                    )
+
+                TESTONLYSetPLLAlgorithm ( _, Err algorithmError ) ->
+                    ( model
+                    , Effect.fromCmd <|
+                        Ports.logError
+                            ("Error in algorithm parsing of test only set pll algorithm: "
+                                ++ Algorithm.debugFromStringError algorithmError
+                            )
+                    )
+
+                TESTONLYSetPLLAlgorithm ( Ok pll, Ok algorithm ) ->
+                    if not <| PLL.solvedBy algorithm pll then
+                        ( model
+                        , Effect.fromCmd <|
+                            Ports.logError
+                                "algorithm given in test only set pll algorithm didn't match the pll"
+                        )
+
+                    else
+                        ( model
+                        , Effect.fromShared <|
+                            Shared.ModifyUser
+                                (User.changePLLAlgorithm
+                                    pll
+                                    algorithm
+                                    >> (\x -> ( x, Nothing ))
+                                )
+                        )
+
         NoOp ->
             ( model, Effect.none )
 
@@ -744,7 +786,9 @@ subscriptions shared model =
         , Ports.onTESTONLYSetTestCase (InternalMsg << TESTONLYSetTestCase)
         , Ports.onTESTONLYOverrideNextTestCase (InternalMsg << TESTONLYOverrideNextTestCase)
         , Ports.onTESTONLYOverrideCubeDisplayAngle (InternalMsg << TESTONLYOverrideCubeDisplayAngle)
+        , Ports.onTESTONLYOverrideDisplayCubeAnnotations (InternalMsg << TESTONLYOverrideDisplayCubeAnnotations)
         , Ports.onTESTONLYSetCubeSizeOverride (InternalMsg << TESTONLYSetCubeSizeOverride)
+        , Ports.onTESTONLYSetPLLAlgorithm (InternalMsg << TESTONLYSetPLLAlgorithm)
         ]
 
 

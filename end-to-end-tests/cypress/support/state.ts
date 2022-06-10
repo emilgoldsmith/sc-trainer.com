@@ -72,7 +72,16 @@ class StateCacheImplementation<
           consolePropsSetter({ "Elm Model": elmModel });
         });
         // When restoring in the future we want to be restoring this local storage here
-        this.localStorage = localStorage;
+        cy.wrap(null, { log: false }).then(() => {
+          const localStorageObject: Record<string, unknown> = {};
+          for (let i = 0; ; i++) {
+            const key = localStorage.key(i);
+            if (key === null) break;
+            const value = localStorage.getItem(key);
+            localStorageObject[key] = value === null ? null : JSON.parse(value);
+          }
+          this.localStorage = localStorageObject;
+        });
         cy.clearLocalStorage();
       }
     );

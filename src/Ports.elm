@@ -1,6 +1,7 @@
-port module Ports exposing (logError, onTESTONLYOverrideCubeDisplayAngle, onTESTONLYOverrideNextTestCase, onTESTONLYSetCubeSizeOverride, onTESTONLYSetTestCase, updateStoredUser)
+port module Ports exposing (logError, onTESTONLYOverrideCubeDisplayAngle, onTESTONLYOverrideDisplayCubeAnnotations, onTESTONLYOverrideNextTestCase, onTESTONLYSetCubeSizeOverride, onTESTONLYSetPLLAlgorithm, onTESTONLYSetTestCase, updateStoredUser)
 
 import AUF exposing (AUF)
+import Algorithm exposing (Algorithm)
 import Cube
 import Json.Decode
 import Json.Encode
@@ -32,6 +33,26 @@ port logError : String -> Cmd msg
 
 
 -- TEST ONLY PORTS
+
+
+port setPLLAlgorithmPort : ({ algorithm : String, pll : String } -> msg) -> Sub msg
+
+
+onTESTONLYSetPLLAlgorithm : (( Result Json.Decode.Error PLL, Result Algorithm.FromStringError Algorithm ) -> msg) -> Sub msg
+onTESTONLYSetPLLAlgorithm toMsg =
+    setPLLAlgorithmPort
+        (\{ algorithm, pll } ->
+            ( Json.Decode.decodeString pllDecoder pll, Algorithm.fromString algorithm )
+                |> toMsg
+        )
+
+
+port overrideDisplayCubeAnnotationsPort : (Maybe Bool -> msg) -> Sub msg
+
+
+onTESTONLYOverrideDisplayCubeAnnotations : (Maybe Bool -> msg) -> Sub msg
+onTESTONLYOverrideDisplayCubeAnnotations =
+    overrideDisplayCubeAnnotationsPort
 
 
 port overrideCubeDisplayAnglePort : (Maybe String -> msg) -> Sub msg

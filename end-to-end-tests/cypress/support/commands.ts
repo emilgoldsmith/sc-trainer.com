@@ -786,6 +786,36 @@ const overrideNextTestCase: Cypress.Chainable<undefined>["overrideNextTestCase"]
 };
 Cypress.Commands.add("overrideNextTestCase", overrideNextTestCase);
 
+const setPLLAlgorithm: Cypress.Chainable<undefined>["setPLLAlgorithm"] = function (
+  pll,
+  algorithm
+) {
+  const jsonValue = {
+    algorithm,
+    pll: pllToPllLetters[pll],
+  };
+  cy.withOverallNameLogged(
+    {
+      displayName: "SET PLL ALGORITHM",
+      message: JSON.stringify(jsonValue),
+    },
+    () => {
+      cy.getCustomWindow({ log: false }).then((window) => {
+        const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+        const setPLLAlgorithmPort = ports.setPLLAlgorithmPort;
+        if (!setPLLAlgorithmPort)
+          throw new Error(
+            `setPLLAlgorithm port is not exposed for some reason. The port keys are: ${JSON.stringify(
+              Object.keys(ports)
+            )}`
+          );
+        setPLLAlgorithmPort.send(jsonValue);
+      });
+    }
+  );
+};
+Cypress.Commands.add("setPLLAlgorithm", setPLLAlgorithm);
+
 const overrideCubeDisplayAngle: Cypress.Chainable<undefined>["overrideCubeDisplayAngle"] = function (
   displayAngle
 ) {
@@ -814,6 +844,42 @@ const overrideCubeDisplayAngle: Cypress.Chainable<undefined>["overrideCubeDispla
   );
 };
 Cypress.Commands.add("overrideCubeDisplayAngle", overrideCubeDisplayAngle);
+
+const overrideDisplayCubeAnnotations: Cypress.Chainable<undefined>["overrideDisplayCubeAnnotations"] = function (
+  displayAnnotations
+) {
+  cy.withOverallNameLogged(
+    {
+      displayName: "OVERRIDE DISPLAY CUBE ANNOTATIONS",
+      message: displayAnnotations,
+    },
+    () => {
+      cy.getCustomWindow({ log: false }).then((window) => {
+        const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+        const overrideDisplayCubeAnnotationsPort =
+          ports.overrideDisplayCubeAnnotationsPort;
+        if (!overrideDisplayCubeAnnotationsPort)
+          throw new Error(
+            "overrideDisplayCubeAnnotations port is not exposed for some reason"
+          );
+        overrideDisplayCubeAnnotationsPort.send(displayAnnotations);
+      });
+      // Release control of the thread to let the render loop do it's thing
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(0);
+      // Wait until canvases are finished re-rendering
+      cy.get("canvas").should((elements) => {
+        elements.each((_, canvas) => {
+          expect(isCanvasBlank(canvas), "canvas not to be blank").to.be.false;
+        });
+      });
+    }
+  );
+};
+Cypress.Commands.add(
+  "overrideDisplayCubeAnnotations",
+  overrideDisplayCubeAnnotations
+);
 
 const setCubeSizeOverride: Cypress.Chainable<undefined>["setCubeSizeOverride"] = function (
   size

@@ -9,7 +9,6 @@ import {
 import {
   completePLLTestInMilliseconds,
   fromGetReadyForTestThroughEvaluateResult,
-  getReadyWaitTime,
   pllTrainerElements,
   pllTrainerStatesNewUser,
   pllTrainerStatesUserDone,
@@ -28,6 +27,7 @@ forceReloadAndNavigateIfDotOnlyIsUsed();
 
 describe("PLL Trainer - Learning Functionality", function () {
   before(function () {
+    pllTrainerStatesUserDone.populateAll();
     pllTrainerStatesNewUser.populateAll();
   });
 
@@ -416,51 +416,54 @@ describe("PLL Trainer - Learning Functionality", function () {
         caseName: "Correct Page",
         pickAlgorithmElementThatShouldShow:
           pllTrainerElements.pickAlgorithmPage.correctText,
-        targetContainer: pllTrainerElements.correctPage.container,
+        firstTargetContainer: pllTrainerElements.correctPage.container,
+        secondTargetContainer: pllTrainerElements.correctPage.container,
         fromEvaluateToPickAlgorithm: () =>
           pllTrainerElements.evaluateResult.correctButton.get().click(),
-        startNextTestButton: pllTrainerElements.correctPage.nextButton,
       },
       {
         caseName: "Wrong --> No Moves Applied",
         pickAlgorithmElementThatShouldShow:
           pllTrainerElements.pickAlgorithmPage.wrongText,
-        targetContainer: pllTrainerElements.wrongPage.container,
+        firstTargetContainer:
+          pllTrainerElements.algorithmDrillerExplanationPage.container,
+        secondTargetContainer: pllTrainerElements.wrongPage.container,
         fromEvaluateToPickAlgorithm: () => {
           pllTrainerElements.evaluateResult.wrongButton.get().click();
           pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
         },
-        startNextTestButton: pllTrainerElements.wrongPage.nextButton,
       },
       {
         caseName: "Wrong --> Nearly There",
         pickAlgorithmElementThatShouldShow:
           pllTrainerElements.pickAlgorithmPage.wrongText,
-        targetContainer: pllTrainerElements.wrongPage.container,
+        firstTargetContainer:
+          pllTrainerElements.algorithmDrillerExplanationPage.container,
+        secondTargetContainer: pllTrainerElements.wrongPage.container,
         fromEvaluateToPickAlgorithm: () => {
           pllTrainerElements.evaluateResult.wrongButton.get().click();
           pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
         },
-        startNextTestButton: pllTrainerElements.wrongPage.nextButton,
       },
       {
         caseName: "Wrong --> Unrecoverable",
         pickAlgorithmElementThatShouldShow:
           pllTrainerElements.pickAlgorithmPage.wrongText,
-        targetContainer: pllTrainerElements.wrongPage.container,
+        firstTargetContainer:
+          pllTrainerElements.algorithmDrillerExplanationPage.container,
+        secondTargetContainer: pllTrainerElements.wrongPage.container,
         fromEvaluateToPickAlgorithm: () => {
           pllTrainerElements.evaluateResult.wrongButton.get().click();
           pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
         },
-        startNextTestButton: pllTrainerElements.wrongPage.nextButton,
       },
     ].forEach(
       ({
         caseName,
         pickAlgorithmElementThatShouldShow,
-        targetContainer,
+        firstTargetContainer,
+        secondTargetContainer,
         fromEvaluateToPickAlgorithm,
-        startNextTestButton,
       }) => {
         /* eslint-enable mocha/no-setup-in-describe */
         describe(caseName, function () {
@@ -475,6 +478,7 @@ describe("PLL Trainer - Learning Functionality", function () {
             cy.mouseClickScreen("center");
             pllTrainerElements.evaluateResult.container.waitFor();
             cy.tick(300);
+            cy.clock().then((clock) => clock.restore());
             fromEvaluateToPickAlgorithm();
 
             pllTrainerElements.pickAlgorithmPage.container.assertShows();
@@ -484,20 +488,22 @@ describe("PLL Trainer - Learning Functionality", function () {
               .get()
               .type(testCaseCorrectAlgorithm + "{enter}");
 
-            targetContainer.assertShows();
+            firstTargetContainer.assertShows();
 
-            cy.overrideNextTestCase(testCase);
-            startNextTestButton.get().click();
-            pllTrainerElements.getReadyState.container.waitFor();
-            cy.tick(getReadyWaitTime);
-            pllTrainerElements.testRunning.container.waitFor();
-
-            cy.mouseClickScreen("center");
-            pllTrainerElements.evaluateResult.container.waitFor();
-            cy.tick(300);
+            pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
+              {
+                retainCurrentLocalStorage: true,
+                navigateOptions: {
+                  case: testCase,
+                  algorithm: testCaseCorrectAlgorithm,
+                  targetParametersPicked: true,
+                  isNewCase: false,
+                },
+              }
+            );
             fromEvaluateToPickAlgorithm();
 
-            targetContainer.assertShows();
+            secondTargetContainer.assertShows();
           });
         });
       }
@@ -785,7 +791,7 @@ describe("PLL Trainer - Learning Functionality", function () {
 
         pllTrainerElements.evaluateResult.wrongButton.get().click();
         pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
-        pllTrainerElements.wrongPage.container.assertShows();
+        pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
       });
 
       it("doesn't display picker if case has picked algorithm on previous visit", function () {
@@ -832,7 +838,7 @@ describe("PLL Trainer - Learning Functionality", function () {
         pllTrainerElements.pickAlgorithmPage.algorithmInput
           .get()
           .type(wrongBranchAlgorithm + "{enter}");
-        pllTrainerElements.wrongPage.container.assertShows();
+        pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
 
         // Revisit, try again but now we should skip it for same case
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
