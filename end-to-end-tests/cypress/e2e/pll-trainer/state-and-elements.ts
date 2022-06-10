@@ -770,7 +770,7 @@ export function fromGetReadyForTestThroughEvaluateResult({
   pllTrainerElements.testRunning.container.waitFor();
   cy.tick(milliseconds);
   testRunningCallback?.();
-  cy.pressKey(Key.space);
+  cy.mouseClickScreen("center");
   pllTrainerElements.evaluateResult.container.waitFor();
   cy.tick(500);
   cy.clock().then((clock) => clock.restore());

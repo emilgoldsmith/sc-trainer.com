@@ -3,6 +3,7 @@ import { Key } from "support/keys";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
 import { AUF, PLL, pllToAlgorithmString } from "support/pll";
 import {
+  fromGetReadyForTestThroughEvaluateResult,
   getReadyWaitTime,
   pllTrainerElements,
   pllTrainerStatesNewUser,
@@ -104,8 +105,9 @@ function checkWhetherShortcutsDisplay(
   matcher: "match" | "not.match",
   method: "useKeyboard" | "useMouseAndButtons"
 ) {
-  const testCase = [AUF.none, PLL.Aa, AUF.none] as const;
-  cy.overrideNextTestCase(testCase);
+  const firstTestCase = [AUF.none, PLL.Aa, AUF.none] as const;
+  const secondTestCase = [AUF.none, PLL.Aa, AUF.U2] as const;
+  cy.overrideNextTestCase(firstTestCase);
   // Ensure that it's a fresh user
   pllTrainerElements.newUserStartPage.welcomeText.waitFor();
   pllTrainerElements.newUserStartPage.startButton
@@ -177,7 +179,7 @@ function checkWhetherShortcutsDisplay(
     .invoke("text")
     .should(matcher, buildShortcutRegex("Space"));
 
-  cy.overrideNextTestCase(testCase);
+  cy.overrideNextTestCase(firstTestCase);
   if (method === "useKeyboard") {
     // Note this also checks the space shortcut actually works as the label implies
     cy.pressKey(Key.space);
@@ -234,7 +236,7 @@ function checkWhetherShortcutsDisplay(
     });
   });
 
-  cy.overrideNextTestCase(testCase);
+  cy.overrideNextTestCase(secondTestCase);
   // And then we test wrong page works as intended too
   pllTrainerElements.wrongPage.nextButton
     .get()
@@ -249,7 +251,78 @@ function checkWhetherShortcutsDisplay(
   } else {
     pllTrainerElements.wrongPage.nextButton.get().click();
   }
-  pllTrainerElements.getReadyState.container.waitFor();
+
+  fromGetReadyForTestThroughEvaluateResult({
+    milliseconds: 500,
+    correct: false,
+    navigateToGetReadyState: () => {
+      pllTrainerElements.newCasePage.startTestButton.get().click();
+    },
+  });
+
+  pllTrainerElements.algorithmDrillerExplanationPage.continueButton
+    .get()
+    .invoke("text")
+    .should(matcher, buildShortcutRegex("Space"));
+
+  if (method === "useKeyboard") {
+    // Check space actually works as a shortcut too as the label implies.
+    // This is just to make sure we're asserting the right thing.
+    // It's more thoroughly checked in main test
+    cy.pressKey(Key.space);
+  } else {
+    pllTrainerElements.algorithmDrillerExplanationPage.continueButton
+      .get()
+      .click();
+  }
+
+  pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
+    .get()
+    .invoke("text")
+    .should(matcher, buildShortcutRegex("Space"));
+
+  for (let i = 0; i < 3; i++) {
+    fromGetReadyForTestThroughEvaluateResult({
+      milliseconds: 300,
+      correct: true,
+      navigateToGetReadyState: () => {
+        if (method === "useKeyboard") {
+          // Check space actually works as a shortcut too as the label implies.
+          // This is just to make sure we're asserting the right thing.
+          // It's more thoroughly checked in main test
+          cy.pressKey(Key.space);
+        } else {
+          pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
+            .get()
+            .click();
+        }
+      },
+    });
+  }
+
+  pllTrainerElements.algorithmDrillerSuccessPage.nextTestButton
+    .get()
+    .invoke("text")
+    .should(matcher, buildShortcutRegex("Space"));
+
+  if (method === "useKeyboard") {
+    // Check space actually works as a shortcut too as the label implies.
+    // This is just to make sure we're asserting the right thing.
+    // It's more thoroughly checked in main test
+    cy.pressKey(Key.space);
+  } else {
+    pllTrainerElements.algorithmDrillerSuccessPage.nextTestButton.get().click();
+  }
+
+  pllTrainerElements.root.waitForStateChangeAwayFrom(
+    pllTrainerElements.root.stateAttributeValues.algorithmDrillerSuccessPage
+  );
+  pllTrainerElements.root.getStateAttributeValue().should((value) => {
+    expect(value).to.be.oneOf([
+      pllTrainerElements.root.stateAttributeValues.newCasePage,
+      pllTrainerElements.root.stateAttributeValues.getReadyState,
+    ]);
+  });
 }
 
 function buildShortcutRegex(shortcutText: string): RegExp {
