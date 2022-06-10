@@ -7,6 +7,7 @@ module Shared exposing
     , PublicMsg(..)
     , buildSharedMessage
     , getDisplayAngleOverride
+    , getDisplayCubeAnnotationsOverride
     , getSizeOverride
     , init
     , shouldUseDebugViewForVisualTesting
@@ -36,8 +37,6 @@ type alias Flags =
     , storedUser : Json.Decode.Value
     , cubeViewOptions :
         { useDebugViewForVisualTesting : Bool
-        , displayAngleOverride : Maybe String
-        , sizeOverride : Maybe Int
         }
     }
 
@@ -51,6 +50,7 @@ type CubeViewOptions
         { useDebugViewForVisualTesting : Bool
         , displayAngleOverride : Maybe Cube.DisplayAngle
         , sizeOverride : Maybe Int
+        , displayCubeAnnotationsOverride : Maybe Bool
         }
 
 
@@ -67,6 +67,11 @@ getDisplayAngleOverride (CubeViewOptions { displayAngleOverride }) =
 getSizeOverride : CubeViewOptions -> Maybe Int
 getSizeOverride (CubeViewOptions { sizeOverride }) =
     sizeOverride
+
+
+getDisplayCubeAnnotationsOverride : CubeViewOptions -> Maybe Bool
+getDisplayCubeAnnotationsOverride (CubeViewOptions { displayCubeAnnotationsOverride }) =
+    displayCubeAnnotationsOverride
 
 
 
@@ -88,26 +93,6 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser, cubeViewO
     let
         builtViewportSize =
             ViewportSize.build viewportSize
-
-        ( displayAngleOverride, cmd ) =
-            case Maybe.map String.toLower cubeViewOptions.displayAngleOverride of
-                Nothing ->
-                    ( Nothing, Cmd.none )
-
-                Just "ufr" ->
-                    ( Just Cube.ufrDisplayAngle, Cmd.none )
-
-                Just "ubl" ->
-                    ( Just Cube.ublDisplayAngle, Cmd.none )
-
-                Just "dbl" ->
-                    ( Just Cube.dblDisplayAngle, Cmd.none )
-
-                Just displayAngleString ->
-                    ( Nothing
-                    , Ports.logError
-                        ("unsupported display angle in displayAngleOverride flag: " ++ displayAngleString)
-                    )
     in
     ( { viewportSize = builtViewportSize
       , palette = UI.defaultPalette
@@ -126,11 +111,12 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser, cubeViewO
       , cubeViewOptions =
             CubeViewOptions
                 { useDebugViewForVisualTesting = cubeViewOptions.useDebugViewForVisualTesting
-                , displayAngleOverride = displayAngleOverride
-                , sizeOverride = cubeViewOptions.sizeOverride
+                , displayAngleOverride = Nothing
+                , sizeOverride = Nothing
+                , displayCubeAnnotationsOverride = Nothing
                 }
       }
-    , cmd
+    , Cmd.none
     )
 
 
@@ -196,6 +182,7 @@ type PublicMsg
     = ModifyUser (User -> ( User, Maybe { errorMessage : String } ))
     | TESTONLYOverrideDisplayAngle (Maybe Cube.DisplayAngle)
     | TESTONLYSetCubeSizeOverride (Maybe Int)
+    | TESTONLYOverrideDisplayCubeAnnotations (Maybe Bool)
 
 
 update : Request -> Msg -> Model -> ( Model, Cmd Msg )
@@ -263,6 +250,19 @@ update _ msg model =
                             CubeViewOptions
                                 { cubeViewOptionsRecord
                                     | sizeOverride = size
+                                }
+                    in
+                    ( { model | cubeViewOptions = newCubeViewOptions }, Cmd.none )
+
+                TESTONLYOverrideDisplayCubeAnnotations displayAnnotations ->
+                    let
+                        (CubeViewOptions cubeViewOptionsRecord) =
+                            model.cubeViewOptions
+
+                        newCubeViewOptions =
+                            CubeViewOptions
+                                { cubeViewOptionsRecord
+                                    | displayCubeAnnotationsOverride = displayAnnotations
                                 }
                     in
                     ( { model | cubeViewOptions = newCubeViewOptions }, Cmd.none )

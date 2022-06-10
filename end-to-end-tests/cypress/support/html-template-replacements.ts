@@ -12,8 +12,6 @@ export function handleHtmlCypressModifications(html: {
       value:
         JSON.stringify({
           useDebugViewForVisualTesting: true,
-          displayAngleOverride: null,
-          sizeOverride: null,
         }) + ",",
     },
   ]);

@@ -291,7 +291,11 @@ declare namespace Cypress {
 
     overrideCubeDisplayAngle(displayAngle: "ufr" | "ubl" | "dbl" | null): void;
 
+    overrideDisplayCubeAnnotations(displayAnnotations: boolean | null): void;
+
     setCubeSizeOverride(size: number | null): void;
+
+    setPLLAlgorithm(pll: import("./pll").PLL, algorithm: string): void;
   }
 }
 

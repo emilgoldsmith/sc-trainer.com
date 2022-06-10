@@ -37,9 +37,14 @@ view options attributes notFinalParameters cube =
                 |> Maybe.map (\newDisplayAngle -> { notFinalParameters | displayAngle = newDisplayAngle })
                 |> Maybe.withDefault notFinalParameters
 
+        withAnnotationsOverride =
+            Shared.getDisplayCubeAnnotationsOverride options
+                |> Maybe.map (\newDisplayAnnotations -> { withDisplayAngleOverride | annotateFaces = newDisplayAnnotations })
+                |> Maybe.withDefault withDisplayAngleOverride
+
         finalParameters =
             Shared.getSizeOverride options
-                |> Maybe.map (\newSize -> { withDisplayAngleOverride | pixelSize = newSize })
-                |> Maybe.withDefault withDisplayAngleOverride
+                |> Maybe.map (\newSize -> { withAnnotationsOverride | pixelSize = newSize })
+                |> Maybe.withDefault withAnnotationsOverride
     in
     Element.html <| viewFn (htmlCubeTestType :: attributes) finalParameters cube
