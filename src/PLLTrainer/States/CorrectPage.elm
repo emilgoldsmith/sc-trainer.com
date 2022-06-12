@@ -70,8 +70,9 @@ view shared { wasNewCase } transitions =
                         [ testid "good-job-text"
                         , Font.size (ViewportSize.minDimension shared.viewportSize // 30)
                         , UI.paddingHorizontal.extremelyLarge
-                        , width (fill |> maximum 1500)
+                        , width (fill |> maximum 750)
                         , centerX
+                        , Font.center
                         ]
                         [ text "Good Job! This case has been noted as already learned for you, so won't be focused much on until other cases have been learned."
                         ]
