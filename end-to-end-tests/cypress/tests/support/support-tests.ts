@@ -1,10 +1,10 @@
-import { assertCubeMatchesAlias } from "support/assertions";
-import { applyDefaultIntercepts } from "support/interceptors";
-import { PLL, pllToPllLetters } from "support/pll";
 import {
   completePLLTestInMilliseconds,
   pllTrainerElements,
-} from "tests/pll-trainer/state-and-elements.helper";
+} from "e2e/pll-trainer/state-and-elements";
+import { assertCubeMatchesAlias } from "support/assertions";
+import { applyDefaultIntercepts } from "support/interceptors";
+import { PLL, pllToPllLetters } from "support/pll";
 
 // Taken from https://www.petermorlion.com/iterating-a-typescript-enum/
 function enumKeys<
