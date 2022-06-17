@@ -1,4 +1,4 @@
-import { Element } from "./elements";
+import { OurElement } from "./elements";
 
 export function assertNonFalsyStringsEqual(
   first: string | undefined | null,
@@ -53,7 +53,7 @@ export function assertNonFalsyStringsDifferent(
 export function assertCubeMatchesAlias<
   Aliases extends Record<string, unknown>,
   Key extends keyof Aliases
->(alias: Key, element: Element): void {
+>(alias: Key, element: OurElement): void {
   return buildCubeAndAliasMatcher<Aliases, Key>(assertNonFalsyStringsEqual)(
     alias,
     element
@@ -63,7 +63,7 @@ export function assertCubeMatchesAlias<
 export function assertCubeIsDifferentFromAlias<
   Aliases extends Record<string, unknown>,
   Key extends keyof Aliases
->(alias: Key, element: Element): void {
+>(alias: Key, element: OurElement): void {
   return buildCubeAndAliasMatcher<Aliases, Key>(assertNonFalsyStringsDifferent)(
     alias,
     element
@@ -75,7 +75,7 @@ function buildCubeAndAliasMatcher<
   Key extends keyof Aliases
 >(
   matcher: typeof assertNonFalsyStringsDifferent
-): (alias: Key, element: Element) => void {
+): (alias: Key, element: OurElement) => void {
   return function (alias, element) {
     element.getStringRepresentationOfCube().then((actualCubeString) => {
       cy.getSingleAlias<Aliases, Key>(alias).should((wronglyTypedArg) => {

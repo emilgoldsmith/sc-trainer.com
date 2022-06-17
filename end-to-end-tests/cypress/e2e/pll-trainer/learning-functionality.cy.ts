@@ -17,7 +17,7 @@ import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.js
 import { paths } from "support/paths";
 import { Key } from "support/keys";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
-import { Element } from "support/elements";
+import { OurElement } from "support/elements";
 import {
   assertCubeIsDifferentFromAlias,
   assertCubeMatchesAlias,
@@ -40,78 +40,8 @@ describe("PLL Trainer - Learning Functionality", function () {
     // eslint-disable-next-line mocha/no-setup-in-describe
     const elems = pllTrainerElements.pickTargetParametersPage;
 
-    it("has all the correct elements", function () {
-      elems.explanation.assertConsumableViaVerticalScroll(
-        elems.container.specifier
-      );
-      elems.recognitionTimeInput.assertConsumableViaVerticalScroll(
-        elems.container.specifier
-      );
-      elems.targetTPSInput.assertConsumableViaVerticalScroll(
-        elems.container.specifier
-      );
-      elems.submitButton.assertConsumableViaVerticalScroll(
-        elems.container.specifier
-      );
-      cy.assertNoHorizontalScrollbar();
-    });
-
-    it("has the correct default values", function () {
-      elems.recognitionTimeInput.get().should("have.value", "2");
-      elems.targetTPSInput.get().should("have.value", "2.5");
-    });
-
-    it("correctly inputs decimal inputs, including making commas periods", function () {
-      elems.recognitionTimeInput
-        .get()
-        .type("{selectall}{backspace}13.5")
-        .should("have.value", "13.5");
-      elems.targetTPSInput
-        .get()
-        .type("{selectall}{backspace}23.7")
-        .should("have.value", "23.7");
-      elems.recognitionTimeInput
-        .get()
-        .type("{selectall}{backspace}1,3")
-        .should("have.value", "1.3");
-      elems.targetTPSInput
-        .get()
-        .type("{selectall}{backspace}2,9")
-        .should("have.value", "2.9");
-    });
-
-    it("displays decimal keyboard on mobile devices", function () {
-      elems.recognitionTimeInput
-        .get()
-        .should("have.attr", "inputmode", "decimal");
-      elems.targetTPSInput.get().should("have.attr", "inputmode", "decimal");
-    });
-
-    it("displays error exactly if there's an invalid number", function () {
-      testInput(elems.recognitionTimeInput, elems.recognitionTimeError);
-      testInput(elems.targetTPSInput, elems.tpsError);
-
-      function testInput(inputElement: Element, expectedError: Element) {
-        inputElement.get().type("{selectall}{backspace}abc").blur();
-        expectedError.assertShows();
-        inputElement.get().type("{selectall}{backspace}3.5").blur();
-        expectedError.assertDoesntExist();
-        inputElement.get().type("{selectall}{backspace}3.5.5").blur();
-        expectedError.assertShows();
-        inputElement.get().type("{selectall}{backspace}61.1").blur();
-        expectedError.assertDoesntExist();
-        // Empty input should also error
-        inputElement.get().type("{selectall}{backspace}").blur();
-        expectedError.assertShows();
-      }
-    });
-
     // eslint-disable-next-line mocha/no-setup-in-describe
     [
-      {
-        method: "submit button",
-        submit: () => elems.submitButton.get().click(),
-      },
       {
         method: "enter in recognition time input",
         submit: () => elems.recognitionTimeInput.get().type("{enter}"),
@@ -121,32 +51,7 @@ describe("PLL Trainer - Learning Functionality", function () {
         submit: () => elems.targetTPSInput.get().type("{enter}"),
       },
     ].forEach(({ method, submit }) =>
-      it(
-        "submits exactly when there are no errors, using " + method,
-        function () {
-          makeInvalid(elems.recognitionTimeInput, elems.recognitionTimeError);
-          submit();
-          elems.container.assertShows();
-          makeInvalid(elems.targetTPSInput, elems.tpsError);
-          submit();
-          elems.container.assertShows();
-          makeValid(elems.recognitionTimeInput, elems.recognitionTimeError);
-          submit();
-          elems.container.assertShows();
-          makeValid(elems.targetTPSInput, elems.tpsError);
-          submit();
-          pllTrainerElements.newUserStartPage.container.assertShows();
-
-          function makeInvalid(inputElement: Element, errorElement: Element) {
-            inputElement.get().type("abc");
-            errorElement.waitFor();
-          }
-          function makeValid(inputElement: Element, errorElement: Element) {
-            inputElement.get().type("{selectall}{backspace}2.0");
-            errorElement.assertDoesntExist();
-          }
-        }
-      )
+      it("submits exactly when there are no errors, using " + method)
     );
 
     it("persists the target parameters", function () {
@@ -181,70 +86,9 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerStatesNewUser.startPage.restoreState();
     });
 
-    it("has all the correct elements", function () {
-      // These elements should all display without scrolling
-      pllTrainerElements.newUserStartPage.welcomeText.assertShows();
-      pllTrainerElements.newUserStartPage.welcomeText.assertContainedByWindow();
-      // These ones we accept possibly having to scroll for so just check it exists
-      // We check it's visibility including scroll in the element sizing
-      pllTrainerElements.newUserStartPage.cubeStartExplanation
-        .get()
-        .should("exist");
-      pllTrainerElements.newUserStartPage.cubeStartState.get().should("exist");
-      pllTrainerElements.newUserStartPage.startButton.get().should("exist");
-      pllTrainerElements.newUserStartPage.instructionsText
-        .get()
-        .should("exist");
-      pllTrainerElements.newUserStartPage.learningResources
-        .get()
-        .should("exist");
-
-      // A smoke test that we have added some links for the cubing terms
-      pllTrainerElements.newUserStartPage.container.get().within(() => {
-        cy.get("a").should("have.length.above", 0);
-      });
-    });
-
-    it("sizes elements reasonably", function () {
-      cy.assertNoHorizontalScrollbar();
-      const containerId =
-        pllTrainerElements.newUserStartPage.container.specifier;
-      // This one is allowed vertical scrolling, but we want to check
-      // that we can actually scroll down to see instructionsText if its missing
-      pllTrainerElements.newUserStartPage.instructionsText.assertConsumableViaVerticalScroll(
-        pllTrainerElements.newUserStartPage.container.specifier
-      );
-      pllTrainerElements.newUserStartPage.learningResources.assertConsumableViaVerticalScroll(
-        containerId
-      );
-      pllTrainerElements.newUserStartPage.cubeStartExplanation.assertConsumableViaVerticalScroll(
-        containerId
-      );
-      pllTrainerElements.newUserStartPage.cubeStartState.assertConsumableViaVerticalScroll(
-        containerId
-      );
-      pllTrainerElements.newUserStartPage.startButton.assertConsumableViaVerticalScroll(
-        containerId
-      );
-    });
-
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
       pllTrainerElements.newCasePage.container.assertShows();
-    });
-
-    it("starts when pressing the begin button", function () {
-      pllTrainerElements.newUserStartPage.startButton.get().click();
-      pllTrainerElements.newCasePage.container.assertShows();
-    });
-
-    it("doesn't start test when pressing any other keys", function () {
-      cy.pressKey(Key.a);
-      pllTrainerElements.newUserStartPage.container.assertShows();
-      cy.pressKey(Key.x);
-      pllTrainerElements.newUserStartPage.container.assertShows();
-      cy.pressKey(Key.capsLock);
-      pllTrainerElements.newUserStartPage.container.assertShows();
     });
   });
 
@@ -253,32 +97,9 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerStatesNewUser.newCasePage.restoreState();
     });
 
-    it("has all the correct elements", function () {
-      pllTrainerElements.newCasePage.assertAllShow();
-    });
-
-    it("sizes elements reasonably", function () {
-      cy.assertNoHorizontalScrollbar();
-      cy.assertNoVerticalScrollbar();
-    });
-
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
       pllTrainerElements.getReadyState.container.assertShows();
-    });
-
-    it("starts when pressing the begin button", function () {
-      pllTrainerElements.newCasePage.startTestButton.get().click();
-      pllTrainerElements.getReadyState.container.assertShows();
-    });
-
-    it("doesn't start test when pressing any other keys", function () {
-      cy.pressKey(Key.a);
-      pllTrainerElements.newCasePage.container.assertShows();
-      cy.pressKey(Key.x);
-      pllTrainerElements.newCasePage.container.assertShows();
-      cy.pressKey(Key.capsLock);
-      pllTrainerElements.newCasePage.container.assertShows();
     });
 
     it("goes from start page to new case page for new user", function () {

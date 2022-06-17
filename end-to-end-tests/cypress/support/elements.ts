@@ -9,7 +9,7 @@ type ElementMeta = {
 
 type ElementSpecifier = string | { meta: ElementMeta; testId: string | null };
 
-export type Element = {
+export type OurElement = {
   get: ReturnType<typeof buildGetter>;
   waitFor: ReturnType<typeof buildWaiter>;
   assertShows: ReturnType<typeof buildVisibleAsserter>;
@@ -29,7 +29,7 @@ export type Element = {
   specifier: ElementSpecifier;
 };
 
-type InternalElement = Element & { meta: ElementMeta };
+type InternalElement = OurElement & { meta: ElementMeta };
 
 type Options = {
   log?: boolean;
@@ -93,13 +93,13 @@ export function buildElementsCategory<keys extends string>(
     [key in keys]: ElementSpecifier;
   }
 ): {
-  container: Element;
+  container: OurElement;
   assertAllShow: () => void;
   assertAllConsumableViaVerticalScroll: (
     scrollableContainerSpecifier: ElementSpecifier
   ) => void;
 } & {
-  [key in keys]: Element;
+  [key in keys]: OurElement;
 } {
   const getContainer = buildGetter(specifiers.container);
   function buildWithinContainer<T>(
@@ -218,7 +218,7 @@ export function buildGlobalsCategory<keys extends string>(
     [key in keys]: ElementSpecifier;
   }
 ): {
-  [key in keys]: Element;
+  [key in keys]: OurElement;
 } {
   return Cypress._.mapValues(specifiers, buildElement);
 }

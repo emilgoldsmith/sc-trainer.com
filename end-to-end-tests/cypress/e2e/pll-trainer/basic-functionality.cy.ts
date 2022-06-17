@@ -1345,28 +1345,6 @@ describe("PLL Trainer - Basic Functionality", function () {
   });
 
   describe("Test Running", function () {
-    describe("Get Ready State", function () {
-      beforeEach(function () {
-        pllTrainerStatesUserDone.getReadyState.restoreState();
-      });
-
-      it("has all the correct elements", function () {
-        // We don't want it to auto transition while we're doing checks
-        cy.clock();
-        pllTrainerElements.getReadyState.container.assertShows();
-        pllTrainerElements.getReadyState.getReadyOverlay.assertShows();
-        pllTrainerElements.getReadyState.getReadyExplanation.assertShows();
-        // Since they are behind the overlay they don't actually show, so we just assert
-        // they are contained by the window instead
-        pllTrainerElements.getReadyState.timer.assertContainedByWindow();
-        pllTrainerElements.getReadyState.cubePlaceholder.assertContainedByWindow();
-      });
-
-      it("sizes elements reasonably", function () {
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
-      });
-    });
     describe("During Test", function () {
       beforeEach(function () {
         pllTrainerStatesUserDone.testRunning.restoreState();
