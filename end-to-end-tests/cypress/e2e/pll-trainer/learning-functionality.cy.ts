@@ -17,7 +17,6 @@ import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.js
 import { paths } from "support/paths";
 import { Key } from "support/keys";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
-import { OurElement } from "support/elements";
 import {
   assertCubeIsDifferentFromAlias,
   assertCubeMatchesAlias,
@@ -330,98 +329,7 @@ describe("PLL Trainer - Learning Functionality", function () {
       }
     );
 
-    it("looks right", function () {
-      pllTrainerElements.pickAlgorithmPage.assertAllShow();
-      // Produce a very long error and assert it still displays
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type("U B F2 A ".repeat(20) + "{enter}");
-      pllTrainerElements.pickAlgorithmPage.invalidTurnableError.assertShows();
-      cy.assertNoHorizontalScrollbar();
-    });
-
     it("focuses input element on load, has all the right elements and then errors as expected", function () {
-      // Enter the page dynamically just in case using restoreState could mess up
-      // the auto focus
-      pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
-      pllTrainerElements.evaluateResult.correctButton.get().click();
-
-      pllTrainerElements.pickAlgorithmPage.algorithmInput.assertIsFocused();
-
-      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
-      // The text should somehow communicate that the algorithm we are picking for is the Aa PLL
-      pllTrainerElements.pickAlgorithmPage.explanationText
-        .get()
-        .should("contain.text", "Aa");
-      // The page should have an AlgDB link to the case being picked for
-      pllTrainerElements.pickAlgorithmPage.algDbLink
-        .get()
-        .should((link) => {
-          expect(link.prop("tagName")).to.equal("A");
-          // Assert it opens in new tab
-          expect(link.attr("target"), "target").to.equal("_blank");
-
-          expect(link.prop("href"), "href")
-            .to.be.a("string")
-            .and.contain("algdb.net")
-            .and.satisfy(
-              (href: string) => href.endsWith("/aa"),
-              "ends with /aa"
-            );
-        })
-        .then((link) => {
-          // Check that the link actually works
-          cy.request(
-            link.attr("href") ||
-              "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
-          )
-            .its("status")
-            .should("be.at.least", 200)
-            .and("be.lessThan", 300);
-        });
-      // The page should have any type of expert guidance link, any further assertions
-      // would make for too brittle tests
-      pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
-        .get()
-        .should((link) => {
-          expect(link.prop("tagName")).to.equal("A");
-          // Assert it opens in new tab
-          expect(link.attr("target"), "target").to.equal("_blank");
-        })
-        .then((link) => {
-          // Check that the link actually works
-          cy.request(
-            link.attr("href") ||
-              "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
-          )
-            .its("status")
-            .should("be.at.least", 200)
-            .and("be.lessThan", 300);
-        });
-
-      // And the parts dependent on the current test case should
-      // change if we change the current test case
-      cy.setCurrentTestCase([AUF.none, PLL.Ab, AUF.none]);
-      pllTrainerElements.pickAlgorithmPage.explanationText
-        .get()
-        .should("not.contain.text", "Aa");
-      pllTrainerElements.pickAlgorithmPage.explanationText
-        .get()
-        .should("contain.text", "Ab");
-      pllTrainerElements.pickAlgorithmPage.algDbLink.get().should((link) => {
-        expect(link.prop("tagName")).to.equal("A");
-        // Assert it opens in new tab
-        expect(link.attr("target"), "target").to.equal("_blank");
-
-        expect(link.prop("href"), "href")
-          .to.be.a("string")
-          .and.contain("algdb.net")
-          .and.satisfy((href: string) => href.endsWith("/ab"), "ends with /ab");
-      });
-
-      // Shouldn't have error message on load
-      pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
-
       // Should require input if pressing enter right away
       pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
       pllTrainerElements.pickAlgorithmPage.inputRequiredError.assertShows();

@@ -1,15 +1,28 @@
 import { OurElement } from "support/elements";
-import { Key } from "support/keys";
+import { applyDefaultIntercepts } from "support/interceptors";
+import { getKeyValue, Key } from "support/keys";
 import { paths } from "support/paths";
+import { AUF, PLL, pllToAlgorithmString, pllToPllLetters } from "support/pll";
 import {
   getReadyWaitTime,
   pllTrainerElements,
 } from "./pll-trainer/state-and-elements";
 
 describe("PLL Trainer", function () {
+  beforeEach(function () {
+    applyDefaultIntercepts();
+  });
+
   it("todo", function () {
     cy.visit(paths.pllTrainer);
     pllTrainerElements.pickTargetParametersPage.container.waitFor();
+    let currentTestCase: [AUF, PLL, AUF] = [AUF.U, PLL.Ga, AUF.none];
+    cy.overrideNextTestCase(currentTestCase);
+    function getUpdatedTestCase() {
+      // Do it with a wrap like this to properly go to the right place
+      // in the async loop
+      return cy.wrap(null, { log: false }).then(() => currentTestCase);
+    }
     cy.withOverallNameLogged(
       { message: "Pick Target Parameters No Side Effects" },
       pickTargetParametersPageNoSideEffectsButScroll
@@ -51,7 +64,35 @@ describe("PLL Trainer", function () {
       { message: "Test Running" },
       testRunningNoSideEffectsButScroll
     );
-    cy.mouseClickScreen("center");
+    testRunningNavigateVariant1();
+    cy.withOverallNameLogged(
+      { message: "Evaluate Result Page While Ignoring Transitions" },
+      evaluateResultWhileIgnoringTransitionsNoSideEffects
+    );
+    cy.tick(300);
+    cy.withOverallNameLogged(
+      { message: "Evaluate Result Page After Ignoring Transitions" },
+      evaluateResultAfterIgnoringTransitionsNoSideEffects
+    );
+    evaluateResultNavigateVariant1();
+    cy.withOverallNameLogged({ message: "Pick Algorithm Page" }, () => {
+      getUpdatedTestCase().then(([, currentPLL]) => {
+        const nextCase: [AUF, PLL, AUF] = [AUF.U2, PLL.Gb, AUF.UPrime];
+        function changePLL() {
+          currentTestCase = nextCase;
+          cy.setCurrentTestCase(currentTestCase);
+        }
+        pickAlgorithmPageFirstThingNoSideEffects();
+        pickAlgorithmPageSideEffectsExceptNavigations(
+          currentPLL,
+          changePLL,
+          nextCase[1]
+        );
+      });
+    });
+    getUpdatedTestCase().then(([, currentPLL]) =>
+      pickAlgorithmNavigateVariant1(currentPLL)
+    );
   });
 });
 
@@ -193,11 +234,11 @@ function testPickTargetParametersOnlySubmitsWithNoErrors(submit: () => void) {
   pllTrainerElements.newUserStartPage.container.assertShows();
 
   function makeInvalid(inputElement: OurElement, errorElement: OurElement) {
-    inputElement.get().type("abc");
+    inputElement.get().type("abc", { delay: 0 });
     errorElement.waitFor();
   }
   function makeValid(inputElement: OurElement, errorElement: OurElement) {
-    inputElement.get().type("{selectall}{backspace}2.0");
+    inputElement.get().type("{selectall}{backspace}2.0", { delay: 0 });
     errorElement.assertDoesntExist();
   }
 }
@@ -312,9 +353,259 @@ function testRunningNoSideEffectsButScroll() {
       "has all the correct elements",
       () => {
         elements.assertAllShow();
+        cy.assertNoHorizontalScrollbar();
+        cy.assertNoVerticalScrollbar();
       },
     ],
   ] as const).forEach(([testDescription, testFunction]) =>
     cy.withOverallNameLogged({ message: testDescription }, testFunction)
   );
+}
+
+function testRunningNavigateVariant1() {
+  cy.mouseClickScreen("center");
+  pllTrainerElements.testRunning.container.assertDoesntExist();
+}
+
+function evaluateResultWhileIgnoringTransitionsNoSideEffects() {
+  const elements = pllTrainerElements.evaluateResult;
+
+  ([
+    [
+      "looks right",
+      () => {
+        elements.assertAllShow();
+        cy.assertNoHorizontalScrollbar();
+        cy.assertNoVerticalScrollbar();
+      },
+    ],
+    [
+      "doesn't change state when otherwise correct buttons or shortcuts are pressed",
+      () => {
+        elements.correctButton.get().click({ force: true });
+        elements.wrongButton.get().click({ force: true });
+        cy.pressKey(Key.space);
+        cy.pressKey(Key.w);
+        cy.pressKey(Key.W);
+        elements.container.assertShows();
+      },
+    ],
+  ] as const).forEach(([testDescription, testFunction]) =>
+    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  );
+}
+
+function evaluateResultAfterIgnoringTransitionsNoSideEffects() {
+  const elements = pllTrainerElements.evaluateResult;
+
+  ([
+    [
+      "looks right",
+      () => {
+        elements.assertAllShow();
+        cy.assertNoHorizontalScrollbar();
+        cy.assertNoVerticalScrollbar();
+      },
+    ],
+    [
+      "doesn't change state when mouse clicks or keyboard presses that shouldn't work are pressed",
+      () => {
+        ([
+          "center",
+          "top",
+          "left",
+          "right",
+          "bottom",
+          "topLeft",
+          "topRight",
+          "bottomRight",
+          "bottomLeft",
+        ] as const).forEach((position) => {
+          cy.withOverallNameLogged(
+            {
+              name: "testing click",
+              displayName: "TESTING CLICK",
+              message: `position ${position}`,
+            },
+            () => {
+              cy.get("body", { log: false }).click(position, { log: false });
+            }
+          );
+        });
+
+        [Key.leftCtrl, Key.five, Key.l].forEach((key) => {
+          cy.withOverallNameLogged(
+            {
+              displayName: "TESTING KEY",
+              message: "'" + getKeyValue(key) + "'",
+            },
+            () => {
+              cy.pressKey(key, { log: false });
+            }
+          );
+        });
+
+        elements.container.assertShows();
+      },
+    ],
+  ] as const).forEach(([testDescription, testFunction]) =>
+    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  );
+}
+
+function evaluateResultNavigateVariant1() {
+  pllTrainerElements.evaluateResult.correctButton.get().click();
+  pllTrainerElements.evaluateResult.container.assertDoesntExist();
+}
+
+function pickAlgorithmPageFirstThingNoSideEffects() {
+  ([
+    [
+      "auto focuses the algorithm input",
+      () => {
+        pllTrainerElements.pickAlgorithmPage.algorithmInput.assertIsFocused();
+      },
+    ],
+  ] as const).forEach(([testDescription, testFunction]) =>
+    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  );
+}
+
+function pickAlgorithmPageSideEffectsExceptNavigations(
+  firstPLL: PLL,
+  changePLL: () => void,
+  secondPLL: PLL
+) {
+  const elements = pllTrainerElements.pickAlgorithmPage;
+
+  ([
+    [
+      "looks right",
+      () => {
+        // Shouldn't have error message on load
+        pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
+        elements.assertAllShow();
+        // Produce a very long error and assert it still displays, and that it didn't
+        // trigger any scrollbars
+        pllTrainerElements.pickAlgorithmPage.algorithmInput
+          .get()
+          .type("U B F2 A ".repeat(20) + "{enter}", { delay: 0 });
+        pllTrainerElements.pickAlgorithmPage.invalidTurnableError.assertShows();
+        cy.assertNoHorizontalScrollbar();
+        cy.assertNoVerticalScrollbar();
+
+        // The text should somehow communicate which pll we are picking an algorithm for
+        pllTrainerElements.pickAlgorithmPage.explanationText
+          .get()
+          .should("contain.text", pllToPllLetters[firstPLL]);
+      },
+    ],
+    [
+      "has correct links",
+      () => {
+        type Aliases = {
+          firstExpertLink: string;
+        };
+        // The page should have an AlgDB link to the case being picked for
+        testAlgdbLink(firstPLL);
+        // The page should have any type of expert guidance link, any further assertions
+        // would make for too brittle tests
+        pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
+          .get()
+          .should((link) => {
+            expect(link.prop("tagName")).to.equal("A");
+            // Assert it opens in new tab
+            expect(link.attr("target"), "target").to.equal("_blank");
+          })
+          .then((link) => {
+            const url =
+              link.attr("href") ||
+              "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
+            // Check that the link actually works
+            return cy
+              .request(url)
+              .its("status")
+              .should("be.at.least", 200)
+              .and("be.lessThan", 300)
+              .then(() => url);
+          })
+          .setAlias<Aliases, "firstExpertLink">("firstExpertLink");
+
+        // NOTE: Pll is changed to secondPLL from here on out
+        changePLL();
+
+        testAlgdbLink(secondPLL);
+        pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
+          .get()
+          .should((link) => {
+            expect(link.prop("tagName")).to.equal("A");
+            // Assert it opens in new tab
+            expect(link.attr("target"), "target").to.equal("_blank");
+          })
+          .then((link) => {
+            const url =
+              link.attr("href") ||
+              "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
+            // Check that the link actually works
+            cy.request(url)
+              .its("status")
+              .should("be.at.least", 200)
+              .and("be.lessThan", 300);
+            return cy.getAliases<Aliases>().then((aliases) => ({
+              previous: aliases.firstExpertLink,
+              current: url,
+            }));
+          })
+          .should(({ previous, current }) => {
+            expect(previous).to.not.be.undefined;
+            expect(current).to.not.deep.equal(previous);
+          });
+
+        function testAlgdbLink(currentPLL: PLL) {
+          pllTrainerElements.pickAlgorithmPage.algDbLink
+            .get()
+            .should((link) => {
+              expect(link.prop("tagName")).to.equal("A");
+              // Assert it opens in new tab
+              expect(link.attr("target"), "target").to.equal("_blank");
+
+              expect(link.prop("href"), "href")
+                .to.be.a("string")
+                .and.contain("algdb.net")
+                .and.satisfy(
+                  (href: string) =>
+                    href
+                      .toLowerCase()
+                      .endsWith(
+                        "/" + pllToPllLetters[currentPLL].toLowerCase()
+                      ),
+                  "ends with /" + pllToPllLetters[currentPLL].toLowerCase()
+                );
+            })
+            .then((link) => {
+              // Check that the link actually works
+              cy.request(
+                link.attr("href") ||
+                  "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
+              )
+                .its("status")
+                .should("be.at.least", 200)
+                .and("be.lessThan", 300);
+            });
+        }
+      },
+    ],
+  ] as const).forEach(([testDescription, testFunction]) =>
+    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  );
+}
+
+function pickAlgorithmNavigateVariant1(currentPLL: PLL) {
+  pllTrainerElements.pickAlgorithmPage.algorithmInput
+    .get()
+    .type(
+      "{selectall}{backspace}" + pllToAlgorithmString[currentPLL] + "{enter}",
+      { delay: 0 }
+    );
+  pllTrainerElements.pickAlgorithmPage.container.assertDoesntExist();
 }
