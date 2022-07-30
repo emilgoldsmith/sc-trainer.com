@@ -3,6 +3,7 @@ import { Key } from "support/keys";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
 import { AUF, PLL, pllToAlgorithmString } from "support/pll";
 import {
+  evaluateResultIgnoreTransitionsWaitTime,
   fromGetReadyForTestThroughEvaluateResult,
   getReadyWaitTime,
   pllTrainerElements,
@@ -149,7 +150,7 @@ function checkWhetherShortcutsDisplay(
     .invoke("text")
     .should(matcher, buildShortcutRegex("Space"));
 
-  cy.tick(300);
+  cy.tick(evaluateResultIgnoreTransitionsWaitTime);
   if (method === "useKeyboard") {
     // Note this also checks the space shortcut actually works as the label implies
     cy.pressKey(Key.space);
@@ -202,7 +203,7 @@ function checkWhetherShortcutsDisplay(
     .invoke("text")
     .should(matcher, buildShortcutRegex("[wW]"));
 
-  cy.tick(300);
+  cy.tick(evaluateResultIgnoreTransitionsWaitTime);
   if (method === "useKeyboard") {
     // Note this also checks the w shortcut actually works as the label implies
     cy.pressKey(Key.w);

@@ -193,6 +193,7 @@ export const pllTrainerElements = {
 };
 
 export const getReadyWaitTime = 2400;
+export const evaluateResultIgnoreTransitionsWaitTime = 300;
 
 export const pllTrainerStatesUserDone = buildStates<
   | "startPage"
@@ -285,7 +286,7 @@ export const pllTrainerStatesUserDone = buildStates<
         cy.clock();
         cy.pressKey(Key.space, options);
         pllTrainerElements.evaluateResult.container.waitFor(options);
-        cy.tick(300, options);
+        cy.tick(evaluateResultIgnoreTransitionsWaitTime, options);
         cy.clock().then((clock) => clock.restore());
       },
       waitForStateToAppear: (options) => {
@@ -471,7 +472,7 @@ export const pllTrainerStatesNewUser = buildStates<
         pllTrainerElements.getReadyState.container.waitFor(options);
         cy.tick(getReadyWaitTime, options);
         pllTrainerElements.testRunning.container.waitFor();
-        cy.tick(300);
+        cy.tick(evaluateResultIgnoreTransitionsWaitTime);
         cy.pressKey(Key.space, options);
         cy.clock().then((clock) => clock.restore());
       },
@@ -500,10 +501,10 @@ export const pllTrainerStatesNewUser = buildStates<
         pllTrainerElements.getReadyState.container.waitFor(options);
         cy.tick(getReadyWaitTime, options);
         pllTrainerElements.testRunning.container.waitFor();
-        cy.tick(300);
+        cy.tick(evaluateResultIgnoreTransitionsWaitTime);
         cy.pressKey(Key.space, options);
         pllTrainerElements.evaluateResult.container.waitFor(options);
-        cy.tick(300, options);
+        cy.tick(evaluateResultIgnoreTransitionsWaitTime, options);
         cy.clock().then((clock) => clock.restore());
       },
       waitForStateToAppear: (options) => {
