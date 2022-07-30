@@ -1828,49 +1828,8 @@ describe("PLL Trainer - Basic Functionality", function () {
       pllTrainerStatesUserDone.correctPage.restoreState();
     });
 
-    it("has all the correct elements", function () {
-      pllTrainerElements.correctPage.nextButton.assertShows();
-      pllTrainerElements.globals.feedbackButton
-        .assertShows()
-        .parent()
-        .within(() => {
-          // It should be a link going to a google form
-          cy.get("a")
-            .should((linkElement) => {
-              expect(linkElement.prop("href"), "href")
-                .to.be.a("string")
-                .and.satisfy(
-                  (href: string) => href.startsWith("https://forms.gle/"),
-                  "starts with https://forms.gle/"
-                );
-              // Asserts it opens in new tab
-              expect(linkElement.attr("target"), "target").to.equal("_blank");
-            })
-            .then((link) => {
-              // Check that the link actually works
-              cy.request(
-                link.attr("href") ||
-                  "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
-              )
-                .its("status")
-                .should("be.at.least", 200)
-                .and("be.lessThan", 300);
-            });
-        });
-    });
-
-    it("sizes elements reasonably", function () {
-      cy.assertNoHorizontalScrollbar();
-      cy.assertNoVerticalScrollbar();
-    });
-
     it("starts test when pressing space", function () {
       cy.pressKey(Key.space);
-      pllTrainerElements.getReadyState.container.assertShows();
-    });
-
-    it("starts when pressing the next button", function () {
-      pllTrainerElements.correctPage.nextButton.get().click();
       pllTrainerElements.getReadyState.container.assertShows();
     });
 
@@ -1887,83 +1846,6 @@ describe("PLL Trainer - Basic Functionality", function () {
   describe("Type Of Wrong Page", function () {
     beforeEach(function () {
       pllTrainerStatesUserDone.typeOfWrongPage.restoreState();
-    });
-
-    it("has all the correct elements", function () {
-      type Aliases = {
-        originalCubeFront: string;
-        originalCubeBack: string;
-        nextCubeFront: string;
-        nextCubeBack: string;
-      };
-      // Go to evaluate to get the "original" cube state
-      pllTrainerStatesUserDone.evaluateResultAfterIgnoringTransitions.restoreState();
-      cy.log("GETTING ORIGINAL CUBE STRINGS");
-      pllTrainerElements.evaluateResult.expectedCubeFront
-        .getStringRepresentationOfCube()
-        .setAlias<Aliases, "originalCubeFront">("originalCubeFront");
-      pllTrainerElements.evaluateResult.expectedCubeBack
-        .getStringRepresentationOfCube()
-        .setAlias<Aliases, "originalCubeBack">("originalCubeBack");
-      // Run another test case
-      pllTrainerElements.evaluateResult.correctButton.get().click();
-      cy.clock();
-      pllTrainerElements.correctPage.nextButton.get().click();
-      pllTrainerElements.getReadyState.container.waitFor();
-      cy.tick(getReadyWaitTime);
-      pllTrainerElements.testRunning.container.waitFor();
-      cy.mouseClickScreen("center");
-      // We're back at Evaluate Result
-      cy.log("GETTING NEXT CUBE STRINGS");
-      pllTrainerElements.evaluateResult.expectedCubeFront
-        .getStringRepresentationOfCube()
-        .setAlias<Aliases, "nextCubeFront">("nextCubeFront");
-      pllTrainerElements.evaluateResult.expectedCubeBack
-        .getStringRepresentationOfCube()
-        .setAlias<Aliases, "nextCubeBack">("nextCubeBack");
-      // Navigate to Type Of Wrong for the tests
-      cy.tick(500);
-      pllTrainerElements.evaluateResult.wrongButton.get().click();
-      pllTrainerElements.typeOfWrongPage.container.waitFor();
-      // SETUP DONE
-
-      // Check all elements are present
-      pllTrainerElements.typeOfWrongPage.assertAllShow();
-
-      // Check all the cubes look right
-
-      // The cube for 'no moves applied' should be the same state as the previous/original expected cube state
-      assertCubeMatchesAlias<Aliases, "originalCubeFront">(
-        "originalCubeFront",
-        pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
-      );
-      assertCubeMatchesAlias<Aliases, "originalCubeBack">(
-        "originalCubeBack",
-        pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
-      );
-      // The cube for 'nearly there' should look like the expected state if you had
-      // solved the case correctly
-      assertCubeMatchesAlias<Aliases, "nextCubeFront">(
-        "nextCubeFront",
-        pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
-      );
-      assertCubeMatchesAlias<Aliases, "nextCubeBack">(
-        "nextCubeBack",
-        pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateBack
-      );
-    });
-
-    it("sizes elements reasonably", function () {
-      cy.assertNoHorizontalScrollbar();
-      cy.assertNoVerticalScrollbar();
-    });
-
-    it("doesn't leave the page on arbitrary key presses", function () {
-      // on purpose use some of the ones we often use like space and w
-      [Key.space, Key.w, Key.W, Key.five, Key.d, Key.shift].forEach((key) => {
-        cy.pressKey(key);
-        pllTrainerElements.typeOfWrongPage.container.assertShows();
-      });
     });
 
     it("navigates to 'wrong page' displaying the cube displayed under no moves button when it's clicked", function () {

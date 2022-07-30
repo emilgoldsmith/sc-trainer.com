@@ -8,6 +8,7 @@ import {
 } from "support/pll";
 import {
   completePLLTestInMilliseconds,
+  evaluateResultIgnoreTransitionsWaitTime,
   fromGetReadyForTestThroughEvaluateResult,
   pllTrainerElements,
   pllTrainerStatesNewUser,
@@ -94,11 +95,6 @@ describe("PLL Trainer - Learning Functionality", function () {
   describe("New Case Page", function () {
     beforeEach(function () {
       pllTrainerStatesNewUser.newCasePage.restoreState();
-    });
-
-    it("starts test when pressing space", function () {
-      cy.pressKey(Key.space);
-      pllTrainerElements.getReadyState.container.assertShows();
     });
 
     it("goes from start page to new case page for new user", function () {
@@ -297,7 +293,7 @@ describe("PLL Trainer - Learning Functionality", function () {
 
             cy.mouseClickScreen("center");
             pllTrainerElements.evaluateResult.container.waitFor();
-            cy.tick(300);
+            cy.tick(evaluateResultIgnoreTransitionsWaitTime);
             cy.clock().then((clock) => clock.restore());
             fromEvaluateToPickAlgorithm();
 
@@ -592,44 +588,6 @@ describe("PLL Trainer - Learning Functionality", function () {
   describe("Algorithm Driller Explanation Page", function () {
     // eslint-disable-next-line mocha/no-setup-in-describe
     const elements = pllTrainerElements.algorithmDrillerExplanationPage;
-
-    it("looks right", function () {
-      type Aliases = { testCaseCube: string };
-      completePLLTestInMilliseconds(1000, PLL.Jb, {
-        correct: false,
-        aufs: [],
-        testRunningCallback: () =>
-          pllTrainerElements.testRunning.testCase
-            .getStringRepresentationOfCube()
-            .setAlias<Aliases, "testCaseCube">("testCaseCube"),
-        algorithmDrillerExplanationPageCallback: () => {
-          elements.assertAllConsumableViaVerticalScroll(
-            elements.container.specifier
-          );
-          assertCubeMatchesAlias<Aliases, "testCaseCube">(
-            "testCaseCube",
-            elements.caseToDrill
-          );
-        },
-      });
-    });
-
-    it("sizes elements correctly", function () {
-      pllTrainerStatesNewUser.algorithmDrillerExplanationPage.restoreState();
-      cy.assertNoHorizontalScrollbar();
-    });
-
-    it("continues to driller state page on button click", function () {
-      pllTrainerStatesNewUser.algorithmDrillerExplanationPage.restoreState();
-      elements.continueButton.get().click();
-      pllTrainerElements.algorithmDrillerStatusPage.container.assertShows();
-    });
-
-    it("continues to driller state page on space bar press", function () {
-      pllTrainerStatesNewUser.algorithmDrillerExplanationPage.restoreState();
-      cy.pressKey(Key.space);
-      pllTrainerElements.algorithmDrillerStatusPage.container.assertShows();
-    });
 
     it("goes to driller when a new case is not solved correctly and displays exactly wrong text", function () {
       // Driller first time pll is encountered
