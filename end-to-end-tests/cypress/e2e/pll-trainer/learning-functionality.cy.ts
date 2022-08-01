@@ -81,17 +81,6 @@ describe("PLL Trainer - Learning Functionality", function () {
     });
   });
 
-  describe("New User Start Page", function () {
-    beforeEach(function () {
-      pllTrainerStatesNewUser.startPage.restoreState();
-    });
-
-    it("starts test when pressing space", function () {
-      cy.pressKey(Key.space);
-      pllTrainerElements.newCasePage.container.assertShows();
-    });
-  });
-
   describe("New Case Page", function () {
     beforeEach(function () {
       pllTrainerStatesNewUser.newCasePage.restoreState();
