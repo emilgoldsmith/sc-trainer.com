@@ -29,6 +29,8 @@ describe("Support Tests", function () {
         type Aliases = {
           firstCube: string;
         };
+        // Here we first run a test where the app's default algorithm is used
+        // but in pick algorithm we provide our test's default algorithm
         completePLLTestInMilliseconds(500, pll, {
           aufs: [],
           correct: true,
@@ -38,6 +40,8 @@ describe("Support Tests", function () {
               .setAlias<Aliases, "firstCube">("firstCube"),
         });
 
+        // Here we then run it now with our test's default algorithm
+        // and assert that it results in the same cube as with the app\s default
         completePLLTestInMilliseconds(500, pll, {
           aufs: [],
           correct: true,
