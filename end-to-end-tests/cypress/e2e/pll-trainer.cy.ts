@@ -11,11 +11,15 @@ import {
 } from "./pll-trainer/state-and-elements";
 
 type Aliases = {
+  solvedFront: string;
+  solvedBack: string;
   testCaseCube: string;
   originalCubeFront: string;
   originalCubeBack: string;
   nextCubeFront: string;
   nextCubeBack: string;
+  evaluateResultFront: string;
+  evaluateResultBack: string;
 };
 
 describe("PLL Trainer", function () {
@@ -70,6 +74,14 @@ describe("PLL Trainer", function () {
       },
       newUserStartPageNoSideEffectsButScroll
     );
+    pllTrainerElements.newUserStartPage.cubeStartState
+      .getStringRepresentationOfCube()
+      .setAlias<Aliases, "solvedFront">("solvedFront");
+    cy.overrideCubeDisplayAngle("ubl");
+    pllTrainerElements.newUserStartPage.cubeStartState
+      .getStringRepresentationOfCube()
+      .setAlias<Aliases, "solvedBack">("solvedBack");
+    cy.overrideCubeDisplayAngle(null);
     cy.withOverallNameLogged(
       { message: "To New Case Page" },
       startPageNavigateVariant1
@@ -177,6 +189,62 @@ describe("PLL Trainer", function () {
         algorithmDrillerExplanationPageNavigateVariant1();
       }
     );
+    cy.withOverallNameLogged(
+      { message: "Algorithm Driller Status Page" },
+      () => {
+        algorithmDrillerStatusPageNoSideEffects({
+          expectedCubeStateWasNotSolvedBeforeThis: true,
+        });
+      }
+    );
+    cy.withOverallNameLogged(
+      {
+        message:
+          "Complete Three Drills Successfully, ending at Algorithm Driller Success Page",
+      },
+      () => {
+        for (let i = 0; i < 3; i++) {
+          if (i % 2 === 0) {
+            cy.withOverallNameLogged(
+              { message: "Status Page Navigate Variant 1" },
+              algorithmDrillerStatusPageNavigateVariant1
+            );
+          } else {
+            cy.withOverallNameLogged(
+              { message: "Status Page Navigate Variant 2" },
+              algorithmDrillerStatusPageNavigateVariant2
+            );
+          }
+          pllTrainerElements.getReadyState.container.waitFor();
+          cy.tick(getReadyWaitTime);
+          pllTrainerElements.testRunning.container.waitFor();
+          testRunningNavigateVariant3();
+          pllTrainerElements.evaluateResult.container.waitFor();
+          cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+          if (i === 0) {
+            pllTrainerElements.evaluateResult.expectedCubeFront
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "evaluateResultFront">("evaluateResultFront");
+            pllTrainerElements.evaluateResult.expectedCubeBack
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
+          }
+          evaluateResultNavigateCorrectVariant2();
+          if (i === 0) {
+            cy.withOverallNameLogged(
+              { message: "After 1 success" },
+              algorithmDrillerStatusPageAfter1SuccessNoSideEffects
+            );
+          } else if (i === 1) {
+            cy.withOverallNameLogged(
+              { message: "After 2 successes" },
+              algorithmDrillerStatusPageAfter2SuccessesNoSideEffects
+            );
+          }
+        }
+      }
+    );
+    pllTrainerElements.algorithmDrillerSuccessPage.container.waitFor();
   });
 });
 
@@ -1004,4 +1072,92 @@ function algorithmDrillerExplanationPageNavigateVariant1() {
 function algorithmDrillerExplanationPageNavigateVariant2() {
   cy.pressKey(Key.space);
   pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist();
+}
+
+// We are just adding this argument to make it clear what the requirements
+// are for the caller. That's also why only true is allowed
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function algorithmDrillerStatusPageNoSideEffects(_: {
+  expectedCubeStateWasNotSolvedBeforeThis: true;
+}) {
+  const elements = pllTrainerElements.algorithmDrillerStatusPage;
+
+  ([
+    [
+      "looks right",
+      () => {
+        elements.assertAllShow();
+        cy.assertNoHorizontalScrollbar();
+        cy.assertNoVerticalScrollbar();
+      },
+    ],
+    [
+      "the expected cube state at first is always solved even if expected cube state was not solved before",
+      () => {
+        assertCubeMatchesAlias<Aliases, "solvedFront">(
+          "solvedFront",
+          elements.expectedCubeStateFront
+        );
+        assertCubeMatchesAlias<Aliases, "solvedBack">(
+          "solvedBack",
+          elements.expectedCubeStateBack
+        );
+      },
+    ],
+    [
+      "initial attempts left value reads 3",
+      () => {
+        elements.correctConsecutiveAttemptsLeft.get().should("have.text", "3");
+      },
+    ],
+    [
+      "doesn't start test when pressing keys other than space",
+      () => {
+        cy.pressKey(Key.a);
+        cy.pressKey(Key.x);
+        cy.pressKey(Key.capsLock);
+        elements.container.assertShows();
+      },
+    ],
+  ] as const).forEach(([testDescription, testFunction]) =>
+    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  );
+}
+
+function algorithmDrillerStatusPageAfter1SuccessNoSideEffects() {
+  const elements = pllTrainerElements.algorithmDrillerStatusPage;
+
+  elements.correctConsecutiveAttemptsLeft.get().should("have.text", "2");
+
+  // Here we assert that the cube is displayed in the expected state
+  assertCubeMatchesAlias<Aliases, "evaluateResultFront">(
+    "evaluateResultFront",
+    elements.expectedCubeStateFront
+  );
+  assertCubeMatchesAlias<Aliases, "evaluateResultBack">(
+    "evaluateResultBack",
+    elements.expectedCubeStateBack
+  );
+}
+
+function algorithmDrillerStatusPageAfter1Success1FailureNoSideEffects() {
+  pllTrainerElements.algorithmDrillerStatusPage.correctConsecutiveAttemptsLeft
+    .get()
+    .should("have.text", "3");
+}
+
+function algorithmDrillerStatusPageAfter2SuccessesNoSideEffects() {
+  pllTrainerElements.algorithmDrillerStatusPage.correctConsecutiveAttemptsLeft
+    .get()
+    .should("have.text", "1");
+}
+
+function algorithmDrillerStatusPageNavigateVariant1() {
+  pllTrainerElements.algorithmDrillerStatusPage.nextTestButton.get().click();
+  pllTrainerElements.algorithmDrillerStatusPage.container.assertDoesntExist();
+}
+
+function algorithmDrillerStatusPageNavigateVariant2() {
+  cy.pressKey(Key.space);
+  pllTrainerElements.algorithmDrillerStatusPage.container.assertDoesntExist();
 }
