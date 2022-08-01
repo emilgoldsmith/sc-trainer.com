@@ -3,6 +3,7 @@ import { OurElement } from "support/elements";
 import { applyDefaultIntercepts } from "support/interceptors";
 import { getKeyValue, Key } from "support/keys";
 import { paths } from "support/paths";
+import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
 import {
   AUF,
   aufToAlgorithmString,
@@ -34,6 +35,15 @@ type Aliases = {
 describe("PLL Trainer", function () {
   beforeEach(function () {
     applyDefaultIntercepts();
+  });
+
+  it("recurring user", function () {
+    cy.setLocalStorage(fullyPopulatedLocalStorage);
+    cy.visit(paths.pllTrainer);
+    cy.withOverallNameLogged(
+      { message: "Done User Start Page" },
+      recurringUserStartPageNoSideEffectsButScroll
+    );
   });
 
   it("todo", function () {
@@ -93,7 +103,7 @@ describe("PLL Trainer", function () {
     cy.overrideCubeDisplayAngle(null);
     cy.withOverallNameLogged(
       { message: "To New Case Page" },
-      startPageNavigateVariant1
+      newUserStartPageBeginNavigateVariant1
     );
     cy.withOverallNameLogged(
       { message: "New Case Page" },
@@ -478,8 +488,77 @@ function newUserStartPageNoSideEffectsButScroll() {
   );
 }
 
-function startPageNavigateVariant1() {
+function newUserStartPageBeginNavigateVariant1() {
   pllTrainerElements.newUserStartPage.startButton.get().click();
+  pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+}
+
+function newUserStartPageBeginNavigateVariant2() {
+  cy.pressKey(Key.space);
+  pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+}
+
+function newUserStartPageEditTargetParamsNavigateVariant1() {
+  pllTrainerElements.newUserStartPage.editTargetParametersButton.get().click();
+  pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+}
+
+function recurringUserStartPageNoSideEffectsButScroll() {
+  const elements = pllTrainerElements.recurringUserStartPage;
+
+  ([
+    [
+      "looks right",
+      () => {
+        // These elements should all display without scrolling
+        [
+          pllTrainerElements.recurringUserStartPage.numCasesTried,
+          pllTrainerElements.recurringUserStartPage.numCasesNotYetTried,
+          pllTrainerElements.recurringUserStartPage.worstThreeCases,
+          pllTrainerElements.recurringUserStartPage.averageTPS,
+          pllTrainerElements.recurringUserStartPage.averageTime,
+        ].forEach((x) => {
+          x.assertShows();
+          x.assertContainedByWindow();
+        });
+        elements.assertAllConsumableViaVerticalScroll(
+          elements.container.specifier
+        );
+        cy.assertNoHorizontalScrollbar();
+        // A smoke test that we have added some links for the cubing terms
+        pllTrainerElements.recurringUserStartPage.container.get().within(() => {
+          cy.get("a").should("have.length.above", 0);
+        });
+      },
+    ],
+    [
+      "doesn't start test when pressing other keys than space",
+      () => {
+        cy.pressKey(Key.a);
+        elements.container.assertShows();
+        cy.pressKey(Key.x);
+        elements.container.assertShows();
+        cy.pressKey(Key.capsLock);
+        elements.container.assertShows();
+      },
+    ],
+  ] as const).forEach(([testDescription, testFunction]) =>
+    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  );
+}
+
+function recurringUserStartPageNavigateVariant1() {
+  pllTrainerElements.recurringUserStartPage.startButton.get().click();
+  pllTrainerElements.recurringUserStartPage.container.assertDoesntExist();
+}
+
+function recurringUserStartPageNavigateVariant2() {
+  cy.pressKey(Key.space);
+  pllTrainerElements.recurringUserStartPage.container.assertDoesntExist();
+}
+
+function recurringUserStartPageEditTargetParamsNavigateVariant1() {
+  pllTrainerElements.newUserStartPage.editTargetParametersButton.get().click();
   pllTrainerElements.newUserStartPage.container.assertDoesntExist();
 }
 
