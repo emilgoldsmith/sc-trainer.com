@@ -781,36 +781,4 @@ describe("PLL Trainer - Learning Functionality", function () {
       );
     });
   });
-
-  describe("Algorithm Driller Success Page", function () {
-    // eslint-disable-next-line mocha/no-setup-in-describe
-    const elements = pllTrainerElements.algorithmDrillerSuccessPage;
-
-    beforeEach(function () {
-      pllTrainerStatesNewUser.algorithmDrillerSuccessPage.restoreState();
-    });
-
-    it("looks right", function () {
-      elements.assertAllShow();
-    });
-
-    it("sizes elements correctly", function () {
-      cy.assertNoHorizontalScrollbar();
-      cy.assertNoVerticalScrollbar();
-    });
-
-    it("starts new test on button click", function () {
-      elements.nextTestButton.get().click();
-      // Since it's a new user and this was the first case they learned,
-      // the learning algorithm should always present a new case afterwards
-      pllTrainerElements.newCasePage.container.assertShows();
-    });
-
-    it("starts new test on space bar press", function () {
-      cy.pressKey(Key.space);
-      // Since it's a new user and this was the first case they learned,
-      // the learning algorithm should always present a new case afterwards
-      pllTrainerElements.newCasePage.container.assertShows();
-    });
-  });
 });

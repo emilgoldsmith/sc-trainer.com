@@ -270,14 +270,15 @@ describe("Visual Tests", function () {
         algorithmDrillerStatusPageCallback: () =>
           cy.percySnapshotWithProperName("Algorithm Driller Status Page"),
       });
+      cy.clock();
       for (let i = 0; i < 3; i++) {
+        pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
+          .get()
+          .click();
         fromGetReadyForTestThroughEvaluateResult({
+          cyClockAlreadyCalled: true,
           milliseconds: 500,
           correct: true,
-          navigateToGetReadyState: () =>
-            pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
-              .get()
-              .click(),
         });
       }
 

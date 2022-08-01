@@ -622,14 +622,15 @@ export const pllTrainerStatesNewUser = buildStates<
       name: "algorithmDrillerSuccessPage",
       getToThatState: (getState, options) => {
         getState("algorithmDrillerStatusPage");
+        cy.clock();
         for (let i = 0; i < 3; i++) {
+          pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
+            .get(options)
+            .click(options);
           fromGetReadyForTestThroughEvaluateResult({
+            cyClockAlreadyCalled: true,
             correct: true,
             milliseconds: 500,
-            navigateToGetReadyState: () =>
-              pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
-                .get(options)
-                .click(options),
           });
         }
       },
@@ -697,28 +698,29 @@ export function completePLLTestInMilliseconds(
   pllTrainerElements.newUserStartPage.container.waitFor();
   startPageCallback?.();
   cy.overrideNextTestCase(testCase);
-  fromGetReadyForTestThroughEvaluateResult({
-    correct,
-    milliseconds,
-    navigateToGetReadyState: () => {
-      pllTrainerElements.newUserStartPage.startButton.get().click();
-      pllTrainerElements.root.waitForStateChangeAwayFrom(
-        stateAttributeValues.startPage
-      );
+  cy.clock();
 
-      pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
-        // It is purposeful this is here before we know if new case page is actually
-        // displaying, as we want to allow for assert doesn't exist in the callback
-        // and also for it to error if you try finding new case page in a case where
-        // it doesn't display
-        newCasePageCallback?.();
-        if (stateValue === stateAttributeValues.newCasePage) {
-          pllTrainerElements.newCasePage.startTestButton.get().click();
-        }
-      });
-    },
+  pllTrainerElements.newUserStartPage.startButton.get().click();
+  pllTrainerElements.root.waitForStateChangeAwayFrom(
+    stateAttributeValues.startPage
+  );
+
+  pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+    // It is purposeful this is here before we know if new case page is actually
+    // displaying, as we want to allow for assert doesn't exist in the callback
+    // and also for it to error if you try finding new case page in a case where
+    // it doesn't display
+    newCasePageCallback?.();
+    if (stateValue === stateAttributeValues.newCasePage) {
+      pllTrainerElements.newCasePage.startTestButton.get().click();
+    }
+  });
+  fromGetReadyForTestThroughEvaluateResult({
+    cyClockAlreadyCalled: true,
+    milliseconds,
     ...(testRunningCallback === undefined ? {} : { testRunningCallback }),
     ...(evaluateResultCallback === undefined ? {} : { evaluateResultCallback }),
+    ...(correct ? { correct } : { wrong: "unrecoverable" }),
   });
   pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
     if (stateValue === stateAttributeValues.pickAlgorithmPage) {
@@ -729,6 +731,7 @@ export function completePLLTestInMilliseconds(
         );
     }
   });
+  cy.clock().then((clock) => clock.restore());
   if (correct && params.correctPageCallback) {
     pllTrainerElements.correctPage.container.waitFor();
     params.correctPageCallback();
@@ -748,42 +751,62 @@ export function completePLLTestInMilliseconds(
   }
 }
 
-export function fromGetReadyForTestThroughEvaluateResult({
-  milliseconds,
-  correct,
-  navigateToGetReadyState,
-  testRunningCallback,
-  evaluateResultCallback,
-}: {
-  milliseconds: number;
-  correct: boolean;
-  navigateToGetReadyState: () => void;
-  testRunningCallback?: () => void;
-  evaluateResultCallback?: () => void;
-}): void {
+export function fromGetReadyForTestThroughEvaluateResult(
+  params: {
+    // This is just for communication about requirements to caller
+    cyClockAlreadyCalled: true;
+    milliseconds: number;
+    testRunningCallback?: () => void;
+    evaluateResultCallback?: () => void;
+    testRunningNavigator?: () => void;
+  } & (
+    | {
+        correct: true;
+        evaluateResultCorrectNavigator?: () => void;
+      }
+    | {
+        wrong: "unrecoverable" | "nearly there" | "no moves made";
+        evaluateResultWrongNavigator?: () => void;
+      }
+  )
+): void {
+  const {
+    milliseconds,
+    testRunningCallback,
+    evaluateResultCallback,
+    testRunningNavigator,
+  } = params;
   const { stateAttributeValues } = pllTrainerElements.root;
-
-  cy.clock();
-  navigateToGetReadyState();
 
   pllTrainerElements.getReadyState.container.waitFor();
   cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();
   cy.tick(milliseconds);
   testRunningCallback?.();
-  cy.mouseClickScreen("center");
+  (testRunningNavigator ?? (() => cy.mouseClickScreen("center")))();
   pllTrainerElements.evaluateResult.container.waitFor();
   cy.tick(500);
-  cy.clock().then((clock) => clock.restore());
   evaluateResultCallback?.();
-  if (correct) {
-    pllTrainerElements.evaluateResult.correctButton.get().click();
+  if ("correct" in params) {
+    (
+      params.evaluateResultCorrectNavigator ??
+      (() => pllTrainerElements.evaluateResult.correctButton.get().click())
+    )();
     pllTrainerElements.root.waitForStateChangeAwayFrom(
       stateAttributeValues.evaluateResultPage
     );
   } else {
-    pllTrainerElements.evaluateResult.wrongButton.get().click();
-    pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+    (
+      params.evaluateResultWrongNavigator ??
+      (() => pllTrainerElements.evaluateResult.wrongButton.get().click())
+    )();
+    if (params.wrong === "unrecoverable") {
+      pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+    } else if (params.wrong === "nearly there") {
+      pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
+    } else {
+      pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
+    }
     pllTrainerElements.root.waitForStateChangeAwayFrom(
       stateAttributeValues.typeOfWrongPage
     );

@@ -6,6 +6,7 @@ import { paths } from "support/paths";
 import { AUF, PLL, pllToAlgorithmString, pllToPllLetters } from "support/pll";
 import {
   evaluateResultIgnoreTransitionsWaitTime,
+  fromGetReadyForTestThroughEvaluateResult,
   getReadyWaitTime,
   pllTrainerElements,
 } from "./pll-trainer/state-and-elements";
@@ -203,48 +204,65 @@ describe("PLL Trainer", function () {
           "Complete Three Drills Successfully, ending at Algorithm Driller Success Page",
       },
       () => {
-        for (let i = 0; i < 3; i++) {
-          if (i % 2 === 0) {
-            cy.withOverallNameLogged(
-              { message: "Status Page Navigate Variant 1" },
-              algorithmDrillerStatusPageNavigateVariant1
-            );
-          } else {
-            cy.withOverallNameLogged(
-              { message: "Status Page Navigate Variant 2" },
-              algorithmDrillerStatusPageNavigateVariant2
-            );
-          }
-          pllTrainerElements.getReadyState.container.waitFor();
-          cy.tick(getReadyWaitTime);
-          pllTrainerElements.testRunning.container.waitFor();
-          testRunningNavigateVariant3();
-          pllTrainerElements.evaluateResult.container.waitFor();
-          cy.tick(evaluateResultIgnoreTransitionsWaitTime);
-          if (i === 0) {
+        algorithmDrillerStatusPageNavigateVariant1();
+        fromGetReadyForTestThroughEvaluateResult({
+          cyClockAlreadyCalled: true,
+          milliseconds: 500,
+          correct: true,
+          testRunningNavigator: testRunningNavigateVariant3,
+          evaluateResultCallback() {
             pllTrainerElements.evaluateResult.expectedCubeFront
               .getStringRepresentationOfCube()
               .setAlias<Aliases, "evaluateResultFront">("evaluateResultFront");
             pllTrainerElements.evaluateResult.expectedCubeBack
               .getStringRepresentationOfCube()
               .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
-          }
-          evaluateResultNavigateCorrectVariant2();
-          if (i === 0) {
-            cy.withOverallNameLogged(
-              { message: "After 1 success" },
-              algorithmDrillerStatusPageAfter1SuccessNoSideEffects
-            );
-          } else if (i === 1) {
-            cy.withOverallNameLogged(
-              { message: "After 2 successes" },
-              algorithmDrillerStatusPageAfter2SuccessesNoSideEffects
-            );
-          }
-        }
+          },
+          evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant2,
+        });
+        cy.withOverallNameLogged(
+          { message: "After 1 success" },
+          algorithmDrillerStatusPageAfter1SuccessNoSideEffects
+        );
+        algorithmDrillerStatusPageNavigateVariant2();
+        fromGetReadyForTestThroughEvaluateResult({
+          cyClockAlreadyCalled: true,
+          milliseconds: 500,
+          correct: true,
+          testRunningNavigator: testRunningNavigateVariant4,
+          evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant1,
+        });
+        cy.withOverallNameLogged(
+          { message: "After 2 successes" },
+          algorithmDrillerStatusPageAfter2SuccessesNoSideEffects
+        );
+        algorithmDrillerStatusPageNavigateVariant1();
+        fromGetReadyForTestThroughEvaluateResult({
+          cyClockAlreadyCalled: true,
+          milliseconds: 500,
+          correct: true,
+          testRunningNavigator: testRunningNavigateVariant5,
+          evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant1,
+        });
       }
     );
-    pllTrainerElements.algorithmDrillerSuccessPage.container.waitFor();
+    cy.withOverallNameLogged(
+      { message: "Algorithm Driller Success Page" },
+      () => {
+        algorithmDrillerSuccessPageNoSideEffects();
+      }
+    );
+    cy.withOverallNameLogged({ message: "To Wrong Page" }, () => {
+      // Redo the same case so we don't go over the driller stuff etc.
+      cy.overrideNextTestCase(getCurrentTestCase());
+      algorithmDrillerSuccessPageNavigateVariant1();
+      fromGetReadyForTestThroughEvaluateResult({
+        cyClockAlreadyCalled: true,
+        milliseconds: 100,
+        wrong: "nearly there",
+      });
+      pllTrainerElements.wrongPage.container.waitFor();
+    });
   });
 });
 
@@ -1160,4 +1178,40 @@ function algorithmDrillerStatusPageNavigateVariant1() {
 function algorithmDrillerStatusPageNavigateVariant2() {
   cy.pressKey(Key.space);
   pllTrainerElements.algorithmDrillerStatusPage.container.assertDoesntExist();
+}
+
+function algorithmDrillerSuccessPageNoSideEffects() {
+  const elements = pllTrainerElements.algorithmDrillerSuccessPage;
+
+  ([
+    [
+      "looks right",
+      () => {
+        elements.assertAllShow();
+        cy.assertNoHorizontalScrollbar();
+        cy.assertNoVerticalScrollbar();
+      },
+    ],
+    [
+      "doesn't start test when pressing keys other than space",
+      () => {
+        cy.pressKey(Key.a);
+        cy.pressKey(Key.x);
+        cy.pressKey(Key.capsLock);
+        elements.container.assertShows();
+      },
+    ],
+  ] as const).forEach(([testDescription, testFunction]) =>
+    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  );
+}
+
+function algorithmDrillerSuccessPageNavigateVariant1() {
+  pllTrainerElements.algorithmDrillerSuccessPage.nextTestButton.get().click();
+  pllTrainerElements.algorithmDrillerSuccessPage.container.assertDoesntExist();
+}
+
+function algorithmDrillerSuccessPageNavigateVariant2() {
+  cy.pressKey(Key.space);
+  pllTrainerElements.algorithmDrillerSuccessPage.container.assertDoesntExist();
 }
