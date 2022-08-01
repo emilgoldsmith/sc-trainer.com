@@ -1,3 +1,5 @@
 Maybe do a refactor so we're passing in the aliases to the functions so it's obvious which aliases which functions require? Make the dependencies more explicit
 
 There's actually no need for identifying the type of wrong if you're going to the algorithm driller, correct?
+
+Should we just implement a getCurrentTestCase function that just asks the app what the current test case is so we can set the test case much less frequently?
