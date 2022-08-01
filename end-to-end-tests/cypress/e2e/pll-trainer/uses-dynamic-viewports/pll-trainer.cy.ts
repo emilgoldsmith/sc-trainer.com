@@ -253,12 +253,12 @@ function checkWhetherShortcutsDisplay(
     pllTrainerElements.wrongPage.nextButton.get().click();
   }
 
+  cy.clock();
+  pllTrainerElements.newCasePage.startTestButton.get().click();
   fromGetReadyForTestThroughEvaluateResult({
+    cyClockAlreadyCalled: true,
     milliseconds: 500,
-    correct: false,
-    navigateToGetReadyState: () => {
-      pllTrainerElements.newCasePage.startTestButton.get().click();
-    },
+    wrong: "unrecoverable",
   });
 
   pllTrainerElements.algorithmDrillerExplanationPage.continueButton
@@ -283,21 +283,20 @@ function checkWhetherShortcutsDisplay(
     .should(matcher, buildShortcutRegex("Space"));
 
   for (let i = 0; i < 3; i++) {
+    if (method === "useKeyboard") {
+      // Check space actually works as a shortcut too as the label implies.
+      // This is just to make sure we're asserting the right thing.
+      // It's more thoroughly checked in main test
+      cy.pressKey(Key.space);
+    } else {
+      pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
+        .get()
+        .click();
+    }
     fromGetReadyForTestThroughEvaluateResult({
+      cyClockAlreadyCalled: true,
       milliseconds: 300,
       correct: true,
-      navigateToGetReadyState: () => {
-        if (method === "useKeyboard") {
-          // Check space actually works as a shortcut too as the label implies.
-          // This is just to make sure we're asserting the right thing.
-          // It's more thoroughly checked in main test
-          cy.pressKey(Key.space);
-        } else {
-          pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
-            .get()
-            .click();
-        }
-      },
     });
   }
 
