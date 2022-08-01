@@ -3,7 +3,13 @@ import { OurElement } from "support/elements";
 import { applyDefaultIntercepts } from "support/interceptors";
 import { getKeyValue, Key } from "support/keys";
 import { paths } from "support/paths";
-import { AUF, PLL, pllToAlgorithmString, pllToPllLetters } from "support/pll";
+import {
+  AUF,
+  aufToAlgorithmString,
+  PLL,
+  pllToAlgorithmString,
+  pllToPllLetters,
+} from "support/pll";
 import {
   evaluateResultIgnoreTransitionsWaitTime,
   fromGetReadyForTestThroughEvaluateResult,
@@ -15,6 +21,8 @@ type Aliases = {
   solvedFront: string;
   solvedBack: string;
   testCaseCube: string;
+  testCaseFront: string;
+  testCaseBack: string;
   originalCubeFront: string;
   originalCubeBack: string;
   nextCubeFront: string;
@@ -260,8 +268,25 @@ describe("PLL Trainer", function () {
         cyClockAlreadyCalled: true,
         milliseconds: 100,
         wrong: "nearly there",
+        testRunningCallback() {
+          cy.overrideDisplayCubeAnnotations(true);
+          pllTrainerElements.testRunning.testCase
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "testCaseFront">("testCaseFront");
+          cy.overrideCubeDisplayAngle("ubl");
+          pllTrainerElements.testRunning.testCase
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "testCaseBack">("testCaseBack");
+          cy.overrideCubeDisplayAngle(null);
+          cy.overrideDisplayCubeAnnotations(null);
+        },
       });
-      pllTrainerElements.wrongPage.container.waitFor();
+    });
+    cy.withOverallNameLogged({ message: "Wrong Page" }, () => {
+      wrongPageNoSideEffects({
+        nearlyThereTypeOfWrongWasUsed: true,
+        currentTestCase: getCurrentTestCase(),
+      });
     });
   });
 });
@@ -573,25 +598,25 @@ function testRunningNavigateVariant6() {
 
 function testRunningNavigateChangingClockVariant1() {
   // Extra interesting as it's used as a shortcut in evaluate result
-  cy.pressKey(Key.space);
+  cy.longPressKey(Key.space);
   pllTrainerElements.testRunning.container.assertDoesntExist();
 }
 
 function testRunningNavigateChangingClockVariant2() {
   // Extra interesting as it's used as a shortcut in evaluate result
-  cy.pressKey(Key.w);
+  cy.longPressKey(Key.w);
   pllTrainerElements.testRunning.container.assertDoesntExist();
 }
 
 function testRunningNavigateChangingClockVariant3() {
   // Extra interesting as it's used as a shortcut in evaluate result
-  cy.pressKey(Key.W);
+  cy.longPressKey(Key.W);
   pllTrainerElements.testRunning.container.assertDoesntExist();
 }
 
 function testRunningNavigateChangingClockVariant4() {
   // Just a random "nonimportant" key, to make sure that works too
-  cy.pressKey(Key.five);
+  cy.longPressKey(Key.five);
   pllTrainerElements.testRunning.container.assertDoesntExist();
 }
 
@@ -922,33 +947,7 @@ function correctPageNoSideEffects() {
         elements.assertAllShow();
         cy.assertNoHorizontalScrollbar();
         cy.assertNoVerticalScrollbar();
-        pllTrainerElements.globals.feedbackButton
-          .assertShows()
-          .parent()
-          .within(() => {
-            // It should be a link going to a google form
-            cy.get("a")
-              .should((linkElement) => {
-                expect(linkElement.prop("href"), "href")
-                  .to.be.a("string")
-                  .and.satisfy(
-                    (href: string) => href.startsWith("https://forms.gle/"),
-                    "starts with https://forms.gle/"
-                  );
-                // Asserts it opens in new tab
-                expect(linkElement.attr("target"), "target").to.equal("_blank");
-              })
-              .then((link) => {
-                // Check that the link actually works
-                cy.request(
-                  link.attr("href") ||
-                    "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
-                )
-                  .its("status")
-                  .should("be.at.least", 200)
-                  .and("be.lessThan", 300);
-              });
-          });
+        assertFunctioningFeedbackButtonShows();
       },
     ],
     [
@@ -967,6 +966,11 @@ function correctPageNoSideEffects() {
 
 function correctPageNavigateVariant1() {
   pllTrainerElements.correctPage.nextButton.get().click();
+  pllTrainerElements.correctPage.container.assertDoesntExist();
+}
+
+function correctPageNavigateVariant2() {
+  cy.pressKey(Key.space);
   pllTrainerElements.correctPage.container.assertDoesntExist();
 }
 
@@ -1214,4 +1218,137 @@ function algorithmDrillerSuccessPageNavigateVariant1() {
 function algorithmDrillerSuccessPageNavigateVariant2() {
   cy.pressKey(Key.space);
   pllTrainerElements.algorithmDrillerSuccessPage.container.assertDoesntExist();
+}
+
+// It's important that the nearly there button was used because
+// otherwise expected state could be solved state which could avoid catching
+// a bug we actually (nearly) had in production where what was
+// displayed was the expectedCube with the inverse test case applied
+// to it instead of the solved cube with inverse test case
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function wrongPageNoSideEffects({
+  currentTestCase,
+}: {
+  nearlyThereTypeOfWrongWasUsed: true;
+  currentTestCase: [AUF, PLL, AUF];
+}) {
+  const elements = pllTrainerElements.wrongPage;
+
+  ([
+    [
+      "looks right",
+      () => {
+        elements.assertAllShow();
+        assertFunctioningFeedbackButtonShows();
+        cy.assertNoHorizontalScrollbar();
+        cy.assertNoVerticalScrollbar();
+
+        // Test case cubes look correct
+        assertCubeMatchesAlias<Aliases, "testCaseFront">(
+          "testCaseFront",
+          pllTrainerElements.wrongPage.testCaseFront
+        );
+        assertCubeMatchesAlias<Aliases, "testCaseBack">(
+          "testCaseBack",
+          pllTrainerElements.wrongPage.testCaseBack
+        );
+      },
+    ],
+    [
+      "doesn't start test when pressing keys other than space",
+      () => {
+        cy.pressKey(Key.a);
+        cy.pressKey(Key.x);
+        cy.pressKey(Key.capsLock);
+        elements.container.assertShows();
+      },
+    ],
+    [
+      "has the right correct answer text",
+      () => {
+        // Verify U and U2 display correctly
+        const firstTestCase = [AUF.U, PLL.Aa, AUF.U2] as const;
+        cy.setCurrentTestCase(firstTestCase);
+        pllTrainerElements.wrongPage.testCaseName
+          .get()
+          .invoke("text")
+          .should("match", testCaseToWrongPageRegex(firstTestCase));
+
+        // Verify U' and nothing display correctly, while also trying a different PLL
+        const secondTestCase = [AUF.UPrime, PLL.Ab, AUF.none] as const;
+        cy.setCurrentTestCase(secondTestCase);
+        pllTrainerElements.wrongPage.testCaseName
+          .get()
+          .invoke("text")
+          .should("match", testCaseToWrongPageRegex(secondTestCase));
+
+        // Verify no AUFs displays correctly and also trying a third PLL
+        const thirdTestCase = [AUF.none, PLL.H, AUF.none] as const;
+        cy.setCurrentTestCase(thirdTestCase);
+        pllTrainerElements.wrongPage.testCaseName
+          .get()
+          .invoke("text")
+          .should("match", testCaseToWrongPageRegex(thirdTestCase));
+
+        // Reset to the previous test case, which is very important to uphold the
+        // promise of no side effects
+        cy.setCurrentTestCase(currentTestCase);
+      },
+    ],
+  ] as const).forEach(([testDescription, testFunction]) =>
+    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  );
+}
+
+function testCaseToWrongPageRegex(testCase: readonly [AUF, PLL, AUF]): RegExp {
+  const firstAufString = aufToAlgorithmString[testCase[0]];
+  const secondAufString = aufToAlgorithmString[testCase[2]];
+  return new RegExp(
+    [
+      firstAufString && String.raw`\b${firstAufString}\s+`,
+      String.raw`[^\b]*${pllToPllLetters[testCase[1]]}[^\b]*`,
+      secondAufString && String.raw`\s+${secondAufString}\b`,
+    ].join("")
+  );
+}
+
+function wrongPageNavigateVariant1() {
+  pllTrainerElements.wrongPage.nextButton.get().click();
+  pllTrainerElements.wrongPage.container.assertDoesntExist();
+}
+
+function wrongPageNavigateVariant2() {
+  cy.pressKey(Key.space);
+  pllTrainerElements.wrongPage.container.assertDoesntExist();
+}
+
+function assertFunctioningFeedbackButtonShows() {
+  pllTrainerElements.globals.feedbackButton
+    .assertShows()
+    .parent()
+    .within(() => {
+      // It should be a link going to a google form
+      cy.get("a")
+        .should((linkElement) => {
+          expect(linkElement.prop("href"), "href")
+            .to.be.a("string")
+            .and.satisfy(
+              (href: string) => href.startsWith("https://forms.gle/"),
+              "starts with https://forms.gle/"
+            );
+          // Asserts it opens in new tab
+          expect(linkElement.attr("target"), "target").to.equal("_blank");
+        })
+        .then((link) => {
+          // Check that the link actually works
+          cy.request(
+            link.attr("href") ||
+              "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
+          )
+            .its("status")
+            .should("be.at.least", 200)
+            .and("be.lessThan", 300);
+        });
+    });
 }
