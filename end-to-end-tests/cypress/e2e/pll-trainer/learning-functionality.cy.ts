@@ -40,20 +40,6 @@ describe("PLL Trainer - Learning Functionality", function () {
     // eslint-disable-next-line mocha/no-setup-in-describe
     const elems = pllTrainerElements.pickTargetParametersPage;
 
-    // eslint-disable-next-line mocha/no-setup-in-describe
-    [
-      {
-        method: "enter in recognition time input",
-        submit: () => elems.recognitionTimeInput.get().type("{enter}"),
-      },
-      {
-        method: "enter in tps input",
-        submit: () => elems.targetTPSInput.get().type("{enter}"),
-      },
-    ].forEach(({ method, submit }) =>
-      it("submits exactly when there are no errors, using " + method)
-    );
-
     it("persists the target parameters", function () {
       const recognitionTime = "3.5";
       const tps = "1.3";
@@ -461,16 +447,6 @@ describe("PLL Trainer - Learning Functionality", function () {
       pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
       // Now it should show because we submitted
       pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertShows();
-    });
-
-    it("continues to next page on submit button click", function () {
-      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type(pllToAlgorithmString[PLL.Aa]);
-      pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
-
-      pllTrainerElements.correctPage.container.assertShows();
     });
 
     context("Persistence", function () {

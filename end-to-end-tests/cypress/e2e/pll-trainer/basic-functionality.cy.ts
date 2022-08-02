@@ -1165,8 +1165,6 @@ describe("PLL Trainer - Basic Functionality", function () {
         pllTrainerStatesUserDone.testRunning.restoreState();
       });
 
-      it("has all the correct elements", function () {});
-
       it("sizes elements reasonably", function () {
         // Get max length timer to stress test content fitting
         getTestRunningWithMaxLengthTimer();
@@ -1245,47 +1243,6 @@ describe("PLL Trainer - Basic Functionality", function () {
       });
 
       describe("ends test correctly", function () {
-        it("on clicking anywhere on the screen", function () {
-          ([
-            "topLeft",
-            "top",
-            "topRight",
-            "right",
-            "bottomRight",
-            "bottom",
-            "bottomLeft",
-            "bottom",
-            "left",
-            "center",
-          ] as const).forEach((position) => {
-            cy.withOverallNameLogged(
-              {
-                name: "testingClick",
-                displayName: "TESTING CLICK",
-                message: position,
-              },
-              () => {
-                cy.mouseClickScreen(position);
-                pllTrainerElements.evaluateResult.container.assertShows({
-                  log: false,
-                });
-              }
-            );
-            cy.withOverallNameLogged(
-              {
-                name: "resetting state",
-                displayName: "RESETTING STATE",
-                message: "to testRunning state",
-              },
-              () => {
-                pllTrainerStatesUserDone.testRunning.restoreState({
-                  log: false,
-                });
-              }
-            );
-          });
-        });
-
         it("on touching the screen over the area where the correct button is", function () {
           // We observed touching on mobile over the place where the button is can trigger the click event
           // on the next screen about 120ms after. So we just test that clicking 150ms (to be safe) after (with mocked time) doesn't
@@ -1321,10 +1278,6 @@ describe("PLL Trainer - Basic Functionality", function () {
     describe("starting at ignoring key presses state", function () {
       beforeEach(function () {
         pllTrainerStatesUserDone.evaluateResult.restoreState();
-      });
-
-      it("has all the correct elements", function () {
-        pllTrainerElements.evaluateResult.assertAllShow();
       });
 
       it("sizes elements reasonably", function () {
