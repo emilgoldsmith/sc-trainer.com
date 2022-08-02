@@ -410,15 +410,80 @@ function pickTargetParametersPageSideEffectsExceptNavigations() {
         }
       },
     ],
+    ...([
+      {
+        method: "submit button",
+        submit: () => elements.submitButton.get().click(),
+      },
+      {
+        method: "enter in recognition time input",
+        submit: () => elements.recognitionTimeInput.get().type("{enter}"),
+      },
+      {
+        method: "enter in TPS input",
+        submit: () => elements.targetTPSInput.get().type("{enter}"),
+      },
+    ] as const).map(
+      ({ method, submit }) =>
+        [
+          "doesn't submit if there are errors using " + method,
+          () => {
+            makeInvalid(
+              elements.recognitionTimeInput,
+              elements.recognitionTimeError
+            );
+            submit();
+            elements.container.assertShows();
+            makeInvalid(elements.targetTPSInput, elements.tpsError);
+            submit();
+            elements.container.assertShows();
+            makeValid(
+              elements.recognitionTimeInput,
+              elements.recognitionTimeError
+            );
+            submit();
+            elements.container.assertShows();
+
+            function makeInvalid(
+              inputElement: OurElement,
+              errorElement: OurElement
+            ) {
+              inputElement.get().type("abc", { delay: 0 });
+              errorElement.waitFor();
+            }
+            function makeValid(
+              inputElement: OurElement,
+              errorElement: OurElement
+            ) {
+              inputElement
+                .get()
+                .type("{selectall}{backspace}2.0", { delay: 0 });
+              errorElement.assertDoesntExist();
+            }
+          },
+        ] as const
+    ),
   ] as const).forEach(([testDescription, testFunction]) =>
     cy.withOverallNameLogged({ message: testDescription }, testFunction)
   );
 }
 
 function pickTargetParametersNavigateVariant1() {
-  testPickTargetParametersOnlySubmitsWithNoErrors(() =>
-    pllTrainerElements.pickTargetParametersPage.submitButton.get().click()
-  );
+  pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
+  pllTrainerElements.pickTargetParametersPage.container.assertDoesntExist();
+}
+
+function pickTargetParametersNavigateVariant2() {
+  pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+    .get()
+    .type("{enter}");
+  pllTrainerElements.pickTargetParametersPage.container.assertDoesntExist();
+}
+
+function pickTargetParametersNavigateVariant3() {
+  pllTrainerElements.pickTargetParametersPage.targetTPSInput
+    .get()
+    .type("{enter}");
   pllTrainerElements.pickTargetParametersPage.container.assertDoesntExist();
 }
 
@@ -641,6 +706,8 @@ function testRunningNoSideEffectsButScroll() {
   );
 }
 
+// TODO: If there is space for more navigation variants then adding more places
+// to click here for both mouse and touch would be a good idea.
 function testRunningNavigateVariant1() {
   cy.mouseClickScreen("topLeft");
   pllTrainerElements.testRunning.container.assertDoesntExist();
