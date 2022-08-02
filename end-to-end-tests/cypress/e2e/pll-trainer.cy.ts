@@ -1,4 +1,4 @@
-import { assertCubeMatchesAlias } from "support/assertions";
+import { assertCubeMatchesStateString } from "support/assertions";
 import { OurElement } from "support/elements";
 import { applyDefaultIntercepts } from "support/interceptors";
 import { getKeyValue, Key } from "support/keys";
@@ -21,15 +21,12 @@ import {
 type Aliases = {
   solvedFront: string;
   solvedBack: string;
-  testCaseCube: string;
   testCaseFront: string;
   testCaseBack: string;
-  originalCubeFront: string;
-  originalCubeBack: string;
-  nextCubeFront: string;
-  nextCubeBack: string;
   evaluateResultFront: string;
   evaluateResultBack: string;
+  previousEvaluateResultFront: string;
+  previousEvaluateResultBack: string;
 };
 
 describe("PLL Trainer", function () {
@@ -82,10 +79,15 @@ describe("PLL Trainer", function () {
       { message: "Pick Target Parameters Side Effects" },
       pickTargetParametersPageSideEffectsExceptNavigations
     );
-    cy.withOverallNameLogged(
-      { message: "To New User Page" },
-      pickTargetParametersNavigateVariant1
-    );
+    cy.withOverallNameLogged({ message: "To New User Page" }, () => {
+      pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+        .get()
+        .type("{selectall}{backspace}2");
+      pllTrainerElements.pickTargetParametersPage.targetTPSInput
+        .get()
+        .type("{selectall}{backspace}4");
+      pickTargetParametersNavigateVariant1();
+    });
     pllTrainerElements.newUserStartPage.container.get().scrollTo("topLeft");
     cy.withOverallNameLogged(
       {
@@ -138,10 +140,14 @@ describe("PLL Trainer", function () {
     );
     pllTrainerElements.evaluateResult.expectedCubeFront
       .getStringRepresentationOfCube()
-      .setAlias<Aliases, "originalCubeFront">("originalCubeFront");
+      .setAlias<Aliases, "previousEvaluateResultFront">(
+        "previousEvaluateResultFront"
+      );
     pllTrainerElements.evaluateResult.expectedCubeBack
       .getStringRepresentationOfCube()
-      .setAlias<Aliases, "originalCubeBack">("originalCubeBack");
+      .setAlias<Aliases, "previousEvaluateResultBack">(
+        "previousEvaluateResultBack"
+      );
     cy.withOverallNameLogged(
       { message: "To Pick Algorithm Page" },
       evaluateResultNavigateCorrectVariant1
@@ -175,19 +181,41 @@ describe("PLL Trainer", function () {
       testCaseIndex++;
       pllTrainerElements.testRunning.testCase
         .getStringRepresentationOfCube()
-        .setAlias<Aliases, "testCaseCube">("testCaseCube");
+        .setAlias<Aliases, "testCaseFront">("testCaseFront");
       testRunningNavigateVariant2();
       cy.tick(evaluateResultIgnoreTransitionsWaitTime);
       pllTrainerElements.evaluateResult.expectedCubeFront
         .getStringRepresentationOfCube()
-        .setAlias<Aliases, "nextCubeFront">("nextCubeFront");
+        .setAlias<Aliases, "evaluateResultFront">("evaluateResultFront");
       pllTrainerElements.evaluateResult.expectedCubeBack
         .getStringRepresentationOfCube()
-        .setAlias<Aliases, "nextCubeBack">("nextCubeBack");
+        .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
       evaluateResultNavigateWrongVariant1();
     });
     cy.withOverallNameLogged({ message: "Type Of Wrong Page" }, () => {
-      TypeOfWrongPageNoSideEffects();
+      cy.getAliases<Aliases>()
+        .then((aliases) =>
+          verifyKeysDefined(aliases, [
+            "previousEvaluateResultFront",
+            "previousEvaluateResultBack",
+            "evaluateResultFront",
+            "evaluateResultBack",
+          ])
+        )
+        .then(
+          ({
+            previousEvaluateResultFront,
+            previousEvaluateResultBack,
+            evaluateResultFront,
+            evaluateResultBack,
+          }) =>
+            TypeOfWrongPageNoSideEffects({
+              originalExpectedCubeFront: previousEvaluateResultFront,
+              originalExpectedCubeBack: previousEvaluateResultBack,
+              nextExpectedCubeFront: evaluateResultFront,
+              nextExpectedCubeBack: evaluateResultBack,
+            })
+        );
     });
     cy.withOverallNameLogged(
       { message: "To Algorithm Driller Explanation Page" },
@@ -199,7 +227,13 @@ describe("PLL Trainer", function () {
     cy.withOverallNameLogged(
       { message: "Algorithm Driller Explanation Page" },
       () => {
-        algorithmDrillerExplanationPageNoSideEffectsButScroll();
+        cy.getAliases<Aliases>()
+          .then((aliases) => verifyKeysDefined(aliases, ["testCaseFront"]))
+          .then(({ testCaseFront }) =>
+            algorithmDrillerExplanationPageNoSideEffectsButScroll({
+              testCaseCube: testCaseFront,
+            })
+          );
       }
     );
     cy.withOverallNameLogged(
@@ -211,9 +245,16 @@ describe("PLL Trainer", function () {
     cy.withOverallNameLogged(
       { message: "Algorithm Driller Status Page" },
       () => {
-        algorithmDrillerStatusPageNoSideEffects({
-          expectedCubeStateWasNotSolvedBeforeThis: true,
-        });
+        cy.getAliases<Aliases>()
+          .then((aliases) =>
+            verifyKeysDefined(aliases, ["solvedFront", "solvedBack"])
+          )
+          .then((aliases) =>
+            algorithmDrillerStatusPageNoSideEffects({
+              expectedCubeStateWasNotSolvedBeforeThis: true,
+              ...aliases,
+            })
+          );
       }
     );
     cy.withOverallNameLogged(
@@ -238,10 +279,16 @@ describe("PLL Trainer", function () {
           },
           evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant2,
         });
-        cy.withOverallNameLogged(
-          { message: "After 1 success" },
-          algorithmDrillerStatusPageAfter1SuccessNoSideEffects
-        );
+        cy.withOverallNameLogged({ message: "After 1 success" }, () => {
+          cy.getAliases<Aliases>()
+            .then((aliases) =>
+              verifyKeysDefined(aliases, [
+                "evaluateResultFront",
+                "evaluateResultBack",
+              ])
+            )
+            .then(algorithmDrillerStatusPageAfter1SuccessNoSideEffects);
+        });
         algorithmDrillerStatusPageNavigateVariant2();
         fromGetReadyForTestThroughEvaluateResult({
           cyClockAlreadyCalled: true,
@@ -293,13 +340,37 @@ describe("PLL Trainer", function () {
       });
     });
     cy.withOverallNameLogged({ message: "Wrong Page" }, () => {
-      wrongPageNoSideEffects({
-        nearlyThereTypeOfWrongWasUsed: true,
-        currentTestCase: getCurrentTestCase(),
-      });
+      cy.getAliases<Aliases>()
+        .then((aliases) =>
+          verifyKeysDefined(aliases, ["testCaseFront", "testCaseBack"])
+        )
+        .then((aliases) => {
+          wrongPageNoSideEffects({
+            nearlyThereTypeOfWrongWasUsed: true,
+            currentTestCase: getCurrentTestCase(),
+            ...aliases,
+          });
+        });
     });
   });
 });
+
+function verifyKeysDefined<Keys extends string, PickedKeys extends Keys>(
+  object: Partial<Record<Keys, string | undefined>>,
+  keys: PickedKeys[]
+): { [key in PickedKeys]: string } {
+  const result: { [key in PickedKeys]: string } = {} as {
+    [key in PickedKeys]: string;
+  };
+  for (const key of keys) {
+    const value: string | undefined = object[key];
+    if (value === undefined) {
+      throw new Error(`Key ${key} is not defined`);
+    }
+    result[key] = value;
+  }
+  return result;
+}
 
 function pickTargetParametersPageNoSideEffectsButScroll() {
   const elements = pllTrainerElements.pickTargetParametersPage;
@@ -1120,7 +1191,17 @@ function correctPageNavigateVariant2() {
   pllTrainerElements.correctPage.container.assertDoesntExist();
 }
 
-function TypeOfWrongPageNoSideEffects() {
+function TypeOfWrongPageNoSideEffects({
+  originalExpectedCubeFront,
+  originalExpectedCubeBack,
+  nextExpectedCubeFront,
+  nextExpectedCubeBack,
+}: {
+  originalExpectedCubeFront: string;
+  originalExpectedCubeBack: string;
+  nextExpectedCubeFront: string;
+  nextExpectedCubeBack: string;
+}) {
   const elements = pllTrainerElements.typeOfWrongPage;
   ([
     [
@@ -1134,22 +1215,22 @@ function TypeOfWrongPageNoSideEffects() {
         // Check all the cubes look right
 
         // The cube for 'no moves applied' should be the same state as the previous/original expected cube state
-        assertCubeMatchesAlias<Aliases, "originalCubeFront">(
-          "originalCubeFront",
+        assertCubeMatchesStateString(
+          originalExpectedCubeFront,
           elements.noMoveCubeStateFront
         );
-        assertCubeMatchesAlias<Aliases, "originalCubeBack">(
-          "originalCubeBack",
+        assertCubeMatchesStateString(
+          originalExpectedCubeBack,
           elements.noMoveCubeStateBack
         );
         // The cube for 'nearly there' should look like the expected state if you had
         // solved the case correctly
-        assertCubeMatchesAlias<Aliases, "nextCubeFront">(
-          "nextCubeFront",
+        assertCubeMatchesStateString(
+          nextExpectedCubeFront,
           elements.nearlyThereCubeStateFront
         );
-        assertCubeMatchesAlias<Aliases, "nextCubeBack">(
-          "nextCubeBack",
+        assertCubeMatchesStateString(
+          nextExpectedCubeBack,
           elements.nearlyThereCubeStateBack
         );
       },
@@ -1199,7 +1280,11 @@ function typeOfWrongPageUnrecoverableNavigateVariant2() {
   pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
 }
 
-function algorithmDrillerExplanationPageNoSideEffectsButScroll() {
+function algorithmDrillerExplanationPageNoSideEffectsButScroll({
+  testCaseCube,
+}: {
+  testCaseCube: string;
+}) {
   const elements = pllTrainerElements.algorithmDrillerExplanationPage;
 
   ([
@@ -1209,10 +1294,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll() {
         elements.assertAllConsumableViaVerticalScroll(
           elements.container.specifier
         );
-        assertCubeMatchesAlias<Aliases, "testCaseCube">(
-          "testCaseCube",
-          elements.caseToDrill
-        );
+        assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
         cy.assertNoHorizontalScrollbar();
       },
     ],
@@ -1242,10 +1324,14 @@ function algorithmDrillerExplanationPageNavigateVariant2() {
   pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist();
 }
 
-// We are just adding this argument to make it clear what the requirements
-// are for the caller. That's also why only true is allowed
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function algorithmDrillerStatusPageNoSideEffects(_: {
+function algorithmDrillerStatusPageNoSideEffects({
+  solvedFront,
+  solvedBack,
+}: {
+  solvedFront: string;
+  solvedBack: string;
+  // We are just adding this argument to make it clear what the requirements
+  // are for the caller. That's also why only true is allowed
   expectedCubeStateWasNotSolvedBeforeThis: true;
 }) {
   const elements = pllTrainerElements.algorithmDrillerStatusPage;
@@ -1262,12 +1348,12 @@ function algorithmDrillerStatusPageNoSideEffects(_: {
     [
       "the expected cube state at first is always solved even if expected cube state was not solved before",
       () => {
-        assertCubeMatchesAlias<Aliases, "solvedFront">(
-          "solvedFront",
+        assertCubeMatchesStateString(
+          solvedFront,
           elements.expectedCubeStateFront
         );
-        assertCubeMatchesAlias<Aliases, "solvedBack">(
-          "solvedBack",
+        assertCubeMatchesStateString(
+          solvedBack,
           elements.expectedCubeStateBack
         );
       },
@@ -1292,18 +1378,24 @@ function algorithmDrillerStatusPageNoSideEffects(_: {
   );
 }
 
-function algorithmDrillerStatusPageAfter1SuccessNoSideEffects() {
+function algorithmDrillerStatusPageAfter1SuccessNoSideEffects({
+  evaluateResultFront,
+  evaluateResultBack,
+}: {
+  evaluateResultFront: string;
+  evaluateResultBack: string;
+}) {
   const elements = pllTrainerElements.algorithmDrillerStatusPage;
 
   elements.correctConsecutiveAttemptsLeft.get().should("have.text", "2");
 
   // Here we assert that the cube is displayed in the expected state
-  assertCubeMatchesAlias<Aliases, "evaluateResultFront">(
-    "evaluateResultFront",
+  assertCubeMatchesStateString(
+    evaluateResultFront,
     elements.expectedCubeStateFront
   );
-  assertCubeMatchesAlias<Aliases, "evaluateResultBack">(
-    "evaluateResultBack",
+  assertCubeMatchesStateString(
+    evaluateResultBack,
     elements.expectedCubeStateBack
   );
 }
@@ -1366,18 +1458,20 @@ function algorithmDrillerSuccessPageNavigateVariant2() {
   pllTrainerElements.algorithmDrillerSuccessPage.container.assertDoesntExist();
 }
 
-// It's important that the nearly there button was used because
-// otherwise expected state could be solved state which could avoid catching
-// a bug we actually (nearly) had in production where what was
-// displayed was the expectedCube with the inverse test case applied
-// to it instead of the solved cube with inverse test case
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function wrongPageNoSideEffects({
   currentTestCase,
+  testCaseFront,
+  testCaseBack,
 }: {
-  nearlyThereTypeOfWrongWasUsed: true;
   currentTestCase: [AUF, PLL, AUF];
+  testCaseFront: string;
+  testCaseBack: string;
+  // It's important that the nearly there button was used because
+  // otherwise expected state could be solved state which could avoid catching
+  // a bug we actually (nearly) had in production where what was
+  // displayed was the expectedCube with the inverse test case applied
+  // to it instead of the solved cube with inverse test case
+  nearlyThereTypeOfWrongWasUsed: true;
 }) {
   const elements = pllTrainerElements.wrongPage;
 
@@ -1391,12 +1485,12 @@ function wrongPageNoSideEffects({
         cy.assertNoVerticalScrollbar();
 
         // Test case cubes look correct
-        assertCubeMatchesAlias<Aliases, "testCaseFront">(
-          "testCaseFront",
+        assertCubeMatchesStateString(
+          testCaseFront,
           pllTrainerElements.wrongPage.testCaseFront
         );
-        assertCubeMatchesAlias<Aliases, "testCaseBack">(
-          "testCaseBack",
+        assertCubeMatchesStateString(
+          testCaseBack,
           pllTrainerElements.wrongPage.testCaseBack
         );
       },
