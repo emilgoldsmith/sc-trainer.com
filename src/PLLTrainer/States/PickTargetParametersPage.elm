@@ -125,71 +125,74 @@ view shared transitions toMsg model =
                     (String.toFloat model.targetTps)
                     |> Maybe.withDefault (Just <| toMsg NoOp)
         in
-        View.FullScreen <|
-            el
-                [ testid "pick-target-parameters-container"
-                , width fill
-                , height fill
-                , scrollbarY
-                ]
-            <|
-                column
-                    [ centerX
-                    , centerY
-                    , width (fill |> maximum 700)
-                    , UI.fontSize.large
-                    , UI.spacingVertical.medium
-                    , UI.paddingAll.veryLarge
+        View.fullScreenBody
+            (\{ scrollableContainerId } ->
+                el
+                    [ testid "pick-target-parameters-container"
+                    , htmlAttribute <| Html.Attributes.id scrollableContainerId
+                    , width fill
+                    , height fill
+                    , scrollbarY
                     ]
-                    [ textColumn [ testid "explanation", UI.spacingVertical.small, width fill ]
-                        [ paragraph []
-                            [ text "Welcome! It is different from person to person how fast they expect to solve a case before they consider it learned."
-                            , text " That's why we ask you to specify your expectations here before we get started. Don't worry if this seems confusing,"
-                            , text " in that case just leave the values as they are right now, as this is a sensible default we have provided for you that"
-                            , text " should work well for everyone, and especially less experienced cubers."
-                            ]
-                        , paragraph []
-                            [ text "If you decide to change the values, you should note that they are not meant to signify your ultimate speed goals, but rather"
-                            , text " the point when you are no longer stumbling through the algorithm. However, when at this point you should be recognizing the case"
-                            , text " comfortably even if still a bit slowly, and executing it without any significant pauses. If these values are set too low the"
-                            , text " app could take too long to move onto new algorithms and mark it as learned, and it is therefore recommended to keep them"
-                            , text " on the higher side of what you may think you want."
-                            ]
-                        , paragraph []
-                            [ text "Recognition time is the time taken in seconds from seeing the cube to executing the first move. TPS is how many turns per second"
-                            , text " you are executing the algorithm itself at after the recognition time."
-                            ]
+                <|
+                    column
+                        [ centerX
+                        , centerY
+                        , width (fill |> maximum 700)
+                        , UI.fontSize.large
+                        , UI.spacingVertical.medium
+                        , UI.paddingAll.veryLarge
                         ]
-                    , targetFloatInput
-                        { testId = "recognition-time-input"
-                        , errorTestId = "recognition-time-error"
-                        , onChange = toMsg << UpdateRecognitionTime
-                        , onEnter = submitMsg
-                        , inputContent = model.targetRecognitionTimeInSeconds
-                        , label = "Recognition Time"
-                        , palette = shared.palette
-                        , unit = "s"
-                        , unitWidth = 10.5
-                        , maxExpectedMainDigits = 1
-                        }
-                    , targetFloatInput
-                        { testId = "target-TPS-input"
-                        , errorTestId = "tps-error"
-                        , onChange = toMsg << UpdateTPS
-                        , onEnter = submitMsg
-                        , inputContent = model.targetTps
-                        , label = "TPS"
-                        , palette = shared.palette
-                        , unit = "tps"
-                        , unitWidth = 28.0667
-                        , maxExpectedMainDigits = 2
-                        }
-                    , UI.viewButton.large [ testid "submit-button", centerX ]
-                        { color = shared.palette.primary
-                        , label = always (text "Submit")
-                        , onPress = submitMsg
-                        }
-                    ]
+                        [ textColumn [ testid "explanation", UI.spacingVertical.small, width fill ]
+                            [ paragraph []
+                                [ text "Welcome! It is different from person to person how fast they expect to solve a case before they consider it learned."
+                                , text " That's why we ask you to specify your expectations here before we get started. Don't worry if this seems confusing,"
+                                , text " in that case just leave the values as they are right now, as this is a sensible default we have provided for you that"
+                                , text " should work well for everyone, and especially less experienced cubers."
+                                ]
+                            , paragraph []
+                                [ text "If you decide to change the values, you should note that they are not meant to signify your ultimate speed goals, but rather"
+                                , text " the point when you are no longer stumbling through the algorithm. However, when at this point you should be recognizing the case"
+                                , text " comfortably even if still a bit slowly, and executing it without any significant pauses. If these values are set too low the"
+                                , text " app could take too long to move onto new algorithms and mark it as learned, and it is therefore recommended to keep them"
+                                , text " on the higher side of what you may think you want."
+                                ]
+                            , paragraph []
+                                [ text "Recognition time is the time taken in seconds from seeing the cube to executing the first move. TPS is how many turns per second"
+                                , text " you are executing the algorithm itself at after the recognition time."
+                                ]
+                            ]
+                        , targetFloatInput
+                            { testId = "recognition-time-input"
+                            , errorTestId = "recognition-time-error"
+                            , onChange = toMsg << UpdateRecognitionTime
+                            , onEnter = submitMsg
+                            , inputContent = model.targetRecognitionTimeInSeconds
+                            , label = "Recognition Time"
+                            , palette = shared.palette
+                            , unit = "s"
+                            , unitWidth = 10.5
+                            , maxExpectedMainDigits = 1
+                            }
+                        , targetFloatInput
+                            { testId = "target-TPS-input"
+                            , errorTestId = "tps-error"
+                            , onChange = toMsg << UpdateTPS
+                            , onEnter = submitMsg
+                            , inputContent = model.targetTps
+                            , label = "TPS"
+                            , palette = shared.palette
+                            , unit = "tps"
+                            , unitWidth = 28.0667
+                            , maxExpectedMainDigits = 2
+                            }
+                        , UI.viewButton.large [ testid "submit-button", centerX ]
+                            { color = shared.palette.primary
+                            , label = always (text "Submit")
+                            , onPress = submitMsg
+                            }
+                        ]
+            )
     }
 
 

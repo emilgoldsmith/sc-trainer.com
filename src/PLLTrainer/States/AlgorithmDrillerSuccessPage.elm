@@ -3,6 +3,7 @@ module PLLTrainer.States.AlgorithmDrillerSuccessPage exposing (Transitions, stat
 import Css exposing (testid)
 import Element exposing (..)
 import Element.Font as Font
+import Html.Attributes
 import Key
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
@@ -46,39 +47,42 @@ view : ViewportSize -> UI.Palette -> Shared.HardwareAvailable -> Transitions msg
 view viewportSize palette hardwareAvailable transitions =
     { overlays = View.buildOverlays []
     , body =
-        View.FullScreen <|
-            column
-                [ testid "algorithm-driller-success-page-container"
-                , centerX
-                , centerY
-                , spacing (ViewportSize.minDimension viewportSize // 10)
-                , UI.paddingAll.veryLarge
-                ]
-                [ paragraph
-                    [ centerX
-                    , Font.center
-                    , Font.bold
-                    , Font.size (ViewportSize.minDimension viewportSize // 10)
-                    ]
-                    [ text "Success!"
-                    ]
-                , paragraph
-                    [ testid "driller-success-explanation"
+        View.fullScreenBody
+            (\{ scrollableContainerId } ->
+                column
+                    [ testid "algorithm-driller-success-page-container"
+                    , htmlAttribute <| Html.Attributes.id scrollableContainerId
                     , centerX
-                    , Font.center
-                    , Font.size (ViewportSize.minDimension viewportSize // 20)
+                    , centerY
+                    , spacing (ViewportSize.minDimension viewportSize // 10)
+                    , UI.paddingAll.veryLarge
                     ]
-                    [ text "Awesome, you now have a fundamental grasp of the case. Continue to return to the normal practice flow of cases" ]
-                , PLLTrainer.ButtonWithShortcut.view
-                    hardwareAvailable
-                    [ testid "next-test-button"
-                    , centerX
+                    [ paragraph
+                        [ centerX
+                        , Font.center
+                        , Font.bold
+                        , Font.size (ViewportSize.minDimension viewportSize // 10)
+                        ]
+                        [ text "Success!"
+                        ]
+                    , paragraph
+                        [ testid "driller-success-explanation"
+                        , centerX
+                        , Font.center
+                        , Font.size (ViewportSize.minDimension viewportSize // 20)
+                        ]
+                        [ text "Awesome, you now have a fundamental grasp of the case. Continue to return to the normal practice flow of cases" ]
+                    , PLLTrainer.ButtonWithShortcut.view
+                        hardwareAvailable
+                        [ testid "next-test-button"
+                        , centerX
+                        ]
+                        { onPress = Just transitions.startTest
+                        , labelText = "Next"
+                        , keyboardShortcut = Key.Space
+                        , color = palette.primary
+                        }
+                        (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 10)
                     ]
-                    { onPress = Just transitions.startTest
-                    , labelText = "Next"
-                    , keyboardShortcut = Key.Space
-                    , color = palette.primary
-                    }
-                    (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 10)
-                ]
+            )
     }

@@ -629,7 +629,7 @@ export const pllTrainerStatesNewUser = buildStates<
             .click(options);
           fromGetReadyForTestThroughEvaluateResult({
             cyClockAlreadyCalled: true,
-            correct: true,
+            resultType: "correct",
             milliseconds: 500,
           });
         }
@@ -718,9 +718,9 @@ export function completePLLTestInMilliseconds(
   fromGetReadyForTestThroughEvaluateResult({
     cyClockAlreadyCalled: true,
     milliseconds,
+    resultType: correct ? "correct" : "unrecoverable",
     ...(testRunningCallback === undefined ? {} : { testRunningCallback }),
     ...(evaluateResultCallback === undefined ? {} : { evaluateResultCallback }),
-    ...(correct ? { correct } : { wrong: "unrecoverable" }),
   });
   pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
     if (stateValue === stateAttributeValues.pickAlgorithmPage) {
@@ -761,11 +761,11 @@ export function fromGetReadyForTestThroughEvaluateResult(
     testRunningNavigator?: () => void;
   } & (
     | {
-        correct: true;
+        resultType: "correct";
         evaluateResultCorrectNavigator?: () => void;
       }
     | {
-        wrong: "unrecoverable" | "nearly there" | "no moves made";
+        resultType: "unrecoverable" | "nearly there" | "no moves made";
         evaluateResultWrongNavigator?: () => void;
       }
   )
@@ -775,6 +775,7 @@ export function fromGetReadyForTestThroughEvaluateResult(
     testRunningCallback,
     evaluateResultCallback,
     testRunningNavigator,
+    resultType,
   } = params;
   const { stateAttributeValues } = pllTrainerElements.root;
 
@@ -787,7 +788,7 @@ export function fromGetReadyForTestThroughEvaluateResult(
   pllTrainerElements.evaluateResult.container.waitFor();
   cy.tick(500);
   evaluateResultCallback?.();
-  if ("correct" in params) {
+  if (resultType === "correct") {
     (
       params.evaluateResultCorrectNavigator ??
       (() => pllTrainerElements.evaluateResult.correctButton.get().click())
@@ -800,9 +801,9 @@ export function fromGetReadyForTestThroughEvaluateResult(
       params.evaluateResultWrongNavigator ??
       (() => pllTrainerElements.evaluateResult.wrongButton.get().click())
     )();
-    if (params.wrong === "unrecoverable") {
+    if (resultType === "unrecoverable") {
       pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
-    } else if (params.wrong === "nearly there") {
+    } else if (resultType === "nearly there") {
       pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
     } else {
       pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();

@@ -221,97 +221,100 @@ view currentTestCase testResult toMsg shared model =
     in
     { overlays = View.buildOverlays []
     , body =
-        View.FullScreen <|
-            el
-                [ width fill
-                , height fill
-                , scrollbarY
-                ]
-            <|
-                column
-                    [ testid "pick-algorithm-container"
-                    , centerX
-                    , centerY
-                    , UI.spacingAll.large
-                    , UI.paddingAll.large
-                    , width (fill |> maximum 700)
-                    , UI.fontSize.medium
+        View.fullScreenBody
+            (\{ scrollableContainerId } ->
+                el
+                    [ htmlAttribute <| Html.Attributes.id scrollableContainerId
+                    , width fill
+                    , height fill
+                    , scrollbarY
                     ]
-                    [ textColumn
-                        [ testid "explanation-text"
+                <|
+                    column
+                        [ testid "pick-algorithm-container"
                         , centerX
-                        , Font.center
-                        , UI.spacingAll.verySmall
-                        , width fill
+                        , centerY
+                        , UI.spacingAll.large
+                        , UI.paddingAll.large
+                        , width (fill |> maximum 700)
+                        , UI.fontSize.medium
                         ]
-                        [ paragraph
-                            [ UI.fontSize.veryLarge
-                            , Region.heading 1
+                        [ textColumn
+                            [ testid "explanation-text"
+                            , centerX
+                            , Font.center
+                            , UI.spacingAll.verySmall
+                            , width fill
                             ]
-                            [ text
-                                ("Pick "
-                                    ++ PLL.getLetters pllCase
-                                    ++ "-Perm Algorithm"
-                                )
-                            ]
-                        , paragraph []
-                            [ case testResult of
-                                User.Correct _ ->
-                                    el [ testid "correct-text" ] <|
-                                        text "Which algorithm did you use?"
+                            [ paragraph
+                                [ UI.fontSize.veryLarge
+                                , Region.heading 1
+                                ]
+                                [ text
+                                    ("Pick "
+                                        ++ PLL.getLetters pllCase
+                                        ++ "-Perm Algorithm"
+                                    )
+                                ]
+                            , paragraph []
+                                [ case testResult of
+                                    User.Correct _ ->
+                                        el [ testid "correct-text" ] <|
+                                            text "Which algorithm did you use?"
 
-                                User.Wrong _ ->
-                                    el [ testid "wrong-text" ] <|
-                                        text "Take some time to select which algorithm you'd like to learn for this case and practice it a bit"
+                                    User.Wrong _ ->
+                                        el [ testid "wrong-text" ] <|
+                                            text "Take some time to select which algorithm you'd like to learn for this case and practice it a bit"
+                                ]
+                            , paragraph []
+                                [ text "We use this to correctly identify which AUFs you need to do for each case so we for example can display correct statistics" ]
                             ]
-                        , paragraph []
-                            [ text "We use this to correctly identify which AUFs you need to do for each case so we for example can display correct statistics" ]
-                        ]
-                    , column
-                        [ centerX
-                        , UI.spacingAll.verySmall
-                        , width fill
-                        ]
-                        [ Input.text
-                            [ testid "algorithm-input"
-                            , htmlAttribute <| Html.Attributes.id focusOnLoadId
+                        , column
+                            [ centerX
+                            , UI.spacingAll.verySmall
+                            , width fill
+                            ]
+                            [ Input.text
+                                [ testid "algorithm-input"
+                                , htmlAttribute <| Html.Attributes.id focusOnLoadId
+                                , centerX
+                                ]
+                                { onChange = toMsg << UpdateText
+                                , text = model.text
+                                , placeholder = Nothing
+                                , label = Input.labelHidden "Algorithm Input"
+                                }
+                            , maybeViewError shared.palette model.error
+                            ]
+                        , PLLTrainer.ButtonWithShortcut.view
+                            shared.hardwareAvailable
+                            [ testid "submit-button"
                             , centerX
                             ]
-                            { onChange = toMsg << UpdateText
-                            , text = model.text
-                            , placeholder = Nothing
-                            , label = Input.labelHidden "Algorithm Input"
+                            { onPress = Just (toMsg Submit)
+                            , labelText = "Submit"
+                            , color = shared.palette.primary
+                            , keyboardShortcut = Key.Enter
                             }
-                        , maybeViewError shared.palette model.error
+                            UI.viewButton.large
+                        , paragraph
+                            [ Font.center
+                            ]
+                            [ text "Need some help choosing an algorithm? If you would like to explore your options check out "
+                            , UI.viewWebResourceLink
+                                [ testid "alg-db-link" ]
+                                shared.palette
+                                (WebResource.AlgDBPLL pllCase)
+                                "this AlgDb entry"
+                            , text ", if you on the other hand want to just follow the advice and guidance of an experienced cuber check out "
+                            , UI.viewWebResourceLink
+                                [ testid "expert-link" ]
+                                shared.palette
+                                (WebResource.ExpertGuidancePLL pllCase)
+                                "this link to J Perm's PLL + Fingertricks video"
+                            ]
                         ]
-                    , PLLTrainer.ButtonWithShortcut.view
-                        shared.hardwareAvailable
-                        [ testid "submit-button"
-                        , centerX
-                        ]
-                        { onPress = Just (toMsg Submit)
-                        , labelText = "Submit"
-                        , color = shared.palette.primary
-                        , keyboardShortcut = Key.Enter
-                        }
-                        UI.viewButton.large
-                    , paragraph
-                        [ Font.center
-                        ]
-                        [ text "Need some help choosing an algorithm? If you would like to explore your options check out "
-                        , UI.viewWebResourceLink
-                            [ testid "alg-db-link" ]
-                            shared.palette
-                            (WebResource.AlgDBPLL pllCase)
-                            "this AlgDb entry"
-                        , text ", if you on the other hand want to just follow the advice and guidance of an experienced cuber check out "
-                        , UI.viewWebResourceLink
-                            [ testid "expert-link" ]
-                            shared.palette
-                            (WebResource.ExpertGuidancePLL pllCase)
-                            "this link to J Perm's PLL + Fingertricks video"
-                        ]
-                    ]
+            )
     }
 
 

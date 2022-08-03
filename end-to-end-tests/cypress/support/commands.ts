@@ -39,6 +39,16 @@ Cypress.Commands.overwrite("tick", (originalFn, milliseconds, options) => {
   return cy.clock({ log: false });
 });
 
+/**
+ * This is a quality of life overwrite as elm seems to break if a page is loaded
+ * with the clock already mocked. So by default we always disable clock before loading
+ * a page
+ */
+Cypress.Commands.overwrite("visit", (originalFn, ...args) => {
+  cy.clock().then((clock) => clock.restore());
+  originalFn(...args);
+});
+
 /** CUSTOM COMMANDS */
 
 const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (

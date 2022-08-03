@@ -450,40 +450,6 @@ describe("PLL Trainer - Learning Functionality", function () {
     });
 
     context("Persistence", function () {
-      it("doesn't display picker when user already has all algorithms picked in local storage", function () {
-        cy.setLocalStorage(allPllsPickedLocalStorage);
-        // Note we use reload here as we don't want restore to save an old state of the
-        // model that doesn't include the plls picked
-        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
-          {
-            retainCurrentLocalStorage: true,
-            navigateOptions: {
-              case: [AUF.none, PLL.H, AUF.none],
-              algorithm: pllToAlgorithmString[PLL.H],
-            },
-          }
-        );
-
-        pllTrainerElements.evaluateResult.correctButton.get().click();
-        pllTrainerElements.correctPage.container.assertShows();
-
-        pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.reloadAndNavigateTo(
-          {
-            retainCurrentLocalStorage: true,
-            navigateOptions: {
-              targetParametersPicked: true,
-              // Just ensure it is not the same as above so that new case shows
-              case: [AUF.none, PLL.Ga, AUF.none],
-              isNewCase: true,
-            },
-          }
-        );
-
-        pllTrainerElements.evaluateResult.wrongButton.get().click();
-        pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
-        pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
-      });
-
       it("doesn't display picker if case has picked algorithm on previous visit", function () {
         pllTrainerStatesNewUser.evaluateResultAfterIgnoringTransitions.restoreState();
 

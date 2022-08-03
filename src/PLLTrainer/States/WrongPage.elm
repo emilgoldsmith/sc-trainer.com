@@ -6,6 +6,7 @@ import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Font as Font
 import FeedbackButton
+import Html.Attributes
 import Key
 import PLL
 import PLLTrainer.ButtonWithShortcut
@@ -63,103 +64,106 @@ view { palette, viewportSize, hardwareAvailable, user, cubeViewOptions } transit
             testCaseCube =
                 PLLTrainer.TestCase.toCube user arguments.testCase
         in
-        View.FullScreen <|
-            column
-                [ testid "wrong-container"
-                , centerX
-                , centerY
-                , spacing (ViewportSize.minDimension viewportSize // 20)
-                ]
-                [ el
-                    [ centerX
-                    , Font.size (ViewportSize.minDimension viewportSize // 20)
-                    , testid "test-case-name"
-                    ]
-                  <|
-                    let
-                        preAufString =
-                            AUF.toString (PLLTrainer.TestCase.preAUF arguments.testCase)
-
-                        postAufString =
-                            AUF.toString (PLLTrainer.TestCase.postAUF arguments.testCase)
-                    in
-                    text
-                        ("The Correct Answer Was "
-                            ++ (if String.isEmpty preAufString then
-                                    ""
-
-                                else
-                                    preAufString ++ " "
-                               )
-                            ++ "["
-                            ++ PLL.getLetters (PLLTrainer.TestCase.pll arguments.testCase)
-                            ++ "-perm]"
-                            ++ (if String.isEmpty postAufString then
-                                    ""
-
-                                else
-                                    " "
-                                        ++ postAufString
-                               )
-                            ++ ":"
-                        )
-                , row
-                    [ centerX
-                    ]
-                    [ ViewCube.view cubeViewOptions
-                        [ htmlTestid "test-case-front" ]
-                        { pixelSize = ViewportSize.minDimension viewportSize // 4
-                        , displayAngle = Cube.ufrDisplayAngle
-                        , annotateFaces = True
-                        , theme = User.cubeTheme user
-                        }
-                        testCaseCube
-                    , ViewCube.view cubeViewOptions
-                        [ htmlTestid "test-case-back" ]
-                        { pixelSize = ViewportSize.minDimension viewportSize // 4
-                        , displayAngle = Cube.ublDisplayAngle
-                        , annotateFaces = True
-                        , theme = User.cubeTheme user
-                        }
-                        testCaseCube
-                    ]
-                , paragraph
-                    [ centerX
-                    , Font.center
-                    , Font.size (ViewportSize.minDimension viewportSize // 20)
-                    , testid "expected-cube-state-text"
-                    ]
-                    [ text "Your Cube Should Now Look Like This:" ]
-                , row
-                    [ centerX
-                    ]
-                    [ ViewCube.view cubeViewOptions
-                        [ htmlTestid "expected-cube-state-front" ]
-                        { pixelSize = ViewportSize.minDimension viewportSize // 4
-                        , displayAngle = Cube.ufrDisplayAngle
-                        , annotateFaces = True
-                        , theme = User.cubeTheme user
-                        }
-                        arguments.expectedCubeState
-                    , ViewCube.view cubeViewOptions
-                        [ htmlTestid "expected-cube-state-back" ]
-                        { pixelSize = ViewportSize.minDimension viewportSize // 4
-                        , displayAngle = Cube.ublDisplayAngle
-                        , annotateFaces = True
-                        , theme = User.cubeTheme user
-                        }
-                        arguments.expectedCubeState
-                    ]
-                , PLLTrainer.ButtonWithShortcut.view
-                    hardwareAvailable
-                    [ testid "next-button"
+        View.fullScreenBody
+            (\{ scrollableContainerId } ->
+                column
+                    [ testid "wrong-container"
+                    , htmlAttribute <| Html.Attributes.id scrollableContainerId
                     , centerX
+                    , centerY
+                    , spacing (ViewportSize.minDimension viewportSize // 20)
                     ]
-                    { onPress = Just transitions.startNextTest
-                    , labelText = "Next"
-                    , keyboardShortcut = Key.Space
-                    , color = palette.primary
-                    }
-                    (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 20)
-                ]
+                    [ el
+                        [ centerX
+                        , Font.size (ViewportSize.minDimension viewportSize // 20)
+                        , testid "test-case-name"
+                        ]
+                      <|
+                        let
+                            preAufString =
+                                AUF.toString (PLLTrainer.TestCase.preAUF arguments.testCase)
+
+                            postAufString =
+                                AUF.toString (PLLTrainer.TestCase.postAUF arguments.testCase)
+                        in
+                        text
+                            ("The Correct Answer Was "
+                                ++ (if String.isEmpty preAufString then
+                                        ""
+
+                                    else
+                                        preAufString ++ " "
+                                   )
+                                ++ "["
+                                ++ PLL.getLetters (PLLTrainer.TestCase.pll arguments.testCase)
+                                ++ "-perm]"
+                                ++ (if String.isEmpty postAufString then
+                                        ""
+
+                                    else
+                                        " "
+                                            ++ postAufString
+                                   )
+                                ++ ":"
+                            )
+                    , row
+                        [ centerX
+                        ]
+                        [ ViewCube.view cubeViewOptions
+                            [ htmlTestid "test-case-front" ]
+                            { pixelSize = ViewportSize.minDimension viewportSize // 4
+                            , displayAngle = Cube.ufrDisplayAngle
+                            , annotateFaces = True
+                            , theme = User.cubeTheme user
+                            }
+                            testCaseCube
+                        , ViewCube.view cubeViewOptions
+                            [ htmlTestid "test-case-back" ]
+                            { pixelSize = ViewportSize.minDimension viewportSize // 4
+                            , displayAngle = Cube.ublDisplayAngle
+                            , annotateFaces = True
+                            , theme = User.cubeTheme user
+                            }
+                            testCaseCube
+                        ]
+                    , paragraph
+                        [ centerX
+                        , Font.center
+                        , Font.size (ViewportSize.minDimension viewportSize // 20)
+                        , testid "expected-cube-state-text"
+                        ]
+                        [ text "Your Cube Should Now Look Like This:" ]
+                    , row
+                        [ centerX
+                        ]
+                        [ ViewCube.view cubeViewOptions
+                            [ htmlTestid "expected-cube-state-front" ]
+                            { pixelSize = ViewportSize.minDimension viewportSize // 4
+                            , displayAngle = Cube.ufrDisplayAngle
+                            , annotateFaces = True
+                            , theme = User.cubeTheme user
+                            }
+                            arguments.expectedCubeState
+                        , ViewCube.view cubeViewOptions
+                            [ htmlTestid "expected-cube-state-back" ]
+                            { pixelSize = ViewportSize.minDimension viewportSize // 4
+                            , displayAngle = Cube.ublDisplayAngle
+                            , annotateFaces = True
+                            , theme = User.cubeTheme user
+                            }
+                            arguments.expectedCubeState
+                        ]
+                    , PLLTrainer.ButtonWithShortcut.view
+                        hardwareAvailable
+                        [ testid "next-button"
+                        , centerX
+                        ]
+                        { onPress = Just transitions.startNextTest
+                        , labelText = "Next"
+                        , keyboardShortcut = Key.Space
+                        , color = palette.primary
+                        }
+                        (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 20)
+                    ]
+            )
     }

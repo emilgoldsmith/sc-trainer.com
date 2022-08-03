@@ -1,14 +1,18 @@
 module View exposing
-    ( Body(..)
+    ( Body
     , Overlays
     , TopLevelEventListeners
     , View
     , buildOverlays
     , buildTopLevelEventListeners
+    , customBody
+    , fullScreenBody
+    , fullScreenScrollableContainerId
     , map
     , none
     , placeholder
     , toBrowserDocument
+    , withNavigationBody
     )
 
 import Browser
@@ -28,6 +32,26 @@ type Body msg
     = FullScreen (Element msg)
     | WithNavigation (Element msg)
     | Custom (Element msg)
+
+
+fullScreenScrollableContainerId : String
+fullScreenScrollableContainerId =
+    "full-screen-scrollable-container"
+
+
+fullScreenBody : ({ scrollableContainerId : String } -> Element msg) -> Body msg
+fullScreenBody f =
+    FullScreen (f { scrollableContainerId = fullScreenScrollableContainerId })
+
+
+withNavigationBody : Element msg -> Body msg
+withNavigationBody =
+    WithNavigation
+
+
+customBody : Element msg -> Body msg
+customBody =
+    Custom
 
 
 mapBody : (a -> b) -> Body a -> Body b

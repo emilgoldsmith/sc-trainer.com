@@ -4,6 +4,7 @@ import { applyDefaultIntercepts } from "support/interceptors";
 import { getKeyValue, Key } from "support/keys";
 import { paths } from "support/paths";
 import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
+import allPLLsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 import {
   AUF,
   aufToAlgorithmString,
@@ -34,13 +35,44 @@ describe("PLL Trainer", function () {
     applyDefaultIntercepts();
   });
 
-  it("recurring user", function () {
+  it("done user", function () {
     cy.setLocalStorage(fullyPopulatedLocalStorage);
     cy.visit(paths.pllTrainer);
     cy.withOverallNameLogged(
       { message: "Done User Start Page" },
       recurringUserStartPageNoSideEffectsButScroll
     );
+  });
+
+  context("only algorithms picked otherwise new user", function () {
+    it("passes pick target parameters page with default values, shows new user start page, and doesn't display algorithm picker for default cases whether solve was correct or wrong", function () {
+      cy.setLocalStorage(allPLLsPickedLocalStorage);
+      // Correct path:
+      cy.visit(paths.pllTrainer);
+      pickTargetParametersNavigateVariant1();
+      assertItsNewUserNotRecurringUserStartPage();
+      newUserStartPageBeginNavigateVariant1();
+      cy.clock();
+      newCasePageNavigateVariant1();
+      fromGetReadyForTestThroughEvaluateResult({
+        cyClockAlreadyCalled: true,
+        milliseconds: 500,
+        resultType: "correct",
+      });
+      pllTrainerElements.correctPage.container.assertShows();
+
+      // Wrong path:
+      cy.visit(paths.pllTrainer);
+      newUserStartPageBeginNavigateVariant1();
+      cy.clock();
+      newCasePageNavigateVariant1();
+      fromGetReadyForTestThroughEvaluateResult({
+        cyClockAlreadyCalled: true,
+        milliseconds: 500,
+        resultType: "unrecoverable",
+      });
+      pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
+    });
   });
 
   it("todo", function () {
@@ -88,7 +120,6 @@ describe("PLL Trainer", function () {
         .type("{selectall}{backspace}4");
       pickTargetParametersNavigateVariant1();
     });
-    pllTrainerElements.newUserStartPage.container.get().scrollTo("topLeft");
     cy.withOverallNameLogged(
       {
         message: "New User Start Page",
@@ -267,7 +298,7 @@ describe("PLL Trainer", function () {
         fromGetReadyForTestThroughEvaluateResult({
           cyClockAlreadyCalled: true,
           milliseconds: 500,
-          correct: true,
+          resultType: "correct",
           testRunningNavigator: testRunningNavigateVariant3,
           evaluateResultCallback() {
             pllTrainerElements.evaluateResult.expectedCubeFront
@@ -293,7 +324,7 @@ describe("PLL Trainer", function () {
         fromGetReadyForTestThroughEvaluateResult({
           cyClockAlreadyCalled: true,
           milliseconds: 500,
-          correct: true,
+          resultType: "correct",
           testRunningNavigator: testRunningNavigateVariant4,
           evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant1,
         });
@@ -305,7 +336,7 @@ describe("PLL Trainer", function () {
         fromGetReadyForTestThroughEvaluateResult({
           cyClockAlreadyCalled: true,
           milliseconds: 500,
-          correct: true,
+          resultType: "correct",
           testRunningNavigator: testRunningNavigateVariant5,
           evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant1,
         });
@@ -324,7 +355,7 @@ describe("PLL Trainer", function () {
       fromGetReadyForTestThroughEvaluateResult({
         cyClockAlreadyCalled: true,
         milliseconds: 100,
-        wrong: "nearly there",
+        resultType: "nearly there",
         testRunningCallback() {
           cy.overrideDisplayCubeAnnotations(true);
           pllTrainerElements.testRunning.testCase
@@ -622,6 +653,11 @@ function newUserStartPageNoSideEffectsButScroll() {
   ] as const).forEach(([testDescription, testFunction]) =>
     cy.withOverallNameLogged({ message: testDescription }, testFunction)
   );
+}
+
+function assertItsNewUserNotRecurringUserStartPage() {
+  pllTrainerElements.newUserStartPage.welcomeText.get().should("exist");
+  pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
 }
 
 function newUserStartPageBeginNavigateVariant1() {
