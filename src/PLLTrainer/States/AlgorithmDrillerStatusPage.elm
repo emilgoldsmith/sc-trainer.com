@@ -4,6 +4,7 @@ import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Font as Font
+import Html.Attributes
 import Key
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
@@ -55,63 +56,66 @@ view : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
 view shared transitions { expectedCube, correctAttemptsLeft } =
     { overlays = View.buildOverlays []
     , body =
-        View.FullScreen <|
-            column
-                [ testid "algorithm-driller-status-page-container"
-                , centerX
-                , centerY
-                , width (fill |> maximum 700)
-                , UI.paddingAll.veryLarge
-                , UI.spacingVertical.medium
-                ]
-                [ paragraph
-                    [ Font.size (ViewportSize.minDimension shared.viewportSize // 15)
-                    , Font.bold
+        View.fullScreenBody
+            (\{ scrollableContainerId } ->
+                column
+                    [ testid "algorithm-driller-status-page-container"
+                    , htmlAttribute <| Html.Attributes.id scrollableContainerId
                     , centerX
-                    , Font.center
+                    , centerY
+                    , width (fill |> maximum 700)
+                    , UI.paddingAll.veryLarge
+                    , UI.spacingVertical.medium
                     ]
-                    [ el [ testid "correct-consecutive-attempts-left" ] <|
-                        text <|
-                            String.fromInt correctAttemptsLeft
-                    , text " Correct Attempts Remaining"
-                    ]
-                , paragraph
-                    [ Font.size (ViewportSize.minDimension shared.viewportSize // 25)
-                    , centerX
-                    , Font.center
-                    ]
-                    [ text "Your cube should now look like this:"
-                    ]
-                , row [ centerX ]
-                    [ ViewCube.view
-                        shared.cubeViewOptions
-                        [ htmlTestid "expected-cube-state-front" ]
-                        { pixelSize = ViewportSize.minDimension shared.viewportSize // 3
-                        , displayAngle = Cube.ufrDisplayAngle
-                        , annotateFaces = True
-                        , theme = User.cubeTheme shared.user
+                    [ paragraph
+                        [ Font.size (ViewportSize.minDimension shared.viewportSize // 15)
+                        , Font.bold
+                        , centerX
+                        , Font.center
+                        ]
+                        [ el [ testid "correct-consecutive-attempts-left" ] <|
+                            text <|
+                                String.fromInt correctAttemptsLeft
+                        , text " Correct Attempts Remaining"
+                        ]
+                    , paragraph
+                        [ Font.size (ViewportSize.minDimension shared.viewportSize // 25)
+                        , centerX
+                        , Font.center
+                        ]
+                        [ text "Your cube should now look like this:"
+                        ]
+                    , row [ centerX ]
+                        [ ViewCube.view
+                            shared.cubeViewOptions
+                            [ htmlTestid "expected-cube-state-front" ]
+                            { pixelSize = ViewportSize.minDimension shared.viewportSize // 3
+                            , displayAngle = Cube.ufrDisplayAngle
+                            , annotateFaces = True
+                            , theme = User.cubeTheme shared.user
+                            }
+                            expectedCube
+                        , ViewCube.view
+                            shared.cubeViewOptions
+                            [ htmlTestid "expected-cube-state-back" ]
+                            { pixelSize = ViewportSize.minDimension shared.viewportSize // 3
+                            , displayAngle = Cube.ublDisplayAngle
+                            , annotateFaces = True
+                            , theme = User.cubeTheme shared.user
+                            }
+                            expectedCube
+                        ]
+                    , PLLTrainer.ButtonWithShortcut.view
+                        shared.hardwareAvailable
+                        [ testid "next-test-button"
+                        , centerX
+                        ]
+                        { onPress = Just transitions.startTest
+                        , labelText = "Next Test"
+                        , keyboardShortcut = Key.Space
+                        , color = shared.palette.primary
                         }
-                        expectedCube
-                    , ViewCube.view
-                        shared.cubeViewOptions
-                        [ htmlTestid "expected-cube-state-back" ]
-                        { pixelSize = ViewportSize.minDimension shared.viewportSize // 3
-                        , displayAngle = Cube.ublDisplayAngle
-                        , annotateFaces = True
-                        , theme = User.cubeTheme shared.user
-                        }
-                        expectedCube
+                        (UI.viewButton.customSize <| ViewportSize.minDimension shared.viewportSize // 25)
                     ]
-                , PLLTrainer.ButtonWithShortcut.view
-                    shared.hardwareAvailable
-                    [ testid "next-test-button"
-                    , centerX
-                    ]
-                    { onPress = Just transitions.startTest
-                    , labelText = "Next Test"
-                    , keyboardShortcut = Key.Space
-                    , color = shared.palette.primary
-                    }
-                    (UI.viewButton.customSize <| ViewportSize.minDimension shared.viewportSize // 25)
-                ]
+            )
     }

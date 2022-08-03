@@ -7,6 +7,7 @@ import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Html.Attributes
 import Html.Events
 import Json.Decode
 import Key
@@ -210,90 +211,93 @@ view { viewportSize, cubeViewOptions, user } model =
     in
     { overlays = View.buildOverlays []
     , body =
-        View.FullScreen <|
-            el
-                [ testid parameters.mainContainerTestId
-                , width fill
-                , height fill
-                , inFront <|
-                    case parameters.isGettingReady of
-                        Just countdown ->
-                            let
-                                red =
-                                    rgb255 255 0 0
+        View.fullScreenBody
+            (\{ scrollableContainerId } ->
+                el
+                    [ testid parameters.mainContainerTestId
+                    , htmlAttribute <| Html.Attributes.id scrollableContainerId
+                    , width fill
+                    , height fill
+                    , inFront <|
+                        case parameters.isGettingReady of
+                            Just countdown ->
+                                let
+                                    red =
+                                        rgb255 255 0 0
 
-                                yellow =
-                                    rgb255 255 255 0
+                                    yellow =
+                                        rgb255 255 255 0
 
-                                green =
-                                    rgb255 0 255 0
+                                    green =
+                                        rgb255 0 255 0
 
-                                circleSize =
-                                    ViewportSize.minDimension viewportSize // 8
+                                    circleSize =
+                                        ViewportSize.minDimension viewportSize // 8
 
-                                circleColor =
-                                    if countdown > 2 then
-                                        red
+                                    circleColor =
+                                        if countdown > 2 then
+                                            red
 
-                                    else if countdown == 2 then
-                                        yellow
+                                        else if countdown == 2 then
+                                            yellow
 
-                                    else
-                                        green
-                            in
-                            el
-                                [ testid "get-ready-overlay"
-                                , width fill
-                                , height fill
-                                , Background.color (rgba255 0 0 0 0.7)
-                                ]
-                            <|
-                                column
-                                    [ centerX
-                                    , centerY
-                                    , Font.center
-                                    , Font.size (ViewportSize.minDimension viewportSize // 10)
-                                    , spacing (ViewportSize.minDimension viewportSize // 20)
-                                    , Background.color (rgba255 255 255 255 0.3)
-                                    , padding (ViewportSize.minDimension viewportSize // 40)
-                                    , Border.rounded (ViewportSize.minDimension viewportSize // 40)
+                                        else
+                                            green
+                                in
+                                el
+                                    [ testid "get-ready-overlay"
+                                    , width fill
+                                    , height fill
+                                    , Background.color (rgba255 0 0 0 0.7)
                                     ]
-                                    [ paragraph [ testid "get-ready-explanation" ] [ text "Get Ready" ]
-                                    , paragraph [] [ text "Go To Home Grip" ]
-                                    , row [ centerX, spacing (ViewportSize.minDimension viewportSize // 30) ]
-                                        [ circle circleSize circleColor
-                                        , circle circleSize circleColor
-                                        , circle circleSize circleColor
+                                <|
+                                    column
+                                        [ centerX
+                                        , centerY
+                                        , Font.center
+                                        , Font.size (ViewportSize.minDimension viewportSize // 10)
+                                        , spacing (ViewportSize.minDimension viewportSize // 20)
+                                        , Background.color (rgba255 255 255 255 0.3)
+                                        , padding (ViewportSize.minDimension viewportSize // 40)
+                                        , Border.rounded (ViewportSize.minDimension viewportSize // 40)
                                         ]
-                                    ]
+                                        [ paragraph [ testid "get-ready-explanation" ] [ text "Get Ready" ]
+                                        , paragraph [] [ text "Go To Home Grip" ]
+                                        , row [ centerX, spacing (ViewportSize.minDimension viewportSize // 30) ]
+                                            [ circle circleSize circleColor
+                                            , circle circleSize circleColor
+                                            , circle circleSize circleColor
+                                            ]
+                                        ]
 
-                        Nothing ->
-                            none
-                ]
-            <|
-                column
-                    [ centerX
-                    , centerY
-                    , spacing (ViewportSize.minDimension viewportSize // 10)
+                            Nothing ->
+                                none
                     ]
-                    [ el [ centerX ] <|
-                        ViewCube.view cubeViewOptions
-                            [ htmlTestid parameters.cubeTestId ]
-                            { pixelSize = ViewportSize.minDimension viewportSize // 2
-                            , displayAngle = Cube.ufrDisplayAngle
-                            , annotateFaces = False
-                            , theme = parameters.cubeTheme
-                            }
-                            parameters.cube
-                    , el
-                        [ testid "timer"
-                        , centerX
-                        , Font.size (ViewportSize.minDimension viewportSize // 5)
+                <|
+                    column
+                        [ centerX
+                        , centerY
+                        , spacing (ViewportSize.minDimension viewportSize // 10)
                         ]
-                      <|
-                        text <|
-                            TimeInterval.displayOneDecimal parameters.elapsedTime
-                    ]
+                        [ el [ centerX ] <|
+                            ViewCube.view cubeViewOptions
+                                [ htmlTestid parameters.cubeTestId ]
+                                { pixelSize = ViewportSize.minDimension viewportSize // 2
+                                , displayAngle = Cube.ufrDisplayAngle
+                                , annotateFaces = False
+                                , theme = parameters.cubeTheme
+                                }
+                                parameters.cube
+                        , el
+                            [ testid "timer"
+                            , centerX
+                            , Font.size (ViewportSize.minDimension viewportSize // 5)
+                            ]
+                          <|
+                            text <|
+                                TimeInterval.displayOneDecimal parameters.elapsedTime
+                        ]
+            )
     }
 
 

@@ -5,6 +5,7 @@ import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Font as Font
+import Html.Attributes
 import Json.Decode
 import Key
 import PLLTrainer.ButtonWithShortcut
@@ -140,100 +141,103 @@ view : Shared.Model -> Transitions msg -> Arguments -> Model -> PLLTrainer.State
 view { viewportSize, palette, hardwareAvailable, cubeViewOptions, user } transitions arguments _ =
     { overlays = View.buildOverlays []
     , body =
-        View.FullScreen <|
-            let
-                overallPadding =
-                    ViewportSize.minDimension viewportSize // 20
+        View.fullScreenBody
+            (\{ scrollableContainerId } ->
+                let
+                    overallPadding =
+                        ViewportSize.minDimension viewportSize // 20
 
-                cubeSize =
-                    ViewportSize.minDimension viewportSize // 3
+                    cubeSize =
+                        ViewportSize.minDimension viewportSize // 3
 
-                cubeSpacing =
-                    ViewportSize.minDimension viewportSize // 15
+                    cubeSpacing =
+                        ViewportSize.minDimension viewportSize // 15
 
-                timerSize =
-                    ViewportSize.minDimension viewportSize // 6
+                    timerSize =
+                        ViewportSize.minDimension viewportSize // 6
 
-                buttonSpacing =
-                    ViewportSize.minDimension viewportSize // 15
+                    buttonSpacing =
+                        ViewportSize.minDimension viewportSize // 15
 
-                button =
-                    \attributes ->
-                        UI.viewButton.customSize (ViewportSize.minDimension viewportSize // 13)
-                            (attributes
-                                ++ [ Font.center
-                                   , width (px <| ViewportSize.minDimension viewportSize // 3)
-                                   ]
-                            )
-            in
-            column
-                [ testid "evaluate-test-result-container"
-                , centerX
-                , centerY
-                , height (fill |> maximum (ViewportSize.minDimension viewportSize))
-                , spaceEvenly
-                , padding overallPadding
-                ]
-                [ el
-                    [ testid "time-result"
+                    button =
+                        \attributes ->
+                            UI.viewButton.customSize (ViewportSize.minDimension viewportSize // 13)
+                                (attributes
+                                    ++ [ Font.center
+                                       , width (px <| ViewportSize.minDimension viewportSize // 3)
+                                       ]
+                                )
+                in
+                column
+                    [ testid "evaluate-test-result-container"
+                    , htmlAttribute <| Html.Attributes.id scrollableContainerId
                     , centerX
-                    , Font.size timerSize
+                    , centerY
+                    , height (fill |> maximum (ViewportSize.minDimension viewportSize))
+                    , spaceEvenly
+                    , padding overallPadding
                     ]
-                  <|
-                    text <|
-                        TimeInterval.displayTwoDecimals arguments.result
-                , row
-                    [ centerX
-                    , spacing cubeSpacing
-                    ]
-                    [ ViewCube.view cubeViewOptions
-                        [ htmlTestid "expected-cube-front" ]
-                        { pixelSize = cubeSize
-                        , displayAngle = Cube.ufrDisplayAngle
-                        , annotateFaces = True
-                        , theme = User.cubeTheme user
-                        }
-                        arguments.expectedCubeState
-                    , ViewCube.view cubeViewOptions
-                        [ htmlTestid "expected-cube-back" ]
-                        { pixelSize = cubeSize
-                        , displayAngle = Cube.ublDisplayAngle
-                        , annotateFaces = True
-                        , theme = User.cubeTheme user
-                        }
-                        arguments.expectedCubeState
-                    ]
-                , row [ centerX, spacing buttonSpacing ]
-                    [ PLLTrainer.ButtonWithShortcut.view
-                        hardwareAvailable
-                        [ testid "correct-button"
+                    [ el
+                        [ testid "time-result"
+                        , centerX
+                        , Font.size timerSize
                         ]
-                        { onPress =
-                            if arguments.transitionsDisabled then
-                                Nothing
-
-                            else
-                                Just transitions.evaluateCorrect
-                        , labelText = "Correct"
-                        , color = palette.correct
-                        , keyboardShortcut = Key.Space
-                        }
-                        button
-                    , PLLTrainer.ButtonWithShortcut.view
-                        hardwareAvailable
-                        [ testid "wrong-button"
+                      <|
+                        text <|
+                            TimeInterval.displayTwoDecimals arguments.result
+                    , row
+                        [ centerX
+                        , spacing cubeSpacing
                         ]
-                        { onPress =
-                            if arguments.transitionsDisabled then
-                                Nothing
+                        [ ViewCube.view cubeViewOptions
+                            [ htmlTestid "expected-cube-front" ]
+                            { pixelSize = cubeSize
+                            , displayAngle = Cube.ufrDisplayAngle
+                            , annotateFaces = True
+                            , theme = User.cubeTheme user
+                            }
+                            arguments.expectedCubeState
+                        , ViewCube.view cubeViewOptions
+                            [ htmlTestid "expected-cube-back" ]
+                            { pixelSize = cubeSize
+                            , displayAngle = Cube.ublDisplayAngle
+                            , annotateFaces = True
+                            , theme = User.cubeTheme user
+                            }
+                            arguments.expectedCubeState
+                        ]
+                    , row [ centerX, spacing buttonSpacing ]
+                        [ PLLTrainer.ButtonWithShortcut.view
+                            hardwareAvailable
+                            [ testid "correct-button"
+                            ]
+                            { onPress =
+                                if arguments.transitionsDisabled then
+                                    Nothing
 
-                            else
-                                Just transitions.evaluateWrong
-                        , labelText = "Wrong"
-                        , keyboardShortcut = Key.W
-                        , color = palette.wrong
-                        }
-                        button
+                                else
+                                    Just transitions.evaluateCorrect
+                            , labelText = "Correct"
+                            , color = palette.correct
+                            , keyboardShortcut = Key.Space
+                            }
+                            button
+                        , PLLTrainer.ButtonWithShortcut.view
+                            hardwareAvailable
+                            [ testid "wrong-button"
+                            ]
+                            { onPress =
+                                if arguments.transitionsDisabled then
+                                    Nothing
+
+                                else
+                                    Just transitions.evaluateWrong
+                            , labelText = "Wrong"
+                            , keyboardShortcut = Key.W
+                            , color = palette.wrong
+                            }
+                            button
+                        ]
                     ]
-                ]
+            )
     }

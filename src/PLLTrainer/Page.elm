@@ -3,6 +3,7 @@ module PLLTrainer.Page exposing (Model, Msg, page)
 import AUF
 import Algorithm exposing (Algorithm)
 import Algorithm.Extra
+import Browser.Dom
 import Css
 import Cube exposing (Cube)
 import Effect exposing (Effect)
@@ -41,10 +42,31 @@ page : Shared.Model -> Page.With Model Msg
 page shared =
     Page.advanced
         { init = init shared
-        , update = update shared
+        , update =
+            \msg model ->
+                update shared msg model
+                    |> resetScrollIfPageChanged model
         , view = view shared
         , subscriptions = subscriptions shared
         }
+
+
+resetScrollIfPageChanged : Model -> ( Model, Effect Msg ) -> ( Model, Effect Msg )
+resetScrollIfPageChanged model ( newModel, effect ) =
+    if uniquePageIdentifier model == uniquePageIdentifier newModel then
+        ( newModel, effect )
+
+    else
+        ( newModel
+        , Effect.batch
+            [ effect
+            , Effect.fromCmd <|
+                Task.perform (\_ -> NoOp) (Browser.Dom.setViewport 0 0)
+            , Effect.fromCmd <|
+                -- We don't care if this errors as we don't require the pages to be full screen
+                Task.attempt (\_ -> NoOp) (Browser.Dom.setViewportOf View.fullScreenScrollableContainerId 0 0)
+            ]
+        )
 
 
 
@@ -1237,6 +1259,46 @@ getTestOnlyStateAttributeValue model =
 
                 TestRunningExtraState _ ->
                     "test-running-state"
+
+        EvaluateResult _ _ ->
+            "evaluate-result-page"
+
+        TypeOfWrongPage _ ->
+            "type-of-wrong-page"
+
+        PickAlgorithmPage _ _ ->
+            "pick-algorithm-page"
+
+        AlgorithmDrillerExplanationPage _ ->
+            "algorithm-driller-explanation-page"
+
+        AlgorithmDrillerStatusPage ->
+            "algorithm-driller-status-page"
+
+        AlgorithmDrillerSuccessPage ->
+            "algorithm-driller-success-page"
+
+        CorrectPage ->
+            "correct-page"
+
+        WrongPage ->
+            "wrong-page"
+
+
+uniquePageIdentifier : Model -> String
+uniquePageIdentifier model =
+    case model.trainerState of
+        PickTargetParametersPage _ ->
+            "pick-target-parameters-page"
+
+        StartPage ->
+            "start-page"
+
+        NewCasePage _ ->
+            "new-case-page"
+
+        TestRunning _ _ ->
+            "test-running"
 
         EvaluateResult _ _ ->
             "evaluate-result-page"

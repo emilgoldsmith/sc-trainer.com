@@ -38,15 +38,6 @@ describe("PLL Trainer - Basic Functionality", function () {
   });
 
   describe("Start Page", function () {
-    it("doesn't display statistics when local storage only has picked but not attempted plls", function () {
-      cy.setLocalStorage(allPllsPickedLocalStorage);
-      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
-        retainCurrentLocalStorage: true,
-      });
-      pllTrainerElements.newUserStartPage.welcomeText.assertShows();
-      pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
-    });
-
     it("displays welcome text on first visit, and after nearly completed but cancelled test, but not after completing a test fully", function () {
       // Assert no statistics on first visit
       pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
