@@ -46,13 +46,10 @@ Cypress.Commands.overwrite("tick", (originalFn, milliseconds, options) => {
   return cy.clock({ log: false });
 });
 
-/**
- * This is a quality of life overwrite as elm seems to break if a page is loaded
- * with the clock already mocked. So by default we always disable clock before loading
- * a page
- */
-Cypress.Commands.overwrite("visit", (originalFn, ...args) => {
-  cy.clock().then((clock) => clock.restore());
+Cypress.Commands.overwrite("visit", function (originalFn, ...args) {
+  if (this.clock) {
+    throw new Error("Elm breaks if visit is called while time is mocked");
+  }
   originalFn(...args);
 });
 
@@ -371,25 +368,15 @@ Cypress.Commands.add("longButtonMash", longButtonMash);
 const getCustomWindow: Cypress.Chainable<undefined>["getCustomWindow"] = function (
   options = {}
 ) {
-  const getWindow = () =>
-    cy.window(options).then((window) => {
-      const customWindow = window as Cypress.CustomWindow;
-      if (customWindow.END_TO_END_TEST_HELPERS === undefined) {
-        throw new Error(
-          "We expected a populated custom window, but didn't find END_TO_END_TEST_HELPERS property"
-        );
-      }
-      return customWindow;
-    });
-  return getWindow();
-  // You can try uncommenting this if we are interested in adding in retries to this command later
-  // Seemed to maybe retry forever?
-  // const withRetries = () => {
-  //   getWindow().then((window) =>
-  //     cy.verifyUpcomingAssertions(window, {}, { onRetry: withRetries })
-  //   );
-  // };
-  // return withRetries();
+  return cy.window(options).then((window) => {
+    const customWindow = window as Cypress.CustomWindow;
+    if (customWindow.END_TO_END_TEST_HELPERS === undefined) {
+      throw new Error(
+        "We expected a populated custom window, but didn't find END_TO_END_TEST_HELPERS property"
+      );
+    }
+    return customWindow;
+  });
 };
 Cypress.Commands.add("getCustomWindow", getCustomWindow);
 

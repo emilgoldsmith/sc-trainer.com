@@ -42,7 +42,11 @@ onTESTONLYSetPLLAlgorithm : (( Result Json.Decode.Error PLL, Result Algorithm.Fr
 onTESTONLYSetPLLAlgorithm toMsg =
     setPLLAlgorithmPort
         (\{ algorithm, pll } ->
-            ( Json.Decode.decodeString pllDecoder pll, Algorithm.fromString algorithm )
+            ( pll
+                |> Json.Encode.string
+                |> Json.Decode.decodeValue pllDecoder
+            , Algorithm.fromString algorithm
+            )
                 |> toMsg
         )
 

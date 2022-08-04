@@ -38,45 +38,6 @@ describe("PLL Trainer - Basic Functionality", function () {
   });
 
   describe("Start Page", function () {
-    it("it displays first 1, then 2, then 3, and then 3 results in worst cases for the first 4 algorithms encountered", function () {
-      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
-      // Ensure it starts off with no elements
-      pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
-
-      completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Aa, {
-        aufs: [],
-        correct: true,
-      });
-      assertListHasLength(1);
-
-      completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Ab, {
-        aufs: [],
-        correct: true,
-      });
-      assertListHasLength(2);
-
-      completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.H, {
-        aufs: [],
-        correct: true,
-      });
-      assertListHasLength(3);
-
-      completePLLTestInMilliseconds(Math.random() * 2000 + 2000, PLL.Ga, {
-        aufs: [],
-        correct: true,
-      });
-      assertListHasLength(3);
-
-      function assertListHasLength(length: number): void {
-        pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
-          retainCurrentLocalStorage: true,
-        });
-        pllTrainerElements.recurringUserStartPage.worstCaseListItem
-          .get()
-          .should("have.length", length);
-      }
-    });
-
     it("displays the correct averages ordered correctly", function () {
       // Taken from the pllToAlgorithmString map
       const AaAlgorithmLength = 10;
@@ -610,46 +571,6 @@ describe("PLL Trainer - Basic Functionality", function () {
     function average(l: number[]) {
       return l.reduce((a, b) => a + b) / l.length;
     }
-    it("correctly ignores y rotations at beginning and end of algorithm as this can be dealt with through AUFs", function () {
-      type Aliases = {
-        unmodified: string;
-        modified: string;
-      };
-      completePLLTestInMilliseconds(1000, PLL.Aa, {
-        aufs: [AUF.U2, AUF.UPrime],
-        correct: true,
-        overrideDefaultAlgorithm: pllToAlgorithmString[PLL.Aa],
-      });
-      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
-        retainCurrentLocalStorage: true,
-      });
-      pllTrainerElements.recurringUserStartPage.worstCaseListItem
-        .get()
-        .invoke("text")
-        .setAlias<Aliases, "unmodified">("unmodified");
-
-      cy.clearLocalStorage();
-      completePLLTestInMilliseconds(1000, PLL.Aa, {
-        aufs: [AUF.U2, AUF.UPrime],
-        correct: true,
-        overrideDefaultAlgorithm: "y' " + pllToAlgorithmString[PLL.Aa] + " y2",
-      });
-      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
-        retainCurrentLocalStorage: true,
-      });
-      pllTrainerElements.recurringUserStartPage.worstCaseListItem
-        .get()
-        .invoke("text")
-        .setAlias<Aliases, "modified">("modified");
-
-      cy.getAliases<Aliases>().should(({ unmodified, modified }) => {
-        assertNonFalsyStringsEqual(
-          modified,
-          unmodified,
-          "modified with y rotations should equal unmodified algorithm"
-        );
-      });
-    });
 
     /* eslint-disable mocha/no-setup-in-describe */
     ([

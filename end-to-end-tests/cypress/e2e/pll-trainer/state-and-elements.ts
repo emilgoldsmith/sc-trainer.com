@@ -649,6 +649,15 @@ export function completePLLTestInMilliseconds(
   pll: PLL,
   params: {
     aufs: readonly [AUF, AUF] | readonly [];
+    startingState: "doNewVisit" | "pickTargetParametersPage" | "startPage";
+    // The function will not throw an error if it can't reach this state
+    // it's just simple decisions like ending early or continuing a bit further
+    // that this parameter is for.
+    endingState?:
+      | "correctPage"
+      | "wrongPage"
+      | "algorithmDrillerExplanationPage"
+      | "algorithmDrillerStatusPage";
     overrideDefaultAlgorithm?: string;
     startPageCallback?: () => void;
     newCasePageCallback?: () => void;
@@ -675,10 +684,19 @@ export function completePLLTestInMilliseconds(
       ))
   )
 ): void {
+  cy.wrap(null, { log: false }).then(function (this: Cypress.CypressThis) {
+    if (this.clock) {
+      throw new Error(
+        "Don't call completePLLTestInMilliseconds with time mocked, time mocking should be reduced to a minimum, as it interferes with Elm commands"
+      );
+    }
+  });
   const {
     aufs,
     correct,
     overrideDefaultAlgorithm,
+    startingState,
+    endingState,
     startPageCallback,
     newCasePageCallback,
     testRunningCallback,
@@ -688,7 +706,9 @@ export function completePLLTestInMilliseconds(
   const testCase = [preAUF, pll, postAUF] as const;
   const { stateAttributeValues } = pllTrainerElements.root;
 
-  cy.visit(paths.pllTrainer);
+  if (startingState === "doNewVisit") {
+    cy.visit(paths.pllTrainer);
+  }
   pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
     if (stateValue === stateAttributeValues.pickTargetParametersPage) {
       pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
@@ -717,6 +737,7 @@ export function completePLLTestInMilliseconds(
   });
   fromGetReadyForTestThroughEvaluateResult({
     cyClockAlreadyCalled: true,
+    keepClockOn: false,
     milliseconds,
     resultType: correct ? "correct" : "unrecoverable",
     ...(testRunningCallback === undefined ? {} : { testRunningCallback }),
@@ -731,7 +752,6 @@ export function completePLLTestInMilliseconds(
         );
     }
   });
-  cy.clock().then((clock) => clock.restore());
   if (correct && params.correctPageCallback) {
     pllTrainerElements.correctPage.container.waitFor();
     params.correctPageCallback();
@@ -740,9 +760,13 @@ export function completePLLTestInMilliseconds(
     params.wrongPageCallback();
   }
   if ("algorithmDrillerExplanationPageCallback" in params) {
+    pllTrainerElements.algorithmDrillerExplanationPage.container.waitFor();
     params.algorithmDrillerExplanationPageCallback?.();
   }
-  if ("algorithmDrillerStatusPageCallback" in params) {
+  if (
+    "algorithmDrillerStatusPageCallback" in params ||
+    endingState === "algorithmDrillerStatusPage"
+  ) {
     pllTrainerElements.algorithmDrillerExplanationPage.continueButton
       .get()
       .click();
@@ -755,6 +779,7 @@ export function fromGetReadyForTestThroughEvaluateResult(
   params: {
     // This is just for communication about requirements to caller
     cyClockAlreadyCalled: true;
+    keepClockOn: boolean;
     milliseconds: number;
     testRunningCallback?: () => void;
     evaluateResultCallback?: () => void;
@@ -776,6 +801,7 @@ export function fromGetReadyForTestThroughEvaluateResult(
     evaluateResultCallback,
     testRunningNavigator,
     resultType,
+    keepClockOn,
   } = params;
   const { stateAttributeValues } = pllTrainerElements.root;
 
@@ -786,7 +812,8 @@ export function fromGetReadyForTestThroughEvaluateResult(
   testRunningCallback?.();
   (testRunningNavigator ?? (() => cy.mouseClickScreen("center")))();
   pllTrainerElements.evaluateResult.container.waitFor();
-  cy.tick(500);
+  cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+  if (!keepClockOn) cy.clock().invoke("restore");
   evaluateResultCallback?.();
   if (resultType === "correct") {
     (
