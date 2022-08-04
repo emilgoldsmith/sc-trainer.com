@@ -35,15 +35,356 @@ describe("PLL Trainer", function () {
     applyDefaultIntercepts();
   });
 
-  it("done user", function () {
-    cy.setLocalStorage(fullyPopulatedLocalStorage);
-    cy.visit(paths.pllTrainer);
-    cy.withOverallNameLogged(
-      { message: "Done User Start Page" },
-      recurringUserStartPageNoSideEffectsButScroll
-    );
-  });
+  context("completely new user", function () {
+    it("displays the new user start page on first visit, and after nearly completed but cancelled test, but displays statistics page after completing a test", function () {
+      cy.visit(paths.pllTrainer);
+      pickTargetParametersNavigateVariant1();
+      assertItsNewUserNotRecurringUserStartPage();
+      newUserStartPageBeginNavigateVariant1();
+      cy.clock();
+      newCasePageNavigateVariant1();
+      fromGetReadyForTestThroughEvaluateResult({
+        cyClockAlreadyCalled: true,
+        milliseconds: 500,
+        resultType: "unrecoverable",
+      });
 
+      // We should now be at pick algorithm page and not have recorded the result yet.
+      // So when we go for another visit we should see the new user start page again.
+      cy.visit(paths.pllTrainer);
+      assertItsNewUserNotRecurringUserStartPage();
+
+      // Complete a test
+      newUserStartPageBeginNavigateVariant1();
+      cy.clock();
+      newCasePageNavigateVariant1();
+      fromGetReadyForTestThroughEvaluateResult({
+        cyClockAlreadyCalled: true,
+        milliseconds: 500,
+        resultType: "unrecoverable",
+      });
+      cy.clock().invoke("restore");
+      cy.getCurrentTestCase().then(([, pll]) =>
+        pickAlgorithmNavigateVariant1(pll)
+      );
+
+      cy.visit(paths.pllTrainer);
+      // As we completed the previous test we should now be at the recurring user's start page.
+      assertItsRecurringUserNotNewUserStartPage();
+    });
+
+    it("todo", function () {
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.pickTargetParametersPage.container.waitFor();
+      const testCaseOrder: [AUF, PLL, AUF][] = [
+        [AUF.U, PLL.Aa, AUF.none],
+        [AUF.U2, PLL.Ab, AUF.UPrime],
+        [AUF.U2, PLL.E, AUF.U2],
+        [AUF.UPrime, PLL.Ga, AUF.U],
+        [AUF.none, PLL.Gb, AUF.none],
+      ];
+      let testCaseIndex = 0;
+      function getCurrentTestCase() {
+        const nextCase = testCaseOrder[testCaseIndex];
+        if (nextCase === undefined)
+          throw new Error(
+            "test case index out of bounds: " + testCaseIndex.toString()
+          );
+        return nextCase;
+      }
+      function getNextTestCase() {
+        const nextCase = testCaseOrder[testCaseIndex + 1];
+        if (nextCase === undefined)
+          throw new Error(
+            "test case index out of bounds: " + testCaseIndex.toString()
+          );
+        return nextCase;
+      }
+      cy.overrideNextTestCase(getCurrentTestCase());
+      cy.withOverallNameLogged(
+        { message: "Pick Target Parameters No Side Effects" },
+        pickTargetParametersPageNoSideEffectsButScroll
+      );
+      cy.withOverallNameLogged(
+        { message: "Pick Target Parameters Side Effects" },
+        pickTargetParametersPageSideEffectsExceptNavigations
+      );
+      cy.withOverallNameLogged({ message: "To New User Page" }, () => {
+        pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+          .get()
+          .type("{selectall}{backspace}2");
+        pllTrainerElements.pickTargetParametersPage.targetTPSInput
+          .get()
+          .type("{selectall}{backspace}4");
+        pickTargetParametersNavigateVariant1();
+      });
+      cy.withOverallNameLogged(
+        {
+          message: "New User Start Page",
+        },
+        newUserStartPageNoSideEffectsButScroll
+      );
+      pllTrainerElements.newUserStartPage.cubeStartState
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "solvedFront">("solvedFront");
+      cy.overrideCubeDisplayAngle("ubl");
+      pllTrainerElements.newUserStartPage.cubeStartState
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "solvedBack">("solvedBack");
+      cy.overrideCubeDisplayAngle(null);
+      cy.withOverallNameLogged(
+        { message: "To New Case Page" },
+        newUserStartPageBeginNavigateVariant1
+      );
+      cy.withOverallNameLogged(
+        { message: "New Case Page" },
+        newCasePageNoSideEffectsButScroll
+      );
+      cy.clock();
+      cy.withOverallNameLogged(
+        { message: "To Get Ready State" },
+        newCasePageNavigateVariant1
+      );
+      cy.withOverallNameLogged(
+        { message: "Get Ready State" },
+        getReadyStateNoSideEffectsButScroll
+      );
+      cy.tick(getReadyWaitTime);
+      cy.withOverallNameLogged(
+        { message: "Test Running" },
+        testRunningNoSideEffectsButScroll
+      );
+      cy.withOverallNameLogged(
+        { message: "To Evaluate Result" },
+        testRunningNavigateVariant1
+      );
+      cy.withOverallNameLogged(
+        { message: "Evaluate Result Page While Ignoring Transitions" },
+        evaluateResultWhileIgnoringTransitionsNoSideEffects
+      );
+      cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+      cy.withOverallNameLogged(
+        { message: "Evaluate Result Page After Ignoring Transitions" },
+        evaluateResultAfterIgnoringTransitionsNoSideEffects
+      );
+      pllTrainerElements.evaluateResult.expectedCubeFront
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "previousEvaluateResultFront">(
+          "previousEvaluateResultFront"
+        );
+      pllTrainerElements.evaluateResult.expectedCubeBack
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "previousEvaluateResultBack">(
+          "previousEvaluateResultBack"
+        );
+      cy.withOverallNameLogged(
+        { message: "To Pick Algorithm Page" },
+        evaluateResultNavigateCorrectVariant1
+      );
+      cy.withOverallNameLogged({ message: "Pick Algorithm Page" }, () => {
+        function changePLL() {
+          testCaseIndex++;
+          cy.setCurrentTestCase(getCurrentTestCase());
+        }
+        pickAlgorithmPageFirstThingNoSideEffects();
+        pickAlgorithmPageSideEffectsExceptNavigations(
+          getCurrentTestCase()[1],
+          changePLL,
+          getNextTestCase()[1]
+        );
+      });
+      cy.withOverallNameLogged({ message: "To Correct Page" }, () => {
+        pickAlgorithmNavigateVariant1(getCurrentTestCase()[1]);
+      });
+      cy.withOverallNameLogged({ message: "Correct Page" }, () => {
+        correctPageNoSideEffects();
+      });
+      cy.withOverallNameLogged({ message: "To Type Of Wrong Page" }, () => {
+        cy.overrideNextTestCase(getNextTestCase());
+        correctPageNavigateVariant1();
+        pllTrainerElements.newCasePage.container.waitFor();
+        newCasePageNavigateVariant2();
+        pllTrainerElements.getReadyState.container.waitFor();
+        cy.tick(getReadyWaitTime);
+        pllTrainerElements.testRunning.container.waitFor();
+        testCaseIndex++;
+        pllTrainerElements.testRunning.testCase
+          .getStringRepresentationOfCube()
+          .setAlias<Aliases, "testCaseFront">("testCaseFront");
+        testRunningNavigateVariant2();
+        cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+        pllTrainerElements.evaluateResult.expectedCubeFront
+          .getStringRepresentationOfCube()
+          .setAlias<Aliases, "evaluateResultFront">("evaluateResultFront");
+        pllTrainerElements.evaluateResult.expectedCubeBack
+          .getStringRepresentationOfCube()
+          .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
+        evaluateResultNavigateWrongVariant1();
+      });
+      cy.withOverallNameLogged({ message: "Type Of Wrong Page" }, () => {
+        cy.getAliases<Aliases>()
+          .then((aliases) =>
+            verifyKeysDefined(aliases, [
+              "previousEvaluateResultFront",
+              "previousEvaluateResultBack",
+              "evaluateResultFront",
+              "evaluateResultBack",
+            ])
+          )
+          .then(
+            ({
+              previousEvaluateResultFront,
+              previousEvaluateResultBack,
+              evaluateResultFront,
+              evaluateResultBack,
+            }) =>
+              TypeOfWrongPageNoSideEffects({
+                originalExpectedCubeFront: previousEvaluateResultFront,
+                originalExpectedCubeBack: previousEvaluateResultBack,
+                nextExpectedCubeFront: evaluateResultFront,
+                nextExpectedCubeBack: evaluateResultBack,
+              })
+          );
+      });
+      cy.withOverallNameLogged(
+        { message: "To Algorithm Driller Explanation Page" },
+        () => {
+          typeOfWrongPageNoMovesNavigateVariant1();
+          pickAlgorithmNavigateVariant2(getCurrentTestCase()[1]);
+        }
+      );
+      cy.withOverallNameLogged(
+        { message: "Algorithm Driller Explanation Page" },
+        () => {
+          cy.getAliases<Aliases>()
+            .then((aliases) => verifyKeysDefined(aliases, ["testCaseFront"]))
+            .then(({ testCaseFront }) =>
+              algorithmDrillerExplanationPageNoSideEffectsButScroll({
+                testCaseCube: testCaseFront,
+              })
+            );
+        }
+      );
+      cy.withOverallNameLogged(
+        { message: "To Algorithm Driller Status Page" },
+        () => {
+          algorithmDrillerExplanationPageNavigateVariant1();
+        }
+      );
+      cy.withOverallNameLogged(
+        { message: "Algorithm Driller Status Page" },
+        () => {
+          cy.getAliases<Aliases>()
+            .then((aliases) =>
+              verifyKeysDefined(aliases, ["solvedFront", "solvedBack"])
+            )
+            .then((aliases) =>
+              algorithmDrillerStatusPageNoSideEffects({
+                expectedCubeStateWasNotSolvedBeforeThis: true,
+                ...aliases,
+              })
+            );
+        }
+      );
+      cy.withOverallNameLogged(
+        {
+          message:
+            "Complete Three Drills Successfully, ending at Algorithm Driller Success Page",
+        },
+        () => {
+          algorithmDrillerStatusPageNavigateVariant1();
+          fromGetReadyForTestThroughEvaluateResult({
+            cyClockAlreadyCalled: true,
+            milliseconds: 500,
+            resultType: "correct",
+            testRunningNavigator: testRunningNavigateVariant3,
+            evaluateResultCallback() {
+              pllTrainerElements.evaluateResult.expectedCubeFront
+                .getStringRepresentationOfCube()
+                .setAlias<Aliases, "evaluateResultFront">(
+                  "evaluateResultFront"
+                );
+              pllTrainerElements.evaluateResult.expectedCubeBack
+                .getStringRepresentationOfCube()
+                .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
+            },
+            evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant2,
+          });
+          cy.withOverallNameLogged({ message: "After 1 success" }, () => {
+            cy.getAliases<Aliases>()
+              .then((aliases) =>
+                verifyKeysDefined(aliases, [
+                  "evaluateResultFront",
+                  "evaluateResultBack",
+                ])
+              )
+              .then(algorithmDrillerStatusPageAfter1SuccessNoSideEffects);
+          });
+          algorithmDrillerStatusPageNavigateVariant2();
+          fromGetReadyForTestThroughEvaluateResult({
+            cyClockAlreadyCalled: true,
+            milliseconds: 500,
+            resultType: "correct",
+            testRunningNavigator: testRunningNavigateVariant4,
+            evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant1,
+          });
+          cy.withOverallNameLogged(
+            { message: "After 2 successes" },
+            algorithmDrillerStatusPageAfter2SuccessesNoSideEffects
+          );
+          algorithmDrillerStatusPageNavigateVariant1();
+          fromGetReadyForTestThroughEvaluateResult({
+            cyClockAlreadyCalled: true,
+            milliseconds: 500,
+            resultType: "correct",
+            testRunningNavigator: testRunningNavigateVariant5,
+            evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant1,
+          });
+        }
+      );
+      cy.withOverallNameLogged(
+        { message: "Algorithm Driller Success Page" },
+        () => {
+          algorithmDrillerSuccessPageNoSideEffects();
+        }
+      );
+      cy.withOverallNameLogged({ message: "To Wrong Page" }, () => {
+        // Redo the same case so we don't go over the driller stuff etc.
+        cy.overrideNextTestCase(getCurrentTestCase());
+        algorithmDrillerSuccessPageNavigateVariant1();
+        fromGetReadyForTestThroughEvaluateResult({
+          cyClockAlreadyCalled: true,
+          milliseconds: 100,
+          resultType: "nearly there",
+          testRunningCallback() {
+            cy.overrideDisplayCubeAnnotations(true);
+            pllTrainerElements.testRunning.testCase
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "testCaseFront">("testCaseFront");
+            cy.overrideCubeDisplayAngle("ubl");
+            pllTrainerElements.testRunning.testCase
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "testCaseBack">("testCaseBack");
+            cy.overrideCubeDisplayAngle(null);
+            cy.overrideDisplayCubeAnnotations(null);
+          },
+        });
+      });
+      cy.withOverallNameLogged({ message: "Wrong Page" }, () => {
+        cy.getAliases<Aliases>()
+          .then((aliases) =>
+            verifyKeysDefined(aliases, ["testCaseFront", "testCaseBack"])
+          )
+          .then((aliases) => {
+            wrongPageNoSideEffects({
+              nearlyThereTypeOfWrongWasUsed: true,
+              currentTestCase: getCurrentTestCase(),
+              ...aliases,
+            });
+          });
+      });
+    });
+  });
   context("only algorithms picked otherwise new user", function () {
     it("passes pick target parameters page with default values, shows new user start page, and doesn't display algorithm picker for default cases whether solve was correct or wrong", function () {
       cy.setLocalStorage(allPLLsPickedLocalStorage);
@@ -75,313 +416,14 @@ describe("PLL Trainer", function () {
     });
   });
 
-  it("todo", function () {
-    cy.visit(paths.pllTrainer);
-    pllTrainerElements.pickTargetParametersPage.container.waitFor();
-    const testCaseOrder: [AUF, PLL, AUF][] = [
-      [AUF.U, PLL.Aa, AUF.none],
-      [AUF.U2, PLL.Ab, AUF.UPrime],
-      [AUF.U2, PLL.E, AUF.U2],
-      [AUF.UPrime, PLL.Ga, AUF.U],
-      [AUF.none, PLL.Gb, AUF.none],
-    ];
-    let testCaseIndex = 0;
-    function getCurrentTestCase() {
-      const nextCase = testCaseOrder[testCaseIndex];
-      if (nextCase === undefined)
-        throw new Error(
-          "test case index out of bounds: " + testCaseIndex.toString()
-        );
-      return nextCase;
-    }
-    function getNextTestCase() {
-      const nextCase = testCaseOrder[testCaseIndex + 1];
-      if (nextCase === undefined)
-        throw new Error(
-          "test case index out of bounds: " + testCaseIndex.toString()
-        );
-      return nextCase;
-    }
-    cy.overrideNextTestCase(getCurrentTestCase());
-    cy.withOverallNameLogged(
-      { message: "Pick Target Parameters No Side Effects" },
-      pickTargetParametersPageNoSideEffectsButScroll
-    );
-    cy.withOverallNameLogged(
-      { message: "Pick Target Parameters Side Effects" },
-      pickTargetParametersPageSideEffectsExceptNavigations
-    );
-    cy.withOverallNameLogged({ message: "To New User Page" }, () => {
-      pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
-        .get()
-        .type("{selectall}{backspace}2");
-      pllTrainerElements.pickTargetParametersPage.targetTPSInput
-        .get()
-        .type("{selectall}{backspace}4");
-      pickTargetParametersNavigateVariant1();
-    });
-    cy.withOverallNameLogged(
-      {
-        message: "New User Start Page",
-      },
-      newUserStartPageNoSideEffectsButScroll
-    );
-    pllTrainerElements.newUserStartPage.cubeStartState
-      .getStringRepresentationOfCube()
-      .setAlias<Aliases, "solvedFront">("solvedFront");
-    cy.overrideCubeDisplayAngle("ubl");
-    pllTrainerElements.newUserStartPage.cubeStartState
-      .getStringRepresentationOfCube()
-      .setAlias<Aliases, "solvedBack">("solvedBack");
-    cy.overrideCubeDisplayAngle(null);
-    cy.withOverallNameLogged(
-      { message: "To New Case Page" },
-      newUserStartPageBeginNavigateVariant1
-    );
-    cy.withOverallNameLogged(
-      { message: "New Case Page" },
-      newCasePageNoSideEffectsButScroll
-    );
-    cy.clock();
-    cy.withOverallNameLogged(
-      { message: "To Get Ready State" },
-      newCasePageNavigateVariant1
-    );
-    cy.withOverallNameLogged(
-      { message: "Get Ready State" },
-      getReadyStateNoSideEffectsButScroll
-    );
-    cy.tick(getReadyWaitTime);
-    cy.withOverallNameLogged(
-      { message: "Test Running" },
-      testRunningNoSideEffectsButScroll
-    );
-    cy.withOverallNameLogged(
-      { message: "To Evaluate Result" },
-      testRunningNavigateVariant1
-    );
-    cy.withOverallNameLogged(
-      { message: "Evaluate Result Page While Ignoring Transitions" },
-      evaluateResultWhileIgnoringTransitionsNoSideEffects
-    );
-    cy.tick(evaluateResultIgnoreTransitionsWaitTime);
-    cy.withOverallNameLogged(
-      { message: "Evaluate Result Page After Ignoring Transitions" },
-      evaluateResultAfterIgnoringTransitionsNoSideEffects
-    );
-    pllTrainerElements.evaluateResult.expectedCubeFront
-      .getStringRepresentationOfCube()
-      .setAlias<Aliases, "previousEvaluateResultFront">(
-        "previousEvaluateResultFront"
+  context("user who has learned full pll", function () {
+    it("shows the recurring user start page", function () {
+      cy.setLocalStorage(fullyPopulatedLocalStorage);
+      cy.visit(paths.pllTrainer);
+      cy.withOverallNameLogged(
+        { message: "Done User Start Page" },
+        recurringUserStartPageNoSideEffectsButScroll
       );
-    pllTrainerElements.evaluateResult.expectedCubeBack
-      .getStringRepresentationOfCube()
-      .setAlias<Aliases, "previousEvaluateResultBack">(
-        "previousEvaluateResultBack"
-      );
-    cy.withOverallNameLogged(
-      { message: "To Pick Algorithm Page" },
-      evaluateResultNavigateCorrectVariant1
-    );
-    cy.withOverallNameLogged({ message: "Pick Algorithm Page" }, () => {
-      function changePLL() {
-        testCaseIndex++;
-        cy.setCurrentTestCase(getCurrentTestCase());
-      }
-      pickAlgorithmPageFirstThingNoSideEffects();
-      pickAlgorithmPageSideEffectsExceptNavigations(
-        getCurrentTestCase()[1],
-        changePLL,
-        getNextTestCase()[1]
-      );
-    });
-    cy.withOverallNameLogged({ message: "To Correct Page" }, () => {
-      pickAlgorithmNavigateVariant1(getCurrentTestCase()[1]);
-    });
-    cy.withOverallNameLogged({ message: "Correct Page" }, () => {
-      correctPageNoSideEffects();
-    });
-    cy.withOverallNameLogged({ message: "To Type Of Wrong Page" }, () => {
-      cy.overrideNextTestCase(getNextTestCase());
-      correctPageNavigateVariant1();
-      pllTrainerElements.newCasePage.container.waitFor();
-      newCasePageNavigateVariant2();
-      pllTrainerElements.getReadyState.container.waitFor();
-      cy.tick(getReadyWaitTime);
-      pllTrainerElements.testRunning.container.waitFor();
-      testCaseIndex++;
-      pllTrainerElements.testRunning.testCase
-        .getStringRepresentationOfCube()
-        .setAlias<Aliases, "testCaseFront">("testCaseFront");
-      testRunningNavigateVariant2();
-      cy.tick(evaluateResultIgnoreTransitionsWaitTime);
-      pllTrainerElements.evaluateResult.expectedCubeFront
-        .getStringRepresentationOfCube()
-        .setAlias<Aliases, "evaluateResultFront">("evaluateResultFront");
-      pllTrainerElements.evaluateResult.expectedCubeBack
-        .getStringRepresentationOfCube()
-        .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
-      evaluateResultNavigateWrongVariant1();
-    });
-    cy.withOverallNameLogged({ message: "Type Of Wrong Page" }, () => {
-      cy.getAliases<Aliases>()
-        .then((aliases) =>
-          verifyKeysDefined(aliases, [
-            "previousEvaluateResultFront",
-            "previousEvaluateResultBack",
-            "evaluateResultFront",
-            "evaluateResultBack",
-          ])
-        )
-        .then(
-          ({
-            previousEvaluateResultFront,
-            previousEvaluateResultBack,
-            evaluateResultFront,
-            evaluateResultBack,
-          }) =>
-            TypeOfWrongPageNoSideEffects({
-              originalExpectedCubeFront: previousEvaluateResultFront,
-              originalExpectedCubeBack: previousEvaluateResultBack,
-              nextExpectedCubeFront: evaluateResultFront,
-              nextExpectedCubeBack: evaluateResultBack,
-            })
-        );
-    });
-    cy.withOverallNameLogged(
-      { message: "To Algorithm Driller Explanation Page" },
-      () => {
-        typeOfWrongPageNoMovesNavigateVariant1();
-        pickAlgorithmNavigateVariant2(getCurrentTestCase()[1]);
-      }
-    );
-    cy.withOverallNameLogged(
-      { message: "Algorithm Driller Explanation Page" },
-      () => {
-        cy.getAliases<Aliases>()
-          .then((aliases) => verifyKeysDefined(aliases, ["testCaseFront"]))
-          .then(({ testCaseFront }) =>
-            algorithmDrillerExplanationPageNoSideEffectsButScroll({
-              testCaseCube: testCaseFront,
-            })
-          );
-      }
-    );
-    cy.withOverallNameLogged(
-      { message: "To Algorithm Driller Status Page" },
-      () => {
-        algorithmDrillerExplanationPageNavigateVariant1();
-      }
-    );
-    cy.withOverallNameLogged(
-      { message: "Algorithm Driller Status Page" },
-      () => {
-        cy.getAliases<Aliases>()
-          .then((aliases) =>
-            verifyKeysDefined(aliases, ["solvedFront", "solvedBack"])
-          )
-          .then((aliases) =>
-            algorithmDrillerStatusPageNoSideEffects({
-              expectedCubeStateWasNotSolvedBeforeThis: true,
-              ...aliases,
-            })
-          );
-      }
-    );
-    cy.withOverallNameLogged(
-      {
-        message:
-          "Complete Three Drills Successfully, ending at Algorithm Driller Success Page",
-      },
-      () => {
-        algorithmDrillerStatusPageNavigateVariant1();
-        fromGetReadyForTestThroughEvaluateResult({
-          cyClockAlreadyCalled: true,
-          milliseconds: 500,
-          resultType: "correct",
-          testRunningNavigator: testRunningNavigateVariant3,
-          evaluateResultCallback() {
-            pllTrainerElements.evaluateResult.expectedCubeFront
-              .getStringRepresentationOfCube()
-              .setAlias<Aliases, "evaluateResultFront">("evaluateResultFront");
-            pllTrainerElements.evaluateResult.expectedCubeBack
-              .getStringRepresentationOfCube()
-              .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
-          },
-          evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant2,
-        });
-        cy.withOverallNameLogged({ message: "After 1 success" }, () => {
-          cy.getAliases<Aliases>()
-            .then((aliases) =>
-              verifyKeysDefined(aliases, [
-                "evaluateResultFront",
-                "evaluateResultBack",
-              ])
-            )
-            .then(algorithmDrillerStatusPageAfter1SuccessNoSideEffects);
-        });
-        algorithmDrillerStatusPageNavigateVariant2();
-        fromGetReadyForTestThroughEvaluateResult({
-          cyClockAlreadyCalled: true,
-          milliseconds: 500,
-          resultType: "correct",
-          testRunningNavigator: testRunningNavigateVariant4,
-          evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant1,
-        });
-        cy.withOverallNameLogged(
-          { message: "After 2 successes" },
-          algorithmDrillerStatusPageAfter2SuccessesNoSideEffects
-        );
-        algorithmDrillerStatusPageNavigateVariant1();
-        fromGetReadyForTestThroughEvaluateResult({
-          cyClockAlreadyCalled: true,
-          milliseconds: 500,
-          resultType: "correct",
-          testRunningNavigator: testRunningNavigateVariant5,
-          evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant1,
-        });
-      }
-    );
-    cy.withOverallNameLogged(
-      { message: "Algorithm Driller Success Page" },
-      () => {
-        algorithmDrillerSuccessPageNoSideEffects();
-      }
-    );
-    cy.withOverallNameLogged({ message: "To Wrong Page" }, () => {
-      // Redo the same case so we don't go over the driller stuff etc.
-      cy.overrideNextTestCase(getCurrentTestCase());
-      algorithmDrillerSuccessPageNavigateVariant1();
-      fromGetReadyForTestThroughEvaluateResult({
-        cyClockAlreadyCalled: true,
-        milliseconds: 100,
-        resultType: "nearly there",
-        testRunningCallback() {
-          cy.overrideDisplayCubeAnnotations(true);
-          pllTrainerElements.testRunning.testCase
-            .getStringRepresentationOfCube()
-            .setAlias<Aliases, "testCaseFront">("testCaseFront");
-          cy.overrideCubeDisplayAngle("ubl");
-          pllTrainerElements.testRunning.testCase
-            .getStringRepresentationOfCube()
-            .setAlias<Aliases, "testCaseBack">("testCaseBack");
-          cy.overrideCubeDisplayAngle(null);
-          cy.overrideDisplayCubeAnnotations(null);
-        },
-      });
-    });
-    cy.withOverallNameLogged({ message: "Wrong Page" }, () => {
-      cy.getAliases<Aliases>()
-        .then((aliases) =>
-          verifyKeysDefined(aliases, ["testCaseFront", "testCaseBack"])
-        )
-        .then((aliases) => {
-          wrongPageNoSideEffects({
-            nearlyThereTypeOfWrongWasUsed: true,
-            currentTestCase: getCurrentTestCase(),
-            ...aliases,
-          });
-        });
     });
   });
 });
@@ -658,6 +700,11 @@ function newUserStartPageNoSideEffectsButScroll() {
 function assertItsNewUserNotRecurringUserStartPage() {
   pllTrainerElements.newUserStartPage.welcomeText.get().should("exist");
   pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
+}
+
+function assertItsRecurringUserNotNewUserStartPage() {
+  pllTrainerElements.newUserStartPage.welcomeText.assertDoesntExist();
+  pllTrainerElements.recurringUserStartPage.averageTime.get().should("exist");
 }
 
 function newUserStartPageBeginNavigateVariant1() {

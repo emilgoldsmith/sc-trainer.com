@@ -27,7 +27,7 @@ import PLLTrainer.States.WrongPage
 import PLLTrainer.Subscription
 import PLLTrainer.TestCase exposing (TestCase)
 import Page
-import Ports
+import Ports exposing (onTESTONLYCurrentTestCaseRequested)
 import Process
 import Random
 import Shared
@@ -214,6 +214,7 @@ type InternalMsg
     | TESTONLYSetCubeSizeOverride (Maybe Int)
     | TESTONLYOverrideDisplayCubeAnnotations (Maybe Bool)
     | TESTONLYSetPLLAlgorithm ( Result Json.Decode.Error PLL, Result Algorithm.FromStringError Algorithm )
+    | TESTONLYCurrentTestCaseRequested
 
 
 {-| We use this structure to make sure there is a set
@@ -538,6 +539,12 @@ update shared msg model =
 
         InternalMsg internalMsg ->
             case internalMsg of
+                TESTONLYCurrentTestCaseRequested ->
+                    ( model
+                    , Effect.fromCmd <|
+                        Ports.tESTONLYEmitCurrentTestCase model.currentTestCase.testCase
+                    )
+
                 TESTONLYSetTestCase (Ok testCase) ->
                     let
                         withUpdatedTestCase =
@@ -811,6 +818,7 @@ subscriptions shared model =
         , Ports.onTESTONLYOverrideDisplayCubeAnnotations (InternalMsg << TESTONLYOverrideDisplayCubeAnnotations)
         , Ports.onTESTONLYSetCubeSizeOverride (InternalMsg << TESTONLYSetCubeSizeOverride)
         , Ports.onTESTONLYSetPLLAlgorithm (InternalMsg << TESTONLYSetPLLAlgorithm)
+        , Ports.onTESTONLYCurrentTestCaseRequested (InternalMsg TESTONLYCurrentTestCaseRequested)
         ]
 
 

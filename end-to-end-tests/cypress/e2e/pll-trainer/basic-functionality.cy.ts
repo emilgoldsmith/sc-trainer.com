@@ -38,43 +38,6 @@ describe("PLL Trainer - Basic Functionality", function () {
   });
 
   describe("Start Page", function () {
-    it("displays welcome text on first visit, and after nearly completed but cancelled test, but not after completing a test fully", function () {
-      // Assert no statistics on first visit
-      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
-      pllTrainerElements.newUserStartPage.welcomeText.assertShows();
-      pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
-
-      // Nearly finish a test
-      pllTrainerStatesNewUser.pickAlgorithmPageAfterUnrecoverable.reloadAndNavigateTo(
-        {
-          navigateOptions: { targetParametersPicked: true },
-          retainCurrentLocalStorage: true,
-        }
-      );
-
-      // Assert still no statistics
-      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
-        retainCurrentLocalStorage: true,
-        navigateOptions: { targetParametersPicked: true },
-      });
-      pllTrainerElements.newUserStartPage.welcomeText.assertShows();
-      pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
-
-      // Finish a test
-      pllTrainerStatesNewUser.correctPage.reloadAndNavigateTo({
-        retainCurrentLocalStorage: true,
-        navigateOptions: { targetParametersPicked: true },
-      });
-
-      // Assert statistics now show
-      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
-        retainCurrentLocalStorage: true,
-        navigateOptions: { targetParametersPicked: true },
-      });
-      pllTrainerElements.recurringUserStartPage.averageTime.assertShows();
-      pllTrainerElements.newUserStartPage.welcomeText.assertDoesntExist();
-    });
-
     it("it displays first 1, then 2, then 3, and then 3 results in worst cases for the first 4 algorithms encountered", function () {
       pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
       // Ensure it starts off with no elements

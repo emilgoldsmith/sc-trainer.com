@@ -6,6 +6,7 @@ declare namespace Cypress {
       | {
           send: (value: any) => void;
           subscribe: (callback: (messageValue: any) => void) => void;
+          unsubscribe: (callback: (messageValue: any) => void) => void;
         }
       | undefined;
   };
@@ -42,6 +43,8 @@ declare namespace Cypress {
         };
       };
     };
+
+  type CypressThis = { clock?: Clock };
 
   /**
    * A "fake type" for our application state as we're essentially
@@ -270,6 +273,10 @@ declare namespace Cypress {
         ensureFullHeightIsCaptured?: boolean;
       }
     ): void;
+
+    getCurrentTestCase(): Chainable<
+      [import("./pll").AUF, import("./pll").PLL, import("./pll").AUF]
+    >;
 
     setCurrentTestCase(
       testCase: readonly [

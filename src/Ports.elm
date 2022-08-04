@@ -1,4 +1,4 @@
-port module Ports exposing (logError, onTESTONLYOverrideCubeDisplayAngle, onTESTONLYOverrideDisplayCubeAnnotations, onTESTONLYOverrideNextTestCase, onTESTONLYSetCubeSizeOverride, onTESTONLYSetPLLAlgorithm, onTESTONLYSetTestCase, updateStoredUser)
+port module Ports exposing (logError, onTESTONLYCurrentTestCaseRequested, onTESTONLYOverrideCubeDisplayAngle, onTESTONLYOverrideDisplayCubeAnnotations, onTESTONLYOverrideNextTestCase, onTESTONLYSetCubeSizeOverride, onTESTONLYSetPLLAlgorithm, onTESTONLYSetTestCase, tESTONLYEmitCurrentTestCase, updateStoredUser)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
@@ -77,6 +77,30 @@ parseDisplayAngle string =
 
         _ ->
             Nothing
+
+
+port sendMeCurrentTestCasePort : (Json.Decode.Value -> msg) -> Sub msg
+
+
+onTESTONLYCurrentTestCaseRequested : msg -> Sub msg
+onTESTONLYCurrentTestCaseRequested msg =
+    sendMeCurrentTestCasePort (always msg)
+
+
+port receiveCurrentTestCasePort : Json.Encode.Value -> Cmd msg
+
+
+tESTONLYEmitCurrentTestCase : TestCase -> Cmd msg
+tESTONLYEmitCurrentTestCase testCase =
+    receiveCurrentTestCasePort <|
+        Json.Encode.list Json.Encode.string <|
+            [ PLLTrainer.TestCase.preAUF testCase
+                |> AUF.toString
+            , PLLTrainer.TestCase.pll testCase
+                |> PLL.getLetters
+            , PLLTrainer.TestCase.postAUF testCase
+                |> AUF.toString
+            ]
 
 
 port setCubeSizeOverridePort : (Maybe Int -> msg) -> Sub msg

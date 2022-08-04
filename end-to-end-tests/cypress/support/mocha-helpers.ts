@@ -7,7 +7,6 @@ import { setForceReloadAndNavigate } from "./state";
 export function forceReloadAndNavigateIfDotOnlyIsUsed(): void {
   before(function () {
     let root: Mocha.Suite =
-      // eslint-disable-next-line no-invalid-this
       this.test?.parent === undefined ? error() : this.test.parent;
 
     while (root.parent !== undefined) {
