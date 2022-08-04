@@ -26,7 +26,14 @@
 
 import { isCanvasBlank } from "./html-helpers";
 import { getCode, getKeyCode, getKeyValue, Key } from "./keys";
-import { aufToAlgorithmString, pllToPllLetters } from "./pll";
+import {
+  AUF,
+  aufToAlgorithmString,
+  parseAUFString,
+  parsePLLString,
+  PLL,
+  pllToPllLetters,
+} from "./pll";
 
 /** OVERWRITES */
 Cypress.Commands.overwrite("tick", (originalFn, milliseconds, options) => {
@@ -80,7 +87,6 @@ const getAliases: Cypress.Chainable<undefined>["getAliases"] = function <
    * We are saving the aliases on Mocha Context which is passed around as `this`
    * so that's what we return here
    */
-  // eslint-disable-next-line no-invalid-this
   return cy.wrap(this, { log: false });
 };
 Cypress.Commands.add("getAliases", getAliases);
@@ -119,7 +125,6 @@ const setAlias = function (
   subject: unknown,
   alias: string
 ) {
-  // eslint-disable-next-line no-invalid-this
   this[alias] = subject;
 };
 Cypress.Commands.add("setAlias", { prevSubject: true }, setAlias);
@@ -728,6 +733,49 @@ Cypress.Commands.add(
   "percySnapshotWithProperName",
   percySnapshotWithProperName
 );
+
+const getCurrentTestCase: Cypress.Chainable<string>["getCurrentTestCase"] = function () {
+  return cy
+    .getCustomWindow({ log: false })
+    .then(function (this: Cypress.CypressThis, window) {
+      if (this.clock) {
+        throw new Error("getCurrentTestCase doesn't work while time is mocked");
+      }
+      const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+      const sendMeCurrentTestCasePort = ports.sendMeCurrentTestCasePort;
+      if (!sendMeCurrentTestCasePort)
+        throw new Error(
+          `sendMeCurrentTestCase port is not exposed for some reason. The port keys are: ${JSON.stringify(
+            Object.keys(ports)
+          )}`
+        );
+      const receiveCurrentTestCasePort = ports.receiveCurrentTestCasePort;
+      if (!receiveCurrentTestCasePort)
+        throw new Error(
+          `receiveCurrentTestCase port is not exposed for some reason. The port keys are: ${JSON.stringify(
+            Object.keys(ports)
+          )}`
+        );
+
+      return { sendMeCurrentTestCasePort, receiveCurrentTestCasePort };
+    })
+    .then(
+      ({ sendMeCurrentTestCasePort, receiveCurrentTestCasePort }) =>
+        new Cypress.Promise<[AUF, PLL, AUF]>((resolve) => {
+          receiveCurrentTestCasePort.subscribe(receiveTestCase);
+          sendMeCurrentTestCasePort.send(null);
+          function receiveTestCase(testCase: [string, string, string]) {
+            // receiveCurrentTestCasePort.unsubscribe(receiveTestCase);
+            resolve([
+              parseAUFString(testCase[0]),
+              parsePLLString(testCase[1]),
+              parseAUFString(testCase[2]),
+            ]);
+          }
+        })
+    );
+};
+Cypress.Commands.add("getCurrentTestCase", getCurrentTestCase);
 
 const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] = function ([
   preAuf,
