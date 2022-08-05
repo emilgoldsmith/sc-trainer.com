@@ -711,32 +711,44 @@ export function completePLLTestInMilliseconds(
   const testCase = [preAUF, pll, postAUF] as const;
   const { stateAttributeValues } = pllTrainerElements.root;
 
-  let startingPointPassed = startingState === "doNewVisit";
-  if (startingPointPassed) {
-    cy.visit(paths.pllTrainer);
-  }
+  let atStartPage = true;
 
-  startingPointPassed ||= startingState === "pickTargetParametersPage";
-
-  if (startingPointPassed) {
+  if (startingState === "doNewVisit") {
+    let loaded = false;
+    cy.visit(paths.pllTrainer, { onLoad: () => (loaded = true) });
+    cy.waitUntil(() => loaded);
+    pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+      if (
+        stateValue ===
+        pllTrainerElements.root.stateAttributeValues.pickTargetParametersPage
+      ) {
+        pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
+      }
+    });
+  } else if (startingState === "pickTargetParametersPage") {
     pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
+  } else if (startingState !== "startPage") {
+    atStartPage = false;
   }
 
+  if (startingState === "startPage") {
+    // In case someone for some reason calls this right after calling cy.visit with
+    // startPage starting state instead of just using "doNewVisit" starting state.
+    // Because that could cause issues with calling the meta functions below before
+    // waiting for the page to load
+    pllTrainerElements.newUserStartPage.container.waitFor();
+  }
   cy.overrideNextTestCase(testCase);
   cy.clock();
 
-  startingPointPassed ||= startingState === "startPage";
-
-  if (startingPointPassed) {
+  if (atStartPage) {
     pllTrainerElements.newUserStartPage.container.waitFor();
     startPageCallback?.();
     pllTrainerElements.newUserStartPage.startButton.get().click();
     pllTrainerElements.root.waitForStateChangeAwayFrom(
       stateAttributeValues.startPage
     );
-  }
-
-  if (startingState === "correctPage") {
+  } else if (startingState === "correctPage") {
     pllTrainerElements.correctPage.nextButton.get().click();
   }
 
