@@ -649,7 +649,11 @@ export function completePLLTestInMilliseconds(
   pll: PLL,
   params: {
     aufs: readonly [AUF, AUF] | readonly [];
-    startingState: "doNewVisit" | "pickTargetParametersPage" | "startPage";
+    startingState:
+      | "doNewVisit"
+      | "pickTargetParametersPage"
+      | "startPage"
+      | "correctPage";
     // The function will not throw an error if it can't reach this state
     // it's just simple decisions like ending early or continuing a bit further
     // that this parameter is for.
@@ -706,24 +710,34 @@ export function completePLLTestInMilliseconds(
   const testCase = [preAUF, pll, postAUF] as const;
   const { stateAttributeValues } = pllTrainerElements.root;
 
-  if (startingState === "doNewVisit") {
+  let startingPointPassed = startingState === "doNewVisit";
+  if (startingPointPassed) {
     cy.visit(paths.pllTrainer);
   }
-  pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
-    if (stateValue === stateAttributeValues.pickTargetParametersPage) {
-      pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
-    }
-  });
 
-  pllTrainerElements.newUserStartPage.container.waitFor();
-  startPageCallback?.();
+  startingPointPassed ||= startingState === "pickTargetParametersPage";
+
+  if (startingPointPassed) {
+    pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
+  }
+
   cy.overrideNextTestCase(testCase);
   cy.clock();
 
-  pllTrainerElements.newUserStartPage.startButton.get().click();
-  pllTrainerElements.root.waitForStateChangeAwayFrom(
-    stateAttributeValues.startPage
-  );
+  startingPointPassed ||= startingState === "startPage";
+
+  if (startingPointPassed) {
+    pllTrainerElements.newUserStartPage.container.waitFor();
+    startPageCallback?.();
+    pllTrainerElements.newUserStartPage.startButton.get().click();
+    pllTrainerElements.root.waitForStateChangeAwayFrom(
+      stateAttributeValues.startPage
+    );
+  }
+
+  if (startingState === "correctPage") {
+    pllTrainerElements.correctPage.nextButton.get().click();
+  }
 
   pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
     // It is purposeful this is here before we know if new case page is actually
