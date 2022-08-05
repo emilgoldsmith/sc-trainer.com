@@ -1,5 +1,6 @@
 import {
   assertCubeMatchesStateString,
+  assertNonFalsyStringsDifferent,
   assertNonFalsyStringsEqual,
 } from "support/assertions";
 import { OurElement } from "support/elements";
@@ -774,7 +775,7 @@ describe("PLL Trainer", function () {
     });
   });
 
-  describe.only("test case cube display during tests", function () {
+  describe("test case cube display during tests", function () {
     /* eslint-disable mocha/no-setup-in-describe */
     ([
       {
@@ -889,6 +890,162 @@ describe("PLL Trainer", function () {
         });
       }
     );
+
+    it("doesn't display the same cube for same case with algorithms that require different AUFs", function () {
+      type Aliases = {
+        firstCube: string;
+        secondCube: string;
+      };
+      const pll = PLL.Ua;
+      const aufs = [AUF.none, AUF.none] as const;
+      const firstAlgorithm = "R2 U' R' U' R U R U R U' R";
+      const secondAlgorithm = "R2 U' R2 S R2 S' U R2";
+
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.pickTargetParametersPage.container.waitFor();
+      cy.setPLLAlgorithm(pll, firstAlgorithm);
+      completePLLTestInMilliseconds(1000, pll, {
+        aufs,
+        correct: true,
+        startingState: "pickTargetParametersPage",
+        endingState: "testRunning",
+        testRunningCallback: () =>
+          pllTrainerElements.testRunning.testCase
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "firstCube">("firstCube"),
+      });
+
+      cy.clearLocalStorage();
+
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.pickTargetParametersPage.container.waitFor();
+      cy.setPLLAlgorithm(pll, secondAlgorithm);
+      completePLLTestInMilliseconds(1000, pll, {
+        aufs,
+        correct: true,
+        startingState: "pickTargetParametersPage",
+        endingState: "testRunning",
+        testRunningCallback: () =>
+          pllTrainerElements.testRunning.testCase
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "secondCube">("secondCube"),
+      });
+
+      cy.getAliases<Aliases>().should(({ firstCube, secondCube }) => {
+        assertNonFalsyStringsDifferent(
+          firstCube,
+          secondCube,
+          "These algorithms should have different AUFs required"
+        );
+      });
+    });
+
+    it("correctly calculates the TPS of the first attempt on a case, even though we don't know which AUF was used until the algorithm is input", function () {
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Ua,
+        // Standard slice algorithm
+        algorithm: "M2 U M' U2 M U M2",
+      });
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Ua,
+        // An algorithm with a different preAUF but same postAUF
+        algorithm: "R2 U' R2 S R2 S' U R2",
+      });
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Gc,
+        // Emil's main Gc algorithm (maybe standard?)
+        algorithm: "R2 U' R U' R U R' U R2 D' U R U' R' D",
+      });
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Gc,
+        // An algorithm with a different postAUF but same preAUF
+        algorithm: "R2' Uw' R U' R U R' Uw R2 y R U' R' y'",
+      });
+
+      function assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll,
+        algorithm,
+      }: {
+        pll: PLL;
+        algorithm: string;
+      }) {
+        type Aliases = {
+          cubeBeforeAlgorithmPicked: string;
+          statsAfterFirstTest: string;
+          cubeAfterAlgorithmPicked: string;
+          statsAfterSecondTest: string;
+        };
+        const testResultTime = 1000;
+        const aufOnAppsDefaultAlgorithm = [AUF.none, AUF.none] as const;
+
+        cy.clearLocalStorage();
+        completePLLTestInMilliseconds(testResultTime, pll, {
+          aufs: aufOnAppsDefaultAlgorithm,
+          correct: true,
+          overrideDefaultAlgorithm: algorithm,
+          startingState: "doNewVisit",
+          endingState: "correctPage",
+          testRunningCallback: () =>
+            pllTrainerElements.testRunning.testCase
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "cubeBeforeAlgorithmPicked">(
+                "cubeBeforeAlgorithmPicked"
+              ),
+        });
+        cy.getCurrentTestCase()
+          .then(([preAUF, , postAUF]) => {
+            const equivalentAUFsForOurAlgorithm: [AUF, AUF] = [preAUF, postAUF];
+            completePLLTestInMilliseconds(testResultTime, pll, {
+              aufs: equivalentAUFsForOurAlgorithm,
+              correct: true,
+              startingState: "doNewVisit",
+              startPageCallback: () =>
+                pllTrainerElements.recurringUserStartPage.worstCaseListItem
+                  .get()
+                  .invoke("text")
+                  .setAlias<Aliases, "statsAfterFirstTest">(
+                    "statsAfterFirstTest"
+                  ),
+              testRunningCallback: () =>
+                pllTrainerElements.testRunning.testCase
+                  .getStringRepresentationOfCube()
+                  .setAlias<Aliases, "cubeAfterAlgorithmPicked">(
+                    "cubeAfterAlgorithmPicked"
+                  ),
+            });
+
+            cy.visit(paths.pllTrainer);
+            pllTrainerElements.recurringUserStartPage.worstCaseListItem
+              .get()
+              .invoke("text")
+              .setAlias<Aliases, "statsAfterSecondTest">(
+                "statsAfterSecondTest"
+              );
+            return cy.getAliases<Aliases>();
+          })
+          .should(
+            ({
+              cubeBeforeAlgorithmPicked,
+              statsAfterFirstTest,
+              cubeAfterAlgorithmPicked,
+              statsAfterSecondTest,
+            }) => {
+              // We assert cubes should be the same to ensure we didn't write the test
+              // wrong and provided different AUFs / cubes
+              assertNonFalsyStringsEqual(
+                cubeBeforeAlgorithmPicked,
+                cubeAfterAlgorithmPicked,
+                "cubes should be the same"
+              );
+              assertNonFalsyStringsEqual(
+                statsAfterFirstTest,
+                statsAfterSecondTest,
+                "stats should be the same"
+              );
+            }
+          );
+      }
+    });
   });
 });
 
