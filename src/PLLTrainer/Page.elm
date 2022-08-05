@@ -628,7 +628,11 @@ update shared msg model =
                     )
 
                 TESTONLYSetPLLAlgorithm ( Ok pll, Ok algorithm ) ->
-                    if not <| PLL.solvedBy algorithm pll then
+                    let
+                        cleanedUpAlgorithm =
+                            PLLTrainer.States.PickAlgorithmPage.cleanUpAlgorithm algorithm
+                    in
+                    if not <| PLL.solvedBy cleanedUpAlgorithm pll then
                         ( model
                         , Effect.fromCmd <|
                             Ports.logError
@@ -641,7 +645,7 @@ update shared msg model =
                             Shared.ModifyUser
                                 (User.changePLLAlgorithm
                                     pll
-                                    algorithm
+                                    cleanedUpAlgorithm
                                     >> (\x -> ( x, Nothing ))
                                 )
                         )
