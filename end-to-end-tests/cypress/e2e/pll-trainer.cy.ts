@@ -111,661 +111,6 @@ describe("PLL Trainer", function () {
       });
       pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
     });
-
-    describe("statistics", function () {
-      it("displays the correct averages ordered correctly, and never displays more than 3 worst cases", function () {
-        // Taken from the pllToAlgorithmString map
-        const AaAlgorithmLength = 10;
-        const HAlgorithmLength = 7;
-        const ZAlgorithmLength = 9;
-        const GcAlgorithmLength = 12;
-
-        cy.visit(paths.pllTrainer);
-        completePLLTestInMilliseconds(1500, PLL.Aa, {
-          // Try with no AUFs
-          aufs: [],
-          correct: true,
-          startingState: "pickTargetParametersPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [{ timeMs: 1500, turns: AaAlgorithmLength }],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-        completePLLTestInMilliseconds(2000, PLL.Aa, {
-          // Try with a preAUF
-          aufs: [AUF.U, AUF.none],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [
-                { timeMs: 1500, turns: AaAlgorithmLength },
-                // The addition is for the extra AUF turn
-                { timeMs: 2000, turns: AaAlgorithmLength + 1 },
-              ],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-        completePLLTestInMilliseconds(1000, PLL.Aa, {
-          // Try with a postAUF
-          aufs: [AUF.none, AUF.U2],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [
-                { timeMs: 1500, turns: AaAlgorithmLength },
-                { timeMs: 2000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 1000, turns: AaAlgorithmLength + 1 },
-              ],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-        // Ensure with a fourth attempt that only the most recent 3 attempts
-        // are taken into account
-        completePLLTestInMilliseconds(1000, PLL.Aa, {
-          // Try with both AUFs
-          aufs: [AUF.UPrime, AUF.U],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [
-                { timeMs: 1000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 2000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 1000, turns: AaAlgorithmLength + 2 },
-              ],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-        completePLLTestInMilliseconds(2000, PLL.H, {
-          aufs: [],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
-              pll: PLL.H,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 1000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 2000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 1000, turns: AaAlgorithmLength + 2 },
-              ],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-        // Test that DNFs work as we want them to
-        completePLLTestInMilliseconds(2000, PLL.Aa, {
-          aufs: [AUF.U2, AUF.UPrime],
-          correct: false,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              pll: PLL.Aa,
-              dnf: true,
-            },
-            {
-              lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
-              pll: PLL.H,
-            },
-          ],
-        });
-        completePLLTestInMilliseconds(2000, PLL.Aa, {
-          aufs: [AUF.U2, AUF.none],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              pll: PLL.Aa,
-              dnf: true,
-            },
-            {
-              lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
-              pll: PLL.H,
-            },
-          ],
-        });
-        completePLLTestInMilliseconds(1000, PLL.Aa, {
-          aufs: [AUF.none, AUF.none],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              pll: PLL.Aa,
-              dnf: true,
-            },
-            {
-              lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
-              pll: PLL.H,
-            },
-          ],
-        });
-        completePLLTestInMilliseconds(3000, PLL.Aa, {
-          aufs: [AUF.U, AUF.UPrime],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
-              pll: PLL.H,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 1000, turns: AaAlgorithmLength },
-                { timeMs: 3000, turns: AaAlgorithmLength + 2 },
-              ],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-
-        /** And here we now test that it correctly calculates statistics for AUFs on symmetric cases */
-        /** Note that H-perm is fully symmetrical. Therefore pre-AUF is not a thing, the only
-         * difference it makes is changing the post-AUF
-         */
-        completePLLTestInMilliseconds(2000, PLL.H, {
-          // These AUFs actually cancel out and should result in a 0-AUF case
-          // and calculated as such
-          aufs: [AUF.U, AUF.UPrime],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: HAlgorithmLength },
-                { timeMs: 2000, turns: HAlgorithmLength },
-              ],
-              pll: PLL.H,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 1000, turns: AaAlgorithmLength },
-                { timeMs: 3000, turns: AaAlgorithmLength + 2 },
-              ],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-        completePLLTestInMilliseconds(2000, PLL.H, {
-          // These should partially cancel out and just add a single postAUF
-          aufs: [AUF.U2, AUF.UPrime],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: HAlgorithmLength },
-                { timeMs: 2000, turns: HAlgorithmLength },
-                { timeMs: 2000, turns: HAlgorithmLength + 1 },
-              ],
-              pll: PLL.H,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 1000, turns: AaAlgorithmLength },
-                { timeMs: 3000, turns: AaAlgorithmLength + 2 },
-              ],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-        completePLLTestInMilliseconds(2000, PLL.H, {
-          // This should predictably just add a single turn
-          aufs: [AUF.none, AUF.U],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: HAlgorithmLength },
-                { timeMs: 2000, turns: HAlgorithmLength + 1 },
-                { timeMs: 2000, turns: HAlgorithmLength + 1 },
-              ],
-              pll: PLL.H,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 1000, turns: AaAlgorithmLength },
-                { timeMs: 3000, turns: AaAlgorithmLength + 2 },
-              ],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-        /**
-         * Z is partially symmetrical, having 2 possible preAUFs, either none or a U turn.
-         * We just do two tests (after picking the algorithm) to see that these partial
-         * symmetries seem handled too
-         */
-        completePLLTestInMilliseconds(5000, PLL.Z, {
-          aufs: [],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [{ timeMs: 5000, turns: ZAlgorithmLength }],
-              pll: PLL.Z,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: HAlgorithmLength },
-                { timeMs: 2000, turns: HAlgorithmLength + 1 },
-                { timeMs: 2000, turns: HAlgorithmLength + 1 },
-              ],
-              pll: PLL.H,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 1000, turns: AaAlgorithmLength },
-                { timeMs: 3000, turns: AaAlgorithmLength + 2 },
-              ],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-        completePLLTestInMilliseconds(5000, PLL.Z, {
-          // We check that it can indeed get +2
-          aufs: [AUF.U, AUF.UPrime],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [
-                { timeMs: 5000, turns: ZAlgorithmLength },
-                { timeMs: 5000, turns: ZAlgorithmLength + 2 },
-              ],
-              pll: PLL.Z,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: HAlgorithmLength },
-                { timeMs: 2000, turns: HAlgorithmLength + 1 },
-                { timeMs: 2000, turns: HAlgorithmLength + 1 },
-              ],
-              pll: PLL.H,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 1000, turns: AaAlgorithmLength },
-                { timeMs: 3000, turns: AaAlgorithmLength + 2 },
-              ],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-        completePLLTestInMilliseconds(5000, PLL.Z, {
-          // We check that a U2 postAUF gets correctly cancelled out
-          // as one could then just do U' as the preAUF and it's only +1
-          aufs: [AUF.U, AUF.U2],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [
-                { timeMs: 5000, turns: ZAlgorithmLength },
-                { timeMs: 5000, turns: ZAlgorithmLength + 2 },
-                { timeMs: 5000, turns: ZAlgorithmLength + 1 },
-              ],
-              pll: PLL.Z,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: HAlgorithmLength },
-                { timeMs: 2000, turns: HAlgorithmLength + 1 },
-                { timeMs: 2000, turns: HAlgorithmLength + 1 },
-              ],
-              pll: PLL.H,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: AaAlgorithmLength + 1 },
-                { timeMs: 1000, turns: AaAlgorithmLength },
-                { timeMs: 3000, turns: AaAlgorithmLength + 2 },
-              ],
-              pll: PLL.Aa,
-            },
-          ],
-        });
-        /**
-         * Finally we check that if a fourth pll is attempted it still only shows
-         * the worst 3 cases
-         */
-        completePLLTestInMilliseconds(10000, PLL.Gc, {
-          aufs: [AUF.U, AUF.U2],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectStatistics({
-          worstCasesFromWorstToBetter: [
-            {
-              lastThreeResults: [
-                { timeMs: 10000, turns: GcAlgorithmLength + 2 },
-              ],
-              pll: PLL.Gc,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 5000, turns: ZAlgorithmLength },
-                { timeMs: 5000, turns: ZAlgorithmLength + 2 },
-                { timeMs: 5000, turns: ZAlgorithmLength + 1 },
-              ],
-              pll: PLL.Z,
-            },
-            {
-              lastThreeResults: [
-                { timeMs: 2000, turns: HAlgorithmLength },
-                { timeMs: 2000, turns: HAlgorithmLength + 1 },
-                { timeMs: 2000, turns: HAlgorithmLength + 1 },
-              ],
-              pll: PLL.H,
-            },
-          ],
-        });
-
-        function assertCorrectStatistics({
-          worstCasesFromWorstToBetter,
-        }: {
-          worstCasesFromWorstToBetter: (
-            | {
-                lastThreeResults: { timeMs: number; turns: number }[];
-                pll: PLL;
-                dnf?: undefined;
-              }
-            | { pll: PLL; dnf: true }
-          )[];
-        }): void {
-          pllTrainerElements.recurringUserStartPage.worstCaseListItem
-            .get()
-            .should("have.length", worstCasesFromWorstToBetter.length)
-            .and((elements) => {
-              elements.each((index, elem) => {
-                const text = Cypress.$(elem).text();
-                const caseInfo = worstCasesFromWorstToBetter[index];
-                if (caseInfo === undefined) {
-                  expect.fail(
-                    "Unexpected wrong index when lengths should be the same"
-                  );
-                }
-                if (caseInfo.dnf !== true) {
-                  const { averageTimeMs, averageTPS } = computeAverages(
-                    caseInfo.lastThreeResults
-                  );
-                  expect(text)
-                    .to.match(
-                      new RegExp(
-                        "\\b" + pllToPllLetters[caseInfo.pll] + "-perm\\b"
-                      )
-                    )
-                    .and.match(
-                      new RegExp(
-                        "\\b" + (averageTimeMs / 1000).toFixed(2) + "s\\b"
-                      )
-                    )
-                    .and.match(
-                      new RegExp("\\b" + averageTPS.toFixed(2) + "\\s?TPS\\b")
-                    );
-                } else {
-                  expect(text).to.equal(
-                    pllToPllLetters[caseInfo.pll] + "-perm: DNF"
-                  );
-                }
-              });
-            });
-        }
-      });
-      it("displays the global statistics correctly", function () {
-        // Taken from pllToAlgorithmString
-        // It counts the first x rotation but not the last one
-        const AaAlgorithmLength = 10;
-        const GaAlgorithmLength = 12;
-        const totalPLLCases = 21;
-
-        cy.visit(paths.pllTrainer);
-        completePLLTestInMilliseconds(1000, PLL.Aa, {
-          aufs: [AUF.UPrime, AUF.none],
-          correct: true,
-          startingState: "pickTargetParametersPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectGlobalStatistics({
-          numTried: 1,
-          casesWithLastThreeCasesValid: [
-            [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
-          ],
-        });
-
-        completePLLTestInMilliseconds(2000, PLL.Ab, {
-          aufs: [],
-          correct: false,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        // Still counts a try even though it's incorrect.
-        // But doesn't change the global averages
-        assertCorrectGlobalStatistics({
-          numTried: 2,
-          casesWithLastThreeCasesValid: [
-            [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
-          ],
-        });
-
-        completePLLTestInMilliseconds(2000, PLL.Ga, {
-          aufs: [AUF.U, AUF.U2],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        // And counts a third one after an incorrect
-        // And now changes the global averages
-        assertCorrectGlobalStatistics({
-          numTried: 3,
-          casesWithLastThreeCasesValid: [
-            [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
-            [{ timeMs: 2000, turns: GaAlgorithmLength + 2 }],
-          ],
-        });
-
-        completePLLTestInMilliseconds(1000, PLL.Ga, {
-          aufs: [],
-          correct: true,
-          startingState: "startPage",
-        });
-        cy.visit(paths.pllTrainer);
-        // And doesn't count a repeat of one we tried before in numTried
-        // but does modify one of the averages
-        assertCorrectGlobalStatistics({
-          numTried: 3,
-          casesWithLastThreeCasesValid: [
-            [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
-            [
-              { timeMs: 2000, turns: GaAlgorithmLength + 2 },
-              { timeMs: 1000, turns: GaAlgorithmLength },
-            ],
-          ],
-        });
-
-        // Now we make sure that it only counts the last three by going up
-        // to 4 tests on Ga
-        completePLLTestInMilliseconds(2000, PLL.Ga, {
-          aufs: [AUF.none, AUF.U],
-          correct: true,
-          startingState: "startPage",
-          endingState: "correctPage",
-        });
-        completePLLTestInMilliseconds(3000, PLL.Ga, {
-          aufs: [AUF.UPrime, AUF.U2],
-          correct: true,
-          startingState: "correctPage",
-        });
-        cy.visit(paths.pllTrainer);
-        assertCorrectGlobalStatistics({
-          numTried: 3,
-          casesWithLastThreeCasesValid: [
-            [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
-            [
-              { timeMs: 1000, turns: GaAlgorithmLength },
-              { timeMs: 2000, turns: GaAlgorithmLength + 1 },
-              { timeMs: 3000, turns: GaAlgorithmLength + 2 },
-            ],
-          ],
-        });
-
-        function assertCorrectGlobalStatistics({
-          numTried,
-          casesWithLastThreeCasesValid,
-        }: {
-          numTried: number;
-          casesWithLastThreeCasesValid: { timeMs: number; turns: number }[][];
-        }): void {
-          const eachCasePrecomputed = casesWithLastThreeCasesValid.map(
-            computeAverages
-          );
-          const globalTimeAverageSeconds =
-            average(eachCasePrecomputed.map((x) => x.averageTimeMs)) / 1000;
-          const globalTPSAverage = average(
-            eachCasePrecomputed.map((x) => x.averageTPS)
-          );
-          const numNotYetTried = totalPLLCases - numTried;
-
-          pllTrainerElements.recurringUserStartPage.numCasesTried
-            .get()
-            .should("include.text", ": " + numTried.toString());
-          pllTrainerElements.recurringUserStartPage.numCasesNotYetTried
-            .get()
-            .should("include.text", ": " + numNotYetTried.toString());
-          pllTrainerElements.recurringUserStartPage.averageTime
-            .get()
-            .should(
-              "include.text",
-              ": " + globalTimeAverageSeconds.toFixed(2) + "s"
-            );
-          pllTrainerElements.recurringUserStartPage.averageTPS
-            .get()
-            .should("include.text", ": " + globalTPSAverage.toFixed(2));
-        }
-      });
-      function computeAverages(
-        lastThreeResults: { timeMs: number; turns: number }[]
-      ): { averageTimeMs: number; averageTPS: number } {
-        return {
-          averageTimeMs: average(lastThreeResults.map((x) => x.timeMs)),
-          averageTPS: average(
-            lastThreeResults.map(({ timeMs, turns }) => turns / (timeMs / 1000))
-          ),
-        };
-      }
-      function average(l: number[]) {
-        return l.reduce((a, b) => a + b) / l.length;
-      }
-
-      it("correctly ignores y rotations at beginning and end of algorithm as this can be dealt with through AUFs", function () {
-        type Aliases = {
-          unmodified: string;
-          modified: string;
-        };
-        cy.visit(paths.pllTrainer);
-        pllTrainerElements.pickTargetParametersPage.container.waitFor();
-        cy.setPLLAlgorithm(PLL.Aa, pllToAlgorithmString[PLL.Aa]);
-        completePLLTestInMilliseconds(1000, PLL.Aa, {
-          startingState: "pickTargetParametersPage",
-          aufs: [AUF.U2, AUF.UPrime],
-          correct: true,
-        });
-
-        cy.visit(paths.pllTrainer);
-        pllTrainerElements.recurringUserStartPage.worstCaseListItem
-          .get()
-          .invoke("text")
-          .setAlias<Aliases, "unmodified">("unmodified");
-
-        // Reset and try again with modified
-        cy.clearLocalStorage();
-        cy.visit(paths.pllTrainer);
-        pllTrainerElements.pickTargetParametersPage.container.waitFor();
-        cy.setPLLAlgorithm(
-          PLL.Aa,
-          "y' " + pllToAlgorithmString[PLL.Aa] + " y2"
-        );
-        completePLLTestInMilliseconds(1000, PLL.Aa, {
-          startingState: "pickTargetParametersPage",
-          aufs: [AUF.U2, AUF.UPrime],
-          correct: true,
-        });
-        cy.visit(paths.pllTrainer);
-        pllTrainerElements.recurringUserStartPage.worstCaseListItem
-          .get()
-          .invoke("text")
-          .setAlias<Aliases, "modified">("modified");
-
-        cy.getAliases<Aliases>().should(({ unmodified, modified }) => {
-          assertNonFalsyStringsEqual(
-            modified,
-            unmodified,
-            "modified with y rotations should equal unmodified algorithm"
-          );
-        });
-      });
-    });
   });
 
   context("user who has learned full pll", function () {
@@ -778,7 +123,775 @@ describe("PLL Trainer", function () {
       );
     });
   });
+
+  describe("statistics", function () {
+    it("displays the correct averages ordered correctly, and never displays more than 3 worst cases", function () {
+      // Taken from the pllToAlgorithmString map
+      const AaAlgorithmLength = 10;
+      const HAlgorithmLength = 7;
+      const ZAlgorithmLength = 9;
+      const GcAlgorithmLength = 12;
+
+      cy.visit(paths.pllTrainer);
+      completePLLTestInMilliseconds(1500, PLL.Aa, {
+        // Try with no AUFs
+        aufs: [],
+        correct: true,
+        startingState: "pickTargetParametersPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [{ timeMs: 1500, turns: AaAlgorithmLength }],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(2000, PLL.Aa, {
+        // Try with a preAUF
+        aufs: [AUF.U, AUF.none],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 1500, turns: AaAlgorithmLength },
+              // The addition is for the extra AUF turn
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        // Try with a postAUF
+        aufs: [AUF.none, AUF.U2],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 1500, turns: AaAlgorithmLength },
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength + 1 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      // Ensure with a fourth attempt that only the most recent 3 attempts
+      // are taken into account
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        // Try with both AUFs
+        aufs: [AUF.UPrime, AUF.U],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 1000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(2000, PLL.H, {
+        aufs: [],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 1000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      // Test that DNFs work as we want them to
+      completePLLTestInMilliseconds(2000, PLL.Aa, {
+        aufs: [AUF.U2, AUF.UPrime],
+        correct: false,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            pll: PLL.Aa,
+            dnf: true,
+          },
+          {
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
+            pll: PLL.H,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(2000, PLL.Aa, {
+        aufs: [AUF.U2, AUF.none],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            pll: PLL.Aa,
+            dnf: true,
+          },
+          {
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
+            pll: PLL.H,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        aufs: [AUF.none, AUF.none],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            pll: PLL.Aa,
+            dnf: true,
+          },
+          {
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
+            pll: PLL.H,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(3000, PLL.Aa, {
+        aufs: [AUF.U, AUF.UPrime],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+
+      /** And here we now test that it correctly calculates statistics for AUFs on symmetric cases */
+      /** Note that H-perm is fully symmetrical. Therefore pre-AUF is not a thing, the only
+       * difference it makes is changing the post-AUF
+       */
+      completePLLTestInMilliseconds(2000, PLL.H, {
+        // These AUFs actually cancel out and should result in a 0-AUF case
+        // and calculated as such
+        aufs: [AUF.U, AUF.UPrime],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(2000, PLL.H, {
+        // These should partially cancel out and just add a single postAUF
+        aufs: [AUF.U2, AUF.UPrime],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(2000, PLL.H, {
+        // This should predictably just add a single turn
+        aufs: [AUF.none, AUF.U],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      /**
+       * Z is partially symmetrical, having 2 possible preAUFs, either none or a U turn.
+       * We just do two tests (after picking the algorithm) to see that these partial
+       * symmetries seem handled too
+       */
+      completePLLTestInMilliseconds(5000, PLL.Z, {
+        aufs: [],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [{ timeMs: 5000, turns: ZAlgorithmLength }],
+            pll: PLL.Z,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(5000, PLL.Z, {
+        // We check that it can indeed get +2
+        aufs: [AUF.U, AUF.UPrime],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 5000, turns: ZAlgorithmLength },
+              { timeMs: 5000, turns: ZAlgorithmLength + 2 },
+            ],
+            pll: PLL.Z,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      completePLLTestInMilliseconds(5000, PLL.Z, {
+        // We check that a U2 postAUF gets correctly cancelled out
+        // as one could then just do U' as the preAUF and it's only +1
+        aufs: [AUF.U, AUF.U2],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [
+              { timeMs: 5000, turns: ZAlgorithmLength },
+              { timeMs: 5000, turns: ZAlgorithmLength + 2 },
+              { timeMs: 5000, turns: ZAlgorithmLength + 1 },
+            ],
+            pll: PLL.Z,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+            ],
+            pll: PLL.H,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: AaAlgorithmLength + 1 },
+              { timeMs: 1000, turns: AaAlgorithmLength },
+              { timeMs: 3000, turns: AaAlgorithmLength + 2 },
+            ],
+            pll: PLL.Aa,
+          },
+        ],
+      });
+      /**
+       * Finally we check that if a fourth pll is attempted it still only shows
+       * the worst 3 cases
+       */
+      completePLLTestInMilliseconds(10000, PLL.Gc, {
+        aufs: [AUF.U, AUF.U2],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectStatistics({
+        worstCasesFromWorstToBetter: [
+          {
+            lastThreeResults: [{ timeMs: 10000, turns: GcAlgorithmLength + 2 }],
+            pll: PLL.Gc,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 5000, turns: ZAlgorithmLength },
+              { timeMs: 5000, turns: ZAlgorithmLength + 2 },
+              { timeMs: 5000, turns: ZAlgorithmLength + 1 },
+            ],
+            pll: PLL.Z,
+          },
+          {
+            lastThreeResults: [
+              { timeMs: 2000, turns: HAlgorithmLength },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+              { timeMs: 2000, turns: HAlgorithmLength + 1 },
+            ],
+            pll: PLL.H,
+          },
+        ],
+      });
+
+      function assertCorrectStatistics({
+        worstCasesFromWorstToBetter,
+      }: {
+        worstCasesFromWorstToBetter: (
+          | {
+              lastThreeResults: { timeMs: number; turns: number }[];
+              pll: PLL;
+              dnf?: undefined;
+            }
+          | { pll: PLL; dnf: true }
+        )[];
+      }): void {
+        pllTrainerElements.recurringUserStartPage.worstCaseListItem
+          .get()
+          .should("have.length", worstCasesFromWorstToBetter.length)
+          .and((elements) => {
+            elements.each((index, elem) => {
+              const text = Cypress.$(elem).text();
+              const caseInfo = worstCasesFromWorstToBetter[index];
+              if (caseInfo === undefined) {
+                expect.fail(
+                  "Unexpected wrong index when lengths should be the same"
+                );
+              }
+              if (caseInfo.dnf !== true) {
+                const { averageTimeMs, averageTPS } = computeAverages(
+                  caseInfo.lastThreeResults
+                );
+                expect(text)
+                  .to.match(
+                    new RegExp(
+                      "\\b" + pllToPllLetters[caseInfo.pll] + "-perm\\b"
+                    )
+                  )
+                  .and.match(
+                    new RegExp(
+                      "\\b" + (averageTimeMs / 1000).toFixed(2) + "s\\b"
+                    )
+                  )
+                  .and.match(
+                    new RegExp("\\b" + averageTPS.toFixed(2) + "\\s?TPS\\b")
+                  );
+              } else {
+                expect(text).to.equal(
+                  pllToPllLetters[caseInfo.pll] + "-perm: DNF"
+                );
+              }
+            });
+          });
+      }
+    });
+    it("displays the global statistics correctly", function () {
+      // Taken from pllToAlgorithmString
+      // It counts the first x rotation but not the last one
+      const AaAlgorithmLength = 10;
+      const GaAlgorithmLength = 12;
+      const totalPLLCases = 21;
+
+      cy.visit(paths.pllTrainer);
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        aufs: [AUF.UPrime, AUF.none],
+        correct: true,
+        startingState: "pickTargetParametersPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectGlobalStatistics({
+        numTried: 1,
+        casesWithLastThreeCasesValid: [
+          [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
+        ],
+      });
+
+      completePLLTestInMilliseconds(2000, PLL.Ab, {
+        aufs: [],
+        correct: false,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      // Still counts a try even though it's incorrect.
+      // But doesn't change the global averages
+      assertCorrectGlobalStatistics({
+        numTried: 2,
+        casesWithLastThreeCasesValid: [
+          [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
+        ],
+      });
+
+      completePLLTestInMilliseconds(2000, PLL.Ga, {
+        aufs: [AUF.U, AUF.U2],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      // And counts a third one after an incorrect
+      // And now changes the global averages
+      assertCorrectGlobalStatistics({
+        numTried: 3,
+        casesWithLastThreeCasesValid: [
+          [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
+          [{ timeMs: 2000, turns: GaAlgorithmLength + 2 }],
+        ],
+      });
+
+      completePLLTestInMilliseconds(1000, PLL.Ga, {
+        aufs: [],
+        correct: true,
+        startingState: "startPage",
+      });
+      cy.visit(paths.pllTrainer);
+      // And doesn't count a repeat of one we tried before in numTried
+      // but does modify one of the averages
+      assertCorrectGlobalStatistics({
+        numTried: 3,
+        casesWithLastThreeCasesValid: [
+          [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
+          [
+            { timeMs: 2000, turns: GaAlgorithmLength + 2 },
+            { timeMs: 1000, turns: GaAlgorithmLength },
+          ],
+        ],
+      });
+
+      // Now we make sure that it only counts the last three by going up
+      // to 4 tests on Ga
+      completePLLTestInMilliseconds(2000, PLL.Ga, {
+        aufs: [AUF.none, AUF.U],
+        correct: true,
+        startingState: "startPage",
+        endingState: "correctPage",
+      });
+      completePLLTestInMilliseconds(3000, PLL.Ga, {
+        aufs: [AUF.UPrime, AUF.U2],
+        correct: true,
+        startingState: "correctPage",
+      });
+      cy.visit(paths.pllTrainer);
+      assertCorrectGlobalStatistics({
+        numTried: 3,
+        casesWithLastThreeCasesValid: [
+          [{ timeMs: 1000, turns: AaAlgorithmLength + 1 }],
+          [
+            { timeMs: 1000, turns: GaAlgorithmLength },
+            { timeMs: 2000, turns: GaAlgorithmLength + 1 },
+            { timeMs: 3000, turns: GaAlgorithmLength + 2 },
+          ],
+        ],
+      });
+
+      function assertCorrectGlobalStatistics({
+        numTried,
+        casesWithLastThreeCasesValid,
+      }: {
+        numTried: number;
+        casesWithLastThreeCasesValid: { timeMs: number; turns: number }[][];
+      }): void {
+        const eachCasePrecomputed = casesWithLastThreeCasesValid.map(
+          computeAverages
+        );
+        const globalTimeAverageSeconds =
+          average(eachCasePrecomputed.map((x) => x.averageTimeMs)) / 1000;
+        const globalTPSAverage = average(
+          eachCasePrecomputed.map((x) => x.averageTPS)
+        );
+        const numNotYetTried = totalPLLCases - numTried;
+
+        pllTrainerElements.recurringUserStartPage.numCasesTried
+          .get()
+          .should("include.text", ": " + numTried.toString());
+        pllTrainerElements.recurringUserStartPage.numCasesNotYetTried
+          .get()
+          .should("include.text", ": " + numNotYetTried.toString());
+        pllTrainerElements.recurringUserStartPage.averageTime
+          .get()
+          .should(
+            "include.text",
+            ": " + globalTimeAverageSeconds.toFixed(2) + "s"
+          );
+        pllTrainerElements.recurringUserStartPage.averageTPS
+          .get()
+          .should("include.text", ": " + globalTPSAverage.toFixed(2));
+      }
+    });
+    function computeAverages(
+      lastThreeResults: { timeMs: number; turns: number }[]
+    ): { averageTimeMs: number; averageTPS: number } {
+      return {
+        averageTimeMs: average(lastThreeResults.map((x) => x.timeMs)),
+        averageTPS: average(
+          lastThreeResults.map(({ timeMs, turns }) => turns / (timeMs / 1000))
+        ),
+      };
+    }
+    function average(l: number[]) {
+      return l.reduce((a, b) => a + b) / l.length;
+    }
+
+    it("correctly ignores y rotations at beginning and end of algorithm as this can be dealt with through AUFs", function () {
+      type Aliases = {
+        unmodified: string;
+        modified: string;
+      };
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.pickTargetParametersPage.container.waitFor();
+      cy.setPLLAlgorithm(PLL.Aa, pllToAlgorithmString[PLL.Aa]);
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        startingState: "pickTargetParametersPage",
+        aufs: [AUF.U2, AUF.UPrime],
+        correct: true,
+      });
+
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.recurringUserStartPage.worstCaseListItem
+        .get()
+        .invoke("text")
+        .setAlias<Aliases, "unmodified">("unmodified");
+
+      // Reset and try again with modified
+      cy.clearLocalStorage();
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.pickTargetParametersPage.container.waitFor();
+      cy.setPLLAlgorithm(PLL.Aa, "y' " + pllToAlgorithmString[PLL.Aa] + " y2");
+      completePLLTestInMilliseconds(1000, PLL.Aa, {
+        startingState: "pickTargetParametersPage",
+        aufs: [AUF.U2, AUF.UPrime],
+        correct: true,
+      });
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.recurringUserStartPage.worstCaseListItem
+        .get()
+        .invoke("text")
+        .setAlias<Aliases, "modified">("modified");
+
+      cy.getAliases<Aliases>().should(({ unmodified, modified }) => {
+        assertNonFalsyStringsEqual(
+          modified,
+          unmodified,
+          "modified with y rotations should equal unmodified algorithm"
+        );
+      });
+    });
+  });
+
+  describe.only("test case cube display during tests", function () {
+    /* eslint-disable mocha/no-setup-in-describe */
+    ([
+      {
+        testName:
+          "displays exactly the same whether there's a y rotation in the beginning or not as it's redundant",
+        pll: PLL.Gc,
+        algorithmWithRotation: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
+        // The same algorithm with no y rotation
+        algorithmWithoutRotation: "R2 U' R U' R U R' U R2 D' U R U' R' D",
+      },
+      {
+        testName:
+          "displays exactly the same whether there's a U or Dw move in the beginning or not as it's redundant",
+        pll: PLL.Gc,
+        algorithmWithRotation: "U Dw R2 U' R U' R U R' U R2 D' U R U' R' D",
+        // The same algorithm with no initial U or Dw move. Note the moves are in the opposite
+        // directions, so this is not just equivalent to a y rotation
+        algorithmWithoutRotation: "R2 U' R U' R U R' U R2 D' U R U' R' D",
+      },
+      {
+        testName:
+          "displays exactly the same, even if there's a y rotation in the middle of the algorithm that isn't corrected later",
+        pll: PLL.V,
+        algorithmWithRotation: "R' U R' U' (y) R' F' R2 U' R' U R' F R F",
+        // The same algorithm but just modified to move the faces without the rotation
+        algorithmWithoutRotation: "R' U R' U' B' R' B2 U' B' U B' R B R",
+      },
+      {
+        testName:
+          "displays exactly the same, even if there's an x rotation in the beginning of the algorithm that isn't corrected later",
+        pll: PLL.E,
+        algorithmWithRotation: "x U R' U' L U R U' r2 U' R U L U' R' U",
+        // The same algorithm but just modified to move the faces without the rotation
+        algorithmWithoutRotation: "F R' F' L F R F' r2 F' R F L F' R' F",
+      },
+      {
+        testName:
+          "displays exactly the same, even if there's a z rotation in the beginning of the algorithm that isn't corrected later",
+        pll: PLL.V,
+        algorithmWithRotation: "z D' R2 D R2 U R' D' R U' R U R' D R U'",
+        // The same algorithm but just modified to move the faces without the rotation
+        algorithmWithoutRotation: "R' U2 R U2 L U' R' U L' U L U' R U L'",
+      },
+      {
+        testName:
+          "displays exactly the same, even if there's a wide move in the algorithm that isn't corrected later",
+        pll: PLL.Jb,
+        algorithmWithRotation: "R U2 R' U' R U2 L' U R' U' r",
+        // The same algorithm but just converted the r move to a slice and outside face turn
+        algorithmWithoutRotation: "R U2 R' U' R U2 L' U R' U' R M'",
+      },
+    ] as {
+      testName: string;
+      pll: PLL;
+      algorithmWithRotation: string;
+      algorithmWithoutRotation: string;
+      only?: boolean;
+    }[]).forEach(
+      /* eslint-enable mocha/no-setup-in-describe */
+      ({
+        pll,
+        algorithmWithRotation,
+        algorithmWithoutRotation,
+        testName,
+        only,
+      }) => {
+        (only ? it.only : it)(testName, () => {
+          type Aliases = {
+            withRotation: string;
+            withoutRotation: string;
+          };
+          // First we input the desired algorithm as our chosen one
+          cy.visit(paths.pllTrainer);
+          pllTrainerElements.pickTargetParametersPage.container.waitFor();
+          cy.setPLLAlgorithm(pll, algorithmWithRotation);
+          // Then we run the test with that algorithm being used
+          completePLLTestInMilliseconds(1000, pll, {
+            correct: true,
+            aufs: [],
+            startingState: "pickTargetParametersPage",
+            endingState: "testRunning",
+            testRunningCallback: () =>
+              pllTrainerElements.testRunning.testCase
+                .getStringRepresentationOfCube()
+                .setAlias<Aliases, "withRotation">("withRotation"),
+          });
+
+          cy.clearLocalStorage();
+          // We again input the desired algorithm as our chosen one
+          cy.visit(paths.pllTrainer);
+          pllTrainerElements.pickTargetParametersPage.container.waitFor();
+          cy.setPLLAlgorithm(pll, algorithmWithoutRotation);
+          // Then we run the test with that algorithm being used
+          completePLLTestInMilliseconds(1000, pll, {
+            correct: true,
+            aufs: [],
+            startingState: "pickTargetParametersPage",
+            endingState: "testRunning",
+            testRunningCallback: () =>
+              pllTrainerElements.testRunning.testCase
+                .getStringRepresentationOfCube()
+                .setAlias<Aliases, "withoutRotation">("withoutRotation"),
+          });
+
+          cy.getAliases<Aliases>().then(({ withRotation, withoutRotation }) => {
+            assertNonFalsyStringsEqual(
+              withRotation,
+              withoutRotation,
+              "they should display the same cube no matter about uncorrected rotations in the algorithm"
+            );
+          });
+        });
+      }
+    );
+  });
 });
+
 // eslint-disable-next-line mocha/no-global-tests
 it.skip("todo", function () {
   cy.visit(paths.pllTrainer);

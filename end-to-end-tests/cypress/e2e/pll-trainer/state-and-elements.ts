@@ -658,6 +658,7 @@ export function completePLLTestInMilliseconds(
     // it's just simple decisions like ending early or continuing a bit further
     // that this parameter is for.
     endingState?:
+      | "testRunning"
       | "correctPage"
       | "wrongPage"
       | "algorithmDrillerExplanationPage"
@@ -754,6 +755,7 @@ export function completePLLTestInMilliseconds(
     keepClockOn: false,
     milliseconds,
     resultType: correct ? "correct" : "unrecoverable",
+    endingState: endingState === "testRunning" ? "testRunning" : undefined,
     ...(testRunningCallback === undefined ? {} : { testRunningCallback }),
     ...(evaluateResultCallback === undefined ? {} : { evaluateResultCallback }),
   });
@@ -795,6 +797,7 @@ export function fromGetReadyForTestThroughEvaluateResult(
     cyClockAlreadyCalled: true;
     keepClockOn: boolean;
     milliseconds: number;
+    endingState?: "testRunning" | undefined;
     testRunningCallback?: () => void;
     evaluateResultCallback?: () => void;
     testRunningNavigator?: () => void;
@@ -816,6 +819,7 @@ export function fromGetReadyForTestThroughEvaluateResult(
     testRunningNavigator,
     resultType,
     keepClockOn,
+    endingState,
   } = params;
   const { stateAttributeValues } = pllTrainerElements.root;
 
@@ -824,6 +828,10 @@ export function fromGetReadyForTestThroughEvaluateResult(
   pllTrainerElements.testRunning.container.waitFor();
   cy.tick(milliseconds);
   testRunningCallback?.();
+  if (endingState === "testRunning") {
+    if (!keepClockOn) cy.clock().invoke("restore");
+    return;
+  }
   (testRunningNavigator ?? (() => cy.mouseClickScreen("center")))();
   pllTrainerElements.evaluateResult.container.waitFor();
   cy.tick(evaluateResultIgnoreTransitionsWaitTime);
