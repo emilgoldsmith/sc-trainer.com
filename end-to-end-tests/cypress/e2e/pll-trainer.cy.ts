@@ -1046,6 +1046,100 @@ describe("PLL Trainer", function () {
           );
       }
     });
+
+    it("correctly identifies the optimal AUFs of symmetrical cases", function () {
+      /**
+       * Note that what we are testing here is how, when a case is provided, the app determines
+       * the optimal AUF set to simplify this case to and interface with the user in this sense.
+       *
+       * We are deciding here that we prefer less total turns, quarter turns over half turns,
+       * postAUFs over preAUFS and clockwise turns over counterclockwise turns if there
+       * are multiple AUF combinations that need tiebreaking between. Also special case
+       * [U, U'] is preferred over [U', U] just arbitrarily to have a fully defined ordering.
+       *
+       * As can be seen several factors are arbitrary such as the clockwise tiebreak.
+       * This can definitely be changed in the future to be user customizable
+       * or adjusted based on CATPS etc.
+       */
+
+      // H PERM TESTS - Full symmetry
+      // First we make sure the algorithm is picked so AUFs are predictable
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.pickTargetParametersPage.container.waitFor();
+      cy.setPLLAlgorithm(PLL.H, pllToAlgorithmString[PLL.H]);
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.H,
+        // Checking that a preAUF is moved to a postAUF
+        aufToSet: [AUF.U, AUF.none],
+        aufToExpect: [AUF.none, AUF.U],
+        startingStateOverride: "pickTargetParametersPage",
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.H,
+        // These two should be simplified to a single U postAUF
+        aufToSet: [AUF.UPrime, AUF.U2],
+        aufToExpect: [AUF.none, AUF.U],
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.H,
+        // These should cancel out to no AUFs
+        aufToSet: [AUF.U2, AUF.U2],
+        aufToExpect: [AUF.none, AUF.none],
+      });
+
+      // Z PERM TESTS - Half symmetry
+      // Again make sure algorithm is picked
+      cy.setPLLAlgorithm(PLL.Z, pllToAlgorithmString[PLL.Z]);
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.Z,
+        // Checking that [U, U'] is preferred over [U', U]
+        aufToSet: [AUF.UPrime, AUF.U],
+        aufToExpect: [AUF.U, AUF.UPrime],
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.Z,
+        // Checking that [U, U] is preferred over [U', U']
+        aufToSet: [AUF.UPrime, AUF.UPrime],
+        aufToExpect: [AUF.U, AUF.U],
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.Z,
+        // This should be simplified to a single U that has to be preAUF here
+        aufToSet: [AUF.UPrime, AUF.U2],
+        aufToExpect: [AUF.U, AUF.none],
+      });
+      assertAUFsDisplayedCorrectly({
+        pll: PLL.Z,
+        // Verifying that an already optimized AUF is not changed
+        aufToSet: [AUF.none, AUF.U],
+        aufToExpect: [AUF.none, AUF.U],
+      });
+
+      function assertAUFsDisplayedCorrectly({
+        pll,
+        aufToSet,
+        aufToExpect,
+        startingStateOverride,
+      }: {
+        pll: PLL;
+        aufToSet: [AUF, AUF];
+        aufToExpect: [AUF, AUF];
+        startingStateOverride?: "pickTargetParametersPage";
+      }) {
+        completePLLTestInMilliseconds(1000, pll, {
+          aufs: aufToSet,
+          correct: true,
+          startingState: startingStateOverride ?? "doNewVisit",
+          endingState: "testRunning",
+          testRunningCallback() {
+            cy.clock().invoke("restore");
+            cy.getCurrentTestCase().should(([preAUF, , postAUF]) => {
+              expect([preAUF, postAUF]).to.deep.equal(aufToExpect);
+            });
+          },
+        });
+      }
+    });
   });
 });
 
