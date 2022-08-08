@@ -71,9 +71,7 @@ describe("PLL Trainer", function () {
         resultType: "unrecoverable",
       });
       cy.clock().invoke("restore");
-      cy.getCurrentTestCase().then(([, pll]) =>
-        pickAlgorithmNavigateVariant1(pll)
-      );
+      pickAlgorithmNavigateVariant1();
 
       cy.visit(paths.pllTrainer);
       // As we completed the previous test we should now be at the recurring user's start page.
@@ -1253,19 +1251,11 @@ it.skip("todo", function () {
     evaluateResultNavigateCorrectVariant1
   );
   cy.withOverallNameLogged({ message: "Pick Algorithm Page" }, () => {
-    function changePLL() {
-      testCaseIndex++;
-      cy.setCurrentTestCase(getCurrentTestCase());
-    }
     pickAlgorithmPageFirstThingNoSideEffects();
-    pickAlgorithmPageSideEffectsExceptNavigations(
-      getCurrentTestCase()[1],
-      changePLL,
-      getNextTestCase()[1]
-    );
+    pickAlgorithmPageSideEffectsExceptNavigations();
   });
   cy.withOverallNameLogged({ message: "To Correct Page" }, () => {
-    pickAlgorithmNavigateVariant1(getCurrentTestCase()[1]);
+    pickAlgorithmNavigateVariant1();
   });
   cy.withOverallNameLogged({ message: "Correct Page" }, () => {
     correctPageNoSideEffects();
@@ -1321,7 +1311,7 @@ it.skip("todo", function () {
     { message: "To Algorithm Driller Explanation Page" },
     () => {
       typeOfWrongPageNoMovesNavigateVariant1();
-      pickAlgorithmNavigateVariant2(getCurrentTestCase()[1]);
+      pickAlgorithmNavigateVariant2();
     }
   );
   cy.withOverallNameLogged(
@@ -1332,6 +1322,7 @@ it.skip("todo", function () {
         .then(({ testCaseFront }) =>
           algorithmDrillerExplanationPageNoSideEffectsButScroll({
             testCaseCube: testCaseFront,
+            defaultAlgorithmWasUsed: true,
           })
         );
     }
@@ -1448,7 +1439,6 @@ it.skip("todo", function () {
       .then((aliases) => {
         wrongPageNoSideEffects({
           nearlyThereTypeOfWrongWasUsed: true,
-          currentTestCase: getCurrentTestCase(),
           ...aliases,
         });
       });
@@ -2115,11 +2105,7 @@ function pickAlgorithmPageFirstThingNoSideEffects() {
   );
 }
 
-function pickAlgorithmPageSideEffectsExceptNavigations(
-  firstPLL: PLL,
-  changePLL: () => void,
-  secondPLL: PLL
-) {
+function pickAlgorithmPageSideEffectsExceptNavigations() {
   const elements = pllTrainerElements.pickAlgorithmPage;
 
   ([
@@ -2139,9 +2125,11 @@ function pickAlgorithmPageSideEffectsExceptNavigations(
         cy.assertNoVerticalScrollbar();
 
         // The text should somehow communicate which pll we are picking an algorithm for
-        pllTrainerElements.pickAlgorithmPage.explanationText
-          .get()
-          .should("contain.text", pllToPllLetters[firstPLL]);
+        cy.getCurrentTestCase().then(([, pll]) =>
+          pllTrainerElements.pickAlgorithmPage.explanationText
+            .get()
+            .should("contain.text", pllToPllLetters[pll])
+        );
       },
     ],
     [
@@ -2150,93 +2138,105 @@ function pickAlgorithmPageSideEffectsExceptNavigations(
         type LocalAliases = {
           firstExpertLink: string;
         };
-        // The page should have an AlgDB link to the case being picked for
-        testAlgdbLink(firstPLL);
-        // The page should have any type of expert guidance link, any further assertions
-        // would make for too brittle tests
-        pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
-          .get()
-          .should((link) => {
-            expect(link.prop("tagName")).to.equal("A");
-            // Assert it opens in new tab
-            expect(link.attr("target"), "target").to.equal("_blank");
-          })
-          .then((link) => {
-            const url =
-              link.attr("href") ||
-              "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
-            // Check that the link actually works
-            return cy
-              .request(url)
-              .its("status")
-              .should("be.at.least", 200)
-              .and("be.lessThan", 300)
-              .then(() => url);
-          })
-          .setAlias<LocalAliases, "firstExpertLink">("firstExpertLink");
-
-        // NOTE: Pll is changed to secondPLL from here on out
-        changePLL();
-
-        testAlgdbLink(secondPLL);
-        pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
-          .get()
-          .should((link) => {
-            expect(link.prop("tagName")).to.equal("A");
-            // Assert it opens in new tab
-            expect(link.attr("target"), "target").to.equal("_blank");
-          })
-          .then((link) => {
-            const url =
-              link.attr("href") ||
-              "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
-            // Check that the link actually works
-            cy.request(url)
-              .its("status")
-              .should("be.at.least", 200)
-              .and("be.lessThan", 300);
-            return cy.getAliases<LocalAliases>().then((aliases) => ({
-              previous: aliases.firstExpertLink,
-              current: url,
-            }));
-          })
-          .should(({ previous, current }) => {
-            expect(previous).to.not.be.undefined;
-            expect(current).to.not.deep.equal(previous);
-          });
-
-        function testAlgdbLink(currentPLL: PLL) {
-          pllTrainerElements.pickAlgorithmPage.algDbLink
+        cy.getCurrentTestCase().then((currentCase) => {
+          // The page should have an AlgDB link to the case being picked for
+          testAlgdbLink(currentCase[1]);
+          // The page should have any type of expert guidance link, any further assertions
+          // would make for too brittle tests
+          pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
             .get()
             .should((link) => {
               expect(link.prop("tagName")).to.equal("A");
               // Assert it opens in new tab
               expect(link.attr("target"), "target").to.equal("_blank");
-
-              expect(link.prop("href"), "href")
-                .to.be.a("string")
-                .and.contain("algdb.net")
-                .and.satisfy(
-                  (href: string) =>
-                    href
-                      .toLowerCase()
-                      .endsWith(
-                        "/" + pllToPllLetters[currentPLL].toLowerCase()
-                      ),
-                  "ends with /" + pllToPllLetters[currentPLL].toLowerCase()
-                );
             })
             .then((link) => {
-              // Check that the link actually works
-              cy.request(
+              const url =
                 link.attr("href") ||
-                  "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
-              )
+                "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
+              // Check that the link actually works
+              return cy
+                .request(url)
+                .its("status")
+                .should("be.at.least", 200)
+                .and("be.lessThan", 300)
+                .then(() => url);
+            })
+            .setAlias<LocalAliases, "firstExpertLink">("firstExpertLink");
+
+          // We want to change the algorithm to something different so ensuring
+          // that we don't pick the same one again
+          let differentTestCase: [AUF, PLL, AUF];
+          if (currentCase[1] === PLL.Ga) {
+            differentTestCase = [AUF.U, PLL.Gb, AUF.U2];
+          } else {
+            differentTestCase = [AUF.U, PLL.Ga, AUF.U2];
+          }
+          cy.setCurrentTestCase(differentTestCase);
+
+          testAlgdbLink(differentTestCase[1]);
+          pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
+            .get()
+            .should((link) => {
+              expect(link.prop("tagName")).to.equal("A");
+              // Assert it opens in new tab
+              expect(link.attr("target"), "target").to.equal("_blank");
+            })
+            .then((link) => {
+              const url =
+                link.attr("href") ||
+                "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
+              // Check that the link actually works
+              cy.request(url)
                 .its("status")
                 .should("be.at.least", 200)
                 .and("be.lessThan", 300);
+              return cy.getAliases<LocalAliases>().then((aliases) => ({
+                previous: aliases.firstExpertLink,
+                current: url,
+              }));
+            })
+            .should(({ previous, current }) => {
+              expect(previous).to.not.be.undefined;
+              expect(current).to.not.deep.equal(previous);
             });
-        }
+
+          // Make sure to reset the test case so we don't have side effects
+          cy.setCurrentTestCase(currentCase);
+
+          function testAlgdbLink(currentPLL: PLL) {
+            pllTrainerElements.pickAlgorithmPage.algDbLink
+              .get()
+              .should((link) => {
+                expect(link.prop("tagName")).to.equal("A");
+                // Assert it opens in new tab
+                expect(link.attr("target"), "target").to.equal("_blank");
+
+                expect(link.prop("href"), "href")
+                  .to.be.a("string")
+                  .and.contain("algdb.net")
+                  .and.satisfy(
+                    (href: string) =>
+                      href
+                        .toLowerCase()
+                        .endsWith(
+                          "/" + pllToPllLetters[currentPLL].toLowerCase()
+                        ),
+                    "ends with /" + pllToPllLetters[currentPLL].toLowerCase()
+                  );
+              })
+              .then((link) => {
+                // Check that the link actually works
+                cy.request(
+                  link.attr("href") ||
+                    "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
+                )
+                  .its("status")
+                  .should("be.at.least", 200)
+                  .and("be.lessThan", 300);
+              });
+          }
+        });
       },
     ],
   ] as const).forEach(([testDescription, testFunction]) =>
@@ -2244,22 +2244,27 @@ function pickAlgorithmPageSideEffectsExceptNavigations(
   );
 }
 
-function pickAlgorithmNavigateVariant1(currentPLL: PLL) {
-  pllTrainerElements.pickAlgorithmPage.algorithmInput
-    .get()
-    .type(
-      "{selectall}{backspace}" + pllToAlgorithmString[currentPLL] + "{enter}",
-      { delay: 0 }
-    );
+function pickAlgorithmNavigateVariant1() {
+  cy.getCurrentTestCase().then(([, currentPLL]) => {
+    pllTrainerElements.pickAlgorithmPage.algorithmInput
+      .get()
+      .type(
+        "{selectall}{backspace}" + pllToAlgorithmString[currentPLL] + "{enter}",
+        { delay: 0 }
+      );
+  });
   pllTrainerElements.pickAlgorithmPage.container.assertDoesntExist();
 }
 
-function pickAlgorithmNavigateVariant2(currentPLL: PLL) {
-  pllTrainerElements.pickAlgorithmPage.algorithmInput
-    .get()
-    .type("{selectall}{backspace}" + pllToAlgorithmString[currentPLL], {
-      delay: 0,
-    });
+function pickAlgorithmNavigateVariant2() {
+  cy.getCurrentTestCase().then(([, currentPLL]) => {
+    pllTrainerElements.pickAlgorithmPage.algorithmInput
+      .get()
+      .type(
+        "{selectall}{backspace}" + pllToAlgorithmString[currentPLL] + "{enter}",
+        { delay: 0 }
+      );
+  });
   pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
   pllTrainerElements.pickAlgorithmPage.container.assertDoesntExist();
 }
@@ -2393,6 +2398,8 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
   testCaseCube,
 }: {
   testCaseCube: string;
+  // Just for communicating expectations to caller
+  defaultAlgorithmWasUsed: true;
 }) {
   const elements = pllTrainerElements.algorithmDrillerExplanationPage;
 
@@ -2405,6 +2412,26 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
         );
         assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
         cy.assertNoHorizontalScrollbar();
+
+        cy.getCurrentTestCase().then(([, pll]) => {
+          elements.algorithmToDrill
+            .get()
+            .invoke("text")
+            .should((displayedAlgorithm) => {
+              const sanitizedDisplayAlgorithm = displayedAlgorithm.replace(
+                /\s/g,
+                ""
+              );
+              const defaultAlgorithm = pllToAlgorithmString[pll];
+              const sanitizedDefaultAlgorithm = defaultAlgorithm.replace(
+                /\(|\)|\s/g,
+                ""
+              );
+              expect(sanitizedDisplayAlgorithm).to.equal(
+                sanitizedDefaultAlgorithm
+              );
+            });
+        });
       },
     ],
     [
@@ -2568,11 +2595,9 @@ function algorithmDrillerSuccessPageNavigateVariant2() {
 }
 
 function wrongPageNoSideEffects({
-  currentTestCase,
   testCaseFront,
   testCaseBack,
 }: {
-  currentTestCase: [AUF, PLL, AUF];
   testCaseFront: string;
   testCaseBack: string;
   // It's important that the nearly there button was used because
@@ -2616,33 +2641,35 @@ function wrongPageNoSideEffects({
     [
       "has the right correct answer text",
       () => {
-        // Verify U and U2 display correctly
-        const firstTestCase = [AUF.U, PLL.Aa, AUF.U2] as const;
-        cy.setCurrentTestCase(firstTestCase);
-        pllTrainerElements.wrongPage.testCaseName
-          .get()
-          .invoke("text")
-          .should("match", testCaseToWrongPageRegex(firstTestCase));
+        cy.getCurrentTestCase().then((testCase) => {
+          // Verify U, U2 and a pll display correctly
+          const firstTestCase = [AUF.U, PLL.Aa, AUF.U2] as const;
+          cy.setCurrentTestCase(firstTestCase);
+          pllTrainerElements.wrongPage.testCaseName
+            .get()
+            .invoke("text")
+            .should("match", testCaseToWrongPageRegex(firstTestCase));
 
-        // Verify U' and nothing display correctly, while also trying a different PLL
-        const secondTestCase = [AUF.UPrime, PLL.Ab, AUF.none] as const;
-        cy.setCurrentTestCase(secondTestCase);
-        pllTrainerElements.wrongPage.testCaseName
-          .get()
-          .invoke("text")
-          .should("match", testCaseToWrongPageRegex(secondTestCase));
+          // Verify U' and nothing display correctly, while also trying a different PLL
+          const secondTestCase = [AUF.UPrime, PLL.Ab, AUF.none] as const;
+          cy.setCurrentTestCase(secondTestCase);
+          pllTrainerElements.wrongPage.testCaseName
+            .get()
+            .invoke("text")
+            .should("match", testCaseToWrongPageRegex(secondTestCase));
 
-        // Verify no AUFs displays correctly and also trying a third PLL
-        const thirdTestCase = [AUF.none, PLL.H, AUF.none] as const;
-        cy.setCurrentTestCase(thirdTestCase);
-        pllTrainerElements.wrongPage.testCaseName
-          .get()
-          .invoke("text")
-          .should("match", testCaseToWrongPageRegex(thirdTestCase));
+          // Verify no AUFs displays correctly and also trying a third PLL
+          const thirdTestCase = [AUF.none, PLL.H, AUF.none] as const;
+          cy.setCurrentTestCase(thirdTestCase);
+          pllTrainerElements.wrongPage.testCaseName
+            .get()
+            .invoke("text")
+            .should("match", testCaseToWrongPageRegex(thirdTestCase));
 
-        // Reset to the previous test case, which is very important to uphold the
-        // promise of no side effects
-        cy.setCurrentTestCase(currentTestCase);
+          // Reset to the previous test case, which is very important to uphold the
+          // promise of no side effects
+          cy.setCurrentTestCase(testCase);
+        });
       },
     ],
   ] as const).forEach(([testDescription, testFunction]) =>
