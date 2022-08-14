@@ -2128,11 +2128,22 @@ function evaluateResultNavigateWrongVariant3() {
 }
 
 function pickAlgorithmPageFirstThingNoSideEffects() {
+  const elements = pllTrainerElements.pickAlgorithmPage;
   ([
     [
       "auto focuses the algorithm input",
       () => {
-        pllTrainerElements.pickAlgorithmPage.algorithmInput.assertIsFocused();
+        elements.algorithmInput.assertIsFocused();
+      },
+    ],
+    [
+      "errors behave properly at the start",
+      () => {
+        // No errors expected as you enter the page
+        pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
+        // Should require input if pressing enter right away
+        elements.algorithmInput.get().type("{enter}");
+        elements.inputRequiredError.assertShows();
       },
     ],
   ] as const).forEach(([testDescription, testFunction]) =>
@@ -2271,6 +2282,101 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
                   .and("be.lessThan", 300);
               });
           }
+        });
+      },
+    ],
+    [
+      "all errors display exactly when expected, don't update unless an attempt at submitting has occurred, and stays on the page despite submit action when an error is expected",
+      () => {
+        let useEnterKeyToSubmit = true;
+        function clearInputTypeAndSubmit(input: string): void {
+          elements.algorithmInput
+            .get()
+            .type(`{selectall}{backspace}${input}`, { delay: 0 });
+
+          if (useEnterKeyToSubmit) {
+            elements.algorithmInput.get().type("{enter}", { delay: 0 });
+          } else {
+            elements.submitButton.get().click();
+          }
+
+          useEnterKeyToSubmit = !useEnterKeyToSubmit;
+        }
+        // Should require input if input is empty
+        clearInputTypeAndSubmit("");
+        elements.inputRequiredError.assertShows();
+
+        // Should no longer require input after input
+        elements.algorithmInput.get().type("asdfgfda{enter}");
+        elements.inputRequiredError.assertDoesntExist();
+
+        // Should require input again after deleting the input
+        clearInputTypeAndSubmit("");
+        elements.inputRequiredError.assertShows();
+
+        // Errors informatively when invalid turnable encountered
+        clearInputTypeAndSubmit("U B A");
+        elements.invalidTurnableError.assertShows();
+
+        // Errors informatively when invalid turn length encountered
+        clearInputTypeAndSubmit("U4");
+        elements.invalidTurnLengthError.assertShows();
+
+        // Errors informatively when repeated turnable encountered
+        // And doesn't update the error until the submit action
+        elements.algorithmInput
+          .get()
+          .type("{selectall}{backspace}U2U", { delay: 0 });
+        // Still old error before submit
+        elements.invalidTurnLengthError.assertShows();
+        elements.submitButton.get().click();
+        // Error now updated after submit action
+        elements.repeatedTurnableError.assertShows();
+
+        // Errors informatively when mixed wide move styles encountered
+        // And doesn't update the error until the submit action, this time using enter key
+        elements.algorithmInput
+          .get()
+          .type("{selectall}{backspace}u B Rw", { delay: 0 });
+        // Still old error before submit
+        elements.repeatedTurnableError.assertShows();
+        elements.algorithmInput.get().type("{enter}", { delay: 0 });
+        // Error now updated after submit action
+        elements.wideMoveStylesMixedError.assertShows();
+
+        // Errors informatively when space between turnable and apostrophe encountered
+        clearInputTypeAndSubmit("U '");
+        elements.turnWouldWorkWithoutInterruptionError.assertShows();
+
+        // Errors informatively when parenthesis between turnable and apostrophe encountered
+        clearInputTypeAndSubmit("(U)'");
+        elements.turnWouldWorkWithoutInterruptionError.assertShows();
+
+        // Errors informatively when apostrophe on wrong side of length encountered
+        clearInputTypeAndSubmit("U'2");
+        elements.apostropheWrongSideOfLengthError.assertShows();
+
+        // Errors informatively when unclosed parenthesis encountered
+        clearInputTypeAndSubmit("U ( B F' D2");
+        elements.unclosedParenthesisError.assertShows();
+
+        // Errors informatively when unmatched closing parenthesis encountered
+        clearInputTypeAndSubmit("U B F' ) D2");
+        elements.unmatchedClosingParenthesisError.assertShows();
+
+        // Errors informatively when nested parentheses encountered
+        clearInputTypeAndSubmit("( U (B F') ) D2");
+        elements.nestedParenthesesError.assertShows();
+
+        // Errors informatively when invalid symbol encountered
+        clearInputTypeAndSubmit("( U B F') % D2");
+        elements.invalidSymbolError.assertShows();
+
+        // Errors informatively an algorithm that doesn't match the case is encountered
+        cy.getCurrentTestCase().then(([, correctPLL]) => {
+          const wrongPLL = correctPLL === PLL.Ga ? PLL.Gb : PLL.Ga;
+          clearInputTypeAndSubmit(pllToAlgorithmString[wrongPLL]);
+          elements.algorithmDoesntMatchCaseError.assertShows();
         });
       },
     ],
