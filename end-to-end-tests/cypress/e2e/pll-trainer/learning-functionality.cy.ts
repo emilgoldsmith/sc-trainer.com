@@ -9,19 +9,12 @@ import {
 import {
   completePLLTestInMilliseconds,
   evaluateResultIgnoreTransitionsWaitTime,
-  fromGetReadyForTestThroughEvaluateResult,
   pllTrainerElements,
   pllTrainerStatesNewUser,
   pllTrainerStatesUserDone,
 } from "./state-and-elements";
-import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 import { paths } from "support/paths";
-import { Key } from "support/keys";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
-import {
-  assertCubeIsDifferentFromAlias,
-  assertCubeMatchesAlias,
-} from "support/assertions";
 
 forceReloadAndNavigateIfDotOnlyIsUsed();
 
@@ -34,37 +27,6 @@ describe("PLL Trainer - Learning Functionality", function () {
   beforeEach(function () {
     applyDefaultIntercepts();
     cy.visit(paths.pllTrainer);
-  });
-
-  describe("Pick Target Parameters Page", function () {
-    // eslint-disable-next-line mocha/no-setup-in-describe
-    const elems = pllTrainerElements.pickTargetParametersPage;
-
-    it("persists the target parameters", function () {
-      const recognitionTime = "3.5";
-      const tps = "1.3";
-
-      elems.recognitionTimeInput
-        .get()
-        .type("{selectall}{backspace}" + recognitionTime);
-      elems.targetTPSInput.get().type("{selectall}{backspace}" + tps);
-      elems.submitButton.get().click();
-
-      pllTrainerElements.newUserStartPage.editTargetParametersButton
-        .get()
-        .click();
-
-      // This asserts that it preserves it through a session
-      elems.recognitionTimeInput.get().should("have.value", recognitionTime);
-      elems.targetTPSInput.get().should("have.value", tps);
-
-      // Also test that it persists through separate sessions
-      pllTrainerStatesUserDone.pickTargetParametersPage.reloadAndNavigateTo({
-        retainCurrentLocalStorage: true,
-      });
-      elems.recognitionTimeInput.get().should("have.value", recognitionTime);
-      elems.targetTPSInput.get().should("have.value", tps);
-    });
   });
 
   describe("New Case Page", function () {
