@@ -262,82 +262,6 @@ describe("PLL Trainer - Learning Functionality", function () {
       }
     );
 
-    it("focuses input element on load, has all the right elements and then errors as expected", function () {
-      // Should require input if pressing enter right away
-      pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
-      pllTrainerElements.pickAlgorithmPage.inputRequiredError.assertShows();
-
-      // Should no longer require input after input
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type("asdfgfda{enter}");
-      pllTrainerElements.pickAlgorithmPage.inputRequiredError.assertDoesntExist();
-
-      // Should require input again after deleting the input
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type("{selectall}{backspace}{enter}");
-      pllTrainerElements.pickAlgorithmPage.inputRequiredError.assertShows();
-
-      function clearInputTypeAndSubmit(input: string): void {
-        pllTrainerElements.pickAlgorithmPage.algorithmInput
-          .get()
-          .type(`{selectall}{backspace}${input}{enter}`);
-      }
-      // Errors informatively when invalid turnable encountered
-      clearInputTypeAndSubmit("U B A");
-      pllTrainerElements.pickAlgorithmPage.invalidTurnableError.assertShows();
-
-      // Errors informatively when invalid turn length encountered
-      clearInputTypeAndSubmit("U4");
-      pllTrainerElements.pickAlgorithmPage.invalidTurnLengthError.assertShows();
-
-      // Errors informatively when repeated turnable encountered
-      clearInputTypeAndSubmit("U2U");
-      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertShows();
-
-      // Errors informatively when mixed wide move styles encountered
-      clearInputTypeAndSubmit("u B Rw");
-      pllTrainerElements.pickAlgorithmPage.wideMoveStylesMixedError.assertShows();
-
-      // Errors informatively when space between turnable and apostrophe encountered
-      clearInputTypeAndSubmit("U '");
-      pllTrainerElements.pickAlgorithmPage.turnWouldWorkWithoutInterruptionError.assertShows();
-
-      // Errors informatively when parenthesis between turnable and apostrophe encountered
-      clearInputTypeAndSubmit("(U)'");
-      pllTrainerElements.pickAlgorithmPage.turnWouldWorkWithoutInterruptionError.assertShows();
-
-      // Errors informatively when apostrophe on wrong side of length encountered
-      clearInputTypeAndSubmit("U'2");
-      pllTrainerElements.pickAlgorithmPage.apostropheWrongSideOfLengthError.assertShows();
-
-      // Errors informatively when unclosed parenthesis encountered
-      clearInputTypeAndSubmit("U ( B F' D2");
-      pllTrainerElements.pickAlgorithmPage.unclosedParenthesisError.assertShows();
-
-      // Errors informatively when unmatched closing parenthesis encountered
-      clearInputTypeAndSubmit("U B F' ) D2");
-      pllTrainerElements.pickAlgorithmPage.unmatchedClosingParenthesisError.assertShows();
-
-      // Errors informatively when nested parentheses encountered
-      clearInputTypeAndSubmit("( U (B F') ) D2");
-      pllTrainerElements.pickAlgorithmPage.nestedParenthesesError.assertShows();
-
-      // Errors informatively when invalid symbol encountered
-      clearInputTypeAndSubmit("( U B F') % D2");
-      pllTrainerElements.pickAlgorithmPage.invalidSymbolError.assertShows();
-
-      // Errors informatively an algorithm that doesn't match the case is encountered
-      cy.setCurrentTestCase([AUF.none, PLL.Aa, AUF.none]);
-      clearInputTypeAndSubmit(pllToAlgorithmString[PLL.H]);
-      pllTrainerElements.pickAlgorithmPage.algorithmDoesntMatchCaseError.assertShows();
-
-      // Submits successfully when correct algorithm passed
-      clearInputTypeAndSubmit(pllToAlgorithmString[PLL.Aa]);
-      pllTrainerElements.correctPage.container.assertShows();
-    });
-
     it("accepts algorithms no matter what execution angle or AUF they have, and which cube rotation they end on", function () {
       allAUFs.forEach((preAUF) =>
         allAUFs.forEach((postAUF) =>
@@ -377,38 +301,6 @@ describe("PLL Trainer - Learning Functionality", function () {
           })
         )
       );
-    });
-
-    it("only updates error message on submit", function () {
-      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertDoesntExist();
-      pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("U U");
-      // Check error didn't show yet
-      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertDoesntExist();
-
-      pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
-      // Now it should show because we submitted
-      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertShows();
-
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type("{selectall}{backspace}U4");
-      // It shouldn't show yet
-      pllTrainerElements.pickAlgorithmPage.invalidTurnLengthError.assertDoesntExist();
-      pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}");
-      // Now it should show because we submitted
-      pllTrainerElements.pickAlgorithmPage.invalidTurnLengthError.assertShows();
-
-      // Now try with the button
-      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertDoesntExist();
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type("{selectall}{backspace}U U");
-      // Check error didn't show yet
-      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertDoesntExist();
-
-      pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
-      // Now it should show because we submitted
-      pllTrainerElements.pickAlgorithmPage.repeatedTurnableError.assertShows();
     });
 
     context("Persistence", function () {
