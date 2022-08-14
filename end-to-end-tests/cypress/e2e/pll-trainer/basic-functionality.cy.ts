@@ -1,28 +1,15 @@
-import { getKeyValue, Key } from "support/keys";
+import { Key } from "support/keys";
 import { installClock, setTimeTo, tick } from "support/clock";
 import {
   pllTrainerStatesUserDone,
   pllTrainerElements,
   pllTrainerStatesNewUser,
-  completePLLTestInMilliseconds,
   getReadyWaitTime,
 } from "./state-and-elements";
 import { paths } from "support/paths";
 import { applyDefaultIntercepts } from "support/interceptors";
-import {
-  AUF,
-  aufToAlgorithmString,
-  PLL,
-  pllToAlgorithmString,
-  pllToPllLetters,
-} from "support/pll";
-import allPllsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
-import {
-  assertCubeMatchesAlias,
-  assertNonFalsyStringsDifferent,
-  assertNonFalsyStringsEqual,
-} from "support/assertions";
+import { assertCubeMatchesAlias } from "support/assertions";
 
 forceReloadAndNavigateIfDotOnlyIsUsed();
 

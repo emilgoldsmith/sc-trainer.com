@@ -41,41 +41,76 @@ describe("PLL Trainer", function () {
   });
 
   context("completely new user", function () {
-    it("displays the new user start page on first visit, and after nearly completed but cancelled test, but displays statistics page after completing a test", function () {
-      cy.visit(paths.pllTrainer);
-      pickTargetParametersNavigateVariant1();
-      assertItsNewUserNotRecurringUserStartPage();
-      newUserStartPageBeginNavigateVariant1();
-      cy.clock();
-      newCasePageNavigateVariant1();
-      fromGetReadyForTestThroughEvaluateResult({
-        cyClockAlreadyCalled: true,
-        keepClockOn: false,
-        milliseconds: 500,
-        resultType: "unrecoverable",
+    context("Target Parameters and Statistics Displaying:", function () {
+      it("displays the new user start page on first visit, and after nearly completed but cancelled test, but displays statistics page after completing a test. It also tests target parameters are persisted within and across sessions", function () {
+        const recognitionTime = "3.5";
+        const tps = "1.3";
+
+        cy.visit(paths.pllTrainer);
+        pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+          .get()
+          .type("{selectall}{backspace}" + recognitionTime);
+        pllTrainerElements.pickTargetParametersPage.targetTPSInput
+          .get()
+          .type("{selectall}{backspace}" + tps);
+        pickTargetParametersNavigateVariant1();
+
+        assertItsNewUserNotRecurringUserStartPage();
+
+        // Go back to target parameters to assert that it preserves it within a session
+        pllTrainerElements.newUserStartPage.editTargetParametersButton
+          .get()
+          .click();
+        pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+          .get()
+          .should("have.value", recognitionTime);
+        pllTrainerElements.pickTargetParametersPage.targetTPSInput
+          .get()
+          .should("have.value", tps);
+        pickTargetParametersNavigateVariant2();
+        newUserStartPageBeginNavigateVariant1();
+        cy.clock();
+        newCasePageNavigateVariant1();
+        fromGetReadyForTestThroughEvaluateResult({
+          cyClockAlreadyCalled: true,
+          keepClockOn: false,
+          milliseconds: 500,
+          resultType: "unrecoverable",
+        });
+
+        // We should now be at pick algorithm page and not have recorded the result yet.
+        // So when we go for another visit we should see the new user start page again.
+        cy.visit(paths.pllTrainer);
+        assertItsNewUserNotRecurringUserStartPage();
+
+        // Complete a test
+        newUserStartPageBeginNavigateVariant1();
+        cy.clock();
+        newCasePageNavigateVariant1();
+        fromGetReadyForTestThroughEvaluateResult({
+          cyClockAlreadyCalled: true,
+          keepClockOn: false,
+          milliseconds: 500,
+          resultType: "unrecoverable",
+        });
+        cy.clock().invoke("restore");
+        pickAlgorithmNavigateVariant1();
+
+        cy.visit(paths.pllTrainer);
+        // As we completed the previous test we should now be at the recurring user's start page.
+        assertItsRecurringUserNotNewUserStartPage();
+
+        // Assert that the target parameters are persisted across sessions
+        pllTrainerElements.recurringUserStartPage.editTargetParametersButton
+          .get()
+          .click();
+        pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+          .get()
+          .should("have.value", recognitionTime);
+        pllTrainerElements.pickTargetParametersPage.targetTPSInput
+          .get()
+          .should("have.value", tps);
       });
-
-      // We should now be at pick algorithm page and not have recorded the result yet.
-      // So when we go for another visit we should see the new user start page again.
-      cy.visit(paths.pllTrainer);
-      assertItsNewUserNotRecurringUserStartPage();
-
-      // Complete a test
-      newUserStartPageBeginNavigateVariant1();
-      cy.clock();
-      newCasePageNavigateVariant1();
-      fromGetReadyForTestThroughEvaluateResult({
-        cyClockAlreadyCalled: true,
-        keepClockOn: false,
-        milliseconds: 500,
-        resultType: "unrecoverable",
-      });
-      cy.clock().invoke("restore");
-      pickAlgorithmNavigateVariant1();
-
-      cy.visit(paths.pllTrainer);
-      // As we completed the previous test we should now be at the recurring user's start page.
-      assertItsRecurringUserNotNewUserStartPage();
     });
   });
 
