@@ -5,3 +5,5 @@ Should we just implement a getCurrentTestCase function that just asks the app wh
 Should we implement a pick algorithm dev function? Upside faster tests, downside more surface area for wrong tests
 
 Are the AUFs on wrong page and/or driller explanation page properly tested after we remove the parse functions usage in other tests?
+
+Visual test for success and status page happening?
