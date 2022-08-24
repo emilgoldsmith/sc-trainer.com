@@ -787,12 +787,12 @@ export function completePLLTestInMilliseconds(
     pllTrainerElements.wrongPage.container.waitFor();
     params.wrongPageCallback();
   }
-  if ("algorithmDrillerExplanationPageCallback" in params) {
+  if (params.algorithmDrillerExplanationPageCallback) {
     pllTrainerElements.algorithmDrillerExplanationPage.container.waitFor();
     params.algorithmDrillerExplanationPageCallback?.();
   }
   if (
-    "algorithmDrillerStatusPageCallback" in params ||
+    params.algorithmDrillerStatusPageCallback ||
     endingState === "algorithmDrillerStatusPage"
   ) {
     pllTrainerElements.algorithmDrillerExplanationPage.continueButton

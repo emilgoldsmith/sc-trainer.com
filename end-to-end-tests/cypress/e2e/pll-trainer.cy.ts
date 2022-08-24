@@ -1,4 +1,5 @@
 import {
+  assertCubeMatchesAlias,
   assertCubeMatchesStateString,
   assertNonFalsyStringsDifferent,
   assertNonFalsyStringsEqual,
@@ -41,6 +42,64 @@ describe("PLL Trainer", function () {
   });
 
   context("completely new user", function () {
+    describe.only("different paths in the app:", function () {
+      it("shows new case for new user -> solved quickly + ending test by touching screen where correct button shows up doesn't press that button -> pick algorithm -> correct with goodjob text (no driller) -> same case again on a different visit, no new case page, doesn't display picker, doesn't display good job text", function () {
+        cy.visit(paths.pllTrainer);
+        pickTargetParametersNavigateVariant1();
+        newUserStartPageBeginNavigateVariant1();
+        pllTrainerElements.newCasePage.container.assertShows();
+        cy.clock();
+        newCasePageNavigateVariant1();
+        pllTrainerElements.getReadyState.container.waitFor();
+        cy.tick(getReadyWaitTime);
+        testRunningNavigateVariant1();
+        pllTrainerElements.evaluateResult.container.waitFor();
+        // We observed touching on mobile over the place where the button is can trigger the click event
+        // on the next screen about 120ms after transition. So we just test that clicking 150ms (to be safe) after (with mocked time) doesn't
+        // take us on to the "Correct Page"
+        cy.tick(150);
+        pllTrainerElements.evaluateResult.correctButton
+          .get()
+          // Force stops it from erroring on disabled button
+          .click({ force: true });
+        pllTrainerElements.evaluateResult.container.assertShows();
+        // Continue with normal navigation
+        cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+        cy.clock().invoke("restore");
+        evaluateResultNavigateCorrectVariant1();
+        pickAlgorithmNavigateVariant1();
+        pllTrainerElements.correctPage.goodJobText.assertShows();
+
+        // Do same case again, but now pick algorithm should not be displayed
+        cy.getCurrentTestCase().then((testCase) => {
+          cy.visit(paths.pllTrainer);
+          pllTrainerElements.recurringUserStartPage.container.waitFor();
+          cy.overrideNextTestCase(testCase);
+          cy.clock();
+          newUserStartPageBeginNavigateVariant1();
+          // No new case page here
+          pllTrainerElements.getReadyState.container.waitFor();
+          cy.tick(getReadyWaitTime);
+          testRunningNavigateVariant1();
+          // This is the same as above with correct button, now just testing it also doesn't
+          // react to a fast click on the wrong button
+          cy.tick(150);
+          pllTrainerElements.evaluateResult.wrongButton
+            .get()
+            // Force stops it from erroring on disabled button
+            .click({ force: true });
+          pllTrainerElements.evaluateResult.container.assertShows();
+          // Continue with normal navigation
+          cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+          cy.clock().invoke("restore");
+          evaluateResultNavigateCorrectVariant1();
+          // No pick algorithm page here
+          pllTrainerElements.correctPage.container.assertShows();
+          pllTrainerElements.correctPage.goodJobText.assertDoesntExist();
+        });
+      });
+    });
+
     context("Target Parameters and Statistics Displaying:", function () {
       it("displays the new user start page on first visit, and after nearly completed but cancelled test, but displays statistics page after completing a test. It also tests target parameters are persisted within and across sessions", function () {
         const recognitionTime = "3.5";
@@ -112,6 +171,119 @@ describe("PLL Trainer", function () {
           .should("have.value", tps);
       });
     });
+
+    it("displays new case page exactly when a new pll, pre- or postAUF is next", function () {
+      cy.log("This is a completely new user so new case page should display");
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.UPrime, AUF.UPrime],
+        correct: true,
+        startingState: "doNewVisit",
+        endingState: "correctPage",
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertShows();
+        },
+      });
+
+      cy.log("This is a new preAUF so should display new case page");
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.U, AUF.UPrime],
+        correct: true,
+        startingState: "correctPage",
+        endingState: "correctPage",
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertShows();
+        },
+      });
+
+      cy.log(
+        "This is the same case as last time so no new case page should display"
+      );
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.U, AUF.UPrime],
+        correct: true,
+        startingState: "correctPage",
+        endingState: "correctPage",
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertDoesntExist();
+        },
+      });
+
+      cy.log(
+        "This is a new postAUF even with known preAUF so should still display new case page"
+      );
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.U, AUF.U2],
+        correct: true,
+        startingState: "correctPage",
+        endingState: "correctPage",
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertShows();
+        },
+      });
+
+      cy.log(
+        "This is a case that hasn't been seen before, but each type of pre- and post-AUF have been tested independently so it shouldn't count as a new case"
+      );
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.UPrime, AUF.U2],
+        correct: true,
+        startingState: "correctPage",
+        endingState: "correctPage",
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertDoesntExist();
+        },
+      });
+
+      cy.log(
+        "This is the first time there is no postAUF, and while this is a \"new\" case we don't want to count it as it's simply the act of not making a move. Also note that the preAUF is of course seen before otherwise it would be a new case"
+      );
+      completePLLTestInMilliseconds(500, PLL.Aa, {
+        aufs: [AUF.UPrime, AUF.none],
+        correct: true,
+        startingState: "correctPage",
+        endingState: "correctPage",
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertDoesntExist();
+        },
+      });
+
+      cy.log("New PLL so should display");
+      completePLLTestInMilliseconds(500, PLL.H, {
+        aufs: [AUF.U, AUF.none],
+        correct: true,
+        startingState: "correctPage",
+        endingState: "correctPage",
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertShows();
+        },
+      });
+
+      cy.log(
+        "H perm is fully symmetrical so preAUF and postAUF are equivalent in that sense and this shouldn't be a new case"
+      );
+      completePLLTestInMilliseconds(500, PLL.H, {
+        aufs: [AUF.none, AUF.U],
+        correct: true,
+        startingState: "correctPage",
+        endingState: "correctPage",
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertDoesntExist();
+        },
+      });
+
+      cy.log(
+        "This is a different combination though so should display the new case page"
+      );
+      completePLLTestInMilliseconds(500, PLL.H, {
+        aufs: [AUF.U2, AUF.none],
+        correct: true,
+        startingState: "correctPage",
+        endingState: "correctPage",
+        newCasePageCallback() {
+          pllTrainerElements.newCasePage.container.assertShows();
+        },
+      });
+    });
   });
 
   context("only algorithms picked otherwise new user", function () {
@@ -147,14 +319,149 @@ describe("PLL Trainer", function () {
     });
   });
 
-  context("user who has learned full pll", function () {
-    it("shows the recurring user start page", function () {
+  context.only("user who has learned full pll", function () {
+    beforeEach(function () {
       cy.setLocalStorage(fullyPopulatedLocalStorage);
+    });
+
+    it("shows the recurring user start page, and doesn't show new case page on first attempt", function () {
       cy.visit(paths.pllTrainer);
       cy.withOverallNameLogged(
         { message: "Done User Start Page" },
         recurringUserStartPageNoSideEffectsButScroll
       );
+      recurringUserStartPageNavigateVariant1();
+      pllTrainerElements.getReadyState.container.assertShows();
+    });
+
+    it("changes the cube state correctly after choosing type of wrong", function () {
+      type Aliases = {
+        solvedFront: string;
+        solvedBack: string;
+        expectedFront: string;
+        expectedBack: string;
+      };
+      cy.visit(paths.pllTrainer);
+      pllTrainerElements.newUserStartPage.cubeStartState
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "solvedFront">("solvedFront");
+      cy.overrideCubeDisplayAngle("ubl");
+      pllTrainerElements.newUserStartPage.cubeStartState
+        .getStringRepresentationOfCube()
+        .setAlias<Aliases, "solvedBack">("solvedBack");
+      cy.overrideCubeDisplayAngle(null);
+      cy.clock();
+      recurringUserStartPageNavigateVariant1();
+      pllTrainerElements.getReadyState.container.assertShows();
+      cy.tick(getReadyWaitTime);
+      pllTrainerElements.testRunning.container.waitFor();
+      testRunningNavigateChangingClockVariant1();
+      pllTrainerElements.evaluateResult.container.waitFor();
+      cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+      evaluateResultNavigateWrongVariant1();
+
+      cy.getApplicationState().then((typeOfWrongApplicationState) => {
+        cy.withOverallNameLogged({ message: "no moves both variants" }, () => {
+          pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "expectedFront">("expectedFront");
+          pllTrainerElements.typeOfWrongPage.noMoveCubeStateBack
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "expectedBack">("expectedBack");
+
+          typeOfWrongPageNoMovesNavigateVariant1();
+
+          assertCubeMatchesAlias<Aliases, "expectedFront">(
+            "expectedFront",
+            pllTrainerElements.wrongPage.expectedCubeStateFront
+          );
+          assertCubeMatchesAlias<Aliases, "expectedBack">(
+            "expectedBack",
+            pllTrainerElements.wrongPage.expectedCubeStateBack
+          );
+
+          cy.setApplicationState(typeOfWrongApplicationState);
+
+          typeOfWrongPageNoMovesNavigateVariant2();
+
+          assertCubeMatchesAlias<Aliases, "expectedFront">(
+            "expectedFront",
+            pllTrainerElements.wrongPage.expectedCubeStateFront
+          );
+          assertCubeMatchesAlias<Aliases, "expectedBack">(
+            "expectedBack",
+            pllTrainerElements.wrongPage.expectedCubeStateBack
+          );
+        });
+
+        cy.withOverallNameLogged(
+          { message: "nearly there both variants" },
+          () => {
+            cy.setApplicationState(typeOfWrongApplicationState);
+            pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateFront
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "expectedFront">("expectedFront");
+            pllTrainerElements.typeOfWrongPage.nearlyThereCubeStateBack
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "expectedBack">("expectedBack");
+
+            typeOfWrongPageNearlyThereNavigateVariant1();
+
+            assertCubeMatchesAlias<Aliases, "expectedFront">(
+              "expectedFront",
+              pllTrainerElements.wrongPage.expectedCubeStateFront
+            );
+            assertCubeMatchesAlias<Aliases, "expectedBack">(
+              "expectedBack",
+              pllTrainerElements.wrongPage.expectedCubeStateBack
+            );
+
+            cy.setApplicationState(typeOfWrongApplicationState);
+
+            typeOfWrongPageNearlyThereNavigateVariant2();
+
+            assertCubeMatchesAlias<Aliases, "expectedFront">(
+              "expectedFront",
+              pllTrainerElements.wrongPage.expectedCubeStateFront
+            );
+            assertCubeMatchesAlias<Aliases, "expectedBack">(
+              "expectedBack",
+              pllTrainerElements.wrongPage.expectedCubeStateBack
+            );
+          }
+        );
+
+        cy.withOverallNameLogged(
+          { message: "unrecoverable both variants" },
+          () => {
+            cy.setApplicationState(typeOfWrongApplicationState);
+
+            typeOfWrongPageUnrecoverableNavigateVariant1();
+
+            assertCubeMatchesAlias<Aliases, "solvedFront">(
+              "solvedFront",
+              pllTrainerElements.wrongPage.expectedCubeStateFront
+            );
+            assertCubeMatchesAlias<Aliases, "solvedBack">(
+              "solvedBack",
+              pllTrainerElements.wrongPage.expectedCubeStateBack
+            );
+
+            cy.setApplicationState(typeOfWrongApplicationState);
+
+            typeOfWrongPageUnrecoverableNavigateVariant2();
+
+            assertCubeMatchesAlias<Aliases, "solvedFront">(
+              "solvedFront",
+              pllTrainerElements.wrongPage.expectedCubeStateFront
+            );
+            assertCubeMatchesAlias<Aliases, "solvedBack">(
+              "solvedBack",
+              pllTrainerElements.wrongPage.expectedCubeStateBack
+            );
+          }
+        );
+      });
     });
   });
 
