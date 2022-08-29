@@ -244,7 +244,7 @@ const buttonMash: Cypress.Chainable<undefined>["buttonMash"] = (
   keys,
   options
 ) => {
-  if (keys === []) {
+  if (keys.length === 0) {
     throw new Error("You must pass in at least one key to mash");
   }
   const handleButtonMash = () => {
@@ -295,7 +295,7 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
   keys,
   options
 ) => {
-  if (keys === []) {
+  if (keys.length === 0) {
     throw new Error("You must pass in at least one key to mash");
   }
   const handleButtonMash = () => {
