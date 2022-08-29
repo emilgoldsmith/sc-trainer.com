@@ -9,7 +9,6 @@ import {
 import { paths } from "support/paths";
 import { applyDefaultIntercepts } from "support/interceptors";
 import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
-import { assertCubeMatchesAlias } from "support/assertions";
 
 forceReloadAndNavigateIfDotOnlyIsUsed();
 
