@@ -646,14 +646,13 @@ export const pllTrainerStatesNewUser = buildStates<
 
 export function completePLLTestInMilliseconds(
   milliseconds: number,
-  pll: PLL,
   params: {
-    aufs: readonly [AUF, AUF] | readonly [];
     startingState:
       | "doNewVisit"
       | "pickTargetParametersPage"
       | "startPage"
       | "correctPage";
+    forceTestCase?: readonly [AUF, PLL, AUF];
     // The function will not throw an error if it can't reach this state
     // it's just simple decisions like ending early or continuing a bit further
     // that this parameter is for.
@@ -697,7 +696,7 @@ export function completePLLTestInMilliseconds(
     }
   });
   const {
-    aufs,
+    forceTestCase,
     correct,
     overrideDefaultAlgorithm,
     startingState,
@@ -707,8 +706,6 @@ export function completePLLTestInMilliseconds(
     testRunningCallback,
     evaluateResultCallback,
   } = params;
-  const [preAUF, postAUF] = [aufs[0] ?? AUF.none, aufs[1] ?? AUF.none];
-  const testCase = [preAUF, pll, postAUF] as const;
   const { stateAttributeValues } = pllTrainerElements.root;
 
   let atStartPage = true;
@@ -738,7 +735,7 @@ export function completePLLTestInMilliseconds(
     // waiting for the page to load
     pllTrainerElements.newUserStartPage.container.waitFor();
   }
-  cy.overrideNextTestCase(testCase);
+  if (forceTestCase) cy.overrideNextTestCase(forceTestCase);
   cy.clock();
 
   if (atStartPage) {
@@ -771,15 +768,30 @@ export function completePLLTestInMilliseconds(
     ...(testRunningCallback === undefined ? {} : { testRunningCallback }),
     ...(evaluateResultCallback === undefined ? {} : { evaluateResultCallback }),
   });
-  pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
-    if (stateValue === stateAttributeValues.pickAlgorithmPage) {
-      pllTrainerElements.pickAlgorithmPage.algorithmInput
-        .get()
-        .type(
-          (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
-        );
-    }
-  });
+  pllTrainerElements.root
+    .getStateAttributeValue()
+    .then(
+      (stateValue): Cypress.Chainable<{ pll: PLL | null }> => {
+        if (stateValue === stateAttributeValues.pickAlgorithmPage) {
+          if (forceTestCase)
+            return cy.wrap({ pll: forceTestCase[1] } as { pll: PLL | null });
+          return cy
+            .getCurrentTestCase()
+            .then(([, pll]) => ({ pll } as { pll: PLL | null }));
+        }
+        return cy.wrap({ pll: null } as { pll: PLL | null });
+      }
+    )
+    .then(({ pll: pllIfOnPickAlgorithmPage }) => {
+      if (pllIfOnPickAlgorithmPage !== null) {
+        const pll = pllIfOnPickAlgorithmPage;
+        pllTrainerElements.pickAlgorithmPage.algorithmInput
+          .get()
+          .type(
+            (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
+          );
+      }
+    });
   if (correct && params.correctPageCallback) {
     pllTrainerElements.correctPage.container.waitFor();
     params.correctPageCallback();

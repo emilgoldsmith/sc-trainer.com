@@ -42,7 +42,7 @@ describe("PLL Trainer", function () {
   });
 
   context("completely new user", function () {
-    describe.only("different paths in the app:", function () {
+    describe("different paths in the app:", function () {
       it("shows new case for new user -> solved quickly + ending test by touching screen where correct button shows up doesn't press that button -> pick algorithm -> correct with goodjob text (no driller) -> same case again on a different visit, no new case page, doesn't display picker, doesn't display good job text", function () {
         cy.visit(paths.pllTrainer);
         pickTargetParametersNavigateVariant1();
@@ -174,8 +174,8 @@ describe("PLL Trainer", function () {
 
     it("displays new case page exactly when a new pll, pre- or postAUF is next", function () {
       cy.log("This is a completely new user so new case page should display");
-      completePLLTestInMilliseconds(500, PLL.Aa, {
-        aufs: [AUF.UPrime, AUF.UPrime],
+      completePLLTestInMilliseconds(500, {
+        forceTestCase: [AUF.UPrime, PLL.Aa, AUF.UPrime],
         correct: true,
         startingState: "doNewVisit",
         endingState: "correctPage",
@@ -185,8 +185,8 @@ describe("PLL Trainer", function () {
       });
 
       cy.log("This is a new preAUF so should display new case page");
-      completePLLTestInMilliseconds(500, PLL.Aa, {
-        aufs: [AUF.U, AUF.UPrime],
+      completePLLTestInMilliseconds(500, {
+        forceTestCase: [AUF.U, PLL.Aa, AUF.UPrime],
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
@@ -198,8 +198,8 @@ describe("PLL Trainer", function () {
       cy.log(
         "This is the same case as last time so no new case page should display"
       );
-      completePLLTestInMilliseconds(500, PLL.Aa, {
-        aufs: [AUF.U, AUF.UPrime],
+      completePLLTestInMilliseconds(500, {
+        forceTestCase: [AUF.U, PLL.Aa, AUF.UPrime],
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
@@ -211,8 +211,8 @@ describe("PLL Trainer", function () {
       cy.log(
         "This is a new postAUF even with known preAUF so should still display new case page"
       );
-      completePLLTestInMilliseconds(500, PLL.Aa, {
-        aufs: [AUF.U, AUF.U2],
+      completePLLTestInMilliseconds(500, {
+        forceTestCase: [AUF.U, PLL.Aa, AUF.U2],
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
@@ -224,8 +224,8 @@ describe("PLL Trainer", function () {
       cy.log(
         "This is a case that hasn't been seen before, but each type of pre- and post-AUF have been tested independently so it shouldn't count as a new case"
       );
-      completePLLTestInMilliseconds(500, PLL.Aa, {
-        aufs: [AUF.UPrime, AUF.U2],
+      completePLLTestInMilliseconds(500, {
+        forceTestCase: [AUF.UPrime, PLL.Aa, AUF.U2],
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
@@ -237,8 +237,8 @@ describe("PLL Trainer", function () {
       cy.log(
         "This is the first time there is no postAUF, and while this is a \"new\" case we don't want to count it as it's simply the act of not making a move. Also note that the preAUF is of course seen before otherwise it would be a new case"
       );
-      completePLLTestInMilliseconds(500, PLL.Aa, {
-        aufs: [AUF.UPrime, AUF.none],
+      completePLLTestInMilliseconds(500, {
+        forceTestCase: [AUF.UPrime, PLL.Aa, AUF.none],
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
@@ -248,8 +248,8 @@ describe("PLL Trainer", function () {
       });
 
       cy.log("New PLL so should display");
-      completePLLTestInMilliseconds(500, PLL.H, {
-        aufs: [AUF.U, AUF.none],
+      completePLLTestInMilliseconds(500, {
+        forceTestCase: [AUF.U, PLL.H, AUF.none],
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
@@ -261,8 +261,8 @@ describe("PLL Trainer", function () {
       cy.log(
         "H perm is fully symmetrical so preAUF and postAUF are equivalent in that sense and this shouldn't be a new case"
       );
-      completePLLTestInMilliseconds(500, PLL.H, {
-        aufs: [AUF.none, AUF.U],
+      completePLLTestInMilliseconds(500, {
+        forceTestCase: [AUF.none, PLL.H, AUF.U],
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
@@ -274,8 +274,8 @@ describe("PLL Trainer", function () {
       cy.log(
         "This is a different combination though so should display the new case page"
       );
-      completePLLTestInMilliseconds(500, PLL.H, {
-        aufs: [AUF.U2, AUF.none],
+      completePLLTestInMilliseconds(500, {
+        forceTestCase: [AUF.U2, PLL.H, AUF.none],
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
@@ -287,7 +287,7 @@ describe("PLL Trainer", function () {
   });
 
   context("only algorithms picked otherwise new user", function () {
-    it("passes pick target parameters page with default values, shows new user start page, and doesn't display algorithm picker for default cases whether solve was correct or wrong", function () {
+    it("passes pick target parameters page with default values, shows new user start page, and doesn't display algorithm picker for apps generated cases whether solve was correct or wrong as in this case algorithms have already been picked", function () {
       cy.setLocalStorage(allPLLsPickedLocalStorage);
       // Correct path:
       cy.visit(paths.pllTrainer);
@@ -319,7 +319,7 @@ describe("PLL Trainer", function () {
     });
   });
 
-  context.only("user who has learned full pll", function () {
+  context("user who has learned full pll", function () {
     beforeEach(function () {
       cy.setLocalStorage(fullyPopulatedLocalStorage);
     });
@@ -474,9 +474,9 @@ describe("PLL Trainer", function () {
       const GcAlgorithmLength = 12;
 
       cy.visit(paths.pllTrainer);
-      completePLLTestInMilliseconds(1500, PLL.Aa, {
+      completePLLTestInMilliseconds(1500, {
         // Try with no AUFs
-        aufs: [],
+        forceTestCase: [AUF.none, PLL.Aa, AUF.none],
         correct: true,
         startingState: "pickTargetParametersPage",
       });
@@ -489,9 +489,9 @@ describe("PLL Trainer", function () {
           },
         ],
       });
-      completePLLTestInMilliseconds(2000, PLL.Aa, {
+      completePLLTestInMilliseconds(2000, {
         // Try with a preAUF
-        aufs: [AUF.U, AUF.none],
+        forceTestCase: [AUF.U, PLL.Aa, AUF.none],
         correct: true,
         startingState: "startPage",
       });
@@ -508,9 +508,9 @@ describe("PLL Trainer", function () {
           },
         ],
       });
-      completePLLTestInMilliseconds(1000, PLL.Aa, {
+      completePLLTestInMilliseconds(1000, {
         // Try with a postAUF
-        aufs: [AUF.none, AUF.U2],
+        forceTestCase: [AUF.none, PLL.Aa, AUF.U2],
         correct: true,
         startingState: "startPage",
       });
@@ -529,9 +529,9 @@ describe("PLL Trainer", function () {
       });
       // Ensure with a fourth attempt that only the most recent 3 attempts
       // are taken into account
-      completePLLTestInMilliseconds(1000, PLL.Aa, {
+      completePLLTestInMilliseconds(1000, {
         // Try with both AUFs
-        aufs: [AUF.UPrime, AUF.U],
+        forceTestCase: [AUF.UPrime, PLL.Aa, AUF.U],
         correct: true,
         startingState: "startPage",
       });
@@ -548,8 +548,8 @@ describe("PLL Trainer", function () {
           },
         ],
       });
-      completePLLTestInMilliseconds(2000, PLL.H, {
-        aufs: [],
+      completePLLTestInMilliseconds(2000, {
+        forceTestCase: [AUF.none, PLL.H, AUF.none],
         correct: true,
         startingState: "startPage",
       });
@@ -571,8 +571,8 @@ describe("PLL Trainer", function () {
         ],
       });
       // Test that DNFs work as we want them to
-      completePLLTestInMilliseconds(2000, PLL.Aa, {
-        aufs: [AUF.U2, AUF.UPrime],
+      completePLLTestInMilliseconds(2000, {
+        forceTestCase: [AUF.U2, PLL.Aa, AUF.UPrime],
         correct: false,
         startingState: "startPage",
       });
@@ -589,8 +589,8 @@ describe("PLL Trainer", function () {
           },
         ],
       });
-      completePLLTestInMilliseconds(2000, PLL.Aa, {
-        aufs: [AUF.U2, AUF.none],
+      completePLLTestInMilliseconds(2000, {
+        forceTestCase: [AUF.U2, PLL.Aa, AUF.none],
         correct: true,
         startingState: "startPage",
       });
@@ -607,8 +607,8 @@ describe("PLL Trainer", function () {
           },
         ],
       });
-      completePLLTestInMilliseconds(1000, PLL.Aa, {
-        aufs: [AUF.none, AUF.none],
+      completePLLTestInMilliseconds(1000, {
+        forceTestCase: [AUF.none, PLL.Aa, AUF.none],
         correct: true,
         startingState: "startPage",
       });
@@ -625,8 +625,8 @@ describe("PLL Trainer", function () {
           },
         ],
       });
-      completePLLTestInMilliseconds(3000, PLL.Aa, {
-        aufs: [AUF.U, AUF.UPrime],
+      completePLLTestInMilliseconds(3000, {
+        forceTestCase: [AUF.U, PLL.Aa, AUF.UPrime],
         correct: true,
         startingState: "startPage",
       });
@@ -652,10 +652,10 @@ describe("PLL Trainer", function () {
       /** Note that H-perm is fully symmetrical. Therefore pre-AUF is not a thing, the only
        * difference it makes is changing the post-AUF
        */
-      completePLLTestInMilliseconds(2000, PLL.H, {
+      completePLLTestInMilliseconds(2000, {
         // These AUFs actually cancel out and should result in a 0-AUF case
         // and calculated as such
-        aufs: [AUF.U, AUF.UPrime],
+        forceTestCase: [AUF.U, PLL.H, AUF.UPrime],
         correct: true,
         startingState: "startPage",
       });
@@ -679,9 +679,9 @@ describe("PLL Trainer", function () {
           },
         ],
       });
-      completePLLTestInMilliseconds(2000, PLL.H, {
+      completePLLTestInMilliseconds(2000, {
         // These should partially cancel out and just add a single postAUF
-        aufs: [AUF.U2, AUF.UPrime],
+        forceTestCase: [AUF.U2, PLL.H, AUF.UPrime],
         correct: true,
         startingState: "startPage",
       });
@@ -706,9 +706,9 @@ describe("PLL Trainer", function () {
           },
         ],
       });
-      completePLLTestInMilliseconds(2000, PLL.H, {
+      completePLLTestInMilliseconds(2000, {
         // This should predictably just add a single turn
-        aufs: [AUF.none, AUF.U],
+        forceTestCase: [AUF.none, PLL.H, AUF.U],
         correct: true,
         startingState: "startPage",
       });
@@ -738,8 +738,8 @@ describe("PLL Trainer", function () {
        * We just do two tests (after picking the algorithm) to see that these partial
        * symmetries seem handled too
        */
-      completePLLTestInMilliseconds(5000, PLL.Z, {
-        aufs: [],
+      completePLLTestInMilliseconds(5000, {
+        forceTestCase: [AUF.none, PLL.Z, AUF.none],
         correct: true,
         startingState: "startPage",
       });
@@ -768,9 +768,9 @@ describe("PLL Trainer", function () {
           },
         ],
       });
-      completePLLTestInMilliseconds(5000, PLL.Z, {
+      completePLLTestInMilliseconds(5000, {
         // We check that it can indeed get +2
-        aufs: [AUF.U, AUF.UPrime],
+        forceTestCase: [AUF.U, PLL.Z, AUF.UPrime],
         correct: true,
         startingState: "startPage",
       });
@@ -802,10 +802,10 @@ describe("PLL Trainer", function () {
           },
         ],
       });
-      completePLLTestInMilliseconds(5000, PLL.Z, {
+      completePLLTestInMilliseconds(5000, {
         // We check that a U2 postAUF gets correctly cancelled out
         // as one could then just do U' as the preAUF and it's only +1
-        aufs: [AUF.U, AUF.U2],
+        forceTestCase: [AUF.U, PLL.Z, AUF.U2],
         correct: true,
         startingState: "startPage",
       });
@@ -842,8 +842,8 @@ describe("PLL Trainer", function () {
        * Finally we check that if a fourth pll is attempted it still only shows
        * the worst 3 cases
        */
-      completePLLTestInMilliseconds(10000, PLL.Gc, {
-        aufs: [AUF.U, AUF.U2],
+      completePLLTestInMilliseconds(10000, {
+        forceTestCase: [AUF.U, PLL.Gc, AUF.U2],
         correct: true,
         startingState: "startPage",
       });
@@ -932,8 +932,8 @@ describe("PLL Trainer", function () {
       const totalPLLCases = 21;
 
       cy.visit(paths.pllTrainer);
-      completePLLTestInMilliseconds(1000, PLL.Aa, {
-        aufs: [AUF.UPrime, AUF.none],
+      completePLLTestInMilliseconds(1000, {
+        forceTestCase: [AUF.UPrime, PLL.Aa, AUF.none],
         correct: true,
         startingState: "pickTargetParametersPage",
       });
@@ -945,8 +945,8 @@ describe("PLL Trainer", function () {
         ],
       });
 
-      completePLLTestInMilliseconds(2000, PLL.Ab, {
-        aufs: [],
+      completePLLTestInMilliseconds(2000, {
+        forceTestCase: [AUF.none, PLL.Ab, AUF.none],
         correct: false,
         startingState: "startPage",
       });
@@ -960,8 +960,8 @@ describe("PLL Trainer", function () {
         ],
       });
 
-      completePLLTestInMilliseconds(2000, PLL.Ga, {
-        aufs: [AUF.U, AUF.U2],
+      completePLLTestInMilliseconds(2000, {
+        forceTestCase: [AUF.U, PLL.Ga, AUF.U2],
         correct: true,
         startingState: "startPage",
       });
@@ -976,8 +976,8 @@ describe("PLL Trainer", function () {
         ],
       });
 
-      completePLLTestInMilliseconds(1000, PLL.Ga, {
-        aufs: [],
+      completePLLTestInMilliseconds(1000, {
+        forceTestCase: [AUF.none, PLL.Ga, AUF.none],
         correct: true,
         startingState: "startPage",
       });
@@ -997,14 +997,14 @@ describe("PLL Trainer", function () {
 
       // Now we make sure that it only counts the last three by going up
       // to 4 tests on Ga
-      completePLLTestInMilliseconds(2000, PLL.Ga, {
-        aufs: [AUF.none, AUF.U],
+      completePLLTestInMilliseconds(2000, {
+        forceTestCase: [AUF.none, PLL.Ga, AUF.U],
         correct: true,
         startingState: "startPage",
         endingState: "correctPage",
       });
-      completePLLTestInMilliseconds(3000, PLL.Ga, {
-        aufs: [AUF.UPrime, AUF.U2],
+      completePLLTestInMilliseconds(3000, {
+        forceTestCase: [AUF.UPrime, PLL.Ga, AUF.U2],
         correct: true,
         startingState: "correctPage",
       });
@@ -1077,9 +1077,9 @@ describe("PLL Trainer", function () {
       cy.visit(paths.pllTrainer);
       pllTrainerElements.pickTargetParametersPage.container.waitFor();
       cy.setPLLAlgorithm(PLL.Aa, pllToAlgorithmString[PLL.Aa]);
-      completePLLTestInMilliseconds(1000, PLL.Aa, {
+      completePLLTestInMilliseconds(1000, {
         startingState: "pickTargetParametersPage",
-        aufs: [AUF.U2, AUF.UPrime],
+        forceTestCase: [AUF.U2, PLL.Aa, AUF.UPrime],
         correct: true,
       });
 
@@ -1094,9 +1094,9 @@ describe("PLL Trainer", function () {
       cy.visit(paths.pllTrainer);
       pllTrainerElements.pickTargetParametersPage.container.waitFor();
       cy.setPLLAlgorithm(PLL.Aa, "y' " + pllToAlgorithmString[PLL.Aa] + " y2");
-      completePLLTestInMilliseconds(1000, PLL.Aa, {
+      completePLLTestInMilliseconds(1000, {
         startingState: "pickTargetParametersPage",
-        aufs: [AUF.U2, AUF.UPrime],
+        forceTestCase: [AUF.U2, PLL.Aa, AUF.UPrime],
         correct: true,
       });
       cy.visit(paths.pllTrainer);
@@ -1192,9 +1192,9 @@ describe("PLL Trainer", function () {
           pllTrainerElements.pickTargetParametersPage.container.waitFor();
           cy.setPLLAlgorithm(pll, algorithmWithRotation);
           // Then we run the test with that algorithm being used
-          completePLLTestInMilliseconds(1000, pll, {
+          completePLLTestInMilliseconds(1000, {
             correct: true,
-            aufs: [],
+            forceTestCase: [AUF.none, pll, AUF.none],
             startingState: "pickTargetParametersPage",
             endingState: "testRunning",
             testRunningCallback: () =>
@@ -1209,9 +1209,9 @@ describe("PLL Trainer", function () {
           pllTrainerElements.pickTargetParametersPage.container.waitFor();
           cy.setPLLAlgorithm(pll, algorithmWithoutRotation);
           // Then we run the test with that algorithm being used
-          completePLLTestInMilliseconds(1000, pll, {
+          completePLLTestInMilliseconds(1000, {
             correct: true,
-            aufs: [],
+            forceTestCase: [AUF.none, pll, AUF.none],
             startingState: "pickTargetParametersPage",
             endingState: "testRunning",
             testRunningCallback: () =>
@@ -1236,16 +1236,15 @@ describe("PLL Trainer", function () {
         firstCube: string;
         secondCube: string;
       };
-      const pll = PLL.Ua;
-      const aufs = [AUF.none, AUF.none] as const;
+      const testCase = [AUF.none, PLL.Ua, AUF.none] as const;
       const firstAlgorithm = "R2 U' R' U' R U R U R U' R";
       const secondAlgorithm = "R2 U' R2 S R2 S' U R2";
 
       cy.visit(paths.pllTrainer);
       pllTrainerElements.pickTargetParametersPage.container.waitFor();
-      cy.setPLLAlgorithm(pll, firstAlgorithm);
-      completePLLTestInMilliseconds(1000, pll, {
-        aufs,
+      cy.setPLLAlgorithm(testCase[1], firstAlgorithm);
+      completePLLTestInMilliseconds(1000, {
+        forceTestCase: testCase,
         correct: true,
         startingState: "pickTargetParametersPage",
         endingState: "testRunning",
@@ -1259,9 +1258,9 @@ describe("PLL Trainer", function () {
 
       cy.visit(paths.pllTrainer);
       pllTrainerElements.pickTargetParametersPage.container.waitFor();
-      cy.setPLLAlgorithm(pll, secondAlgorithm);
-      completePLLTestInMilliseconds(1000, pll, {
-        aufs,
+      cy.setPLLAlgorithm(testCase[1], secondAlgorithm);
+      completePLLTestInMilliseconds(1000, {
+        forceTestCase: testCase,
         correct: true,
         startingState: "pickTargetParametersPage",
         endingState: "testRunning",
@@ -1316,11 +1315,15 @@ describe("PLL Trainer", function () {
           statsAfterSecondTest: string;
         };
         const testResultTime = 1000;
-        const aufOnAppsDefaultAlgorithm = [AUF.none, AUF.none] as const;
+        const aufOnTheAppsDefaultAlgorithm = [AUF.none, AUF.none] as const;
 
         cy.clearLocalStorage();
-        completePLLTestInMilliseconds(testResultTime, pll, {
-          aufs: aufOnAppsDefaultAlgorithm,
+        completePLLTestInMilliseconds(testResultTime, {
+          forceTestCase: [
+            aufOnTheAppsDefaultAlgorithm[0],
+            pll,
+            aufOnTheAppsDefaultAlgorithm[1],
+          ],
           correct: true,
           overrideDefaultAlgorithm: algorithm,
           startingState: "doNewVisit",
@@ -1335,8 +1338,12 @@ describe("PLL Trainer", function () {
         cy.getCurrentTestCase()
           .then(([preAUF, , postAUF]) => {
             const equivalentAUFsForOurAlgorithm: [AUF, AUF] = [preAUF, postAUF];
-            completePLLTestInMilliseconds(testResultTime, pll, {
-              aufs: equivalentAUFsForOurAlgorithm,
+            completePLLTestInMilliseconds(testResultTime, {
+              forceTestCase: [
+                equivalentAUFsForOurAlgorithm[0],
+                pll,
+                equivalentAUFsForOurAlgorithm[1],
+              ],
               correct: true,
               startingState: "doNewVisit",
               startPageCallback: () =>
@@ -1466,8 +1473,8 @@ describe("PLL Trainer", function () {
         aufToExpect: [AUF, AUF];
         startingStateOverride?: "pickTargetParametersPage";
       }) {
-        completePLLTestInMilliseconds(1000, pll, {
-          aufs: aufToSet,
+        completePLLTestInMilliseconds(1000, {
+          forceTestCase: [aufToSet[0], pll, aufToSet[1]],
           correct: true,
           startingState: startingStateOverride ?? "doNewVisit",
           endingState: "testRunning",
