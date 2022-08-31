@@ -127,6 +127,11 @@ const setAlias = function (
 };
 Cypress.Commands.add("setAlias", { prevSubject: true }, setAlias);
 
+Cypress.Commands.add("setSystemTimeWithLastFrameTicked", (now) => {
+  cy.clock().invoke("setSystemTime", now - 60);
+  cy.tick(60);
+});
+
 Cypress.Commands.add(
   "pressKey",
   { prevSubject: ["optional", "element"] },

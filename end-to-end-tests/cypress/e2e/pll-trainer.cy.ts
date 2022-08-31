@@ -2059,21 +2059,134 @@ function getReadyStateNoSideEffectsButScroll() {
   );
 }
 
-function testRunningNoSideEffectsButScroll() {
+// We only use this parameter to communicate to the caller the requirements
+// this function has in order to be called correctly
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function testRunningWithTimeSideEffects(_: { timerIsCurrentlyAtZero: true }) {
   const elements = pllTrainerElements.testRunning;
 
-  ([
-    [
-      "has all the correct elements",
-      () => {
-        elements.assertAllShow();
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
-  );
+  cy.window()
+    .then((window) => new window.Date().getTime())
+    .then((startTime) => {
+      ([
+        [
+          "has all the correct elements",
+          () => {
+            elements.assertAllShow();
+          },
+        ],
+        [
+          "tracks time correctly",
+          () => {
+            const second = 1000;
+            const minute = 60 * second;
+            const hour = 60 * minute;
+            // Should start at 0
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should("have.text", "0.0");
+            // Just testing here that nothing happens with small increments
+            cy.tick(3);
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should("have.text", "0.0");
+            cy.tick(10);
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should("have.text", "0.0");
+            cy.tick(0.2 * second);
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should("have.text", "0.2");
+            cy.tick(1.3 * second);
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should("have.text", "1.5");
+            // Switch to using time jumps as tick calls all setInterval times in the
+            // time interval resulting in slow tests and excessive cpu usage
+
+            // Checking two digit seconds alone
+            cy.setSystemTimeWithLastFrameTicked(19.2 * second + startTime);
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should("have.text", "19.2");
+            // Checking "normal" minute
+            cy.setSystemTimeWithLastFrameTicked(
+              3 * minute + 16.8 * second + startTime
+            );
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should("have.text", "3:16.8");
+            // Checking single digit seconds when above minute still shows two digits
+            cy.setSystemTimeWithLastFrameTicked(
+              4 * minute + 7.3 * second + startTime
+            );
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should("have.text", "4:07.3");
+            // Check that it shows hours
+            cy.setSystemTimeWithLastFrameTicked(
+              4 * hour + 38 * minute + 45.7 * second + startTime
+            );
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should("have.text", "4:38:45.7");
+            // Check that it shows double digits for minutes and seconds when in hours
+            cy.setSystemTimeWithLastFrameTicked(
+              5 * hour + 1 * minute + 4 * second + startTime
+            );
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should("have.text", "5:01:04.0");
+            // Just ensuring a ridiculous amount works too, note we don't break it down to days
+            cy.setSystemTimeWithLastFrameTicked(
+              234 * hour + 59 * minute + 18.1 * second + startTime
+            );
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should("have.text", "234:59:18.1");
+          },
+        ],
+        [
+          "all looks good also after timer has run for 15 hours",
+          () => {
+            // We set the timer to double digit hours to test the limits of the width, that seems like it could be plausible
+            // for a huge multiblind attempt if we for some reason support that in the future,
+            // but three digit hours seems implausible so no need to test that
+            cy.setSystemTimeWithLastFrameTicked(
+              1000 * 60 * 60 * 15 + startTime
+            );
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
+            const minDimension = Math.min(
+              Cypress.config().viewportWidth,
+              Cypress.config().viewportHeight
+            );
+            pllTrainerElements.testRunning.timer
+              .get()
+              .should((timerElement) => {
+                expect(timerElement.height()).to.be.at.least(
+                  0.2 * minDimension
+                );
+              });
+            pllTrainerElements.testRunning.testCase
+              .assertShows()
+              .and((cubeElement) => {
+                expect(
+                  cubeElement.width(),
+                  "cube width to fill at least half of screen"
+                ).to.be.at.least(minDimension * 0.5 - 1);
+                expect(
+                  cubeElement.height(),
+                  "cube height to fill at least half of screen"
+                ).to.be.at.least(minDimension * 0.5 - 1);
+              });
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    });
 }
 
 // TODO: If there is space for more navigation variants then adding more places
