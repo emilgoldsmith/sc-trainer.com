@@ -11,6 +11,7 @@ import { paths } from "support/paths";
 import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
 import allPLLsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 import {
+  allAUFs,
   AUF,
   aufToAlgorithmString,
   PLL,
@@ -117,7 +118,11 @@ describe("PLL Trainer", function () {
               .setAlias<Aliases, "testCaseCube">("testCaseCube"),
         });
         pllTrainerElements.pickAlgorithmPage.container.assertShows();
-        pickAlgorithmNavigateVariant2();
+        cy.getCurrentTestCase().then(([, pll]) => {
+          pllTrainerElements.pickAlgorithmPage.algorithmInput
+            .get()
+            .type(pllToAlgorithmString[pll] + "{enter}", { delay: 0 });
+        });
         pllTrainerElements.algorithmDrillerExplanationPage.wrongText.assertShows();
         pllTrainerElements.algorithmDrillerExplanationPage.correctText.assertDoesntExist();
         getVerifiedAliases<Aliases, "testCaseCube">(["testCaseCube"]).then(
@@ -178,10 +183,11 @@ describe("PLL Trainer", function () {
           startingState: "algorithmDrillerStatusPage",
         });
       });
+
       it("Very slow correct for new preAUF but same pll shows driller but with 'correct text' and not 'wrong text'", function () {
         completePLLTestInMilliseconds(10000, {
           correct: true,
-          startingState: "algorithmDrillerSuccessPage",
+          startingState: "doNewVisit",
           forceTestCase: [AUF.none, PLL.Gc, AUF.U2],
           endingState: "algorithmDrillerExplanationPage",
         });
@@ -506,11 +512,11 @@ describe("PLL Trainer", function () {
         expectedBack: string;
       };
       cy.visit(paths.pllTrainer);
-      pllTrainerElements.newUserStartPage.cubeStartState
+      pllTrainerElements.recurringUserStartPage.cubeStartState
         .getStringRepresentationOfCube()
         .setAlias<Aliases, "solvedFront">("solvedFront");
       cy.overrideCubeDisplayAngle("ubl");
-      pllTrainerElements.newUserStartPage.cubeStartState
+      pllTrainerElements.recurringUserStartPage.cubeStartState
         .getStringRepresentationOfCube()
         .setAlias<Aliases, "solvedBack">("solvedBack");
       cy.overrideCubeDisplayAngle(null);
@@ -524,6 +530,7 @@ describe("PLL Trainer", function () {
       cy.tick(evaluateResultIgnoreTransitionsWaitTime);
       evaluateResultNavigateWrongVariant1();
 
+      pllTrainerElements.typeOfWrongPage.container.waitFor();
       cy.getApplicationState().then((typeOfWrongApplicationState) => {
         cy.withOverallNameLogged({ message: "no moves both variants" }, () => {
           pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
@@ -2545,26 +2552,68 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
 
 function pickAlgorithmNavigateVariant1() {
   cy.getCurrentTestCase().then(([, currentPLL]) => {
-    pllTrainerElements.pickAlgorithmPage.algorithmInput
-      .get()
-      .type(
-        "{selectall}{backspace}" + pllToAlgorithmString[currentPLL] + "{enter}",
-        { delay: 0 }
-      );
+    typeInAlgorithm(currentPLL);
+    pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}", {
+      delay: 0,
+    });
   });
   pllTrainerElements.pickAlgorithmPage.container.assertDoesntExist();
 }
 
 function pickAlgorithmNavigateVariant2() {
   cy.getCurrentTestCase().then(([, currentPLL]) => {
-    pllTrainerElements.pickAlgorithmPage.algorithmInput
-      .get()
-      .type("{selectall}{backspace}" + pllToAlgorithmString[currentPLL], {
-        delay: 0,
-      });
+    typeInAlgorithm(currentPLL);
   });
   pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
   pllTrainerElements.pickAlgorithmPage.container.assertDoesntExist();
+}
+
+function typeInAlgorithm(currentPLL: PLL) {
+  const preAUF = allAUFs[Math.floor(Math.random() * allAUFs.length)];
+  if (preAUF === undefined) {
+    throw new Error("No preAUF found");
+  }
+  const postAUF = allAUFs[Math.floor(Math.random() * allAUFs.length)];
+  if (postAUF === undefined) {
+    throw new Error("No postAUF found");
+  }
+  const allRotations = [
+    "",
+    "x",
+    "x2",
+    "x'",
+    "z",
+    "z'",
+  ].flatMap((determineUpFace) =>
+    ["", "y", "y2", "y'"].map(
+      (determineFrontFace) => determineUpFace + " " + determineFrontFace
+    )
+  );
+  const rotation =
+    allRotations[Math.floor(Math.random() * allRotations.length)];
+  if (rotation === undefined) {
+    throw new Error("No rotation found");
+  }
+
+  cy.log(
+    "random preAUF, postAUF, and final rotation chosen to test these also work: " +
+      preAUF +
+      ", " +
+      postAUF +
+      ", " +
+      rotation
+  );
+
+  pllTrainerElements.pickAlgorithmPage.algorithmInput
+    .get()
+    .type(
+      "{selectall}{backspace}" +
+        aufToAlgorithmString[preAUF] +
+        pllToAlgorithmString[currentPLL] +
+        aufToAlgorithmString[postAUF] +
+        rotation,
+      { delay: 0 }
+    );
 }
 
 function correctPageNoSideEffects() {
