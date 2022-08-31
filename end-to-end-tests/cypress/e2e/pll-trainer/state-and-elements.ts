@@ -651,6 +651,8 @@ export function completePLLTestInMilliseconds(
       | "doNewVisit"
       | "pickTargetParametersPage"
       | "startPage"
+      | "algorithmDrillerStatusPage"
+      | "algorithmDrillerSuccessPage"
       | "correctPage";
     forceTestCase?: readonly [AUF, PLL, AUF];
     // The function will not throw an error if it can't reach this state
@@ -658,6 +660,7 @@ export function completePLLTestInMilliseconds(
     // that this parameter is for.
     endingState?:
       | "testRunning"
+      | "pickAlgorithmPage"
       | "correctPage"
       | "wrongPage"
       | "algorithmDrillerExplanationPage"
@@ -747,6 +750,10 @@ export function completePLLTestInMilliseconds(
     );
   } else if (startingState === "correctPage") {
     pllTrainerElements.correctPage.nextButton.get().click();
+  } else if (startingState === "algorithmDrillerStatusPage") {
+    pllTrainerElements.algorithmDrillerStatusPage.nextTestButton.get().click();
+  } else if (startingState === "algorithmDrillerSuccessPage") {
+    pllTrainerElements.algorithmDrillerSuccessPage.nextTestButton.get().click();
   }
 
   pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
@@ -768,6 +775,7 @@ export function completePLLTestInMilliseconds(
     ...(testRunningCallback === undefined ? {} : { testRunningCallback }),
     ...(evaluateResultCallback === undefined ? {} : { evaluateResultCallback }),
   });
+  if (endingState === "pickAlgorithmPage") return;
   pllTrainerElements.root
     .getStateAttributeValue()
     .then(

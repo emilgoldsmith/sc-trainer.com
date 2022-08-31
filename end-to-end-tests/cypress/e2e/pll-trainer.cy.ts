@@ -25,17 +25,6 @@ import {
   pllTrainerElements,
 } from "./pll-trainer/state-and-elements";
 
-type Aliases = {
-  solvedFront: string;
-  solvedBack: string;
-  testCaseFront: string;
-  testCaseBack: string;
-  evaluateResultFront: string;
-  evaluateResultBack: string;
-  previousEvaluateResultFront: string;
-  previousEvaluateResultBack: string;
-};
-
 describe("PLL Trainer", function () {
   beforeEach(function () {
     applyDefaultIntercepts();
@@ -97,6 +86,181 @@ describe("PLL Trainer", function () {
           pllTrainerElements.correctPage.container.assertShows();
           pllTrainerElements.correctPage.goodJobText.assertDoesntExist();
         });
+      });
+
+      it("solves new case incorrectly -> goes to pick algorithm -> driller with 'wrong text' and not 'correct text' -> test driller works as expected", function () {
+        type Aliases = {
+          testCaseCube: string;
+          solvedFront: string;
+          solvedBack: string;
+          evaluateResultFront: string;
+          evaluateResultBack: string;
+        };
+        completePLLTestInMilliseconds(500, {
+          correct: false,
+          forceTestCase: [AUF.U, PLL.Gb, AUF.UPrime],
+          startingState: "doNewVisit",
+          endingState: "pickAlgorithmPage",
+          startPageCallback: () => {
+            pllTrainerElements.newUserStartPage.cubeStartState
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "solvedFront">("solvedFront");
+            cy.overrideCubeDisplayAngle("ubl");
+            pllTrainerElements.newUserStartPage.cubeStartState
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "solvedBack">("solvedBack");
+            cy.overrideCubeDisplayAngle(null);
+          },
+          testRunningCallback: () =>
+            pllTrainerElements.testRunning.testCase
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "testCaseCube">("testCaseCube"),
+        });
+        pllTrainerElements.pickAlgorithmPage.container.assertShows();
+        pickAlgorithmNavigateVariant2();
+        pllTrainerElements.algorithmDrillerExplanationPage.wrongText.assertShows();
+        pllTrainerElements.algorithmDrillerExplanationPage.correctText.assertDoesntExist();
+        getVerifiedAliases<Aliases, "testCaseCube">(["testCaseCube"]).then(
+          ({ testCaseCube }) =>
+            algorithmDrillerExplanationPageNoSideEffectsButScroll({
+              testCaseCube,
+              defaultAlgorithmWasUsed: true,
+            })
+        );
+
+        algorithmDrillerExplanationPageNavigateVariant1();
+        getVerifiedAliases<Aliases, "solvedFront" | "solvedBack">([
+          "solvedFront",
+          "solvedBack",
+        ]).then(({ solvedFront, solvedBack }) => {
+          algorithmDrillerStatusPageNoSideEffects({
+            solvedFront,
+            solvedBack,
+            expectedCubeStateDidNotEqualSolvedJustBeforeThis: true,
+          });
+        });
+
+        completePLLTestInMilliseconds(500, {
+          correct: true,
+          startingState: "algorithmDrillerStatusPage",
+          evaluateResultCallback: () => {
+            pllTrainerElements.evaluateResult.expectedCubeFront
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "evaluateResultFront">("evaluateResultFront");
+            pllTrainerElements.evaluateResult.expectedCubeBack
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
+          },
+        });
+        getVerifiedAliases<
+          Aliases,
+          "evaluateResultFront" | "evaluateResultBack"
+        >(["evaluateResultFront", "evaluateResultBack"]).then(
+          algorithmDrillerStatusPageAfter1SuccessNoSideEffects
+        );
+
+        completePLLTestInMilliseconds(500, {
+          correct: false,
+          startingState: "algorithmDrillerStatusPage",
+        });
+        algorithmDrillerStatusPageAfter1Success1FailureNoSideEffects();
+        completePLLTestInMilliseconds(500, {
+          correct: true,
+          startingState: "algorithmDrillerStatusPage",
+        });
+        completePLLTestInMilliseconds(500, {
+          correct: true,
+          startingState: "algorithmDrillerStatusPage",
+        });
+        algorithmDrillerStatusPageAfter2SuccessesNoSideEffects();
+        completePLLTestInMilliseconds(500, {
+          correct: true,
+          startingState: "algorithmDrillerStatusPage",
+        });
+      });
+      it("Very slow correct for new preAUF but same pll shows driller but with 'correct text' and not 'wrong text'", function () {
+        completePLLTestInMilliseconds(10000, {
+          correct: true,
+          startingState: "algorithmDrillerSuccessPage",
+          forceTestCase: [AUF.none, PLL.Gc, AUF.U2],
+          endingState: "algorithmDrillerExplanationPage",
+        });
+
+        pllTrainerElements.algorithmDrillerExplanationPage.correctText.assertShows();
+        pllTrainerElements.algorithmDrillerExplanationPage.wrongText.assertDoesntExist();
+      });
+
+      it("goes to driller for new preAUF, and new postAUF exactly if it's not none, even when the pll and other AUF combination have been tested before; doesn't go to driller for new combination of seen pre and postAUF with seen pll", function () {
+        const pll = PLL.Gc;
+        const firstPreAUF = AUF.U2;
+        const firstNotNonePostAUF = AUF.U;
+        const differentPreAUF = AUF.UPrime;
+        const differentNotNonePostAUF = AUF.U2;
+        completePLLTestInMilliseconds(500, {
+          correct: true,
+          startingState: "doNewVisit",
+          forceTestCase: [firstPreAUF, pll, firstNotNonePostAUF],
+          endingState: "correctPage",
+        });
+        // We from now on very consciously switch between doing an incorrect test
+        // and a slow correct test, in order to ensure this is true for both cases
+        completePLLTestInMilliseconds(500, {
+          correct: false,
+          startingState: "correctPage",
+          forceTestCase: [firstPreAUF, pll, differentNotNonePostAUF],
+          endingState: "algorithmDrillerExplanationPage",
+        });
+        pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
+
+        completePLLTestInMilliseconds(10000, {
+          correct: true,
+          startingState: "doNewVisit",
+          forceTestCase: [differentPreAUF, pll, firstNotNonePostAUF],
+          endingState: "algorithmDrillerExplanationPage",
+        });
+        pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
+
+        completePLLTestInMilliseconds(500, {
+          correct: false,
+          startingState: "doNewVisit",
+          forceTestCase: [firstPreAUF, pll, AUF.none],
+          endingState: "wrongPage",
+        });
+
+        // We shouldn't drill if it's a known preAUF and an unknown \"none\" post-AUF this is because
+        // that just means not to make a move in the end which shouldn't be considered new,
+        // as learning post-AUF recognition has already been done when that preAUF was learned
+        pllTrainerElements.wrongPage.container.assertShows();
+
+        completePLLTestInMilliseconds(10000, {
+          correct: true,
+          startingState: "doNewVisit",
+          forceTestCase: [differentPreAUF, pll, differentNotNonePostAUF],
+          endingState: "correctPage",
+        });
+
+        // We shouldn't be drilling for known pre and post auf cases even if they haven't been seen
+        // in that combination previously
+        pllTrainerElements.correctPage.container.assertShows();
+      });
+
+      it("doesn't go to driller on what is technically new pre and post aufs if they are equivalent by symmetry to cases that have been learned", function () {
+        completePLLTestInMilliseconds(500, {
+          correct: true,
+          startingState: "doNewVisit",
+          forceTestCase: [AUF.UPrime, PLL.H, AUF.UPrime],
+          endingState: "correctPage",
+        });
+        completePLLTestInMilliseconds(10000, {
+          correct: true,
+          startingState: "correctPage",
+          forceTestCase: [AUF.none, PLL.H, AUF.U2],
+          endingState: "correctPage",
+        });
+
+        // Should not show a driller as (U', U') is equivalent to (none, U2) for a fully symmetric
+        // case such as the H perm
+        pllTrainerElements.correctPage.container.assertShows();
       });
     });
 
@@ -1490,326 +1654,6 @@ describe("PLL Trainer", function () {
   });
 });
 
-// eslint-disable-next-line mocha/no-global-tests
-it.skip("todo", function () {
-  cy.visit(paths.pllTrainer);
-  pllTrainerElements.pickTargetParametersPage.container.waitFor();
-  const testCaseOrder: [AUF, PLL, AUF][] = [
-    [AUF.U, PLL.Aa, AUF.none],
-    [AUF.U2, PLL.Ab, AUF.UPrime],
-    [AUF.U2, PLL.E, AUF.U2],
-    [AUF.UPrime, PLL.Ga, AUF.U],
-    [AUF.none, PLL.Gb, AUF.none],
-  ];
-  let testCaseIndex = 0;
-  function getCurrentTestCase() {
-    const nextCase = testCaseOrder[testCaseIndex];
-    if (nextCase === undefined)
-      throw new Error(
-        "test case index out of bounds: " + testCaseIndex.toString()
-      );
-    return nextCase;
-  }
-  function getNextTestCase() {
-    const nextCase = testCaseOrder[testCaseIndex + 1];
-    if (nextCase === undefined)
-      throw new Error(
-        "test case index out of bounds: " + testCaseIndex.toString()
-      );
-    return nextCase;
-  }
-  cy.overrideNextTestCase(getCurrentTestCase());
-  cy.withOverallNameLogged(
-    { message: "Pick Target Parameters No Side Effects" },
-    pickTargetParametersPageNoSideEffectsButScroll
-  );
-  cy.withOverallNameLogged(
-    { message: "Pick Target Parameters Side Effects" },
-    pickTargetParametersPageSideEffectsExceptNavigations
-  );
-  cy.withOverallNameLogged({ message: "To New User Page" }, () => {
-    pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
-      .get()
-      .type("{selectall}{backspace}2");
-    pllTrainerElements.pickTargetParametersPage.targetTPSInput
-      .get()
-      .type("{selectall}{backspace}4");
-    pickTargetParametersNavigateVariant1();
-  });
-  cy.withOverallNameLogged(
-    {
-      message: "New User Start Page",
-    },
-    newUserStartPageNoSideEffectsButScroll
-  );
-  pllTrainerElements.newUserStartPage.cubeStartState
-    .getStringRepresentationOfCube()
-    .setAlias<Aliases, "solvedFront">("solvedFront");
-  cy.overrideCubeDisplayAngle("ubl");
-  pllTrainerElements.newUserStartPage.cubeStartState
-    .getStringRepresentationOfCube()
-    .setAlias<Aliases, "solvedBack">("solvedBack");
-  cy.overrideCubeDisplayAngle(null);
-  cy.withOverallNameLogged(
-    { message: "To New Case Page" },
-    newUserStartPageBeginNavigateVariant1
-  );
-  cy.withOverallNameLogged(
-    { message: "New Case Page" },
-    newCasePageNoSideEffectsButScroll
-  );
-  cy.clock();
-  cy.withOverallNameLogged(
-    { message: "To Get Ready State" },
-    newCasePageNavigateVariant1
-  );
-  cy.withOverallNameLogged(
-    { message: "Get Ready State" },
-    getReadyStateNoSideEffectsButScroll
-  );
-  cy.tick(getReadyWaitTime);
-  cy.withOverallNameLogged(
-    { message: "Test Running" },
-    testRunningNoSideEffectsButScroll
-  );
-  cy.withOverallNameLogged(
-    { message: "To Evaluate Result" },
-    testRunningNavigateVariant1
-  );
-  cy.withOverallNameLogged(
-    { message: "Evaluate Result Page While Ignoring Transitions" },
-    evaluateResultWhileIgnoringTransitionsNoSideEffects
-  );
-  cy.tick(evaluateResultIgnoreTransitionsWaitTime);
-  cy.withOverallNameLogged(
-    { message: "Evaluate Result Page After Ignoring Transitions" },
-    evaluateResultAfterIgnoringTransitionsNoSideEffects
-  );
-  pllTrainerElements.evaluateResult.expectedCubeFront
-    .getStringRepresentationOfCube()
-    .setAlias<Aliases, "previousEvaluateResultFront">(
-      "previousEvaluateResultFront"
-    );
-  pllTrainerElements.evaluateResult.expectedCubeBack
-    .getStringRepresentationOfCube()
-    .setAlias<Aliases, "previousEvaluateResultBack">(
-      "previousEvaluateResultBack"
-    );
-  cy.withOverallNameLogged(
-    { message: "To Pick Algorithm Page" },
-    evaluateResultNavigateCorrectVariant1
-  );
-  cy.withOverallNameLogged({ message: "Pick Algorithm Page" }, () => {
-    pickAlgorithmPageFirstThingNoSideEffects();
-    pickAlgorithmPageSideEffectsExceptNavigations();
-  });
-  cy.withOverallNameLogged({ message: "To Correct Page" }, () => {
-    pickAlgorithmNavigateVariant1();
-  });
-  cy.withOverallNameLogged({ message: "Correct Page" }, () => {
-    correctPageNoSideEffects();
-  });
-  cy.withOverallNameLogged({ message: "To Type Of Wrong Page" }, () => {
-    cy.overrideNextTestCase(getNextTestCase());
-    correctPageNavigateVariant1();
-    pllTrainerElements.newCasePage.container.waitFor();
-    newCasePageNavigateVariant2();
-    pllTrainerElements.getReadyState.container.waitFor();
-    cy.tick(getReadyWaitTime);
-    pllTrainerElements.testRunning.container.waitFor();
-    testCaseIndex++;
-    pllTrainerElements.testRunning.testCase
-      .getStringRepresentationOfCube()
-      .setAlias<Aliases, "testCaseFront">("testCaseFront");
-    testRunningNavigateVariant2();
-    cy.tick(evaluateResultIgnoreTransitionsWaitTime);
-    pllTrainerElements.evaluateResult.expectedCubeFront
-      .getStringRepresentationOfCube()
-      .setAlias<Aliases, "evaluateResultFront">("evaluateResultFront");
-    pllTrainerElements.evaluateResult.expectedCubeBack
-      .getStringRepresentationOfCube()
-      .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
-    evaluateResultNavigateWrongVariant1();
-  });
-  cy.withOverallNameLogged({ message: "Type Of Wrong Page" }, () => {
-    cy.getAliases<Aliases>()
-      .then((aliases) =>
-        verifyKeysDefined(aliases, [
-          "previousEvaluateResultFront",
-          "previousEvaluateResultBack",
-          "evaluateResultFront",
-          "evaluateResultBack",
-        ])
-      )
-      .then(
-        ({
-          previousEvaluateResultFront,
-          previousEvaluateResultBack,
-          evaluateResultFront,
-          evaluateResultBack,
-        }) =>
-          TypeOfWrongPageNoSideEffects({
-            originalExpectedCubeFront: previousEvaluateResultFront,
-            originalExpectedCubeBack: previousEvaluateResultBack,
-            nextExpectedCubeFront: evaluateResultFront,
-            nextExpectedCubeBack: evaluateResultBack,
-          })
-      );
-  });
-  cy.withOverallNameLogged(
-    { message: "To Algorithm Driller Explanation Page" },
-    () => {
-      typeOfWrongPageNoMovesNavigateVariant1();
-      pickAlgorithmNavigateVariant2();
-    }
-  );
-  cy.withOverallNameLogged(
-    { message: "Algorithm Driller Explanation Page" },
-    () => {
-      cy.getAliases<Aliases>()
-        .then((aliases) => verifyKeysDefined(aliases, ["testCaseFront"]))
-        .then(({ testCaseFront }) =>
-          algorithmDrillerExplanationPageNoSideEffectsButScroll({
-            testCaseCube: testCaseFront,
-            defaultAlgorithmWasUsed: true,
-          })
-        );
-    }
-  );
-  cy.withOverallNameLogged(
-    { message: "To Algorithm Driller Status Page" },
-    () => {
-      algorithmDrillerExplanationPageNavigateVariant1();
-    }
-  );
-  cy.withOverallNameLogged({ message: "Algorithm Driller Status Page" }, () => {
-    cy.getAliases<Aliases>()
-      .then((aliases) =>
-        verifyKeysDefined(aliases, ["solvedFront", "solvedBack"])
-      )
-      .then((aliases) =>
-        algorithmDrillerStatusPageNoSideEffects({
-          expectedCubeStateWasNotSolvedBeforeThis: true,
-          ...aliases,
-        })
-      );
-  });
-  cy.withOverallNameLogged(
-    {
-      message:
-        "Complete Three Drills Successfully, ending at Algorithm Driller Success Page",
-    },
-    () => {
-      algorithmDrillerStatusPageNavigateVariant1();
-      fromGetReadyForTestThroughEvaluateResult({
-        cyClockAlreadyCalled: true,
-        keepClockOn: false,
-        milliseconds: 500,
-        resultType: "correct",
-        testRunningNavigator: testRunningNavigateVariant3,
-        evaluateResultCallback() {
-          pllTrainerElements.evaluateResult.expectedCubeFront
-            .getStringRepresentationOfCube()
-            .setAlias<Aliases, "evaluateResultFront">("evaluateResultFront");
-          pllTrainerElements.evaluateResult.expectedCubeBack
-            .getStringRepresentationOfCube()
-            .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
-        },
-        evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant2,
-      });
-      cy.withOverallNameLogged({ message: "After 1 success" }, () => {
-        cy.getAliases<Aliases>()
-          .then((aliases) =>
-            verifyKeysDefined(aliases, [
-              "evaluateResultFront",
-              "evaluateResultBack",
-            ])
-          )
-          .then(algorithmDrillerStatusPageAfter1SuccessNoSideEffects);
-      });
-      algorithmDrillerStatusPageNavigateVariant2();
-      fromGetReadyForTestThroughEvaluateResult({
-        cyClockAlreadyCalled: true,
-        keepClockOn: false,
-        milliseconds: 500,
-        resultType: "correct",
-        testRunningNavigator: testRunningNavigateVariant4,
-        evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant1,
-      });
-      cy.withOverallNameLogged(
-        { message: "After 2 successes" },
-        algorithmDrillerStatusPageAfter2SuccessesNoSideEffects
-      );
-      algorithmDrillerStatusPageNavigateVariant1();
-      fromGetReadyForTestThroughEvaluateResult({
-        cyClockAlreadyCalled: true,
-        keepClockOn: false,
-        milliseconds: 500,
-        resultType: "correct",
-        testRunningNavigator: testRunningNavigateVariant5,
-        evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant1,
-      });
-    }
-  );
-  cy.withOverallNameLogged(
-    { message: "Algorithm Driller Success Page" },
-    () => {
-      algorithmDrillerSuccessPageNoSideEffects();
-    }
-  );
-  cy.withOverallNameLogged({ message: "To Wrong Page" }, () => {
-    // Redo the same case so we don't go over the driller stuff etc.
-    cy.overrideNextTestCase(getCurrentTestCase());
-    algorithmDrillerSuccessPageNavigateVariant1();
-    fromGetReadyForTestThroughEvaluateResult({
-      cyClockAlreadyCalled: true,
-      keepClockOn: false,
-      milliseconds: 100,
-      resultType: "nearly there",
-      testRunningCallback() {
-        cy.overrideDisplayCubeAnnotations(true);
-        pllTrainerElements.testRunning.testCase
-          .getStringRepresentationOfCube()
-          .setAlias<Aliases, "testCaseFront">("testCaseFront");
-        cy.overrideCubeDisplayAngle("ubl");
-        pllTrainerElements.testRunning.testCase
-          .getStringRepresentationOfCube()
-          .setAlias<Aliases, "testCaseBack">("testCaseBack");
-        cy.overrideCubeDisplayAngle(null);
-        cy.overrideDisplayCubeAnnotations(null);
-      },
-    });
-  });
-  cy.withOverallNameLogged({ message: "Wrong Page" }, () => {
-    cy.getAliases<Aliases>()
-      .then((aliases) =>
-        verifyKeysDefined(aliases, ["testCaseFront", "testCaseBack"])
-      )
-      .then((aliases) => {
-        wrongPageNoSideEffects({
-          nearlyThereTypeOfWrongWasUsed: true,
-          ...aliases,
-        });
-      });
-  });
-});
-function verifyKeysDefined<Keys extends string, PickedKeys extends Keys>(
-  object: Partial<Record<Keys, string | undefined>>,
-  keys: PickedKeys[]
-): { [key in PickedKeys]: string } {
-  const result: { [key in PickedKeys]: string } = {} as {
-    [key in PickedKeys]: string;
-  };
-  for (const key of keys) {
-    const value: string | undefined = object[key];
-    if (value === undefined) {
-      throw new Error(`Key ${key} is not defined`);
-    }
-    result[key] = value;
-  }
-  return result;
-}
-
 function pickTargetParametersPageNoSideEffectsButScroll() {
   const elements = pllTrainerElements.pickTargetParametersPage;
 
@@ -2715,10 +2559,9 @@ function pickAlgorithmNavigateVariant2() {
   cy.getCurrentTestCase().then(([, currentPLL]) => {
     pllTrainerElements.pickAlgorithmPage.algorithmInput
       .get()
-      .type(
-        "{selectall}{backspace}" + pllToAlgorithmString[currentPLL] + "{enter}",
-        { delay: 0 }
-      );
+      .type("{selectall}{backspace}" + pllToAlgorithmString[currentPLL], {
+        delay: 0,
+      });
   });
   pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
   pllTrainerElements.pickAlgorithmPage.container.assertDoesntExist();
@@ -2868,7 +2711,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
         assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
         cy.assertNoHorizontalScrollbar();
 
-        cy.getCurrentTestCase().then(([, pll]) => {
+        cy.getCurrentTestCase().then(([preAUF, pll, postAUF]) => {
           elements.algorithmToDrill
             .get()
             .invoke("text")
@@ -2877,7 +2720,10 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                 /\s/g,
                 ""
               );
-              const defaultAlgorithm = pllToAlgorithmString[pll];
+              const defaultAlgorithm =
+                aufToAlgorithmString[preAUF] +
+                pllToAlgorithmString[pll] +
+                aufToAlgorithmString[postAUF];
               const sanitizedDefaultAlgorithm = defaultAlgorithm.replace(
                 /\(|\)|\s/g,
                 ""
@@ -2923,7 +2769,7 @@ function algorithmDrillerStatusPageNoSideEffects({
   solvedBack: string;
   // We are just adding this argument to make it clear what the requirements
   // are for the caller. That's also why only true is allowed
-  expectedCubeStateWasNotSolvedBeforeThis: true;
+  expectedCubeStateDidNotEqualSolvedJustBeforeThis: true;
 }) {
   const elements = pllTrainerElements.algorithmDrillerStatusPage;
 
@@ -3182,4 +3028,23 @@ function assertFunctioningFeedbackButtonShows() {
             .and("be.lessThan", 300);
         });
     });
+}
+
+function getVerifiedAliases<
+  Aliases extends { [key: string]: string },
+  Keys extends keyof Aliases
+>(keysToVerify: Keys[]): Cypress.Chainable<{ [key in Keys]: string }> {
+  return cy.getAliases<Aliases>().then((aliases) => {
+    const result: { [key in Keys]: string } = {} as {
+      [key in Keys]: string;
+    };
+    for (const key of keysToVerify) {
+      const value: string | undefined = aliases[key];
+      if (value === undefined) {
+        throw new Error(`Key ${key.toString()} is not defined`);
+      }
+      result[key] = value;
+    }
+    return result;
+  });
 }
