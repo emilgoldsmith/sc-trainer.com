@@ -140,6 +140,12 @@ declare namespace Cypress {
     ): void;
 
     /**
+     * The last 60ms will be passed with cy.tick to ensure any timers are fun from for
+     * example requestAnimationFrame
+     */
+    setSystemTimeWithLastFrameTicked(now: number): void;
+
+    /**
      * Presses a key in the "global scope", not focusing on any specific node
      *
      * @example
