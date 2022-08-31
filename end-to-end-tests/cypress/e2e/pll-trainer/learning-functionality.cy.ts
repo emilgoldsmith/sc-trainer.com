@@ -7,7 +7,6 @@ import {
   pllToAlgorithmString,
 } from "support/pll";
 import {
-  completePLLTestInMilliseconds,
   evaluateResultIgnoreTransitionsWaitTime,
   pllTrainerElements,
   pllTrainerStatesNewUser,
