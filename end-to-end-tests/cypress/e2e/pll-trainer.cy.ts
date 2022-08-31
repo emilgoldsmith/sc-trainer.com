@@ -2380,6 +2380,141 @@ function evaluateResultAfterIgnoringTransitionsNoSideEffects() {
   );
 }
 
+function evaluateResultTimeDependantNoSideEffects1(timeInMs: 1530) {
+  cy.withOverallNameLogged(
+    { message: "displays the time it was stopped at" },
+    () => {
+      pllTrainerElements.evaluateResult.timeResult
+        .get()
+        .should("have.text", "1.53");
+    }
+  );
+}
+
+function evaluateResultTimeDependantNoSideEffects2(timeInMs: 600) {
+  cy.withOverallNameLogged(
+    { message: "displays two decimals on whole decisecond" },
+    () => {
+      pllTrainerElements.evaluateResult.timeResult
+        .get()
+        .should("have.text", "0.60");
+    }
+  );
+}
+
+function evaluateResultTimeDependantNoSideEffects3(timeInMs: 1030) {
+  cy.withOverallNameLogged(
+    { message: "displays two decimals on single digit centisecond" },
+    () => {
+      pllTrainerElements.evaluateResult.timeResult
+        .get()
+        .should("have.text", "1.03");
+    }
+  );
+}
+
+function evaluateResultTimeDependantNoSideEffects4(timeInMs: 100) {
+  cy.withOverallNameLogged({ message: "handles low granularity: 0" }, () => {
+    pllTrainerElements.evaluateResult.timeResult
+      .get()
+      .should("have.text", "0.10");
+  });
+}
+
+function evaluateResultTimeDependantNoSideEffects5(timeInMs: 110) {
+  cy.withOverallNameLogged({ message: "handles low granularity: 1" }, () => {
+    pllTrainerElements.evaluateResult.timeResult
+      .get()
+      .should("have.text", "0.11");
+  });
+}
+
+function evaluateResultTimeDependantNoSideEffects6(timeInMs: 120) {
+  cy.withOverallNameLogged({ message: "handles low granularity: 2" }, () => {
+    pllTrainerElements.evaluateResult.timeResult
+      .get()
+      .should("have.text", "0.12");
+  });
+}
+
+/**
+ * The timestamp represents 12:34:56.78, and was calculated as follows:
+ * 1000 * 60 * 60 * 12 + 1000 * 60 * 34 + 1000 * 56 + 780
+ */
+function evaluateResultTimeDependantNoSideEffects7(timeInMs: 45296780) {
+  const elements = pllTrainerElements.evaluateResult;
+
+  ([
+    [
+      "displays the very large time correctly",
+      () => {
+        pllTrainerElements.evaluateResult.timeResult
+          .get()
+          .should("have.text", "12:34:56.78");
+      },
+    ],
+    [
+      "displays everything nicely and correctly even with very large time",
+      () => {
+        cy.assertNoHorizontalScrollbar();
+        cy.assertNoVerticalScrollbar();
+        const minDimension = Math.min(
+          Cypress.config().viewportWidth,
+          Cypress.config().viewportHeight
+        );
+        [
+          pllTrainerElements.evaluateResult.expectedCubeFront,
+          pllTrainerElements.evaluateResult.expectedCubeBack,
+        ].forEach((cubeElement) =>
+          cubeElement.get().should((jqueryCube) => {
+            expect(
+              jqueryCube.width(),
+              "cube width to fill at least a quarter of min dimension"
+            ).to.be.at.least(minDimension / 4);
+            expect(
+              jqueryCube.height(),
+              "cube height to fill at least a quarter of min dimension"
+            ).to.be.at.least(minDimension / 4);
+            expect(
+              jqueryCube.height(),
+              "cube height to fill at most half of screen height"
+            ).to.be.at.most(Cypress.config().viewportHeight / 2);
+          })
+        );
+        pllTrainerElements.evaluateResult.timeResult
+          .get()
+          .should((timerElement) => {
+            expect(
+              timerElement.height(),
+              "time result height at least 10% of min dimension"
+            ).to.be.at.least(minDimension / 10);
+            expect(
+              timerElement.height(),
+              "time result at most a third of screen height"
+            ).to.be.at.most(Cypress.config().viewportHeight / 3);
+          });
+        [
+          pllTrainerElements.evaluateResult.correctButton,
+          pllTrainerElements.evaluateResult.wrongButton,
+        ].forEach((buttonGetter) => {
+          buttonGetter.get().should((buttonElement) => {
+            expect(
+              buttonElement.height(),
+              "button height at least 5% of min dimension"
+            ).to.be.at.least(minDimension / 20);
+            expect(
+              buttonElement.height(),
+              "button height at most a third of screen height"
+            ).to.be.at.most(Cypress.config().viewportHeight / 3);
+          });
+        });
+      },
+    ],
+  ] as const).forEach(([testDescription, testFunction]) =>
+    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  );
+}
+
 function evaluateResultNavigateCorrectVariant1() {
   pllTrainerElements.evaluateResult.correctButton.get().click();
   pllTrainerElements.evaluateResult.container.assertDoesntExist();
