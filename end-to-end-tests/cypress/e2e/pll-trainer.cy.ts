@@ -70,7 +70,7 @@ describe("PLL Trainer", function () {
           pllTrainerElements.recurringUserStartPage.container.waitFor();
           cy.overrideNextTestCase(testCase);
           cy.clock();
-          newUserStartPageBeginNavigateVariant1();
+          newUserStartPageBeginNavigateVariant2();
           // No new case page here
           pllTrainerElements.getReadyState.container.waitFor();
           cy.tick(getReadyWaitTime);
@@ -107,6 +107,7 @@ describe("PLL Trainer", function () {
           startingState: "doNewVisit",
           endingState: "pickAlgorithmPage",
           startPageCallback: () => {
+            newUserStartPageNoSideEffectsButScroll();
             pllTrainerElements.newUserStartPage.cubeStartState
               .getStringRepresentationOfCube()
               .setAlias<Aliases, "solvedFront">("solvedFront");
@@ -194,6 +195,7 @@ describe("PLL Trainer", function () {
           startingState: "doNewVisit",
           forceTestCase: [AUF.none, PLL.Gc, AUF.U2],
           endingState: "algorithmDrillerExplanationPage",
+          getReadyCallback: getReadyStateNoSideEffectsButScroll,
         });
 
         pllTrainerElements.algorithmDrillerExplanationPage.correctText.assertShows();
@@ -291,9 +293,7 @@ describe("PLL Trainer", function () {
         assertItsNewUserNotRecurringUserStartPage();
 
         // Go back to target parameters to assert that it preserves it within a session
-        pllTrainerElements.newUserStartPage.editTargetParametersButton
-          .get()
-          .click();
+        newUserStartPageEditTargetParamsNavigateVariant1();
         pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
           .get()
           .should("have.value", recognitionTime);
@@ -303,7 +303,7 @@ describe("PLL Trainer", function () {
         pickTargetParametersNavigateVariant3();
         newUserStartPageBeginNavigateVariant1();
         cy.clock();
-        newCasePageNavigateVariant1();
+        newCasePageNavigateVariant2();
         fromGetReadyForTestThroughEvaluateResult({
           cyClockAlreadyCalled: true,
           keepClockOn: false,
@@ -334,9 +334,7 @@ describe("PLL Trainer", function () {
         assertItsRecurringUserNotNewUserStartPage();
 
         // Assert that the target parameters are persisted across sessions
-        pllTrainerElements.recurringUserStartPage.editTargetParametersButton
-          .get()
-          .click();
+        newUserStartPageEditTargetParamsNavigateVariant1();
         pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
           .get()
           .should("have.value", recognitionTime);
@@ -468,8 +466,9 @@ describe("PLL Trainer", function () {
       pickTargetParametersNavigateVariant1();
       assertItsNewUserNotRecurringUserStartPage();
       newUserStartPageBeginNavigateVariant1();
+      newCasePageNoSideEffectsButScroll();
       cy.clock();
-      newCasePageNavigateVariant1();
+      newCasePageNavigateVariant2();
       fromGetReadyForTestThroughEvaluateResult({
         cyClockAlreadyCalled: true,
         keepClockOn: false,
@@ -498,12 +497,12 @@ describe("PLL Trainer", function () {
       cy.setLocalStorage(fullyPopulatedLocalStorage);
     });
 
-    it("shows the recurring user start page, and doesn't show new case page on first attempt", function () {
+    it("shows the recurring user start page, navigates correctly to edit target parameters, and doesn't show new case page on first attempt", function () {
       cy.visit(paths.pllTrainer);
-      cy.withOverallNameLogged(
-        { message: "Done User Start Page" },
-        recurringUserStartPageNoSideEffectsButScroll
-      );
+      recurringUserStartPageNoSideEffectsButScroll();
+      recurringUserStartPageEditTargetParamsNavigateVariant1();
+      pllTrainerElements.pickTargetParametersPage.container.assertShows();
+      pickTargetParametersNavigateVariant3();
       recurringUserStartPageNavigateVariant1();
       pllTrainerElements.getReadyState.container.assertShows();
     });
@@ -525,7 +524,7 @@ describe("PLL Trainer", function () {
         .setAlias<Aliases, "solvedBack">("solvedBack");
       cy.overrideCubeDisplayAngle(null);
       cy.clock();
-      recurringUserStartPageNavigateVariant1();
+      recurringUserStartPageNavigateVariant2();
       pllTrainerElements.getReadyState.container.assertShows();
       cy.tick(getReadyWaitTime);
       pllTrainerElements.testRunning.container.waitFor();
@@ -1912,187 +1911,260 @@ function testPickTargetParametersOnlySubmitsWithNoErrors(submit: () => void) {
 
 function newUserStartPageNoSideEffectsButScroll() {
   const elements = pllTrainerElements.newUserStartPage;
+  cy.withOverallNameLogged(
+    { message: "newUserStartPageNoSideEffectsButScroll" },
+    () => {
+      ([
+        [
+          "looks right",
+          () => {
+            // These elements should all display without scrolling
+            elements.welcomeText.assertShows();
+            elements.welcomeText.assertContainedByWindow();
+            // These ones we accept possibly having to scroll for so just check it exists
+            // We check it's visibility including scroll in the element sizing
+            elements.assertAllConsumableViaVerticalScroll(
+              elements.container.specifier
+            );
 
-  ([
-    [
-      "looks right",
-      () => {
-        // These elements should all display without scrolling
-        elements.welcomeText.assertShows();
-        elements.welcomeText.assertContainedByWindow();
-        // These ones we accept possibly having to scroll for so just check it exists
-        // We check it's visibility including scroll in the element sizing
-        elements.assertAllConsumableViaVerticalScroll(
-          elements.container.specifier
-        );
+            // A smoke test that we have added some links for the cubing terms
+            elements.container.get().within(() => {
+              cy.get("a").should("have.length.above", 0);
+            });
 
-        // A smoke test that we have added some links for the cubing terms
-        elements.container.get().within(() => {
-          cy.get("a").should("have.length.above", 0);
-        });
-
-        cy.assertNoHorizontalScrollbar();
-      },
-    ],
-    [
-      "doesn't start test when pressing other keys than space",
-      () => {
-        cy.pressKey(Key.a);
-        elements.container.assertShows();
-        cy.pressKey(Key.x);
-        elements.container.assertShows();
-        cy.pressKey(Key.capsLock);
-        elements.container.assertShows();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+            cy.assertNoHorizontalScrollbar();
+          },
+        ],
+        [
+          "doesn't start test when pressing other keys than space",
+          () => {
+            cy.pressKey(Key.a);
+            elements.container.assertShows();
+            cy.pressKey(Key.x);
+            elements.container.assertShows();
+            cy.pressKey(Key.capsLock);
+            elements.container.assertShows();
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
 function assertItsNewUserNotRecurringUserStartPage() {
-  pllTrainerElements.newUserStartPage.welcomeText.get().should("exist");
-  pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "assertItsNewUserNotRecurringUserStartPage" },
+    () => {
+      pllTrainerElements.newUserStartPage.welcomeText.get().should("exist");
+      pllTrainerElements.recurringUserStartPage.averageTime.assertDoesntExist();
+    }
+  );
 }
 
 function assertItsRecurringUserNotNewUserStartPage() {
-  pllTrainerElements.newUserStartPage.welcomeText.assertDoesntExist();
-  pllTrainerElements.recurringUserStartPage.averageTime.get().should("exist");
+  cy.withOverallNameLogged(
+    { message: "assertItsRecurringUserNotNewUserStartPage" },
+    () => {
+      pllTrainerElements.newUserStartPage.welcomeText.assertDoesntExist();
+      pllTrainerElements.recurringUserStartPage.averageTime
+        .get()
+        .should("exist");
+    }
+  );
 }
 
 function newUserStartPageBeginNavigateVariant1() {
-  pllTrainerElements.newUserStartPage.startButton.get().click();
-  pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "newUserStartPageBeginNavigateVariant1" },
+    () => {
+      pllTrainerElements.newUserStartPage.startButton.get().click();
+      pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function newUserStartPageBeginNavigateVariant2() {
-  cy.pressKey(Key.space);
-  pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "newUserStartPageBeginNavigateVariant2" },
+    () => {
+      pllTrainerElements.newUserStartPage.container.waitFor();
+      cy.pressKey(Key.space);
+      pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function newUserStartPageEditTargetParamsNavigateVariant1() {
-  pllTrainerElements.newUserStartPage.editTargetParametersButton.get().click();
-  pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "newUserStartPageEditTargetParamsNavigateVariant1" },
+    () => {
+      pllTrainerElements.newUserStartPage.editTargetParametersButton
+        .get()
+        .click();
+      pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function recurringUserStartPageNoSideEffectsButScroll() {
   const elements = pllTrainerElements.recurringUserStartPage;
 
-  ([
-    [
-      "looks right",
-      () => {
-        // These elements should all display without scrolling
+  cy.withOverallNameLogged(
+    { message: "recurringUserStartPageNoSideEffects" },
+    () => {
+      ([
         [
-          pllTrainerElements.recurringUserStartPage.numCasesTried,
-          pllTrainerElements.recurringUserStartPage.numCasesNotYetTried,
-          pllTrainerElements.recurringUserStartPage.worstThreeCases,
-          pllTrainerElements.recurringUserStartPage.averageTPS,
-          pllTrainerElements.recurringUserStartPage.averageTime,
-        ].forEach((x) => {
-          x.assertShows();
-          x.assertContainedByWindow();
-        });
-        elements.assertAllConsumableViaVerticalScroll(
-          elements.container.specifier
-        );
-        cy.assertNoHorizontalScrollbar();
-        // A smoke test that we have added some links for the cubing terms
-        pllTrainerElements.recurringUserStartPage.container.get().within(() => {
-          cy.get("a").should("have.length.above", 0);
-        });
-      },
-    ],
-    [
-      "doesn't start test when pressing other keys than space",
-      () => {
-        cy.pressKey(Key.a);
-        elements.container.assertShows();
-        cy.pressKey(Key.x);
-        elements.container.assertShows();
-        cy.pressKey(Key.capsLock);
-        elements.container.assertShows();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+          "looks right",
+          () => {
+            // These elements should all display without scrolling
+            [
+              pllTrainerElements.recurringUserStartPage.numCasesTried,
+              pllTrainerElements.recurringUserStartPage.numCasesNotYetTried,
+              pllTrainerElements.recurringUserStartPage.worstThreeCases,
+              pllTrainerElements.recurringUserStartPage.averageTPS,
+              pllTrainerElements.recurringUserStartPage.averageTime,
+            ].forEach((x) => {
+              x.assertShows();
+              x.assertContainedByWindow();
+            });
+            elements.assertAllConsumableViaVerticalScroll(
+              elements.container.specifier
+            );
+            cy.assertNoHorizontalScrollbar();
+            // A smoke test that we have added some links for the cubing terms
+            pllTrainerElements.recurringUserStartPage.container
+              .get()
+              .within(() => {
+                cy.get("a").should("have.length.above", 0);
+              });
+          },
+        ],
+        [
+          "doesn't start test when pressing other keys than space",
+          () => {
+            cy.pressKey(Key.a);
+            elements.container.assertShows();
+            cy.pressKey(Key.x);
+            elements.container.assertShows();
+            cy.pressKey(Key.capsLock);
+            elements.container.assertShows();
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
 function recurringUserStartPageNavigateVariant1() {
-  pllTrainerElements.recurringUserStartPage.startButton.get().click();
-  pllTrainerElements.recurringUserStartPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "recurringUserStartPageNavigateVariant1" },
+    () => {
+      pllTrainerElements.recurringUserStartPage.startButton.get().click();
+      pllTrainerElements.recurringUserStartPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function recurringUserStartPageNavigateVariant2() {
-  cy.pressKey(Key.space);
-  pllTrainerElements.recurringUserStartPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "recurringUserStartPageNavigateVariant2" },
+    () => {
+      cy.pressKey(Key.space);
+      pllTrainerElements.recurringUserStartPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function recurringUserStartPageEditTargetParamsNavigateVariant1() {
-  pllTrainerElements.newUserStartPage.editTargetParametersButton.get().click();
-  pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "recurringUserStartPageEditTargetParamsNavigateVariant1" },
+    () => {
+      pllTrainerElements.newUserStartPage.editTargetParametersButton
+        .get()
+        .click();
+      pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function newCasePageNoSideEffectsButScroll() {
   const elements = pllTrainerElements.newCasePage;
 
-  ([
-    [
-      "looks right",
-      () => {
-        elements.assertAllShow();
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
-      },
-    ],
-    [
-      "doesn't start test when pressing other keys than space",
-      () => {
-        cy.pressKey(Key.a);
-        elements.container.assertShows();
-        cy.pressKey(Key.x);
-        elements.container.assertShows();
-        cy.pressKey(Key.capsLock);
-        elements.container.assertShows();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  cy.withOverallNameLogged(
+    { message: "newCasePageNoSideEffectsButScroll" },
+    () => {
+      ([
+        [
+          "looks right",
+          () => {
+            elements.assertAllShow();
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
+          },
+        ],
+        [
+          "doesn't start test when pressing other keys than space",
+          () => {
+            cy.pressKey(Key.a);
+            elements.container.assertShows();
+            cy.pressKey(Key.x);
+            elements.container.assertShows();
+            cy.pressKey(Key.capsLock);
+            elements.container.assertShows();
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
 function newCasePageNavigateVariant1() {
-  pllTrainerElements.newCasePage.startTestButton.get().click();
-  pllTrainerElements.newCasePage.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "newCasePageNavigateVariant1" }, () => {
+    pllTrainerElements.newCasePage.startTestButton.get().click();
+    pllTrainerElements.newCasePage.container.assertDoesntExist();
+  });
 }
 
 function newCasePageNavigateVariant2() {
-  cy.pressKey(Key.space);
-  pllTrainerElements.newCasePage.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "newCasePageNavigateVariant2" }, () => {
+    pllTrainerElements.newCasePage.container.waitFor();
+    cy.pressKey(Key.space);
+    pllTrainerElements.newCasePage.container.assertDoesntExist();
+  });
 }
 
 function getReadyStateNoSideEffectsButScroll() {
   const elements = pllTrainerElements.getReadyState;
 
-  ([
-    [
-      "looks right",
-      () => {
-        elements.container.assertShows();
-        elements.getReadyOverlay.assertShows();
-        elements.getReadyExplanation.assertShows();
-        // Since they are behind the overlay they don't actually show, so we just assert
-        // they are contained by the window instead
-        elements.timer.assertContainedByWindow();
-        elements.cubePlaceholder.assertContainedByWindow();
+  cy.withOverallNameLogged(
+    { message: "getReadyStateNoSideEffectsButScroll" },
+    () => {
+      ([
+        [
+          "looks right",
+          () => {
+            elements.container.assertShows();
+            elements.getReadyOverlay.assertShows();
+            elements.getReadyExplanation.assertShows();
+            // Since they are behind the overlay they don't actually show, so we just assert
+            // they are contained by the window instead
+            elements.timer.assertContainedByWindow();
+            elements.cubePlaceholder.assertContainedByWindow();
 
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
