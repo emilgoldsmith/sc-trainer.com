@@ -668,6 +668,7 @@ export function completePLLTestInMilliseconds(
     overrideDefaultAlgorithm?: string;
     startPageCallback?: () => void;
     newCasePageCallback?: () => void;
+    getReadyCallback?: () => void;
     testRunningCallback?: () => void;
     evaluateResultCallback?: () => void;
   } & (
@@ -706,6 +707,7 @@ export function completePLLTestInMilliseconds(
     endingState,
     startPageCallback,
     newCasePageCallback,
+    getReadyCallback,
     testRunningCallback,
     evaluateResultCallback,
   } = params;
@@ -772,6 +774,7 @@ export function completePLLTestInMilliseconds(
     milliseconds,
     resultType: correct ? "correct" : "unrecoverable",
     endingState: endingState === "testRunning" ? "testRunning" : undefined,
+    ...(getReadyCallback === undefined ? {} : { getReadyCallback }),
     ...(testRunningCallback === undefined ? {} : { testRunningCallback }),
     ...(evaluateResultCallback === undefined ? {} : { evaluateResultCallback }),
   });
@@ -830,6 +833,7 @@ export function fromGetReadyForTestThroughEvaluateResult(
     keepClockOn: boolean;
     milliseconds: number;
     endingState?: "testRunning" | undefined;
+    getReadyCallback?: () => void;
     testRunningCallback?: () => void;
     evaluateResultCallback?: () => void;
     testRunningNavigator?: () => void;
@@ -846,6 +850,7 @@ export function fromGetReadyForTestThroughEvaluateResult(
 ): void {
   const {
     milliseconds,
+    getReadyCallback,
     testRunningCallback,
     evaluateResultCallback,
     testRunningNavigator,
@@ -856,6 +861,7 @@ export function fromGetReadyForTestThroughEvaluateResult(
   const { stateAttributeValues } = pllTrainerElements.root;
 
   pllTrainerElements.getReadyState.container.waitFor();
+  getReadyCallback?.();
   cy.tick(getReadyWaitTime);
   pllTrainerElements.testRunning.container.waitFor();
   cy.tick(milliseconds);
