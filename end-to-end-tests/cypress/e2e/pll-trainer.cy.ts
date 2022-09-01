@@ -21,7 +21,6 @@ import {
 import {
   completePLLTestInMilliseconds,
   evaluateResultIgnoreTransitionsWaitTime,
-  fromGetReadyForTestThroughEvaluateResult,
   getReadyWaitTime,
   pllTrainerElements,
 } from "./pll-trainer/state-and-elements";
@@ -103,6 +102,7 @@ describe("PLL Trainer", function () {
         };
         completePLLTestInMilliseconds(500, {
           correct: false,
+          wrongType: "nearly there",
           forceTestCase: [AUF.U, PLL.Gb, AUF.UPrime],
           startingState: "doNewVisit",
           endingState: "pickAlgorithmPage",
@@ -171,6 +171,7 @@ describe("PLL Trainer", function () {
 
         completePLLTestInMilliseconds(500, {
           correct: false,
+          wrongType: "nearly there",
           startingState: "algorithmDrillerStatusPage",
         });
         algorithmDrillerStatusPageAfter1Success1FailureNoSideEffects();
@@ -218,6 +219,7 @@ describe("PLL Trainer", function () {
         // and a slow correct test, in order to ensure this is true for both cases
         completePLLTestInMilliseconds(500, {
           correct: false,
+          wrongType: "nearly there",
           startingState: "correctPage",
           forceTestCase: [firstPreAUF, pll, differentNotNonePostAUF],
           endingState: "algorithmDrillerExplanationPage",
@@ -234,6 +236,7 @@ describe("PLL Trainer", function () {
 
         completePLLTestInMilliseconds(500, {
           correct: false,
+          wrongType: "nearly there",
           startingState: "doNewVisit",
           forceTestCase: [firstPreAUF, pll, AUF.none],
           endingState: "wrongPage",
@@ -288,7 +291,7 @@ describe("PLL Trainer", function () {
         pllTrainerElements.pickTargetParametersPage.targetTPSInput
           .get()
           .type("{selectall}{backspace}" + tps);
-        pickTargetParametersNavigateVariant2();
+        pickTargetParametersNavigateVariant1();
 
         assertItsNewUserNotRecurringUserStartPage();
 
@@ -300,15 +303,11 @@ describe("PLL Trainer", function () {
         pllTrainerElements.pickTargetParametersPage.targetTPSInput
           .get()
           .should("have.value", tps);
-        pickTargetParametersNavigateVariant3();
-        newUserStartPageBeginNavigateVariant1();
-        cy.clock();
-        newCasePageNavigateVariant2();
-        fromGetReadyForTestThroughEvaluateResult({
-          cyClockAlreadyCalled: true,
-          keepClockOn: false,
-          milliseconds: 500,
-          resultType: "unrecoverable",
+        completePLLTestInMilliseconds(500, {
+          correct: false,
+          wrongType: "unrecoverable",
+          startingState: "pickTargetParametersPage",
+          endingState: "pickAlgorithmPage",
         });
 
         // We should now be at pick algorithm page and not have recorded the result yet.
@@ -317,16 +316,12 @@ describe("PLL Trainer", function () {
         assertItsNewUserNotRecurringUserStartPage();
 
         // Complete a test
-        newUserStartPageBeginNavigateVariant1();
-        cy.clock();
-        newCasePageNavigateVariant1();
-        fromGetReadyForTestThroughEvaluateResult({
-          cyClockAlreadyCalled: true,
-          keepClockOn: false,
-          milliseconds: 500,
-          resultType: "unrecoverable",
+        completePLLTestInMilliseconds(500, {
+          correct: false,
+          wrongType: "unrecoverable",
+          startingState: "startPage",
+          endingState: "pickAlgorithmPage",
         });
-        cy.clock().invoke("restore");
         pickAlgorithmNavigateVariant1();
 
         cy.visit(paths.pllTrainer);
@@ -351,6 +346,7 @@ describe("PLL Trainer", function () {
         correct: true,
         startingState: "doNewVisit",
         endingState: "correctPage",
+        pickTargetParametersNavigator: pickTargetParametersNavigateVariant2,
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertShows();
         },
@@ -462,31 +458,22 @@ describe("PLL Trainer", function () {
     it("passes pick target parameters page with default values, shows new user start page, and doesn't display algorithm picker for apps generated cases whether solve was correct or wrong as in this case algorithms have already been picked", function () {
       cy.setLocalStorage(allPLLsPickedLocalStorage);
       // Correct path:
-      cy.visit(paths.pllTrainer);
-      pickTargetParametersNavigateVariant1();
-      assertItsNewUserNotRecurringUserStartPage();
-      newUserStartPageBeginNavigateVariant1();
-      newCasePageNoSideEffectsButScroll();
-      cy.clock();
-      newCasePageNavigateVariant2();
-      fromGetReadyForTestThroughEvaluateResult({
-        cyClockAlreadyCalled: true,
-        keepClockOn: false,
-        milliseconds: 500,
-        resultType: "correct",
+      completePLLTestInMilliseconds(500, {
+        correct: true,
+        startingState: "doNewVisit",
+        startPageCallback: assertItsNewUserNotRecurringUserStartPage,
+        newCasePageCallback: newCasePageNoSideEffectsButScroll,
+        newCasePageNavigator: newCasePageNavigateVariant2,
+        endingState: "correctPage",
       });
       pllTrainerElements.correctPage.container.assertShows();
 
       // Wrong path:
-      cy.visit(paths.pllTrainer);
-      newUserStartPageBeginNavigateVariant1();
-      cy.clock();
-      newCasePageNavigateVariant1();
-      fromGetReadyForTestThroughEvaluateResult({
-        cyClockAlreadyCalled: true,
-        keepClockOn: false,
-        milliseconds: 500,
-        resultType: "unrecoverable",
+      completePLLTestInMilliseconds(500, {
+        correct: false,
+        wrongType: "unrecoverable",
+        startingState: "doNewVisit",
+        endingState: "algorithmDrillerExplanationPage",
       });
       pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
     });
@@ -748,6 +735,7 @@ describe("PLL Trainer", function () {
       completePLLTestInMilliseconds(2000, {
         forceTestCase: [AUF.U2, PLL.Aa, AUF.UPrime],
         correct: false,
+        wrongType: "nearly there",
         startingState: "startPage",
       });
       cy.visit(paths.pllTrainer);
@@ -1122,6 +1110,7 @@ describe("PLL Trainer", function () {
       completePLLTestInMilliseconds(2000, {
         forceTestCase: [AUF.none, PLL.Ab, AUF.none],
         correct: false,
+        wrongType: "nearly there",
         startingState: "startPage",
       });
       cy.visit(paths.pllTrainer);

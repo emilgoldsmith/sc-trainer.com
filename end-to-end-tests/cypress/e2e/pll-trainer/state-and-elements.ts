@@ -666,11 +666,16 @@ export function completePLLTestInMilliseconds(
       | "algorithmDrillerExplanationPage"
       | "algorithmDrillerStatusPage";
     overrideDefaultAlgorithm?: string;
+    pickTargetParametersNavigator?: () => void;
     startPageCallback?: () => void;
     newCasePageCallback?: () => void;
+    newCasePageNavigator?: () => void;
     getReadyCallback?: () => void;
     testRunningCallback?: () => void;
+    testRunningNavigator?: () => void;
     evaluateResultCallback?: () => void;
+    evaluateResultCorrectNavigator?: () => void;
+    evaluateResultWrongNavigator?: () => void;
   } & (
     | {
         correct: true;
@@ -678,7 +683,10 @@ export function completePLLTestInMilliseconds(
         algorithmDrillerExplanationPageCallback?: () => void;
         algorithmDrillerStatusPageCallback?: () => void;
       }
-    | ({ correct: false } & (
+    | ({
+        correct: false;
+        wrongType: "unrecoverable" | "nearly there" | "no moves made";
+      } & (
         | {
             wrongPageCallback?: () => void;
             algorithmDrillerExplanationPageCallback?: never;
@@ -705,11 +713,16 @@ export function completePLLTestInMilliseconds(
     overrideDefaultAlgorithm,
     startingState,
     endingState,
+    pickTargetParametersNavigator,
     startPageCallback,
     newCasePageCallback,
+    newCasePageNavigator,
     getReadyCallback,
     testRunningCallback,
+    testRunningNavigator,
     evaluateResultCallback,
+    evaluateResultCorrectNavigator,
+    evaluateResultWrongNavigator,
   } = params;
   const { stateAttributeValues } = pllTrainerElements.root;
 
@@ -728,7 +741,11 @@ export function completePLLTestInMilliseconds(
       }
     });
   } else if (startingState === "pickTargetParametersPage") {
-    pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
+    (
+      pickTargetParametersNavigator ??
+      (() =>
+        pllTrainerElements.pickTargetParametersPage.submitButton.get().click())
+    )();
   } else if (startingState !== "startPage") {
     atStartPage = false;
   }
@@ -765,19 +782,53 @@ export function completePLLTestInMilliseconds(
     // it doesn't display
     newCasePageCallback?.();
     if (stateValue === stateAttributeValues.newCasePage) {
-      pllTrainerElements.newCasePage.startTestButton.get().click();
+      (
+        newCasePageNavigator ??
+        (() => pllTrainerElements.newCasePage.startTestButton.get().click())
+      )();
     }
   });
-  fromGetReadyForTestThroughEvaluateResult({
-    cyClockAlreadyCalled: true,
-    keepClockOn: false,
-    milliseconds,
-    resultType: correct ? "correct" : "unrecoverable",
-    endingState: endingState === "testRunning" ? "testRunning" : undefined,
-    ...(getReadyCallback === undefined ? {} : { getReadyCallback }),
-    ...(testRunningCallback === undefined ? {} : { testRunningCallback }),
-    ...(evaluateResultCallback === undefined ? {} : { evaluateResultCallback }),
-  });
+
+  pllTrainerElements.getReadyState.container.waitFor();
+  getReadyCallback?.();
+  cy.tick(getReadyWaitTime);
+  pllTrainerElements.testRunning.container.waitFor();
+  cy.tick(milliseconds);
+  testRunningCallback?.();
+  if (endingState === "testRunning") {
+    cy.clock().invoke("restore");
+    return;
+  }
+  (testRunningNavigator ?? (() => cy.mouseClickScreen("center")))();
+  pllTrainerElements.evaluateResult.container.waitFor();
+  cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+  cy.clock().invoke("restore");
+  evaluateResultCallback?.();
+  if (correct) {
+    (
+      evaluateResultCorrectNavigator ??
+      (() => pllTrainerElements.evaluateResult.correctButton.get().click())
+    )();
+    pllTrainerElements.root.waitForStateChangeAwayFrom(
+      stateAttributeValues.evaluateResultPage
+    );
+  } else {
+    (
+      evaluateResultWrongNavigator ??
+      (() => pllTrainerElements.evaluateResult.wrongButton.get().click())
+    )();
+    if (params.wrongType === "unrecoverable") {
+      pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+    } else if (params.wrongType === "nearly there") {
+      pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
+    } else {
+      pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
+    }
+    pllTrainerElements.root.waitForStateChangeAwayFrom(
+      stateAttributeValues.typeOfWrongPage
+    );
+  }
+
   if (endingState === "pickAlgorithmPage") return;
   pllTrainerElements.root
     .getStateAttributeValue()
@@ -823,80 +874,5 @@ export function completePLLTestInMilliseconds(
       .click();
     pllTrainerElements.algorithmDrillerStatusPage.container.waitFor();
     params.algorithmDrillerStatusPageCallback?.();
-  }
-}
-
-export function fromGetReadyForTestThroughEvaluateResult(
-  params: {
-    // This is just for communication about requirements to caller
-    cyClockAlreadyCalled: true;
-    keepClockOn: boolean;
-    milliseconds: number;
-    endingState?: "testRunning" | undefined;
-    getReadyCallback?: () => void;
-    testRunningCallback?: () => void;
-    evaluateResultCallback?: () => void;
-    testRunningNavigator?: () => void;
-  } & (
-    | {
-        resultType: "correct";
-        evaluateResultCorrectNavigator?: () => void;
-      }
-    | {
-        resultType: "unrecoverable" | "nearly there" | "no moves made";
-        evaluateResultWrongNavigator?: () => void;
-      }
-  )
-): void {
-  const {
-    milliseconds,
-    getReadyCallback,
-    testRunningCallback,
-    evaluateResultCallback,
-    testRunningNavigator,
-    resultType,
-    keepClockOn,
-    endingState,
-  } = params;
-  const { stateAttributeValues } = pllTrainerElements.root;
-
-  pllTrainerElements.getReadyState.container.waitFor();
-  getReadyCallback?.();
-  cy.tick(getReadyWaitTime);
-  pllTrainerElements.testRunning.container.waitFor();
-  cy.tick(milliseconds);
-  testRunningCallback?.();
-  if (endingState === "testRunning") {
-    if (!keepClockOn) cy.clock().invoke("restore");
-    return;
-  }
-  (testRunningNavigator ?? (() => cy.mouseClickScreen("center")))();
-  pllTrainerElements.evaluateResult.container.waitFor();
-  cy.tick(evaluateResultIgnoreTransitionsWaitTime);
-  if (!keepClockOn) cy.clock().invoke("restore");
-  evaluateResultCallback?.();
-  if (resultType === "correct") {
-    (
-      params.evaluateResultCorrectNavigator ??
-      (() => pllTrainerElements.evaluateResult.correctButton.get().click())
-    )();
-    pllTrainerElements.root.waitForStateChangeAwayFrom(
-      stateAttributeValues.evaluateResultPage
-    );
-  } else {
-    (
-      params.evaluateResultWrongNavigator ??
-      (() => pllTrainerElements.evaluateResult.wrongButton.get().click())
-    )();
-    if (resultType === "unrecoverable") {
-      pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
-    } else if (resultType === "nearly there") {
-      pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
-    } else {
-      pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
-    }
-    pllTrainerElements.root.waitForStateChangeAwayFrom(
-      stateAttributeValues.typeOfWrongPage
-    );
   }
 }
