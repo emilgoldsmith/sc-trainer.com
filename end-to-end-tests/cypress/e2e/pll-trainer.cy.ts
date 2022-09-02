@@ -522,7 +522,7 @@ describe("PLL Trainer", function () {
 
       // Wrong path:
       // Note that the time won't be 500 as we're using a changing clock variant
-      // of the test running navigator
+      // of the test running navigator, and test running assertions with time side effects
       completePLLTestInMilliseconds(500, {
         correct: false,
         wrongType: "unrecoverable",
@@ -1291,7 +1291,7 @@ describe("PLL Trainer", function () {
       return l.reduce((a, b) => a + b) / l.length;
     }
 
-    it("correctly ignores y rotations at beginning and end of algorithm as this can be dealt with through AUFs", function () {
+    it("correctly ignores y rotations at beginning and end of algorithm during stats calculations as this can be dealt with through AUFs", function () {
       type Aliases = {
         unmodified: string;
         modified: string;
@@ -1335,9 +1335,123 @@ describe("PLL Trainer", function () {
         );
       });
     });
+    it("correctly calculates the TPS of the first attempt on a case, even though we don't know which AUF was used until the algorithm is input", function () {
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Ua,
+        // Standard slice algorithm
+        algorithm: "M2 U M' U2 M U M2",
+      });
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Ua,
+        // An algorithm with a different preAUF but same postAUF
+        algorithm: "R2 U' R2 S R2 S' U R2",
+      });
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Gc,
+        // Emil's main Gc algorithm (maybe standard?)
+        algorithm: "R2 U' R U' R U R' U R2 D' U R U' R' D",
+      });
+      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll: PLL.Gc,
+        // An algorithm with a different postAUF but same preAUF
+        algorithm: "R2' Uw' R U' R U R' Uw R2 y R U' R' y'",
+      });
+
+      function assertFirstAttemptIsCalculatedSameAsSecondAttempt({
+        pll,
+        algorithm,
+      }: {
+        pll: PLL;
+        algorithm: string;
+      }) {
+        type Aliases = {
+          cubeBeforeAlgorithmPicked: string;
+          statsAfterFirstTest: string;
+          cubeAfterAlgorithmPicked: string;
+          statsAfterSecondTest: string;
+        };
+        const testResultTime = 1000;
+        const aufOnTheAppsDefaultAlgorithm = [AUF.none, AUF.none] as const;
+
+        cy.clearLocalStorage();
+        completePLLTestInMilliseconds(testResultTime, {
+          forceTestCase: [
+            aufOnTheAppsDefaultAlgorithm[0],
+            pll,
+            aufOnTheAppsDefaultAlgorithm[1],
+          ],
+          correct: true,
+          overrideDefaultAlgorithm: algorithm,
+          startingState: "doNewVisit",
+          endingState: "correctPage",
+          testRunningCallback: () =>
+            pllTrainerElements.testRunning.testCase
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "cubeBeforeAlgorithmPicked">(
+                "cubeBeforeAlgorithmPicked"
+              ),
+        });
+        cy.getCurrentTestCase()
+          .then(([preAUF, , postAUF]) => {
+            const equivalentAUFsForOurAlgorithm: [AUF, AUF] = [preAUF, postAUF];
+            completePLLTestInMilliseconds(testResultTime, {
+              forceTestCase: [
+                equivalentAUFsForOurAlgorithm[0],
+                pll,
+                equivalentAUFsForOurAlgorithm[1],
+              ],
+              correct: true,
+              startingState: "doNewVisit",
+              startPageCallback: () =>
+                pllTrainerElements.recurringUserStartPage.worstCaseListItem
+                  .get()
+                  .invoke("text")
+                  .setAlias<Aliases, "statsAfterFirstTest">(
+                    "statsAfterFirstTest"
+                  ),
+              testRunningCallback: () =>
+                pllTrainerElements.testRunning.testCase
+                  .getStringRepresentationOfCube()
+                  .setAlias<Aliases, "cubeAfterAlgorithmPicked">(
+                    "cubeAfterAlgorithmPicked"
+                  ),
+            });
+
+            cy.visit(paths.pllTrainer);
+            pllTrainerElements.recurringUserStartPage.worstCaseListItem
+              .get()
+              .invoke("text")
+              .setAlias<Aliases, "statsAfterSecondTest">(
+                "statsAfterSecondTest"
+              );
+            return cy.getAliases<Aliases>();
+          })
+          .should(
+            ({
+              cubeBeforeAlgorithmPicked,
+              statsAfterFirstTest,
+              cubeAfterAlgorithmPicked,
+              statsAfterSecondTest,
+            }) => {
+              // We assert cubes should be the same to ensure we didn't write the test
+              // wrong and provided different AUFs / cubes
+              assertNonFalsyStringsEqual(
+                cubeBeforeAlgorithmPicked,
+                cubeAfterAlgorithmPicked,
+                "cubes should be the same"
+              );
+              assertNonFalsyStringsEqual(
+                statsAfterFirstTest,
+                statsAfterSecondTest,
+                "stats should be the same"
+              );
+            }
+          );
+      }
+    });
   });
 
-  describe("test case cube display during tests", function () {
+  describe("the test case cube displays correctly during tests", function () {
     /* eslint-disable mocha/no-setup-in-describe */
     ([
       {
@@ -1500,122 +1614,8 @@ describe("PLL Trainer", function () {
         );
       });
     });
-
-    it("correctly calculates the TPS of the first attempt on a case, even though we don't know which AUF was used until the algorithm is input", function () {
-      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
-        pll: PLL.Ua,
-        // Standard slice algorithm
-        algorithm: "M2 U M' U2 M U M2",
-      });
-      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
-        pll: PLL.Ua,
-        // An algorithm with a different preAUF but same postAUF
-        algorithm: "R2 U' R2 S R2 S' U R2",
-      });
-      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
-        pll: PLL.Gc,
-        // Emil's main Gc algorithm (maybe standard?)
-        algorithm: "R2 U' R U' R U R' U R2 D' U R U' R' D",
-      });
-      assertFirstAttemptIsCalculatedSameAsSecondAttempt({
-        pll: PLL.Gc,
-        // An algorithm with a different postAUF but same preAUF
-        algorithm: "R2' Uw' R U' R U R' Uw R2 y R U' R' y'",
-      });
-
-      function assertFirstAttemptIsCalculatedSameAsSecondAttempt({
-        pll,
-        algorithm,
-      }: {
-        pll: PLL;
-        algorithm: string;
-      }) {
-        type Aliases = {
-          cubeBeforeAlgorithmPicked: string;
-          statsAfterFirstTest: string;
-          cubeAfterAlgorithmPicked: string;
-          statsAfterSecondTest: string;
-        };
-        const testResultTime = 1000;
-        const aufOnTheAppsDefaultAlgorithm = [AUF.none, AUF.none] as const;
-
-        cy.clearLocalStorage();
-        completePLLTestInMilliseconds(testResultTime, {
-          forceTestCase: [
-            aufOnTheAppsDefaultAlgorithm[0],
-            pll,
-            aufOnTheAppsDefaultAlgorithm[1],
-          ],
-          correct: true,
-          overrideDefaultAlgorithm: algorithm,
-          startingState: "doNewVisit",
-          endingState: "correctPage",
-          testRunningCallback: () =>
-            pllTrainerElements.testRunning.testCase
-              .getStringRepresentationOfCube()
-              .setAlias<Aliases, "cubeBeforeAlgorithmPicked">(
-                "cubeBeforeAlgorithmPicked"
-              ),
-        });
-        cy.getCurrentTestCase()
-          .then(([preAUF, , postAUF]) => {
-            const equivalentAUFsForOurAlgorithm: [AUF, AUF] = [preAUF, postAUF];
-            completePLLTestInMilliseconds(testResultTime, {
-              forceTestCase: [
-                equivalentAUFsForOurAlgorithm[0],
-                pll,
-                equivalentAUFsForOurAlgorithm[1],
-              ],
-              correct: true,
-              startingState: "doNewVisit",
-              startPageCallback: () =>
-                pllTrainerElements.recurringUserStartPage.worstCaseListItem
-                  .get()
-                  .invoke("text")
-                  .setAlias<Aliases, "statsAfterFirstTest">(
-                    "statsAfterFirstTest"
-                  ),
-              testRunningCallback: () =>
-                pllTrainerElements.testRunning.testCase
-                  .getStringRepresentationOfCube()
-                  .setAlias<Aliases, "cubeAfterAlgorithmPicked">(
-                    "cubeAfterAlgorithmPicked"
-                  ),
-            });
-
-            cy.visit(paths.pllTrainer);
-            pllTrainerElements.recurringUserStartPage.worstCaseListItem
-              .get()
-              .invoke("text")
-              .setAlias<Aliases, "statsAfterSecondTest">(
-                "statsAfterSecondTest"
-              );
-            return cy.getAliases<Aliases>();
-          })
-          .should(
-            ({
-              cubeBeforeAlgorithmPicked,
-              statsAfterFirstTest,
-              cubeAfterAlgorithmPicked,
-              statsAfterSecondTest,
-            }) => {
-              // We assert cubes should be the same to ensure we didn't write the test
-              // wrong and provided different AUFs / cubes
-              assertNonFalsyStringsEqual(
-                cubeBeforeAlgorithmPicked,
-                cubeAfterAlgorithmPicked,
-                "cubes should be the same"
-              );
-              assertNonFalsyStringsEqual(
-                statsAfterFirstTest,
-                statsAfterSecondTest,
-                "stats should be the same"
-              );
-            }
-          );
-      }
-    });
-
+  });
+  describe("other important things", function () {
     it("correctly identifies the optimal AUFs of symmetrical cases", function () {
       /**
        * Note that what we are testing here is how, when a case is provided, the app determines
