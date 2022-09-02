@@ -664,21 +664,23 @@ export function completePLLTestInMilliseconds(
       | "correctPage"
       | "wrongPage"
       | "algorithmDrillerExplanationPage"
-      | "algorithmDrillerStatusPage";
+      | "algorithmDrillerStatusPage"
+      | "algorithmDrillerSuccessPage";
     overrideDefaultAlgorithm?: string;
     pickTargetParametersNavigator?: () => void;
     startPageCallback?: () => void;
     newCasePageCallback?: () => void;
+    assertNewCasePageDidntDisplay?: boolean;
     newCasePageNavigator?: () => void;
     getReadyCallback?: () => void;
+    beginningOfTestRunningCallback?: () => void;
     testRunningCallback?: () => void;
     testRunningNavigator?: () => void;
     evaluateResultCallback?: () => void;
-    evaluateResultCorrectNavigator?: () => void;
-    evaluateResultWrongNavigator?: () => void;
   } & (
     | {
         correct: true;
+        evaluateResultCorrectNavigator?: () => void;
         correctPageCallback?: () => void;
         algorithmDrillerExplanationPageCallback?: () => void;
         algorithmDrillerStatusPageCallback?: () => void;
@@ -686,6 +688,7 @@ export function completePLLTestInMilliseconds(
     | ({
         correct: false;
         wrongType: "unrecoverable" | "nearly there" | "no moves made";
+        evaluateResultWrongNavigator?: () => void;
       } & (
         | {
             wrongPageCallback?: () => void;
@@ -700,179 +703,212 @@ export function completePLLTestInMilliseconds(
       ))
   )
 ): void {
-  cy.wrap(null, { log: false }).then(function (this: Cypress.CypressThis) {
-    if (this.clock) {
-      throw new Error(
-        "Don't call completePLLTestInMilliseconds with time mocked, time mocking should be reduced to a minimum, as it interferes with Elm commands"
-      );
-    }
-  });
-  const {
-    forceTestCase,
-    correct,
-    overrideDefaultAlgorithm,
-    startingState,
-    endingState,
-    pickTargetParametersNavigator,
-    startPageCallback,
-    newCasePageCallback,
-    newCasePageNavigator,
-    getReadyCallback,
-    testRunningCallback,
-    testRunningNavigator,
-    evaluateResultCallback,
-    evaluateResultCorrectNavigator,
-    evaluateResultWrongNavigator,
-  } = params;
-  const { stateAttributeValues } = pllTrainerElements.root;
-
-  let atStartPage = true;
-
-  if (startingState === "doNewVisit") {
-    let loaded = false;
-    cy.visit(paths.pllTrainer, { onLoad: () => (loaded = true) });
-    cy.waitUntil(() => loaded);
-    pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
-      if (
-        stateValue ===
-        pllTrainerElements.root.stateAttributeValues.pickTargetParametersPage
-      ) {
-        pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
-      }
-    });
-  } else if (startingState === "pickTargetParametersPage") {
-    (
-      pickTargetParametersNavigator ??
-      (() =>
-        pllTrainerElements.pickTargetParametersPage.submitButton.get().click())
-    )();
-  } else if (startingState !== "startPage") {
-    atStartPage = false;
-  }
-
-  if (startingState === "startPage") {
-    // In case someone for some reason calls this right after calling cy.visit with
-    // startPage starting state instead of just using "doNewVisit" starting state.
-    // Because that could cause issues with calling the meta functions below before
-    // waiting for the page to load
-    pllTrainerElements.newUserStartPage.container.waitFor();
-  }
-  if (forceTestCase) cy.overrideNextTestCase(forceTestCase);
-  cy.clock();
-
-  if (atStartPage) {
-    pllTrainerElements.newUserStartPage.container.waitFor();
-    startPageCallback?.();
-    pllTrainerElements.newUserStartPage.startButton.get().click();
-    pllTrainerElements.root.waitForStateChangeAwayFrom(
-      stateAttributeValues.startPage
-    );
-  } else if (startingState === "correctPage") {
-    pllTrainerElements.correctPage.nextButton.get().click();
-  } else if (startingState === "algorithmDrillerStatusPage") {
-    pllTrainerElements.algorithmDrillerStatusPage.nextTestButton.get().click();
-  } else if (startingState === "algorithmDrillerSuccessPage") {
-    pllTrainerElements.algorithmDrillerSuccessPage.nextTestButton.get().click();
-  }
-
-  pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
-    // It is purposeful this is here before we know if new case page is actually
-    // displaying, as we want to allow for assert doesn't exist in the callback
-    // and also for it to error if you try finding new case page in a case where
-    // it doesn't display
-    newCasePageCallback?.();
-    if (stateValue === stateAttributeValues.newCasePage) {
-      (
-        newCasePageNavigator ??
-        (() => pllTrainerElements.newCasePage.startTestButton.get().click())
-      )();
-    }
-  });
-
-  pllTrainerElements.getReadyState.container.waitFor();
-  getReadyCallback?.();
-  cy.tick(getReadyWaitTime);
-  pllTrainerElements.testRunning.container.waitFor();
-  cy.tick(milliseconds);
-  testRunningCallback?.();
-  if (endingState === "testRunning") {
-    cy.clock().invoke("restore");
-    return;
-  }
-  (testRunningNavigator ?? (() => cy.mouseClickScreen("center")))();
-  pllTrainerElements.evaluateResult.container.waitFor();
-  cy.tick(evaluateResultIgnoreTransitionsWaitTime);
-  cy.clock().invoke("restore");
-  evaluateResultCallback?.();
-  if (correct) {
-    (
-      evaluateResultCorrectNavigator ??
-      (() => pllTrainerElements.evaluateResult.correctButton.get().click())
-    )();
-    pllTrainerElements.root.waitForStateChangeAwayFrom(
-      stateAttributeValues.evaluateResultPage
-    );
-  } else {
-    (
-      evaluateResultWrongNavigator ??
-      (() => pllTrainerElements.evaluateResult.wrongButton.get().click())
-    )();
-    if (params.wrongType === "unrecoverable") {
-      pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
-    } else if (params.wrongType === "nearly there") {
-      pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
-    } else {
-      pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
-    }
-    pllTrainerElements.root.waitForStateChangeAwayFrom(
-      stateAttributeValues.typeOfWrongPage
-    );
-  }
-
-  if (endingState === "pickAlgorithmPage") return;
-  pllTrainerElements.root
-    .getStateAttributeValue()
-    .then(
-      (stateValue): Cypress.Chainable<{ pll: PLL | null }> => {
-        if (stateValue === stateAttributeValues.pickAlgorithmPage) {
-          if (forceTestCase)
-            return cy.wrap({ pll: forceTestCase[1] } as { pll: PLL | null });
-          return cy
-            .getCurrentTestCase()
-            .then(([, pll]) => ({ pll } as { pll: PLL | null }));
-        }
-        return cy.wrap({ pll: null } as { pll: PLL | null });
-      }
-    )
-    .then(({ pll: pllIfOnPickAlgorithmPage }) => {
-      if (pllIfOnPickAlgorithmPage !== null) {
-        const pll = pllIfOnPickAlgorithmPage;
-        pllTrainerElements.pickAlgorithmPage.algorithmInput
-          .get()
-          .type(
-            (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) + "{enter}"
+  cy.withOverallNameLogged(
+    {
+      message: `completePLLTestInMilliseconds, milliseconds: ${milliseconds.toString()}, params: ${JSON.stringify(
+        params
+      )}`,
+    },
+    () => {
+      cy.wrap(null, { log: false }).then(function (this: Cypress.CypressThis) {
+        if (this.clock) {
+          throw new Error(
+            "Don't call completePLLTestInMilliseconds with time mocked, time mocking should be reduced to a minimum, as it interferes with Elm commands"
           );
+        }
+      });
+      const {
+        forceTestCase,
+        correct,
+        overrideDefaultAlgorithm,
+        startingState,
+        endingState,
+        pickTargetParametersNavigator,
+        startPageCallback,
+        newCasePageCallback,
+        assertNewCasePageDidntDisplay,
+        newCasePageNavigator,
+        getReadyCallback,
+        beginningOfTestRunningCallback,
+        testRunningCallback,
+        testRunningNavigator,
+        evaluateResultCallback,
+      } = params;
+      const { stateAttributeValues } = pllTrainerElements.root;
+
+      let atStartPage = true;
+
+      if (startingState === "doNewVisit") {
+        let loaded = false;
+        cy.visit(paths.pllTrainer, { onLoad: () => (loaded = true) });
+        cy.waitUntil(() => loaded);
+        pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+          if (
+            stateValue ===
+            pllTrainerElements.root.stateAttributeValues
+              .pickTargetParametersPage
+          ) {
+            pllTrainerElements.pickTargetParametersPage.submitButton
+              .get()
+              .click();
+          }
+        });
+      } else if (startingState === "pickTargetParametersPage") {
+        (
+          pickTargetParametersNavigator ??
+          (() =>
+            pllTrainerElements.pickTargetParametersPage.submitButton
+              .get()
+              .click())
+        )();
+      } else if (startingState !== "startPage") {
+        atStartPage = false;
       }
-    });
-  if (correct && params.correctPageCallback) {
-    pllTrainerElements.correctPage.container.waitFor();
-    params.correctPageCallback();
-  } else if (!correct && params.wrongPageCallback) {
-    pllTrainerElements.wrongPage.container.waitFor();
-    params.wrongPageCallback();
-  }
-  if (params.algorithmDrillerExplanationPageCallback) {
-    pllTrainerElements.algorithmDrillerExplanationPage.container.waitFor();
-    params.algorithmDrillerExplanationPageCallback?.();
-  }
-  if (
-    params.algorithmDrillerStatusPageCallback ||
-    endingState === "algorithmDrillerStatusPage"
-  ) {
-    pllTrainerElements.algorithmDrillerExplanationPage.continueButton
-      .get()
-      .click();
-    pllTrainerElements.algorithmDrillerStatusPage.container.waitFor();
-    params.algorithmDrillerStatusPageCallback?.();
-  }
+
+      if (startingState === "startPage") {
+        // In case someone for some reason calls this right after calling cy.visit with
+        // startPage starting state instead of just using "doNewVisit" starting state.
+        // Because that could cause issues with calling the meta functions below before
+        // waiting for the page to load
+        pllTrainerElements.newUserStartPage.container.waitFor();
+      }
+      if (forceTestCase) cy.overrideNextTestCase(forceTestCase);
+      cy.clock();
+
+      if (atStartPage) {
+        pllTrainerElements.newUserStartPage.container.waitFor();
+        startPageCallback?.();
+        pllTrainerElements.newUserStartPage.startButton.get().click();
+        pllTrainerElements.root.waitForStateChangeAwayFrom(
+          stateAttributeValues.startPage
+        );
+      } else if (startingState === "correctPage") {
+        pllTrainerElements.correctPage.nextButton.get().click();
+      } else if (startingState === "algorithmDrillerStatusPage") {
+        pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
+          .get()
+          .click();
+      } else if (startingState === "algorithmDrillerSuccessPage") {
+        pllTrainerElements.algorithmDrillerSuccessPage.nextTestButton
+          .get()
+          .click();
+      }
+
+      pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+        if (stateValue === stateAttributeValues.newCasePage) {
+          if (assertNewCasePageDidntDisplay) {
+            throw new Error(
+              "New case page displayed despite assertion that it shouldn't"
+            );
+          }
+          newCasePageCallback?.();
+          (
+            newCasePageNavigator ??
+            (() => pllTrainerElements.newCasePage.startTestButton.get().click())
+          )();
+        } else if (newCasePageCallback) {
+          throw new Error(
+            "newCasePageCallback was provided but there was no new case page"
+          );
+        }
+      });
+
+      pllTrainerElements.getReadyState.container.waitFor();
+      getReadyCallback?.();
+      cy.tick(getReadyWaitTime);
+      pllTrainerElements.testRunning.container.waitFor();
+      beginningOfTestRunningCallback?.();
+      cy.tick(milliseconds);
+      testRunningCallback?.();
+      if (endingState === "testRunning") {
+        cy.clock().invoke("restore");
+        return;
+      }
+      (testRunningNavigator ?? (() => cy.mouseClickScreen("center")))();
+      pllTrainerElements.evaluateResult.container.waitFor();
+      cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+      cy.clock().invoke("restore");
+      evaluateResultCallback?.();
+      if (correct) {
+        (
+          params.evaluateResultCorrectNavigator ??
+          (() => pllTrainerElements.evaluateResult.correctButton.get().click())
+        )();
+        pllTrainerElements.root.waitForStateChangeAwayFrom(
+          stateAttributeValues.evaluateResultPage
+        );
+      } else {
+        (
+          params.evaluateResultWrongNavigator ??
+          (() => pllTrainerElements.evaluateResult.wrongButton.get().click())
+        )();
+        if (params.wrongType === "unrecoverable") {
+          pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+        } else if (params.wrongType === "nearly there") {
+          pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
+        } else {
+          pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
+        }
+        pllTrainerElements.root.waitForStateChangeAwayFrom(
+          stateAttributeValues.typeOfWrongPage
+        );
+      }
+
+      if (endingState === "pickAlgorithmPage") return;
+      pllTrainerElements.root
+        .getStateAttributeValue()
+        .then(
+          (stateValue): Cypress.Chainable<{ pll: PLL | null }> => {
+            if (stateValue === stateAttributeValues.pickAlgorithmPage) {
+              if (forceTestCase)
+                return cy.wrap({ pll: forceTestCase[1] } as {
+                  pll: PLL | null;
+                });
+              return cy
+                .getCurrentTestCase()
+                .then(([, pll]) => ({ pll } as { pll: PLL | null }));
+            }
+            return cy.wrap({ pll: null } as { pll: PLL | null });
+          }
+        )
+        .then(({ pll: pllIfOnPickAlgorithmPage }) => {
+          if (pllIfOnPickAlgorithmPage !== null) {
+            const pll = pllIfOnPickAlgorithmPage;
+            pllTrainerElements.pickAlgorithmPage.algorithmInput
+              .get()
+              .type(
+                (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) +
+                  "{enter}"
+              );
+          }
+        });
+      if (correct && params.correctPageCallback) {
+        pllTrainerElements.correctPage.container.waitFor();
+        params.correctPageCallback();
+      } else if (!correct && params.wrongPageCallback) {
+        pllTrainerElements.wrongPage.container.waitFor();
+        params.wrongPageCallback();
+      }
+      if (params.algorithmDrillerExplanationPageCallback) {
+        pllTrainerElements.algorithmDrillerExplanationPage.container.waitFor();
+        params.algorithmDrillerExplanationPageCallback?.();
+      }
+      if (
+        params.algorithmDrillerStatusPageCallback ||
+        endingState === "algorithmDrillerStatusPage"
+      ) {
+        pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+          if (
+            stateValue === stateAttributeValues.algorithmDrillerExplanationPage
+          ) {
+            pllTrainerElements.algorithmDrillerExplanationPage.continueButton
+              .get()
+              .click();
+          }
+        });
+        pllTrainerElements.algorithmDrillerStatusPage.container.waitFor();
+        params.algorithmDrillerStatusPageCallback?.();
+      }
+    }
+  );
 }
