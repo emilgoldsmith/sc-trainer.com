@@ -73,7 +73,7 @@ describe("PLL Trainer", function () {
           // No new case page here
           pllTrainerElements.getReadyState.container.waitFor();
           cy.tick(getReadyWaitTime);
-          testRunningNavigateVariant1();
+          testRunningNavigateVariant2();
           // This is the same as above with correct button, now just testing it also doesn't
           // react to a fast click on the wrong button
           cy.tick(150);
@@ -100,6 +100,8 @@ describe("PLL Trainer", function () {
           evaluateResultFront: string;
           evaluateResultBack: string;
         };
+        // Note that the time won't be 500 as we're using a changing clock variant
+        // of the test running navigator
         completePLLTestInMilliseconds(500, {
           correct: false,
           wrongType: "nearly there",
@@ -121,6 +123,8 @@ describe("PLL Trainer", function () {
             pllTrainerElements.testRunning.testCase
               .getStringRepresentationOfCube()
               .setAlias<Aliases, "testCaseCube">("testCaseCube"),
+          testRunningNavigator: testRunningNavigateChangingClockVariant2,
+          evaluateResultWrongNavigator: evaluateResultNavigateWrongVariant2,
         });
         pllTrainerElements.pickAlgorithmPage.container.assertShows();
         cy.getCurrentTestCase().then(([, pll]) => {
@@ -150,10 +154,13 @@ describe("PLL Trainer", function () {
           });
         });
 
-        completePLLTestInMilliseconds(500, {
+        const time = 1530 as const;
+        completePLLTestInMilliseconds(time, {
           correct: true,
           startingState: "algorithmDrillerStatusPage",
+          testRunningNavigator: testRunningNavigateVariant3,
           evaluateResultCallback: () => {
+            evaluateResultTimeDependantNoSideEffects1({ timeInMs: time });
             pllTrainerElements.evaluateResult.expectedCubeFront
               .getStringRepresentationOfCube()
               .setAlias<Aliases, "evaluateResultFront">("evaluateResultFront");
@@ -161,6 +168,7 @@ describe("PLL Trainer", function () {
               .getStringRepresentationOfCube()
               .setAlias<Aliases, "evaluateResultBack">("evaluateResultBack");
           },
+          evaluateResultCorrectNavigator: evaluateResultNavigateCorrectVariant2,
         });
         getVerifiedAliases<
           Aliases,
@@ -169,25 +177,48 @@ describe("PLL Trainer", function () {
           algorithmDrillerStatusPageAfter1SuccessNoSideEffects
         );
 
+        // Note that the time won't be 500 as we're using a changing clock variant
+        // of the test running navigator
         completePLLTestInMilliseconds(500, {
           correct: false,
           wrongType: "nearly there",
           startingState: "algorithmDrillerStatusPage",
+          endingState: "algorithmDrillerStatusPage",
+          testRunningNavigator: testRunningNavigateChangingClockVariant3,
+          evaluateResultWrongNavigator: evaluateResultNavigateWrongVariant3,
         });
         algorithmDrillerStatusPageAfter1Success1FailureNoSideEffects();
-        completePLLTestInMilliseconds(500, {
+
+        const time2 = 600 as const;
+        completePLLTestInMilliseconds(time2, {
           correct: true,
           startingState: "algorithmDrillerStatusPage",
+          endingState: "algorithmDrillerStatusPage",
+          testRunningNavigator: testRunningNavigateVariant4,
+          evaluateResultCallback: () =>
+            evaluateResultTimeDependantNoSideEffects2({ timeInMs: time2 }),
         });
-        completePLLTestInMilliseconds(500, {
+        const time3 = 1030 as const;
+        completePLLTestInMilliseconds(time3, {
           correct: true,
           startingState: "algorithmDrillerStatusPage",
+          endingState: "algorithmDrillerStatusPage",
+          testRunningNavigator: testRunningNavigateVariant5,
+          evaluateResultCallback: () =>
+            evaluateResultTimeDependantNoSideEffects3({ timeInMs: time3 }),
         });
         algorithmDrillerStatusPageAfter2SuccessesNoSideEffects();
-        completePLLTestInMilliseconds(500, {
+        const time4 = 100 as const;
+        completePLLTestInMilliseconds(time4, {
           correct: true,
           startingState: "algorithmDrillerStatusPage",
+          endingState: "algorithmDrillerSuccessPage",
+          testRunningNavigator: testRunningNavigateVariant6,
+          evaluateResultCallback: () =>
+            evaluateResultTimeDependantNoSideEffects4({ timeInMs: time4 }),
         });
+
+        algorithmDrillerSuccessPageNoSideEffects();
       });
 
       it("Very slow correct for new preAUF but same pll shows driller but with 'correct text' and not 'wrong text'", function () {
@@ -197,6 +228,7 @@ describe("PLL Trainer", function () {
           forceTestCase: [AUF.none, PLL.Gc, AUF.U2],
           endingState: "algorithmDrillerExplanationPage",
           getReadyCallback: getReadyStateNoSideEffectsButScroll,
+          testRunningNavigator: testRunningNavigateVariant7,
         });
 
         pllTrainerElements.algorithmDrillerExplanationPage.correctText.assertShows();
@@ -209,20 +241,27 @@ describe("PLL Trainer", function () {
         const firstNotNonePostAUF = AUF.U;
         const differentPreAUF = AUF.UPrime;
         const differentNotNonePostAUF = AUF.U2;
-        completePLLTestInMilliseconds(500, {
+        const time = 110 as const;
+        completePLLTestInMilliseconds(time, {
           correct: true,
           startingState: "doNewVisit",
           forceTestCase: [firstPreAUF, pll, firstNotNonePostAUF],
           endingState: "correctPage",
+          testRunningNavigator: testRunningNavigateVariant8,
+          evaluateResultCallback: () =>
+            evaluateResultTimeDependantNoSideEffects5({ timeInMs: time }),
         });
         // We from now on very consciously switch between doing an incorrect test
         // and a slow correct test, in order to ensure this is true for both cases
+        // Note that the time won't be 500 as we're using a changing clock variant
+        // of the test running navigator
         completePLLTestInMilliseconds(500, {
           correct: false,
           wrongType: "nearly there",
           startingState: "correctPage",
           forceTestCase: [firstPreAUF, pll, differentNotNonePostAUF],
           endingState: "algorithmDrillerExplanationPage",
+          testRunningNavigator: testRunningNavigateChangingClockVariant4,
         });
         pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
 
@@ -231,15 +270,19 @@ describe("PLL Trainer", function () {
           startingState: "doNewVisit",
           forceTestCase: [differentPreAUF, pll, firstNotNonePostAUF],
           endingState: "algorithmDrillerExplanationPage",
+          testRunningNavigator: testRunningNavigateVariant9,
         });
         pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
 
+        // Note that the time won't be 500 as we're using a changing clock variant
+        // of the test running navigator
         completePLLTestInMilliseconds(500, {
           correct: false,
           wrongType: "nearly there",
           startingState: "doNewVisit",
           forceTestCase: [firstPreAUF, pll, AUF.none],
           endingState: "wrongPage",
+          testRunningNavigator: testRunningNavigateChangingClockVariant5,
         });
 
         // We shouldn't drill if it's a known preAUF and an unknown \"none\" post-AUF this is because
@@ -247,11 +290,15 @@ describe("PLL Trainer", function () {
         // as learning post-AUF recognition has already been done when that preAUF was learned
         pllTrainerElements.wrongPage.container.assertShows();
 
-        completePLLTestInMilliseconds(10000, {
+        const timeInMs = 45296780 as const;
+        completePLLTestInMilliseconds(timeInMs, {
           correct: true,
           startingState: "doNewVisit",
           forceTestCase: [differentPreAUF, pll, differentNotNonePostAUF],
           endingState: "correctPage",
+          testRunningNavigator: testRunningNavigateVariant10,
+          evaluateResultCallback: () =>
+            evaluateResultTimeDependantNoSideEffects7({ timeInMs }),
         });
 
         // We shouldn't be drilling for known pre and post auf cases even if they haven't been seen
@@ -260,17 +307,22 @@ describe("PLL Trainer", function () {
       });
 
       it("doesn't go to driller on what is technically new pre and post aufs if they are equivalent by symmetry to cases that have been learned", function () {
-        completePLLTestInMilliseconds(500, {
+        const time = 120 as const;
+        completePLLTestInMilliseconds(time, {
           correct: true,
           startingState: "doNewVisit",
           forceTestCase: [AUF.UPrime, PLL.H, AUF.UPrime],
           endingState: "correctPage",
+          testRunningNavigator: testRunningNavigateVariant11,
+          evaluateResultCallback: () =>
+            evaluateResultTimeDependantNoSideEffects6({ timeInMs: time }),
         });
         completePLLTestInMilliseconds(10000, {
           correct: true,
           startingState: "correctPage",
           forceTestCase: [AUF.none, PLL.H, AUF.U2],
           endingState: "correctPage",
+          testRunningNavigator: testRunningNavigateVariant12,
         });
 
         // Should not show a driller as (U', U') is equivalent to (none, U2) for a fully symmetric
@@ -303,11 +355,14 @@ describe("PLL Trainer", function () {
         pllTrainerElements.pickTargetParametersPage.targetTPSInput
           .get()
           .should("have.value", tps);
+        // Note that the time won't be 500 as we're using a changing clock variant
+        // of the test running navigator
         completePLLTestInMilliseconds(500, {
           correct: false,
           wrongType: "unrecoverable",
           startingState: "pickTargetParametersPage",
           endingState: "pickAlgorithmPage",
+          testRunningNavigator: testRunningNavigateChangingClockVariant6,
         });
 
         // We should now be at pick algorithm page and not have recorded the result yet.
@@ -316,11 +371,14 @@ describe("PLL Trainer", function () {
         assertItsNewUserNotRecurringUserStartPage();
 
         // Complete a test
+        // Note that the time won't be 500 as we're using a changing clock variant
+        // of the test running navigator
         completePLLTestInMilliseconds(500, {
           correct: false,
           wrongType: "unrecoverable",
           startingState: "startPage",
           endingState: "pickAlgorithmPage",
+          testRunningNavigator: testRunningNavigateChangingClockVariant7,
         });
         pickAlgorithmNavigateVariant1();
 
@@ -350,6 +408,7 @@ describe("PLL Trainer", function () {
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertShows();
         },
+        testRunningNavigator: testRunningNavigateVariant13,
       });
 
       cy.log("This is a new preAUF so should display new case page");
@@ -361,6 +420,7 @@ describe("PLL Trainer", function () {
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertShows();
         },
+        testRunningNavigator: testRunningNavigateVariant14,
       });
 
       cy.log(
@@ -371,9 +431,7 @@ describe("PLL Trainer", function () {
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
-        newCasePageCallback() {
-          pllTrainerElements.newCasePage.container.assertDoesntExist();
-        },
+        assertNewCasePageDidntDisplay: true,
       });
 
       cy.log(
@@ -397,9 +455,7 @@ describe("PLL Trainer", function () {
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
-        newCasePageCallback() {
-          pllTrainerElements.newCasePage.container.assertDoesntExist();
-        },
+        assertNewCasePageDidntDisplay: true,
       });
 
       cy.log(
@@ -410,9 +466,7 @@ describe("PLL Trainer", function () {
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
-        newCasePageCallback() {
-          pllTrainerElements.newCasePage.container.assertDoesntExist();
-        },
+        assertNewCasePageDidntDisplay: true,
       });
 
       cy.log("New PLL so should display");
@@ -434,9 +488,7 @@ describe("PLL Trainer", function () {
         correct: true,
         startingState: "correctPage",
         endingState: "correctPage",
-        newCasePageCallback() {
-          pllTrainerElements.newCasePage.container.assertDoesntExist();
-        },
+        assertNewCasePageDidntDisplay: true,
       });
 
       cy.log(
@@ -469,11 +521,16 @@ describe("PLL Trainer", function () {
       pllTrainerElements.correctPage.container.assertShows();
 
       // Wrong path:
+      // Note that the time won't be 500 as we're using a changing clock variant
+      // of the test running navigator
       completePLLTestInMilliseconds(500, {
         correct: false,
         wrongType: "unrecoverable",
         startingState: "doNewVisit",
         endingState: "algorithmDrillerExplanationPage",
+        beginningOfTestRunningCallback: () =>
+          testRunningWithTimeSideEffects({ timerIsCurrentlyAtZero: true }),
+        testRunningNavigator: testRunningNavigateChangingClockVariant1,
       });
       pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
     });
@@ -515,9 +572,11 @@ describe("PLL Trainer", function () {
       pllTrainerElements.getReadyState.container.assertShows();
       cy.tick(getReadyWaitTime);
       pllTrainerElements.testRunning.container.waitFor();
-      testRunningNavigateChangingClockVariant1();
+      testRunningNavigateVariant12();
       pllTrainerElements.evaluateResult.container.waitFor();
+      evaluateResultWhileIgnoringTransitionsNoSideEffects();
       cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+      evaluateResultAfterIgnoringTransitionsNoSideEffects();
       evaluateResultNavigateWrongVariant1();
 
       pllTrainerElements.typeOfWrongPage.container.waitFor();
@@ -2163,322 +2222,464 @@ function getReadyStateNoSideEffectsButScroll() {
 function testRunningWithTimeSideEffects(_: { timerIsCurrentlyAtZero: true }) {
   const elements = pllTrainerElements.testRunning;
 
-  cy.window()
-    .then((window) => new window.Date().getTime())
-    .then((startTime) => {
-      ([
-        [
-          "has all the correct elements",
-          () => {
-            elements.assertAllShow();
-          },
-        ],
-        [
-          "tracks time correctly",
-          () => {
-            const second = 1000;
-            const minute = 60 * second;
-            const hour = 60 * minute;
-            // Should start at 0
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should("have.text", "0.0");
-            // Just testing here that nothing happens with small increments
-            cy.tick(3);
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should("have.text", "0.0");
-            cy.tick(10);
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should("have.text", "0.0");
-            cy.tick(0.2 * second);
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should("have.text", "0.2");
-            cy.tick(1.3 * second);
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should("have.text", "1.5");
-            // Switch to using time jumps as tick calls all setInterval times in the
-            // time interval resulting in slow tests and excessive cpu usage
+  cy.withOverallNameLogged(
+    { message: "testRunningWithTimeSideEffects" },
+    () => {
+      cy.window()
+        .then((window) => new window.Date().getTime())
+        .then((startTime) => {
+          ([
+            [
+              "has all the correct elements",
+              () => {
+                elements.assertAllShow();
+              },
+            ],
+            [
+              "tracks time correctly",
+              () => {
+                const second = 1000;
+                const minute = 60 * second;
+                const hour = 60 * minute;
+                // Should start at 0
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should("have.text", "0.0");
+                // Just testing here that nothing happens with small increments
+                cy.tick(3);
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should("have.text", "0.0");
+                cy.tick(10);
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should("have.text", "0.0");
+                cy.tick(0.2 * second);
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should("have.text", "0.2");
+                cy.tick(1.3 * second);
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should("have.text", "1.5");
+                // Switch to using time jumps as tick calls all setInterval times in the
+                // time interval resulting in slow tests and excessive cpu usage
 
-            // Checking two digit seconds alone
-            cy.setSystemTimeWithLastFrameTicked(19.2 * second + startTime);
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should("have.text", "19.2");
-            // Checking "normal" minute
-            cy.setSystemTimeWithLastFrameTicked(
-              3 * minute + 16.8 * second + startTime
-            );
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should("have.text", "3:16.8");
-            // Checking single digit seconds when above minute still shows two digits
-            cy.setSystemTimeWithLastFrameTicked(
-              4 * minute + 7.3 * second + startTime
-            );
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should("have.text", "4:07.3");
-            // Check that it shows hours
-            cy.setSystemTimeWithLastFrameTicked(
-              4 * hour + 38 * minute + 45.7 * second + startTime
-            );
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should("have.text", "4:38:45.7");
-            // Check that it shows double digits for minutes and seconds when in hours
-            cy.setSystemTimeWithLastFrameTicked(
-              5 * hour + 1 * minute + 4 * second + startTime
-            );
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should("have.text", "5:01:04.0");
-            // Just ensuring a ridiculous amount works too, note we don't break it down to days
-            cy.setSystemTimeWithLastFrameTicked(
-              234 * hour + 59 * minute + 18.1 * second + startTime
-            );
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should("have.text", "234:59:18.1");
-          },
-        ],
-        [
-          "all looks good also after timer has run for 15 hours",
-          () => {
-            // We set the timer to double digit hours to test the limits of the width, that seems like it could be plausible
-            // for a huge multiblind attempt if we for some reason support that in the future,
-            // but three digit hours seems implausible so no need to test that
-            cy.setSystemTimeWithLastFrameTicked(
-              1000 * 60 * 60 * 15 + startTime
-            );
-            cy.assertNoHorizontalScrollbar();
-            cy.assertNoVerticalScrollbar();
-            const minDimension = Math.min(
-              Cypress.config().viewportWidth,
-              Cypress.config().viewportHeight
-            );
-            pllTrainerElements.testRunning.timer
-              .get()
-              .should((timerElement) => {
-                expect(timerElement.height()).to.be.at.least(
-                  0.2 * minDimension
+                // Checking two digit seconds alone
+                cy.setSystemTimeWithLastFrameTicked(19.2 * second + startTime);
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should("have.text", "19.2");
+                // Checking "normal" minute
+                cy.setSystemTimeWithLastFrameTicked(
+                  3 * minute + 16.8 * second + startTime
                 );
-              });
-            pllTrainerElements.testRunning.testCase
-              .assertShows()
-              .and((cubeElement) => {
-                expect(
-                  cubeElement.width(),
-                  "cube width to fill at least half of screen"
-                ).to.be.at.least(minDimension * 0.5 - 1);
-                expect(
-                  cubeElement.height(),
-                  "cube height to fill at least half of screen"
-                ).to.be.at.least(minDimension * 0.5 - 1);
-              });
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
-        cy.withOverallNameLogged({ message: testDescription }, testFunction)
-      );
-    });
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should("have.text", "3:16.8");
+                // Checking single digit seconds when above minute still shows two digits
+                cy.setSystemTimeWithLastFrameTicked(
+                  4 * minute + 7.3 * second + startTime
+                );
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should("have.text", "4:07.3");
+                // Check that it shows hours
+                cy.setSystemTimeWithLastFrameTicked(
+                  4 * hour + 38 * minute + 45.7 * second + startTime
+                );
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should("have.text", "4:38:45.7");
+                // Check that it shows double digits for minutes and seconds when in hours
+                cy.setSystemTimeWithLastFrameTicked(
+                  5 * hour + 1 * minute + 4 * second + startTime
+                );
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should("have.text", "5:01:04.0");
+                // Just ensuring a ridiculous amount works too, note we don't break it down to days
+                cy.setSystemTimeWithLastFrameTicked(
+                  234 * hour + 59 * minute + 18.1 * second + startTime
+                );
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should("have.text", "234:59:18.1");
+              },
+            ],
+            [
+              "all looks good also after timer has run for 15 hours",
+              () => {
+                // We set the timer to double digit hours to test the limits of the width, that seems like it could be plausible
+                // for a huge multiblind attempt if we for some reason support that in the future,
+                // but three digit hours seems implausible so no need to test that
+                cy.setSystemTimeWithLastFrameTicked(
+                  1000 * 60 * 60 * 15 + startTime
+                );
+                cy.assertNoHorizontalScrollbar();
+                cy.assertNoVerticalScrollbar();
+                const minDimension = Math.min(
+                  Cypress.config().viewportWidth,
+                  Cypress.config().viewportHeight
+                );
+                pllTrainerElements.testRunning.timer
+                  .get()
+                  .should((timerElement) => {
+                    expect(timerElement.height()).to.be.at.least(
+                      0.2 * minDimension
+                    );
+                  });
+                pllTrainerElements.testRunning.testCase
+                  .assertShows()
+                  .and((cubeElement) => {
+                    expect(
+                      cubeElement.width(),
+                      "cube width to fill at least half of screen"
+                    ).to.be.at.least(minDimension * 0.5 - 1);
+                    expect(
+                      cubeElement.height(),
+                      "cube height to fill at least half of screen"
+                    ).to.be.at.least(minDimension * 0.5 - 1);
+                  });
+              },
+            ],
+          ] as const).forEach(([testDescription, testFunction]) =>
+            cy.withOverallNameLogged({ message: testDescription }, testFunction)
+          );
+        });
+    }
+  );
 }
 
-// TODO: If there is space for more navigation variants then adding more places
-// to click here for both mouse and touch would be a good idea.
 function testRunningNavigateVariant1() {
-  cy.mouseClickScreen("topLeft");
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant1" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    cy.mouseClickScreen("topLeft");
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
 }
 
 function testRunningNavigateVariant2() {
-  cy.touchScreen("bottomRight");
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant2" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    cy.mouseClickScreen("bottomRight");
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
 }
 
 function testRunningNavigateVariant3() {
-  // Extra interesting as it's used as a shortcut in evaluate result
-  cy.pressKey(Key.space);
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant3" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    cy.mouseClickScreen("center");
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
 }
 
 function testRunningNavigateVariant4() {
-  // Extra interesting as it's used as a shortcut in evaluate result
-  cy.pressKey(Key.w);
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant4" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    cy.mouseClickScreen("topRight");
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
 }
 
 function testRunningNavigateVariant5() {
-  // Extra interesting as it's used as a shortcut in evaluate result
-  cy.pressKey(Key.W);
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant5" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    cy.mouseClickScreen("bottomLeft");
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
 }
 
 function testRunningNavigateVariant6() {
-  // Just a random "nonimportant" key, to make sure that works too
-  cy.pressKey(Key.five);
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant6" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    cy.touchScreen("topLeft");
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
+}
+
+function testRunningNavigateVariant7() {
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant7" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    cy.touchScreen("bottomRight");
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
+}
+
+function testRunningNavigateVariant8() {
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant8" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    cy.touchScreen("center");
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
+}
+
+function testRunningNavigateVariant9() {
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant9" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    cy.touchScreen("topRight");
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
+}
+
+function testRunningNavigateVariant10() {
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant10" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    cy.touchScreen("bottomLeft");
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
+}
+
+function testRunningNavigateVariant11() {
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant11" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    // Extra interesting as it's used as a shortcut in evaluate result
+    cy.pressKey(Key.space);
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
+}
+
+function testRunningNavigateVariant12() {
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant12" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    // Extra interesting as it's used as a shortcut in evaluate result
+    cy.pressKey(Key.w);
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
+}
+
+function testRunningNavigateVariant13() {
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant13" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    // Extra interesting as it's used as a shortcut in evaluate result
+    cy.pressKey(Key.W);
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
+}
+
+function testRunningNavigateVariant14() {
+  cy.withOverallNameLogged({ message: "testRunningNavigateVariant14" }, () => {
+    pllTrainerElements.testRunning.container.waitFor();
+    // Just a random "nonimportant" key, to make sure that works too
+    cy.pressKey(Key.five);
+    pllTrainerElements.testRunning.container.assertDoesntExist();
+  });
 }
 
 function testRunningNavigateChangingClockVariant1() {
-  // Extra interesting as it's used as a shortcut in evaluate result
-  cy.longPressKey(Key.space);
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "testRunningNavigateChangingClockVariant1" },
+    () => {
+      pllTrainerElements.testRunning.container.waitFor();
+      // Extra interesting as it's used as a shortcut in evaluate result
+      cy.longPressKey(Key.space);
+      pllTrainerElements.testRunning.container.assertDoesntExist();
+    }
+  );
 }
 
 function testRunningNavigateChangingClockVariant2() {
-  // Extra interesting as it's used as a shortcut in evaluate result
-  cy.longPressKey(Key.w);
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "testRunningNavigateChangingClockVariant2" },
+    () => {
+      pllTrainerElements.testRunning.container.waitFor();
+      // Extra interesting as it's used as a shortcut in evaluate result
+      cy.longPressKey(Key.w);
+      pllTrainerElements.testRunning.container.assertDoesntExist();
+    }
+  );
 }
 
 function testRunningNavigateChangingClockVariant3() {
-  // Extra interesting as it's used as a shortcut in evaluate result
-  cy.longPressKey(Key.W);
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "testRunningNavigateChangingClockVariant3" },
+    () => {
+      pllTrainerElements.testRunning.container.waitFor();
+      // Extra interesting as it's used as a shortcut in evaluate result
+      cy.longPressKey(Key.W);
+      pllTrainerElements.testRunning.container.assertDoesntExist();
+    }
+  );
 }
 
 function testRunningNavigateChangingClockVariant4() {
-  // Just a random "nonimportant" key, to make sure that works too
-  cy.longPressKey(Key.five);
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "testRunningNavigateChangingClockVariant4" },
+    () => {
+      pllTrainerElements.testRunning.container.waitFor();
+      // Just a random "nonimportant" key, to make sure that works too
+      cy.longPressKey(Key.five);
+      pllTrainerElements.testRunning.container.assertDoesntExist();
+    }
+  );
 }
 
 function testRunningNavigateChangingClockVariant5() {
-  // button mash space before w
-  cy.buttonMash([
-    Key.l,
-    Key.five,
-    Key.shift,
-    Key.space,
-    Key.capsLock,
-    Key.leftCtrl,
-    Key.w,
-    Key.W,
-  ]);
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "testRunningNavigateChangingClockVariant5" },
+    () => {
+      pllTrainerElements.testRunning.container.waitFor();
+      // button mash space before w
+      cy.buttonMash([
+        Key.l,
+        Key.five,
+        Key.shift,
+        Key.space,
+        Key.capsLock,
+        Key.leftCtrl,
+        Key.w,
+        Key.W,
+      ]);
+      pllTrainerElements.testRunning.container.assertDoesntExist();
+    }
+  );
 }
 
 function testRunningNavigateChangingClockVariant6() {
-  // button mash w before space
-  cy.buttonMash([
-    Key.w,
-    Key.W,
-    Key.l,
-    Key.five,
-    Key.shift,
-    Key.space,
-    Key.capsLock,
-    Key.leftCtrl,
-  ]);
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "testRunningNavigateChangingClockVariant6" },
+    () => {
+      pllTrainerElements.testRunning.container.waitFor();
+      // button mash w before space
+      cy.buttonMash([
+        Key.w,
+        Key.W,
+        Key.l,
+        Key.five,
+        Key.shift,
+        Key.space,
+        Key.capsLock,
+        Key.leftCtrl,
+      ]);
+      pllTrainerElements.testRunning.container.assertDoesntExist();
+    }
+  );
 }
 
 function testRunningNavigateChangingClockVariant7() {
-  // Long button mash
-  cy.longButtonMash([
-    Key.w,
-    Key.W,
-    Key.l,
-    Key.five,
-    Key.shift,
-    Key.space,
-    Key.capsLock,
-    Key.leftCtrl,
-  ]);
-  pllTrainerElements.testRunning.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "testRunningNavigateChangingClockVariant7" },
+    () => {
+      pllTrainerElements.testRunning.container.waitFor();
+      // Long button mash
+      cy.longButtonMash([
+        Key.w,
+        Key.W,
+        Key.l,
+        Key.five,
+        Key.shift,
+        Key.space,
+        Key.capsLock,
+        Key.leftCtrl,
+      ]);
+      pllTrainerElements.testRunning.container.assertDoesntExist();
+    }
+  );
 }
 
 function evaluateResultWhileIgnoringTransitionsNoSideEffects() {
   const elements = pllTrainerElements.evaluateResult;
 
-  ([
-    [
-      "looks right",
-      () => {
-        elements.assertAllShow();
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
-      },
-    ],
-    [
-      "doesn't change state when otherwise correct buttons or shortcuts are pressed",
-      () => {
-        elements.correctButton.get().click({ force: true });
-        elements.wrongButton.get().click({ force: true });
-        cy.pressKey(Key.space);
-        cy.pressKey(Key.w);
-        cy.pressKey(Key.W);
-        elements.container.assertShows();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  cy.withOverallNameLogged(
+    { message: "evaluateResultWhileIgnoringTransitionsNoSideEffects" },
+    () => {
+      ([
+        [
+          "looks right",
+          () => {
+            elements.assertAllShow();
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
+          },
+        ],
+        [
+          "doesn't change state when otherwise correct buttons or shortcuts are pressed",
+          () => {
+            elements.correctButton.get().click({ force: true });
+            elements.wrongButton.get().click({ force: true });
+            cy.pressKey(Key.space);
+            cy.pressKey(Key.w);
+            cy.pressKey(Key.W);
+            elements.container.assertShows();
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
 function evaluateResultAfterIgnoringTransitionsNoSideEffects() {
   const elements = pllTrainerElements.evaluateResult;
 
-  ([
-    [
-      "looks right",
-      () => {
-        elements.assertAllShow();
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
-      },
-    ],
-    [
-      "doesn't change state when mouse clicks or keyboard presses that shouldn't work are pressed",
-      () => {
-        ([
-          "center",
-          "top",
-          "left",
-          "right",
-          "bottom",
-          "topLeft",
-          "topRight",
-          "bottomRight",
-          "bottomLeft",
-        ] as const).forEach((position) => {
-          cy.withOverallNameLogged(
-            {
-              name: "testing click",
-              displayName: "TESTING CLICK",
-              message: `position ${position}`,
-            },
-            () => {
-              cy.get("body", { log: false }).click(position, { log: false });
-            }
-          );
-        });
+  cy.withOverallNameLogged(
+    { message: "evaluateResultAfterIgnoringTransitionsNoSideEffects" },
+    () => {
+      ([
+        [
+          "looks right",
+          () => {
+            elements.assertAllShow();
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
+          },
+        ],
+        [
+          "doesn't change state when mouse clicks or keyboard presses that shouldn't work are pressed",
+          () => {
+            ([
+              "center",
+              "top",
+              "left",
+              "right",
+              "bottom",
+              "topLeft",
+              "topRight",
+              "bottomRight",
+              "bottomLeft",
+            ] as const).forEach((position) => {
+              cy.withOverallNameLogged(
+                {
+                  name: "testing click",
+                  displayName: "TESTING CLICK",
+                  message: `position ${position}`,
+                },
+                () => {
+                  cy.get("body", { log: false }).click(position, {
+                    log: false,
+                  });
+                }
+              );
+            });
 
-        [Key.leftCtrl, Key.five, Key.l].forEach((key) => {
-          cy.withOverallNameLogged(
-            {
-              displayName: "TESTING KEY",
-              message: "'" + getKeyValue(key) + "'",
-            },
-            () => {
-              cy.pressKey(key, { log: false });
-            }
-          );
-        });
+            [Key.leftCtrl, Key.five, Key.l].forEach((key) => {
+              cy.withOverallNameLogged(
+                {
+                  displayName: "TESTING KEY",
+                  message: "'" + getKeyValue(key) + "'",
+                },
+                () => {
+                  cy.pressKey(key, { log: false });
+                }
+              );
+            });
 
-        elements.container.assertShows();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+            elements.container.assertShows();
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
-function evaluateResultTimeDependantNoSideEffects1(timeInMs: 1530) {
+// We only use this parameter to communicate to the caller the requirements
+// this function has in order to be called correctly
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function evaluateResultTimeDependantNoSideEffects1(_: { timeInMs: 1530 }) {
   cy.withOverallNameLogged(
     { message: "displays the time it was stopped at" },
     () => {
@@ -2489,7 +2690,10 @@ function evaluateResultTimeDependantNoSideEffects1(timeInMs: 1530) {
   );
 }
 
-function evaluateResultTimeDependantNoSideEffects2(timeInMs: 600) {
+// We only use this parameter to communicate to the caller the requirements
+// this function has in order to be called correctly
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function evaluateResultTimeDependantNoSideEffects2(_: { timeInMs: 600 }) {
   cy.withOverallNameLogged(
     { message: "displays two decimals on whole decisecond" },
     () => {
@@ -2500,7 +2704,10 @@ function evaluateResultTimeDependantNoSideEffects2(timeInMs: 600) {
   );
 }
 
-function evaluateResultTimeDependantNoSideEffects3(timeInMs: 1030) {
+// We only use this parameter to communicate to the caller the requirements
+// this function has in order to be called correctly
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function evaluateResultTimeDependantNoSideEffects3(_: { timeInMs: 1030 }) {
   cy.withOverallNameLogged(
     { message: "displays two decimals on single digit centisecond" },
     () => {
@@ -2511,7 +2718,10 @@ function evaluateResultTimeDependantNoSideEffects3(timeInMs: 1030) {
   );
 }
 
-function evaluateResultTimeDependantNoSideEffects4(timeInMs: 100) {
+// We only use this parameter to communicate to the caller the requirements
+// this function has in order to be called correctly
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function evaluateResultTimeDependantNoSideEffects4(_: { timeInMs: 100 }) {
   cy.withOverallNameLogged({ message: "handles low granularity: 0" }, () => {
     pllTrainerElements.evaluateResult.timeResult
       .get()
@@ -2519,7 +2729,10 @@ function evaluateResultTimeDependantNoSideEffects4(timeInMs: 100) {
   });
 }
 
-function evaluateResultTimeDependantNoSideEffects5(timeInMs: 110) {
+// We only use this parameter to communicate to the caller the requirements
+// this function has in order to be called correctly
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function evaluateResultTimeDependantNoSideEffects5(_: { timeInMs: 110 }) {
   cy.withOverallNameLogged({ message: "handles low granularity: 1" }, () => {
     pllTrainerElements.evaluateResult.timeResult
       .get()
@@ -2527,7 +2740,10 @@ function evaluateResultTimeDependantNoSideEffects5(timeInMs: 110) {
   });
 }
 
-function evaluateResultTimeDependantNoSideEffects6(timeInMs: 120) {
+// We only use this parameter to communicate to the caller the requirements
+// this function has in order to be called correctly
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function evaluateResultTimeDependantNoSideEffects6(_: { timeInMs: 120 }) {
   cy.withOverallNameLogged({ message: "handles low granularity: 2" }, () => {
     pllTrainerElements.evaluateResult.timeResult
       .get()
@@ -2539,77 +2755,78 @@ function evaluateResultTimeDependantNoSideEffects6(timeInMs: 120) {
  * The timestamp represents 12:34:56.78, and was calculated as follows:
  * 1000 * 60 * 60 * 12 + 1000 * 60 * 34 + 1000 * 56 + 780
  */
-function evaluateResultTimeDependantNoSideEffects7(timeInMs: 45296780) {
+// We only use this parameter to communicate to the caller the requirements
+// this function has in order to be called correctly
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function evaluateResultTimeDependantNoSideEffects7(_: { timeInMs: 45296780 }) {
   const elements = pllTrainerElements.evaluateResult;
 
-  ([
-    [
-      "displays the very large time correctly",
-      () => {
-        pllTrainerElements.evaluateResult.timeResult
-          .get()
-          .should("have.text", "12:34:56.78");
-      },
-    ],
-    [
-      "displays everything nicely and correctly even with very large time",
-      () => {
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
-        const minDimension = Math.min(
-          Cypress.config().viewportWidth,
-          Cypress.config().viewportHeight
-        );
+  cy.withOverallNameLogged(
+    { message: "evaluateResultTimeDependantNoSideEffects7" },
+    () => {
+      ([
         [
-          pllTrainerElements.evaluateResult.expectedCubeFront,
-          pllTrainerElements.evaluateResult.expectedCubeBack,
-        ].forEach((cubeElement) =>
-          cubeElement.get().should((jqueryCube) => {
-            expect(
-              jqueryCube.width(),
-              "cube width to fill at least a quarter of min dimension"
-            ).to.be.at.least(minDimension / 4);
-            expect(
-              jqueryCube.height(),
-              "cube height to fill at least a quarter of min dimension"
-            ).to.be.at.least(minDimension / 4);
-            expect(
-              jqueryCube.height(),
-              "cube height to fill at most half of screen height"
-            ).to.be.at.most(Cypress.config().viewportHeight / 2);
-          })
-        );
-        pllTrainerElements.evaluateResult.timeResult
-          .get()
-          .should((timerElement) => {
-            expect(
-              timerElement.height(),
-              "time result height at least 10% of min dimension"
-            ).to.be.at.least(minDimension / 10);
-            expect(
-              timerElement.height(),
-              "time result at most a third of screen height"
-            ).to.be.at.most(Cypress.config().viewportHeight / 3);
-          });
+          "displays the very large time correctly",
+          () => {
+            elements.timeResult.get().should("have.text", "12:34:56.78");
+          },
+        ],
         [
-          pllTrainerElements.evaluateResult.correctButton,
-          pllTrainerElements.evaluateResult.wrongButton,
-        ].forEach((buttonGetter) => {
-          buttonGetter.get().should((buttonElement) => {
-            expect(
-              buttonElement.height(),
-              "button height at least 5% of min dimension"
-            ).to.be.at.least(minDimension / 20);
-            expect(
-              buttonElement.height(),
-              "button height at most a third of screen height"
-            ).to.be.at.most(Cypress.config().viewportHeight / 3);
-          });
-        });
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+          "displays everything nicely and correctly even with very large time",
+          () => {
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
+            const minDimension = Math.min(
+              Cypress.config().viewportWidth,
+              Cypress.config().viewportHeight
+            );
+            [elements.expectedCubeFront, elements.expectedCubeBack].forEach(
+              (cubeElement) =>
+                cubeElement.get().should((jqueryCube) => {
+                  expect(
+                    jqueryCube.width(),
+                    "cube width to fill at least a quarter of min dimension"
+                  ).to.be.at.least(minDimension / 4);
+                  expect(
+                    jqueryCube.height(),
+                    "cube height to fill at least a quarter of min dimension"
+                  ).to.be.at.least(minDimension / 4);
+                  expect(
+                    jqueryCube.height(),
+                    "cube height to fill at most half of screen height"
+                  ).to.be.at.most(Cypress.config().viewportHeight / 2);
+                })
+            );
+            elements.timeResult.get().should((timerElement) => {
+              expect(
+                timerElement.height(),
+                "time result height at least 10% of min dimension"
+              ).to.be.at.least(minDimension / 10);
+              expect(
+                timerElement.height(),
+                "time result at most a third of screen height"
+              ).to.be.at.most(Cypress.config().viewportHeight / 3);
+            });
+            [elements.correctButton, elements.wrongButton].forEach(
+              (buttonGetter) => {
+                buttonGetter.get().should((buttonElement) => {
+                  expect(
+                    buttonElement.height(),
+                    "button height at least 5% of min dimension"
+                  ).to.be.at.least(minDimension / 20);
+                  expect(
+                    buttonElement.height(),
+                    "button height at most a third of screen height"
+                  ).to.be.at.most(Cypress.config().viewportHeight / 3);
+                });
+              }
+            );
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
