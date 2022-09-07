@@ -60,8 +60,11 @@ describe("PLL Trainer", function () {
         cy.tick(evaluateResultIgnoreTransitionsWaitTime);
         cy.clock().invoke("restore");
         evaluateResultNavigateCorrectVariant1();
+        pickAlgorithmPageFirstThingNoSideEffects();
+        pickAlgorithmPageSideEffectsExceptNavigations();
         pickAlgorithmNavigateVariant1();
         pllTrainerElements.correctPage.goodJobText.assertShows();
+        correctPageNoSideEffects();
 
         // Do same case again, but now pick algorithm should not be displayed
         cy.getCurrentTestCase().then((testCase) => {
@@ -186,6 +189,7 @@ describe("PLL Trainer", function () {
           endingState: "algorithmDrillerStatusPage",
           testRunningNavigator: testRunningNavigateChangingClockVariant3,
           evaluateResultWrongNavigator: evaluateResultNavigateWrongVariant3,
+          algorithmDrillerStatusPageNavigator: algorithmDrillerStatusPageNavigateVariant1,
         });
         algorithmDrillerStatusPageAfter1Success1FailureNoSideEffects();
 
@@ -197,6 +201,7 @@ describe("PLL Trainer", function () {
           testRunningNavigator: testRunningNavigateVariant4,
           evaluateResultCallback: () =>
             evaluateResultTimeDependantNoSideEffects2({ timeInMs: time2 }),
+          algorithmDrillerStatusPageNavigator: algorithmDrillerStatusPageNavigateVariant2,
         });
         const time3 = 1030 as const;
         completePLLTestInMilliseconds(time3, {
@@ -219,6 +224,28 @@ describe("PLL Trainer", function () {
         });
 
         algorithmDrillerSuccessPageNoSideEffects();
+
+        // Ensure it navigates away correctly
+        cy.getApplicationState().then((applicationState) => {
+          algorithmDrillerSuccessPageNavigateVariant1();
+          pllTrainerElements.root
+            .getStateAttributeValue()
+            .should("be.oneOf", [
+              pllTrainerElements.root.stateAttributeValues.newCasePage,
+              pllTrainerElements.root.stateAttributeValues.getReadyState,
+            ]);
+
+          cy.setApplicationState(applicationState);
+          pllTrainerElements.algorithmDrillerSuccessPage.container.waitFor();
+
+          algorithmDrillerSuccessPageNavigateVariant2();
+          pllTrainerElements.root
+            .getStateAttributeValue()
+            .should("be.oneOf", [
+              pllTrainerElements.root.stateAttributeValues.newCasePage,
+              pllTrainerElements.root.stateAttributeValues.getReadyState,
+            ]);
+        });
       });
 
       it("Very slow correct for new preAUF but same pll shows driller but with 'correct text' and not 'wrong text'", function () {
@@ -262,6 +289,7 @@ describe("PLL Trainer", function () {
           forceTestCase: [firstPreAUF, pll, differentNotNonePostAUF],
           endingState: "algorithmDrillerExplanationPage",
           testRunningNavigator: testRunningNavigateChangingClockVariant4,
+          correctPageNavigator: correctPageNavigateVariant1,
         });
         pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
 
@@ -274,6 +302,10 @@ describe("PLL Trainer", function () {
         });
         pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
 
+        type Aliases = {
+          testCaseFront: string;
+          testCaseBack: string;
+        };
         // Note that the time won't be 500 as we're using a changing clock variant
         // of the test running navigator
         completePLLTestInMilliseconds(500, {
@@ -282,6 +314,16 @@ describe("PLL Trainer", function () {
           startingState: "doNewVisit",
           forceTestCase: [firstPreAUF, pll, AUF.none],
           endingState: "wrongPage",
+          testRunningCallback: () => {
+            pllTrainerElements.testRunning.testCase
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "testCaseFront">("testCaseFront");
+            cy.overrideCubeDisplayAngle("ubl");
+            pllTrainerElements.testRunning.testCase
+              .getStringRepresentationOfCube()
+              .setAlias<Aliases, "testCaseBack">("testCaseBack");
+            cy.overrideCubeDisplayAngle(null);
+          },
           testRunningNavigator: testRunningNavigateChangingClockVariant5,
         });
 
@@ -289,13 +331,25 @@ describe("PLL Trainer", function () {
         // that just means not to make a move in the end which shouldn't be considered new,
         // as learning post-AUF recognition has already been done when that preAUF was learned
         pllTrainerElements.wrongPage.container.assertShows();
+        getVerifiedAliases<Aliases, "testCaseFront" | "testCaseBack">([
+          "testCaseFront",
+          "testCaseBack",
+        ]).then(({ testCaseFront, testCaseBack }) =>
+          wrongPageNoSideEffects({
+            nearlyThereTypeOfWrongWasUsed: true,
+            testCaseFront,
+            testCaseBack,
+          })
+        );
 
         const timeInMs = 45296780 as const;
         completePLLTestInMilliseconds(timeInMs, {
-          correct: true,
-          startingState: "doNewVisit",
+          correct: false,
+          wrongType: "unrecoverable",
+          startingState: "wrongPage",
           forceTestCase: [differentPreAUF, pll, differentNotNonePostAUF],
-          endingState: "correctPage",
+          endingState: "wrongPage",
+          wrongPageNavigator: wrongPageNavigateVariant1,
           testRunningNavigator: testRunningNavigateVariant10,
           evaluateResultCallback: () =>
             evaluateResultTimeDependantNoSideEffects7({ timeInMs }),
@@ -303,7 +357,16 @@ describe("PLL Trainer", function () {
 
         // We shouldn't be drilling for known pre and post auf cases even if they haven't been seen
         // in that combination previously
-        pllTrainerElements.correctPage.container.assertShows();
+        pllTrainerElements.wrongPage.container.assertShows();
+
+        // Check that it navigates correctly with variant2
+        wrongPageNavigateVariant2();
+        pllTrainerElements.root
+          .getStateAttributeValue()
+          .should("be.oneOf", [
+            pllTrainerElements.root.stateAttributeValues.newCasePage,
+            pllTrainerElements.root.stateAttributeValues.getReadyState,
+          ]);
       });
 
       it("doesn't go to driller on what is technically new pre and post aufs if they are equivalent by symmetry to cases that have been learned", function () {
@@ -323,6 +386,7 @@ describe("PLL Trainer", function () {
           forceTestCase: [AUF.none, PLL.H, AUF.U2],
           endingState: "correctPage",
           testRunningNavigator: testRunningNavigateVariant12,
+          correctPageNavigator: correctPageNavigateVariant2,
         });
 
         // Should not show a driller as (U', U') is equivalent to (none, U2) for a fully symmetric
@@ -380,7 +444,7 @@ describe("PLL Trainer", function () {
           endingState: "pickAlgorithmPage",
           testRunningNavigator: testRunningNavigateChangingClockVariant7,
         });
-        pickAlgorithmNavigateVariant1();
+        pickAlgorithmNavigateVariant2();
 
         cy.visit(paths.pllTrainer);
         // As we completed the previous test we should now be at the recurring user's start page.
@@ -480,6 +544,12 @@ describe("PLL Trainer", function () {
         },
       });
 
+      type Aliases = {
+        originalExpectedCubeFront: string;
+        originalExpectedCubeBack: string;
+        nextExpectedCubeFront: string;
+        nextExpectedCubeBack: string;
+      };
       cy.log(
         "H perm is fully symmetrical so preAUF and postAUF are equivalent in that sense and this shouldn't be a new case"
       );
@@ -489,6 +559,18 @@ describe("PLL Trainer", function () {
         startingState: "correctPage",
         endingState: "correctPage",
         assertNewCasePageDidntDisplay: true,
+        evaluateResultCallback() {
+          pllTrainerElements.evaluateResult.expectedCubeFront
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "originalExpectedCubeFront">(
+              "originalExpectedCubeFront"
+            );
+          pllTrainerElements.evaluateResult.expectedCubeBack
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "originalExpectedCubeBack">(
+              "originalExpectedCubeBack"
+            );
+        },
       });
 
       cy.log(
@@ -496,13 +578,36 @@ describe("PLL Trainer", function () {
       );
       completePLLTestInMilliseconds(500, {
         forceTestCase: [AUF.U2, PLL.H, AUF.none],
-        correct: true,
+        correct: false,
+        wrongType: "unrecoverable",
         startingState: "correctPage",
-        endingState: "correctPage",
+        endingState: "typeOfWrongPage",
         newCasePageCallback() {
           pllTrainerElements.newCasePage.container.assertShows();
         },
+        evaluateResultCallback() {
+          pllTrainerElements.evaluateResult.expectedCubeFront
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "nextExpectedCubeFront">(
+              "nextExpectedCubeFront"
+            );
+          pllTrainerElements.evaluateResult.expectedCubeBack
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "nextExpectedCubeBack">("nextExpectedCubeBack");
+        },
       });
+      getVerifiedAliases<
+        Aliases,
+        | "originalExpectedCubeFront"
+        | "originalExpectedCubeBack"
+        | "nextExpectedCubeFront"
+        | "nextExpectedCubeBack"
+      >([
+        "originalExpectedCubeFront",
+        "originalExpectedCubeBack",
+        "nextExpectedCubeFront",
+        "nextExpectedCubeBack",
+      ]).then(typeOfWrongPageNoSideEffects);
     });
   });
 
@@ -533,6 +638,10 @@ describe("PLL Trainer", function () {
         testRunningNavigator: testRunningNavigateChangingClockVariant1,
       });
       pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
+      // We just navigate to the status page to test variant 2 of navigation, so if another
+      // good place to do this arises we can do it there instead
+      algorithmDrillerExplanationPageNavigateVariant2();
+      pllTrainerElements.algorithmDrillerStatusPage.container.assertShows();
     });
   });
 
@@ -579,7 +688,6 @@ describe("PLL Trainer", function () {
       evaluateResultAfterIgnoringTransitionsNoSideEffects();
       evaluateResultNavigateWrongVariant1();
 
-      pllTrainerElements.typeOfWrongPage.container.waitFor();
       cy.getApplicationState().then((typeOfWrongApplicationState) => {
         cy.withOverallNameLogged({ message: "no moves both variants" }, () => {
           pllTrainerElements.typeOfWrongPage.noMoveCubeStateFront
@@ -2831,304 +2939,346 @@ function evaluateResultTimeDependantNoSideEffects7(_: { timeInMs: 45296780 }) {
 }
 
 function evaluateResultNavigateCorrectVariant1() {
-  pllTrainerElements.evaluateResult.correctButton.get().click();
-  pllTrainerElements.evaluateResult.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "evaluateResultNavigateCorrectVariant1" },
+    () => {
+      pllTrainerElements.evaluateResult.correctButton.get().click();
+      pllTrainerElements.evaluateResult.container.assertDoesntExist();
+    }
+  );
 }
 
 function evaluateResultNavigateCorrectVariant2() {
-  cy.pressKey(Key.space);
-  pllTrainerElements.evaluateResult.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "evaluateResultNavigateCorrectVariant2" },
+    () => {
+      pllTrainerElements.evaluateResult.container.waitFor();
+      cy.pressKey(Key.space);
+      pllTrainerElements.evaluateResult.container.assertDoesntExist();
+    }
+  );
 }
 
 function evaluateResultNavigateWrongVariant1() {
-  pllTrainerElements.evaluateResult.wrongButton.get().click();
-  pllTrainerElements.evaluateResult.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "evaluateResultNavigateWrongVariant1" },
+    () => {
+      pllTrainerElements.evaluateResult.wrongButton.get().click();
+      pllTrainerElements.evaluateResult.container.assertDoesntExist();
+    }
+  );
 }
 
 function evaluateResultNavigateWrongVariant2() {
-  cy.pressKey(Key.w);
-  pllTrainerElements.evaluateResult.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "evaluateResultNavigateWrongVariant2" },
+    () => {
+      pllTrainerElements.evaluateResult.container.waitFor();
+      cy.pressKey(Key.w);
+      pllTrainerElements.evaluateResult.container.assertDoesntExist();
+    }
+  );
 }
 
 function evaluateResultNavigateWrongVariant3() {
-  cy.pressKey(Key.W);
-  pllTrainerElements.evaluateResult.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "evaluateResultNavigateWrongVariant3" },
+    () => {
+      pllTrainerElements.evaluateResult.container.waitFor();
+      cy.pressKey(Key.W);
+      pllTrainerElements.evaluateResult.container.assertDoesntExist();
+    }
+  );
 }
 
 function pickAlgorithmPageFirstThingNoSideEffects() {
   const elements = pllTrainerElements.pickAlgorithmPage;
-  ([
-    [
-      "auto focuses the algorithm input",
-      () => {
-        elements.algorithmInput.assertIsFocused();
-      },
-    ],
-    [
-      "errors behave properly at the start",
-      () => {
-        // No errors expected as you enter the page
-        pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
-        // Should require input if pressing enter right away
-        elements.algorithmInput.get().type("{enter}");
-        elements.inputRequiredError.assertShows();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  cy.withOverallNameLogged(
+    { message: "pickAlgorithmPageFirstThingNoSideEffects" },
+    () => {
+      ([
+        [
+          "auto focuses the algorithm input",
+          () => {
+            elements.algorithmInput.assertIsFocused();
+          },
+        ],
+        [
+          "errors behave properly at the start",
+          () => {
+            // No errors expected as you enter the page
+            pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
+            // Should require input if pressing enter right away
+            elements.algorithmInput.get().type("{enter}");
+            elements.inputRequiredError.assertShows();
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
 function pickAlgorithmPageSideEffectsExceptNavigations() {
   const elements = pllTrainerElements.pickAlgorithmPage;
-
-  ([
-    [
-      "looks right",
-      () => {
-        // Shouldn't have error message on load
-        pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
-        elements.assertAllShow();
-        // Produce a very long error and assert it still displays, and that it didn't
-        // trigger any scrollbars
-        pllTrainerElements.pickAlgorithmPage.algorithmInput
-          .get()
-          .type("U B F2 A ".repeat(20) + "{enter}", { delay: 0 });
-        pllTrainerElements.pickAlgorithmPage.invalidTurnableError.assertShows();
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
-
-        // The text should somehow communicate which pll we are picking an algorithm for
-        cy.getCurrentTestCase().then(([, pll]) =>
-          pllTrainerElements.pickAlgorithmPage.explanationText
-            .get()
-            .should("contain.text", pllToPllLetters[pll])
-        );
-      },
-    ],
-    [
-      "has correct links",
-      () => {
-        type LocalAliases = {
-          firstExpertLink: string;
-        };
-        cy.getCurrentTestCase().then((currentCase) => {
-          // The page should have an AlgDB link to the case being picked for
-          testAlgdbLink(currentCase[1]);
-          // The page should have any type of expert guidance link, any further assertions
-          // would make for too brittle tests
-          pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
-            .get()
-            .should((link) => {
-              expect(link.prop("tagName")).to.equal("A");
-              // Assert it opens in new tab
-              expect(link.attr("target"), "target").to.equal("_blank");
-            })
-            .then((link) => {
-              const url =
-                link.attr("href") ||
-                "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
-              // Check that the link actually works
-              return cy
-                .request(url)
-                .its("status")
-                .should("be.at.least", 200)
-                .and("be.lessThan", 300)
-                .then(() => url);
-            })
-            .setAlias<LocalAliases, "firstExpertLink">("firstExpertLink");
-
-          // We want to change the algorithm to something different so ensuring
-          // that we don't pick the same one again
-          let differentTestCase: [AUF, PLL, AUF];
-          if (currentCase[1] === PLL.Ga) {
-            differentTestCase = [AUF.U, PLL.Gb, AUF.U2];
-          } else {
-            differentTestCase = [AUF.U, PLL.Ga, AUF.U2];
-          }
-          cy.setCurrentTestCase(differentTestCase);
-
-          testAlgdbLink(differentTestCase[1]);
-          pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
-            .get()
-            .should((link) => {
-              expect(link.prop("tagName")).to.equal("A");
-              // Assert it opens in new tab
-              expect(link.attr("target"), "target").to.equal("_blank");
-            })
-            .then((link) => {
-              const url =
-                link.attr("href") ||
-                "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
-              // Check that the link actually works
-              cy.request(url)
-                .its("status")
-                .should("be.at.least", 200)
-                .and("be.lessThan", 300);
-              return cy.getAliases<LocalAliases>().then((aliases) => ({
-                previous: aliases.firstExpertLink,
-                current: url,
-              }));
-            })
-            .should(({ previous, current }) => {
-              expect(previous).to.not.be.undefined;
-              expect(current).to.not.deep.equal(previous);
-            });
-
-          // Make sure to reset the test case so we don't have side effects
-          cy.setCurrentTestCase(currentCase);
-
-          function testAlgdbLink(currentPLL: PLL) {
-            pllTrainerElements.pickAlgorithmPage.algDbLink
+  cy.withOverallNameLogged(
+    { message: "pickAlgorithmPageSideEffectsExceptNavigations" },
+    () => {
+      ([
+        [
+          "looks right",
+          () => {
+            elements.assertAllShow();
+            // Produce a very long error and assert it still displays, and that it didn't
+            // trigger any scrollbars
+            pllTrainerElements.pickAlgorithmPage.algorithmInput
               .get()
-              .should((link) => {
-                expect(link.prop("tagName")).to.equal("A");
-                // Assert it opens in new tab
-                expect(link.attr("target"), "target").to.equal("_blank");
+              .type("U B F2 A ".repeat(20) + "{enter}", { delay: 0 });
+            pllTrainerElements.pickAlgorithmPage.invalidTurnableError.assertShows();
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
 
-                expect(link.prop("href"), "href")
-                  .to.be.a("string")
-                  .and.contain("algdb.net")
-                  .and.satisfy(
-                    (href: string) =>
-                      href
-                        .toLowerCase()
-                        .endsWith(
-                          "/" + pllToPllLetters[currentPLL].toLowerCase()
-                        ),
-                    "ends with /" + pllToPllLetters[currentPLL].toLowerCase()
-                  );
-              })
-              .then((link) => {
-                // Check that the link actually works
-                cy.request(
-                  link.attr("href") ||
-                    "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
-                )
-                  .its("status")
-                  .should("be.at.least", 200)
-                  .and("be.lessThan", 300);
-              });
-          }
-        });
-      },
-    ],
-    [
-      "all errors display exactly when expected, don't update unless an attempt at submitting has occurred, and stays on the page despite submit action when an error is expected",
-      () => {
-        let useEnterKeyToSubmit = true;
-        function clearInputTypeAndSubmit(input: string): void {
-          elements.algorithmInput
-            .get()
-            .type(`{selectall}{backspace}${input}`, { delay: 0 });
+            // The text should somehow communicate which pll we are picking an algorithm for
+            cy.getCurrentTestCase().then(([, pll]) =>
+              pllTrainerElements.pickAlgorithmPage.explanationText
+                .get()
+                .should("contain.text", pllToPllLetters[pll])
+            );
+          },
+        ],
+        [
+          "has correct links",
+          () => {
+            type LocalAliases = {
+              firstExpertLink: string;
+            };
+            cy.getCurrentTestCase().then((currentCase) => {
+              // The page should have an AlgDB link to the case being picked for
+              testAlgdbLink(currentCase[1]);
+              // The page should have any type of expert guidance link, any further assertions
+              // would make for too brittle tests
+              pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
+                .get()
+                .should((link) => {
+                  expect(link.prop("tagName")).to.equal("A");
+                  // Assert it opens in new tab
+                  expect(link.attr("target"), "target").to.equal("_blank");
+                })
+                .then((link) => {
+                  const url =
+                    link.attr("href") ||
+                    "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
+                  // Check that the link actually works
+                  return cy
+                    .request(url)
+                    .its("status")
+                    .should("be.at.least", 200)
+                    .and("be.lessThan", 300)
+                    .then(() => url);
+                })
+                .setAlias<LocalAliases, "firstExpertLink">("firstExpertLink");
 
-          if (useEnterKeyToSubmit) {
-            elements.algorithmInput.get().type("{enter}", { delay: 0 });
-          } else {
+              // We want to change the algorithm to something different so ensuring
+              // that we don't pick the same one again
+              let differentTestCase: [AUF, PLL, AUF];
+              if (currentCase[1] === PLL.Ga) {
+                differentTestCase = [AUF.U, PLL.Gb, AUF.U2];
+              } else {
+                differentTestCase = [AUF.U, PLL.Ga, AUF.U2];
+              }
+              cy.setCurrentTestCase(differentTestCase);
+
+              testAlgdbLink(differentTestCase[1]);
+              pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
+                .get()
+                .should((link) => {
+                  expect(link.prop("tagName")).to.equal("A");
+                  // Assert it opens in new tab
+                  expect(link.attr("target"), "target").to.equal("_blank");
+                })
+                .then((link) => {
+                  const url =
+                    link.attr("href") ||
+                    "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
+                  // Check that the link actually works
+                  cy.request(url)
+                    .its("status")
+                    .should("be.at.least", 200)
+                    .and("be.lessThan", 300);
+                  return cy.getAliases<LocalAliases>().then((aliases) => ({
+                    previous: aliases.firstExpertLink,
+                    current: url,
+                  }));
+                })
+                .should(({ previous, current }) => {
+                  expect(previous).to.not.be.undefined;
+                  expect(current).to.not.deep.equal(previous);
+                });
+
+              // Make sure to reset the test case so we don't have side effects
+              cy.setCurrentTestCase(currentCase);
+
+              function testAlgdbLink(currentPLL: PLL) {
+                pllTrainerElements.pickAlgorithmPage.algDbLink
+                  .get()
+                  .should((link) => {
+                    expect(link.prop("tagName")).to.equal("A");
+                    // Assert it opens in new tab
+                    expect(link.attr("target"), "target").to.equal("_blank");
+
+                    expect(link.prop("href"), "href")
+                      .to.be.a("string")
+                      .and.contain("algdb.net")
+                      .and.satisfy(
+                        (href: string) =>
+                          href
+                            .toLowerCase()
+                            .endsWith(
+                              "/" + pllToPllLetters[currentPLL].toLowerCase()
+                            ),
+                        "ends with /" +
+                          pllToPllLetters[currentPLL].toLowerCase()
+                      );
+                  })
+                  .then((link) => {
+                    // Check that the link actually works
+                    cy.request(
+                      link.attr("href") ||
+                        "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
+                    )
+                      .its("status")
+                      .should("be.at.least", 200)
+                      .and("be.lessThan", 300);
+                  });
+              }
+            });
+          },
+        ],
+        [
+          "all errors display exactly when expected, don't update unless an attempt at submitting has occurred, and stays on the page despite submit action when an error is expected",
+          () => {
+            let useEnterKeyToSubmit = true;
+            function clearInputTypeAndSubmit(input: string): void {
+              elements.algorithmInput
+                .get()
+                .type(`{selectall}{backspace}${input}`, { delay: 0 });
+
+              if (useEnterKeyToSubmit) {
+                elements.algorithmInput.get().type("{enter}", { delay: 0 });
+              } else {
+                elements.submitButton.get().click();
+              }
+
+              useEnterKeyToSubmit = !useEnterKeyToSubmit;
+            }
+            // Should require input if input is empty
+            clearInputTypeAndSubmit("");
+            elements.inputRequiredError.assertShows();
+
+            // Should no longer require input after input
+            elements.algorithmInput.get().type("asdfgfda{enter}");
+            elements.inputRequiredError.assertDoesntExist();
+
+            // Should require input again after deleting the input
+            clearInputTypeAndSubmit("");
+            elements.inputRequiredError.assertShows();
+
+            // Errors informatively when invalid turnable encountered
+            clearInputTypeAndSubmit("U B A");
+            elements.invalidTurnableError.assertShows();
+
+            // Errors informatively when invalid turn length encountered
+            clearInputTypeAndSubmit("U4");
+            elements.invalidTurnLengthError.assertShows();
+
+            // Errors informatively when repeated turnable encountered
+            // And doesn't update the error until the submit action
+            elements.algorithmInput
+              .get()
+              .type("{selectall}{backspace}U2U", { delay: 0 });
+            // Still old error before submit
+            elements.invalidTurnLengthError.assertShows();
             elements.submitButton.get().click();
-          }
+            // Error now updated after submit action
+            elements.repeatedTurnableError.assertShows();
 
-          useEnterKeyToSubmit = !useEnterKeyToSubmit;
-        }
-        // Should require input if input is empty
-        clearInputTypeAndSubmit("");
-        elements.inputRequiredError.assertShows();
+            // Errors informatively when mixed wide move styles encountered
+            // And doesn't update the error until the submit action, this time using enter key
+            elements.algorithmInput
+              .get()
+              .type("{selectall}{backspace}u B Rw", { delay: 0 });
+            // Still old error before submit
+            elements.repeatedTurnableError.assertShows();
+            elements.algorithmInput.get().type("{enter}", { delay: 0 });
+            // Error now updated after submit action
+            elements.wideMoveStylesMixedError.assertShows();
 
-        // Should no longer require input after input
-        elements.algorithmInput.get().type("asdfgfda{enter}");
-        elements.inputRequiredError.assertDoesntExist();
+            // Errors informatively when space between turnable and apostrophe encountered
+            clearInputTypeAndSubmit("U '");
+            elements.turnWouldWorkWithoutInterruptionError.assertShows();
 
-        // Should require input again after deleting the input
-        clearInputTypeAndSubmit("");
-        elements.inputRequiredError.assertShows();
+            // Errors informatively when parenthesis between turnable and apostrophe encountered
+            clearInputTypeAndSubmit("(U)'");
+            elements.turnWouldWorkWithoutInterruptionError.assertShows();
 
-        // Errors informatively when invalid turnable encountered
-        clearInputTypeAndSubmit("U B A");
-        elements.invalidTurnableError.assertShows();
+            // Errors informatively when apostrophe on wrong side of length encountered
+            clearInputTypeAndSubmit("U'2");
+            elements.apostropheWrongSideOfLengthError.assertShows();
 
-        // Errors informatively when invalid turn length encountered
-        clearInputTypeAndSubmit("U4");
-        elements.invalidTurnLengthError.assertShows();
+            // Errors informatively when unclosed parenthesis encountered
+            clearInputTypeAndSubmit("U ( B F' D2");
+            elements.unclosedParenthesisError.assertShows();
 
-        // Errors informatively when repeated turnable encountered
-        // And doesn't update the error until the submit action
-        elements.algorithmInput
-          .get()
-          .type("{selectall}{backspace}U2U", { delay: 0 });
-        // Still old error before submit
-        elements.invalidTurnLengthError.assertShows();
-        elements.submitButton.get().click();
-        // Error now updated after submit action
-        elements.repeatedTurnableError.assertShows();
+            // Errors informatively when unmatched closing parenthesis encountered
+            clearInputTypeAndSubmit("U B F' ) D2");
+            elements.unmatchedClosingParenthesisError.assertShows();
 
-        // Errors informatively when mixed wide move styles encountered
-        // And doesn't update the error until the submit action, this time using enter key
-        elements.algorithmInput
-          .get()
-          .type("{selectall}{backspace}u B Rw", { delay: 0 });
-        // Still old error before submit
-        elements.repeatedTurnableError.assertShows();
-        elements.algorithmInput.get().type("{enter}", { delay: 0 });
-        // Error now updated after submit action
-        elements.wideMoveStylesMixedError.assertShows();
+            // Errors informatively when nested parentheses encountered
+            clearInputTypeAndSubmit("( U (B F') ) D2");
+            elements.nestedParenthesesError.assertShows();
 
-        // Errors informatively when space between turnable and apostrophe encountered
-        clearInputTypeAndSubmit("U '");
-        elements.turnWouldWorkWithoutInterruptionError.assertShows();
+            // Errors informatively when invalid symbol encountered
+            clearInputTypeAndSubmit("( U B F') % D2");
+            elements.invalidSymbolError.assertShows();
 
-        // Errors informatively when parenthesis between turnable and apostrophe encountered
-        clearInputTypeAndSubmit("(U)'");
-        elements.turnWouldWorkWithoutInterruptionError.assertShows();
-
-        // Errors informatively when apostrophe on wrong side of length encountered
-        clearInputTypeAndSubmit("U'2");
-        elements.apostropheWrongSideOfLengthError.assertShows();
-
-        // Errors informatively when unclosed parenthesis encountered
-        clearInputTypeAndSubmit("U ( B F' D2");
-        elements.unclosedParenthesisError.assertShows();
-
-        // Errors informatively when unmatched closing parenthesis encountered
-        clearInputTypeAndSubmit("U B F' ) D2");
-        elements.unmatchedClosingParenthesisError.assertShows();
-
-        // Errors informatively when nested parentheses encountered
-        clearInputTypeAndSubmit("( U (B F') ) D2");
-        elements.nestedParenthesesError.assertShows();
-
-        // Errors informatively when invalid symbol encountered
-        clearInputTypeAndSubmit("( U B F') % D2");
-        elements.invalidSymbolError.assertShows();
-
-        // Errors informatively an algorithm that doesn't match the case is encountered
-        cy.getCurrentTestCase().then(([, correctPLL]) => {
-          const wrongPLL = correctPLL === PLL.Ga ? PLL.Gb : PLL.Ga;
-          clearInputTypeAndSubmit(pllToAlgorithmString[wrongPLL]);
-          elements.algorithmDoesntMatchCaseError.assertShows();
-        });
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+            // Errors informatively an algorithm that doesn't match the case is encountered
+            cy.getCurrentTestCase().then(([, correctPLL]) => {
+              const wrongPLL = correctPLL === PLL.Ga ? PLL.Gb : PLL.Ga;
+              clearInputTypeAndSubmit(pllToAlgorithmString[wrongPLL]);
+              elements.algorithmDoesntMatchCaseError.assertShows();
+            });
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
 function pickAlgorithmNavigateVariant1() {
-  cy.getCurrentTestCase().then(([, currentPLL]) => {
-    typeInAlgorithm(currentPLL);
-    pllTrainerElements.pickAlgorithmPage.algorithmInput.get().type("{enter}", {
-      delay: 0,
+  cy.withOverallNameLogged({ message: "pickAlgorithmNavigateVariant1" }, () => {
+    cy.getCurrentTestCase().then(([, currentPLL]) => {
+      typeInAlgorithm(currentPLL);
+      pllTrainerElements.pickAlgorithmPage.algorithmInput
+        .get()
+        .type("{enter}", {
+          delay: 0,
+        });
     });
+    pllTrainerElements.pickAlgorithmPage.container.assertDoesntExist();
   });
-  pllTrainerElements.pickAlgorithmPage.container.assertDoesntExist();
 }
 
 function pickAlgorithmNavigateVariant2() {
-  cy.getCurrentTestCase().then(([, currentPLL]) => {
-    typeInAlgorithm(currentPLL);
+  cy.withOverallNameLogged({ message: "pickAlgorithmNavigateVariant2" }, () => {
+    cy.getCurrentTestCase().then(([, currentPLL]) => {
+      typeInAlgorithm(currentPLL);
+    });
+    pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
+    pllTrainerElements.pickAlgorithmPage.container.assertDoesntExist();
   });
-  pllTrainerElements.pickAlgorithmPage.submitButton.get().click();
-  pllTrainerElements.pickAlgorithmPage.container.assertDoesntExist();
 }
 
 function typeInAlgorithm(currentPLL: PLL) {
@@ -3180,42 +3330,49 @@ function typeInAlgorithm(currentPLL: PLL) {
 }
 
 function correctPageNoSideEffects() {
-  const elements = pllTrainerElements.correctPage;
-  ([
-    [
-      "looks right",
-      () => {
-        elements.assertAllShow();
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
-        assertFunctioningFeedbackButtonShows();
-      },
-    ],
-    [
-      "doesn't start test when pressing keys other than space",
-      () => {
-        cy.pressKey(Key.a);
-        cy.pressKey(Key.x);
-        cy.pressKey(Key.capsLock);
-        elements.container.assertShows();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
-  );
+  cy.withOverallNameLogged({ message: "correctPageNoSideEffects" }, () => {
+    const elements = pllTrainerElements.correctPage;
+    ([
+      [
+        "looks right",
+        () => {
+          elements.assertAllShow();
+          cy.assertNoHorizontalScrollbar();
+          cy.assertNoVerticalScrollbar();
+          assertFunctioningFeedbackButtonShows();
+        },
+      ],
+      [
+        "doesn't start test when pressing keys other than space",
+        () => {
+          cy.pressKey(Key.a);
+          cy.pressKey(Key.x);
+          cy.pressKey(Key.capsLock);
+          elements.container.assertShows();
+        },
+      ],
+    ] as const).forEach(([testDescription, testFunction]) =>
+      cy.withOverallNameLogged({ message: testDescription }, testFunction)
+    );
+  });
 }
 
 function correctPageNavigateVariant1() {
-  pllTrainerElements.correctPage.nextButton.get().click();
-  pllTrainerElements.correctPage.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "correctPageNavigateVariant1" }, () => {
+    pllTrainerElements.correctPage.nextButton.get().click();
+    pllTrainerElements.correctPage.container.assertDoesntExist();
+  });
 }
 
 function correctPageNavigateVariant2() {
-  cy.pressKey(Key.space);
-  pllTrainerElements.correctPage.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "correctPageNavigateVariant2" }, () => {
+    pllTrainerElements.correctPage.container.waitFor();
+    cy.pressKey(Key.space);
+    pllTrainerElements.correctPage.container.assertDoesntExist();
+  });
 }
 
-function TypeOfWrongPageNoSideEffects({
+function typeOfWrongPageNoSideEffects({
   originalExpectedCubeFront,
   originalExpectedCubeBack,
   nextExpectedCubeFront,
@@ -3227,81 +3384,118 @@ function TypeOfWrongPageNoSideEffects({
   nextExpectedCubeBack: string;
 }) {
   const elements = pllTrainerElements.typeOfWrongPage;
-  ([
-    [
-      "looks right",
-      () => {
-        // Make sure all elements present and no scrollbars
-        elements.assertAllShow();
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
+  cy.withOverallNameLogged({ message: "typeOfWrongPageNoSideEffects" }, () => {
+    ([
+      [
+        "looks right",
+        () => {
+          // Make sure all elements present and no scrollbars
+          elements.assertAllShow();
+          cy.assertNoHorizontalScrollbar();
+          cy.assertNoVerticalScrollbar();
 
-        // Check all the cubes look right
+          // Check all the cubes look right
 
-        // The cube for 'no moves applied' should be the same state as the previous/original expected cube state
-        assertCubeMatchesStateString(
-          originalExpectedCubeFront,
-          elements.noMoveCubeStateFront
-        );
-        assertCubeMatchesStateString(
-          originalExpectedCubeBack,
-          elements.noMoveCubeStateBack
-        );
-        // The cube for 'nearly there' should look like the expected state if you had
-        // solved the case correctly
-        assertCubeMatchesStateString(
-          nextExpectedCubeFront,
-          elements.nearlyThereCubeStateFront
-        );
-        assertCubeMatchesStateString(
-          nextExpectedCubeBack,
-          elements.nearlyThereCubeStateBack
-        );
-      },
-    ],
-    [
-      "doesn't start test when pressing arbitrary keys",
-      () => {
-        // on purpose use some of the ones we often use like space and w
-        [Key.space, Key.w, Key.W, Key.five, Key.d, Key.shift].forEach((key) => {
-          cy.pressKey(key);
-        });
-        elements.container.assertShows();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
-  );
+          // The cube for 'no moves applied' should be the same state as the previous/original expected cube state
+          assertCubeMatchesStateString(
+            originalExpectedCubeFront,
+            elements.noMoveCubeStateFront
+          );
+          assertCubeMatchesStateString(
+            originalExpectedCubeBack,
+            elements.noMoveCubeStateBack
+          );
+          // The cube for 'nearly there' should look like the expected state if you had
+          // solved the case correctly
+          assertCubeMatchesStateString(
+            nextExpectedCubeFront,
+            elements.nearlyThereCubeStateFront
+          );
+          assertCubeMatchesStateString(
+            nextExpectedCubeBack,
+            elements.nearlyThereCubeStateBack
+          );
+        },
+      ],
+      [
+        "doesn't start test when pressing arbitrary keys",
+        () => {
+          // on purpose use some of the ones we often use like space and w
+          [Key.space, Key.w, Key.W, Key.five, Key.d, Key.shift].forEach(
+            (key) => {
+              cy.pressKey(key);
+            }
+          );
+          elements.container.assertShows();
+        },
+      ],
+    ] as const).forEach(([testDescription, testFunction]) =>
+      cy.withOverallNameLogged({ message: testDescription }, testFunction)
+    );
+  });
 }
 
 function typeOfWrongPageNoMovesNavigateVariant1() {
-  pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
-  pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "typeOfWrongPageNoMovesNavigateVariant1" },
+    () => {
+      pllTrainerElements.typeOfWrongPage.noMoveButton.get().click();
+      pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function typeOfWrongPageNoMovesNavigateVariant2() {
-  cy.pressKey(Key.one);
-  pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "typeOfWrongPageNoMovesNavigateVariant2" },
+    () => {
+      pllTrainerElements.typeOfWrongPage.container.waitFor();
+      cy.pressKey(Key.one);
+      pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function typeOfWrongPageNearlyThereNavigateVariant1() {
-  pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
-  pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "typeOfWrongPageNearlyThereNavigateVariant1" },
+    () => {
+      pllTrainerElements.typeOfWrongPage.nearlyThereButton.get().click();
+      pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function typeOfWrongPageNearlyThereNavigateVariant2() {
-  cy.pressKey(Key.two);
-  pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "typeOfWrongPageNearlyThereNavigateVariant2" },
+    () => {
+      pllTrainerElements.typeOfWrongPage.container.waitFor();
+      cy.pressKey(Key.two);
+      pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function typeOfWrongPageUnrecoverableNavigateVariant1() {
-  pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
-  pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "typeOfWrongPageUnrecoverableNavigateVariant1" },
+    () => {
+      pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
+      pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function typeOfWrongPageUnrecoverableNavigateVariant2() {
-  cy.pressKey(Key.three);
-  pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "typeOfWrongPageUnrecoverableNavigateVariant2" },
+    () => {
+      pllTrainerElements.typeOfWrongPage.container.waitFor();
+      cy.pressKey(Key.three);
+      pllTrainerElements.typeOfWrongPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function algorithmDrillerExplanationPageNoSideEffectsButScroll({
@@ -3313,64 +3507,80 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
 }) {
   const elements = pllTrainerElements.algorithmDrillerExplanationPage;
 
-  ([
-    [
-      "looks right",
-      () => {
-        elements.assertAllConsumableViaVerticalScroll(
-          elements.container.specifier
-        );
-        assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
-        cy.assertNoHorizontalScrollbar();
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerExplanationPageNoSideEffectsButScroll" },
+    () => {
+      ([
+        [
+          "looks right",
+          () => {
+            elements.assertAllConsumableViaVerticalScroll(
+              elements.container.specifier
+            );
+            assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
+            cy.assertNoHorizontalScrollbar();
 
-        cy.getCurrentTestCase().then(([preAUF, pll, postAUF]) => {
-          elements.algorithmToDrill
-            .get()
-            .invoke("text")
-            .should((displayedAlgorithm) => {
-              const sanitizedDisplayAlgorithm = displayedAlgorithm.replace(
-                /\s/g,
-                ""
-              );
-              const defaultAlgorithm =
-                aufToAlgorithmString[preAUF] +
-                pllToAlgorithmString[pll] +
-                aufToAlgorithmString[postAUF];
-              const sanitizedDefaultAlgorithm = defaultAlgorithm.replace(
-                /\(|\)|\s/g,
-                ""
-              );
-              expect(sanitizedDisplayAlgorithm).to.equal(
-                sanitizedDefaultAlgorithm
-              );
+            cy.getCurrentTestCase().then(([preAUF, pll, postAUF]) => {
+              elements.algorithmToDrill
+                .get()
+                .invoke("text")
+                .should((displayedAlgorithm) => {
+                  const sanitizedDisplayAlgorithm = displayedAlgorithm.replace(
+                    /\s/g,
+                    ""
+                  );
+                  const defaultAlgorithm =
+                    aufToAlgorithmString[preAUF] +
+                    pllToAlgorithmString[pll] +
+                    aufToAlgorithmString[postAUF];
+                  const sanitizedDefaultAlgorithm = defaultAlgorithm.replace(
+                    /\(|\)|\s/g,
+                    ""
+                  );
+                  expect(sanitizedDisplayAlgorithm).to.equal(
+                    sanitizedDefaultAlgorithm
+                  );
+                });
             });
-        });
-      },
-    ],
-    [
-      "doesn't start test when pressing keys other than space",
-      () => {
-        cy.pressKey(Key.a);
-        cy.pressKey(Key.x);
-        cy.pressKey(Key.capsLock);
-        elements.container.assertShows();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+          },
+        ],
+        [
+          "doesn't start test when pressing keys other than space",
+          () => {
+            cy.pressKey(Key.a);
+            cy.pressKey(Key.x);
+            cy.pressKey(Key.capsLock);
+            elements.container.assertShows();
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
 function algorithmDrillerExplanationPageNavigateVariant1() {
-  pllTrainerElements.algorithmDrillerExplanationPage.continueButton
-    .get()
-    .click();
-  pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerExplanationPageNavigateVariant1" },
+    () => {
+      pllTrainerElements.algorithmDrillerExplanationPage.continueButton
+        .get()
+        .click();
+      pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function algorithmDrillerExplanationPageNavigateVariant2() {
-  cy.pressKey(Key.space);
-  pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerExplanationPageNavigateVariant2" },
+    () => {
+      pllTrainerElements.algorithmDrillerExplanationPage.container.waitFor();
+      cy.pressKey(Key.space);
+      pllTrainerElements.algorithmDrillerExplanationPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function algorithmDrillerStatusPageNoSideEffects({
@@ -3385,45 +3595,52 @@ function algorithmDrillerStatusPageNoSideEffects({
 }) {
   const elements = pllTrainerElements.algorithmDrillerStatusPage;
 
-  ([
-    [
-      "looks right",
-      () => {
-        elements.assertAllShow();
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
-      },
-    ],
-    [
-      "the expected cube state at first is always solved even if expected cube state was not solved before",
-      () => {
-        assertCubeMatchesStateString(
-          solvedFront,
-          elements.expectedCubeStateFront
-        );
-        assertCubeMatchesStateString(
-          solvedBack,
-          elements.expectedCubeStateBack
-        );
-      },
-    ],
-    [
-      "initial attempts left value reads 3",
-      () => {
-        elements.correctConsecutiveAttemptsLeft.get().should("have.text", "3");
-      },
-    ],
-    [
-      "doesn't start test when pressing keys other than space",
-      () => {
-        cy.pressKey(Key.a);
-        cy.pressKey(Key.x);
-        cy.pressKey(Key.capsLock);
-        elements.container.assertShows();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerStatusPageNoSideEffects" },
+    () => {
+      ([
+        [
+          "looks right",
+          () => {
+            elements.assertAllShow();
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
+          },
+        ],
+        [
+          "the expected cube state at first is always solved even if expected cube state was not solved before",
+          () => {
+            assertCubeMatchesStateString(
+              solvedFront,
+              elements.expectedCubeStateFront
+            );
+            assertCubeMatchesStateString(
+              solvedBack,
+              elements.expectedCubeStateBack
+            );
+          },
+        ],
+        [
+          "initial attempts left value reads 3",
+          () => {
+            elements.correctConsecutiveAttemptsLeft
+              .get()
+              .should("have.text", "3");
+          },
+        ],
+        [
+          "doesn't start test when pressing keys other than space",
+          () => {
+            cy.pressKey(Key.a);
+            cy.pressKey(Key.x);
+            cy.pressKey(Key.capsLock);
+            elements.container.assertShows();
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
@@ -3436,75 +3653,121 @@ function algorithmDrillerStatusPageAfter1SuccessNoSideEffects({
 }) {
   const elements = pllTrainerElements.algorithmDrillerStatusPage;
 
-  elements.correctConsecutiveAttemptsLeft.get().should("have.text", "2");
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerStatusPageAfter1SuccessNoSideEffects" },
+    () => {
+      elements.correctConsecutiveAttemptsLeft.get().should("have.text", "2");
 
-  // Here we assert that the cube is displayed in the expected state
-  assertCubeMatchesStateString(
-    evaluateResultFront,
-    elements.expectedCubeStateFront
-  );
-  assertCubeMatchesStateString(
-    evaluateResultBack,
-    elements.expectedCubeStateBack
+      // Here we assert that the cube is displayed in the expected state
+      assertCubeMatchesStateString(
+        evaluateResultFront,
+        elements.expectedCubeStateFront
+      );
+      assertCubeMatchesStateString(
+        evaluateResultBack,
+        elements.expectedCubeStateBack
+      );
+    }
   );
 }
 
 function algorithmDrillerStatusPageAfter1Success1FailureNoSideEffects() {
-  pllTrainerElements.algorithmDrillerStatusPage.correctConsecutiveAttemptsLeft
-    .get()
-    .should("have.text", "3");
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerStatusPageAfter1Success1FailureNoSideEffects" },
+    () => {
+      pllTrainerElements.algorithmDrillerStatusPage.correctConsecutiveAttemptsLeft
+        .get()
+        .should("have.text", "3");
+    }
+  );
 }
 
 function algorithmDrillerStatusPageAfter2SuccessesNoSideEffects() {
-  pllTrainerElements.algorithmDrillerStatusPage.correctConsecutiveAttemptsLeft
-    .get()
-    .should("have.text", "1");
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerStatusPageAfter2SuccessesNoSideEffects" },
+    () => {
+      pllTrainerElements.algorithmDrillerStatusPage.correctConsecutiveAttemptsLeft
+        .get()
+        .should("have.text", "1");
+    }
+  );
 }
 
 function algorithmDrillerStatusPageNavigateVariant1() {
-  pllTrainerElements.algorithmDrillerStatusPage.nextTestButton.get().click();
-  pllTrainerElements.algorithmDrillerStatusPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerStatusPageNavigateVariant1" },
+    () => {
+      pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
+        .get()
+        .click();
+      pllTrainerElements.algorithmDrillerStatusPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function algorithmDrillerStatusPageNavigateVariant2() {
-  cy.pressKey(Key.space);
-  pllTrainerElements.algorithmDrillerStatusPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerStatusPageNavigateVariant2" },
+    () => {
+      pllTrainerElements.algorithmDrillerStatusPage.container.waitFor();
+      cy.pressKey(Key.space);
+      pllTrainerElements.algorithmDrillerStatusPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function algorithmDrillerSuccessPageNoSideEffects() {
   const elements = pllTrainerElements.algorithmDrillerSuccessPage;
 
-  ([
-    [
-      "looks right",
-      () => {
-        elements.assertAllShow();
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
-      },
-    ],
-    [
-      "doesn't start test when pressing keys other than space",
-      () => {
-        cy.pressKey(Key.a);
-        cy.pressKey(Key.x);
-        cy.pressKey(Key.capsLock);
-        elements.container.assertShows();
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerSuccessPageNoSideEffects" },
+    () => {
+      ([
+        [
+          "looks right",
+          () => {
+            elements.assertAllShow();
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
+          },
+        ],
+        [
+          "doesn't start test when pressing keys other than space",
+          () => {
+            cy.pressKey(Key.a);
+            cy.pressKey(Key.x);
+            cy.pressKey(Key.capsLock);
+            elements.container.assertShows();
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
   );
 }
 
 function algorithmDrillerSuccessPageNavigateVariant1() {
-  pllTrainerElements.algorithmDrillerSuccessPage.nextTestButton.get().click();
-  pllTrainerElements.algorithmDrillerSuccessPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerSuccessPageNavigateVariant1" },
+    () => {
+      pllTrainerElements.algorithmDrillerSuccessPage.nextTestButton
+        .get()
+        .click();
+      pllTrainerElements.algorithmDrillerSuccessPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function algorithmDrillerSuccessPageNavigateVariant2() {
-  cy.pressKey(Key.space);
-  pllTrainerElements.algorithmDrillerSuccessPage.container.assertDoesntExist();
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerSuccessPageNavigateVariant2" },
+    () => {
+      pllTrainerElements.algorithmDrillerSuccessPage.container.waitFor();
+      cy.pressKey(Key.space);
+      pllTrainerElements.algorithmDrillerSuccessPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function wrongPageNoSideEffects({
@@ -3522,72 +3785,76 @@ function wrongPageNoSideEffects({
 }) {
   const elements = pllTrainerElements.wrongPage;
 
-  ([
-    [
-      "looks right",
-      () => {
-        elements.assertAllShow();
-        assertFunctioningFeedbackButtonShows();
-        cy.assertNoHorizontalScrollbar();
-        cy.assertNoVerticalScrollbar();
+  cy.withOverallNameLogged({ message: "wrongPageNoSideEffects" }, () => {
+    ([
+      [
+        "looks right",
+        () => {
+          elements.assertAllShow();
+          assertFunctioningFeedbackButtonShows();
+          cy.assertNoHorizontalScrollbar();
+          cy.assertNoVerticalScrollbar();
 
-        // Test case cubes look correct
-        assertCubeMatchesStateString(
-          testCaseFront,
-          pllTrainerElements.wrongPage.testCaseFront
-        );
-        assertCubeMatchesStateString(
-          testCaseBack,
-          pllTrainerElements.wrongPage.testCaseBack
-        );
-      },
-    ],
-    [
-      "doesn't start test when pressing keys other than space",
-      () => {
-        cy.pressKey(Key.a);
-        cy.pressKey(Key.x);
-        cy.pressKey(Key.capsLock);
-        elements.container.assertShows();
-      },
-    ],
-    [
-      "has the right correct answer text",
-      () => {
-        cy.getCurrentTestCase().then((testCase) => {
-          // Verify U, U2 and a pll display correctly
-          const firstTestCase = [AUF.U, PLL.Aa, AUF.U2] as const;
-          cy.setCurrentTestCase(firstTestCase);
-          pllTrainerElements.wrongPage.testCaseName
-            .get()
-            .invoke("text")
-            .should("match", testCaseToWrongPageRegex(firstTestCase));
+          cy.overrideDisplayCubeAnnotations(false);
+          // Test case cubes look correct
+          assertCubeMatchesStateString(
+            testCaseFront,
+            pllTrainerElements.wrongPage.testCaseFront
+          );
+          assertCubeMatchesStateString(
+            testCaseBack,
+            pllTrainerElements.wrongPage.testCaseBack
+          );
+          cy.overrideDisplayCubeAnnotations(null);
+        },
+      ],
+      [
+        "doesn't start test when pressing keys other than space",
+        () => {
+          cy.pressKey(Key.a);
+          cy.pressKey(Key.x);
+          cy.pressKey(Key.capsLock);
+          elements.container.assertShows();
+        },
+      ],
+      [
+        "has the right correct answer text",
+        () => {
+          cy.getCurrentTestCase().then((testCase) => {
+            // Verify U, U2 and a pll display correctly
+            const firstTestCase = [AUF.U, PLL.Aa, AUF.U2] as const;
+            cy.setCurrentTestCase(firstTestCase);
+            pllTrainerElements.wrongPage.testCaseName
+              .get()
+              .invoke("text")
+              .should("match", testCaseToWrongPageRegex(firstTestCase));
 
-          // Verify U' and nothing display correctly, while also trying a different PLL
-          const secondTestCase = [AUF.UPrime, PLL.Ab, AUF.none] as const;
-          cy.setCurrentTestCase(secondTestCase);
-          pllTrainerElements.wrongPage.testCaseName
-            .get()
-            .invoke("text")
-            .should("match", testCaseToWrongPageRegex(secondTestCase));
+            // Verify U' and nothing display correctly, while also trying a different PLL
+            const secondTestCase = [AUF.UPrime, PLL.Ab, AUF.none] as const;
+            cy.setCurrentTestCase(secondTestCase);
+            pllTrainerElements.wrongPage.testCaseName
+              .get()
+              .invoke("text")
+              .should("match", testCaseToWrongPageRegex(secondTestCase));
 
-          // Verify no AUFs displays correctly and also trying a third PLL
-          const thirdTestCase = [AUF.none, PLL.H, AUF.none] as const;
-          cy.setCurrentTestCase(thirdTestCase);
-          pllTrainerElements.wrongPage.testCaseName
-            .get()
-            .invoke("text")
-            .should("match", testCaseToWrongPageRegex(thirdTestCase));
+            // Verify no AUFs displays correctly and also trying a third PLL
+            const thirdTestCase = [AUF.none, PLL.H, AUF.none] as const;
+            cy.setCurrentTestCase(thirdTestCase);
+            pllTrainerElements.wrongPage.testCaseName
+              .get()
+              .invoke("text")
+              .should("match", testCaseToWrongPageRegex(thirdTestCase));
 
-          // Reset to the previous test case, which is very important to uphold the
-          // promise of no side effects
-          cy.setCurrentTestCase(testCase);
-        });
-      },
-    ],
-  ] as const).forEach(([testDescription, testFunction]) =>
-    cy.withOverallNameLogged({ message: testDescription }, testFunction)
-  );
+            // Reset to the previous test case, which is very important to uphold the
+            // promise of no side effects
+            cy.setCurrentTestCase(testCase);
+          });
+        },
+      ],
+    ] as const).forEach(([testDescription, testFunction]) =>
+      cy.withOverallNameLogged({ message: testDescription }, testFunction)
+    );
+  });
 }
 
 function testCaseToWrongPageRegex(testCase: readonly [AUF, PLL, AUF]): RegExp {
@@ -3603,13 +3870,18 @@ function testCaseToWrongPageRegex(testCase: readonly [AUF, PLL, AUF]): RegExp {
 }
 
 function wrongPageNavigateVariant1() {
-  pllTrainerElements.wrongPage.nextButton.get().click();
-  pllTrainerElements.wrongPage.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "wrongPageNavigateVariant1" }, () => {
+    pllTrainerElements.wrongPage.nextButton.get().click();
+    pllTrainerElements.wrongPage.container.assertDoesntExist();
+  });
 }
 
 function wrongPageNavigateVariant2() {
-  cy.pressKey(Key.space);
-  pllTrainerElements.wrongPage.container.assertDoesntExist();
+  cy.withOverallNameLogged({ message: "wrongPageNavigateVariant2" }, () => {
+    pllTrainerElements.wrongPage.container.waitFor();
+    cy.pressKey(Key.space);
+    pllTrainerElements.wrongPage.container.assertDoesntExist();
+  });
 }
 
 function assertFunctioningFeedbackButtonShows() {
