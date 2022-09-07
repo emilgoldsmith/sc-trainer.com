@@ -653,7 +653,8 @@ export function completePLLTestInMilliseconds(
       | "startPage"
       | "algorithmDrillerStatusPage"
       | "algorithmDrillerSuccessPage"
-      | "correctPage";
+      | "correctPage"
+      | "wrongPage";
     forceTestCase?: readonly [AUF, PLL, AUF];
     // The function will not throw an error if it can't reach this state
     // it's just simple decisions like ending early or continuing a bit further
@@ -662,6 +663,7 @@ export function completePLLTestInMilliseconds(
       | "testRunning"
       | "pickAlgorithmPage"
       | "correctPage"
+      | "typeOfWrongPage"
       | "wrongPage"
       | "algorithmDrillerExplanationPage"
       | "algorithmDrillerStatusPage"
@@ -677,6 +679,9 @@ export function completePLLTestInMilliseconds(
     testRunningCallback?: () => void;
     testRunningNavigator?: () => void;
     evaluateResultCallback?: () => void;
+    correctPageNavigator?: () => void;
+    wrongPageNavigator?: () => void;
+    algorithmDrillerStatusPageNavigator?: () => void;
   } & (
     | {
         correct: true;
@@ -733,6 +738,9 @@ export function completePLLTestInMilliseconds(
         testRunningCallback,
         testRunningNavigator,
         evaluateResultCallback,
+        correctPageNavigator,
+        wrongPageNavigator,
+        algorithmDrillerStatusPageNavigator,
       } = params;
       const { stateAttributeValues } = pllTrainerElements.root;
 
@@ -748,9 +756,13 @@ export function completePLLTestInMilliseconds(
             pllTrainerElements.root.stateAttributeValues
               .pickTargetParametersPage
           ) {
-            pllTrainerElements.pickTargetParametersPage.submitButton
-              .get()
-              .click();
+            (
+              pickTargetParametersNavigator ??
+              (() =>
+                pllTrainerElements.pickTargetParametersPage.submitButton
+                  .get()
+                  .click())
+            )();
           }
         });
       } else if (startingState === "pickTargetParametersPage") {
@@ -783,11 +795,23 @@ export function completePLLTestInMilliseconds(
           stateAttributeValues.startPage
         );
       } else if (startingState === "correctPage") {
-        pllTrainerElements.correctPage.nextButton.get().click();
+        (
+          correctPageNavigator ??
+          (() => pllTrainerElements.correctPage.nextButton.get().click())
+        )();
+      } else if (startingState === "wrongPage") {
+        (
+          wrongPageNavigator ??
+          (() => pllTrainerElements.wrongPage.nextButton.get().click())
+        )();
       } else if (startingState === "algorithmDrillerStatusPage") {
-        pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
-          .get()
-          .click();
+        (
+          algorithmDrillerStatusPageNavigator ??
+          (() =>
+            pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
+              .get()
+              .click())
+        )();
       } else if (startingState === "algorithmDrillerSuccessPage") {
         pllTrainerElements.algorithmDrillerSuccessPage.nextTestButton
           .get()
@@ -842,6 +866,7 @@ export function completePLLTestInMilliseconds(
           params.evaluateResultWrongNavigator ??
           (() => pllTrainerElements.evaluateResult.wrongButton.get().click())
         )();
+        if (endingState === "typeOfWrongPage") return;
         if (params.wrongType === "unrecoverable") {
           pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
         } else if (params.wrongType === "nearly there") {

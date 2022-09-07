@@ -11,3 +11,5 @@ Visual test for success and status page happening?
 Do we test that driller test fails after slow correct as well?
 
 Look through TODOs
+
+ensure all callbacks and navigator overrides are called and otherwise throw error;
