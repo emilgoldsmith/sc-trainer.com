@@ -2,15 +2,14 @@ import {
   addPercyCanvasStyleFixers,
   applyDefaultIntercepts,
 } from "support/interceptors";
+import { paths } from "support/paths";
 import { AUF, PLL } from "support/pll";
 import {
   completePLLTestInMilliseconds,
-  fromGetReadyForTestThroughEvaluateResult,
   getReadyWaitTime,
   pllTrainerElements,
-  pllTrainerStatesNewUser,
-  pllTrainerStatesUserDone,
 } from "./pll-trainer/state-and-elements";
+import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
 
 describe("Visual Tests", function () {
   beforeEach(function () {
@@ -18,7 +17,7 @@ describe("Visual Tests", function () {
   });
   describe("PLL Trainer", function () {
     it("looks right", function () {
-      pllTrainerStatesNewUser.pickTargetParametersPage.reloadAndNavigateTo();
+      cy.visit(paths.pllTrainer);
       cy.percySnapshotWithProperName(
         "PLL Trainer Pick Target Parameters Page",
         { ensureFullHeightIsCaptured: true }
@@ -32,7 +31,8 @@ describe("Visual Tests", function () {
       pllTrainerElements.newCasePage.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer New Case Page");
       // Use a "done" user from here
-      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo();
+      cy.setLocalStorage(fullyPopulatedLocalStorage);
+      cy.visit(paths.pllTrainer);
       cy.clock();
       pllTrainerElements.newUserStartPage.startButton.get().click();
       pllTrainerElements.getReadyState.container.waitFor();
@@ -65,7 +65,12 @@ describe("Visual Tests", function () {
       cy.clock().then((clock) => clock.restore());
 
       // All the new pick algorithm type visual tests
-      pllTrainerStatesNewUser.pickAlgorithmPageAfterCorrect.reloadAndNavigateTo();
+      cy.clearLocalStorage();
+      completePLLTestInMilliseconds(500, {
+        correct: true,
+        startingState: "doNewVisit",
+        endingState: "pickAlgorithmPage",
+      });
 
       cy.percySnapshotWithProperName(
         "PLL Trainer Pick Algorithm Page: Initial"
@@ -148,54 +153,62 @@ describe("Visual Tests", function () {
         "PLL Trainer Pick Algorithm Page: Doesn't Solve The Case"
       );
 
-      completePLLTestInMilliseconds(1000, PLL.Ga, {
-        aufs: [],
+      completePLLTestInMilliseconds(1000, {
+        forceTestCase: [AUF.none, PLL.Ga, AUF.none],
         correct: true,
+        startingState: "doNewVisit",
       });
-      completePLLTestInMilliseconds(1000, PLL.H, {
-        aufs: [],
+      completePLLTestInMilliseconds(1000, {
+        forceTestCase: [AUF.none, PLL.H, AUF.none],
         correct: false,
+        wrongType: "unrecoverable",
+        startingState: "doNewVisit",
       });
-      completePLLTestInMilliseconds(2340, PLL.Aa, {
-        aufs: [],
+      completePLLTestInMilliseconds(2340, {
+        forceTestCase: [AUF.none, PLL.Aa, AUF.none],
         correct: true,
+        startingState: "doNewVisit",
       });
-      pllTrainerStatesUserDone.startPage.reloadAndNavigateTo({
-        retainCurrentLocalStorage: true,
-      });
+      cy.visit(paths.pllTrainer);
       cy.percySnapshotWithProperName("PLL Trainer Recurring User Start Page", {
         ensureFullHeightIsCaptured: true,
       });
 
       // Just an assurance that our AUFs and cases are displaying correctly.
       cy.clearLocalStorage();
-      completePLLTestInMilliseconds(1000, PLL.Ua, {
+      completePLLTestInMilliseconds(1000, {
         // This is the AUF that matches the other AUF so that there won't be a driller
         // but actually the wrong page callback
-        aufs: [AUF.UPrime, AUF.none],
+        forceTestCase: [AUF.UPrime, PLL.Ua, AUF.none],
         overrideDefaultAlgorithm: "M2 U M' U2 M U M2",
         correct: true,
+        startingState: "doNewVisit",
       });
-      completePLLTestInMilliseconds(1000, PLL.Ua, {
-        aufs: [AUF.U, AUF.U2],
+      completePLLTestInMilliseconds(1000, {
+        forceTestCase: [AUF.U, PLL.Ua, AUF.U2],
         correct: false,
+        wrongType: "unrecoverable",
+        startingState: "doNewVisit",
         wrongPageCallback: () =>
           cy.percySnapshotWithProperName("U [Ua] U2 standard slice algorithm"),
       });
 
       cy.clearLocalStorage();
-      completePLLTestInMilliseconds(1000, PLL.Ua, {
+      completePLLTestInMilliseconds(1000, {
         // This is the AUF that matches the other AUF so that there won't be a driller
         // but actually the wrong page callback
-        aufs: [AUF.U2, AUF.U],
+        forceTestCase: [AUF.U2, PLL.Ua, AUF.U],
         // Use an algorithm that has a different preAUF but same postAUF
         overrideDefaultAlgorithm: "R2 U' S' U2' S U' R2",
         correct: true,
+        startingState: "doNewVisit",
       });
-      completePLLTestInMilliseconds(1000, PLL.Ua, {
+      completePLLTestInMilliseconds(1000, {
         // This same case corresponds to [Ua] U' with the standard slice algorithm
-        aufs: [AUF.U, AUF.U2],
+        forceTestCase: [AUF.U, PLL.Ua, AUF.U2],
         correct: false,
+        wrongType: "unrecoverable",
+        startingState: "doNewVisit",
         wrongPageCallback: () =>
           cy.percySnapshotWithProperName(
             "[Ua] U' standard slice algorithm equivalent"
@@ -204,33 +217,39 @@ describe("Visual Tests", function () {
 
       // Now let's test some postAUFs with the Gc algorithm
       cy.clearLocalStorage();
-      completePLLTestInMilliseconds(1000, PLL.Gc, {
+      completePLLTestInMilliseconds(1000, {
         // This is the AUF that matches the other AUF so that there won't be a driller
         // but actually the wrong page callback
-        aufs: [AUF.UPrime, AUF.U],
+        forceTestCase: [AUF.UPrime, PLL.Gc, AUF.U],
         overrideDefaultAlgorithm: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
         correct: true,
+        startingState: "doNewVisit",
       });
-      completePLLTestInMilliseconds(1000, PLL.Gc, {
-        aufs: [AUF.UPrime, AUF.none],
+      completePLLTestInMilliseconds(1000, {
+        forceTestCase: [AUF.UPrime, PLL.Gc, AUF.none],
         correct: false,
+        wrongType: "unrecoverable",
+        startingState: "doNewVisit",
         wrongPageCallback: () =>
           cy.percySnapshotWithProperName("U' [Gc] with Emil's main algorithm"),
       });
 
       cy.clearLocalStorage();
-      completePLLTestInMilliseconds(1000, PLL.Gc, {
+      completePLLTestInMilliseconds(1000, {
         // This is the AUF that matches the other AUF so that there won't be a driller
         // but actually the wrong page callback
-        aufs: [AUF.UPrime, AUF.none],
+        forceTestCase: [AUF.UPrime, PLL.Gc, AUF.none],
         // Use an algorithm that has same preAUF but different postAUF
         overrideDefaultAlgorithm: "(y) R2' u' (R U' R U R') u R2 (y) R U' R'",
         correct: true,
+        startingState: "doNewVisit",
       });
-      completePLLTestInMilliseconds(1000, PLL.Gc, {
+      completePLLTestInMilliseconds(1000, {
         // This same case corresponds to U' [Gc] U' with the previous algorithm
-        aufs: [AUF.UPrime, AUF.none],
+        forceTestCase: [AUF.UPrime, PLL.Gc, AUF.none],
         correct: false,
+        wrongType: "unrecoverable",
+        startingState: "doNewVisit",
         wrongPageCallback: () =>
           cy.percySnapshotWithProperName(
             "U' [Gc] U' equivalent with Emil's main algorithm"
@@ -238,17 +257,20 @@ describe("Visual Tests", function () {
       });
 
       cy.clearLocalStorage();
-      completePLLTestInMilliseconds(500, PLL.Gc, {
-        aufs: [],
+      completePLLTestInMilliseconds(500, {
+        forceTestCase: [AUF.none, PLL.Gc, AUF.none],
         correct: true,
+        startingState: "doNewVisit",
         correctPageCallback: () =>
           cy.percySnapshotWithProperName("Correct Page For New Case"),
       });
 
       cy.clearLocalStorage();
-      completePLLTestInMilliseconds(500, PLL.Gc, {
-        aufs: [],
+      completePLLTestInMilliseconds(500, {
+        forceTestCase: [AUF.none, PLL.Gc, AUF.none],
         correct: false,
+        wrongType: "unrecoverable",
+        startingState: "doNewVisit",
         algorithmDrillerExplanationPageCallback: () => {
           pllTrainerElements.algorithmDrillerExplanationPage.container.waitFor();
           cy.percySnapshotWithProperName(
@@ -258,9 +280,10 @@ describe("Visual Tests", function () {
       });
 
       cy.clearLocalStorage();
-      completePLLTestInMilliseconds(10000, PLL.Gc, {
-        aufs: [],
+      completePLLTestInMilliseconds(10000, {
+        forceTestCase: [AUF.none, PLL.Gc, AUF.none],
         correct: true,
+        startingState: "doNewVisit",
         algorithmDrillerExplanationPageCallback: () => {
           pllTrainerElements.algorithmDrillerExplanationPage.container.waitFor();
           cy.percySnapshotWithProperName(
@@ -270,15 +293,11 @@ describe("Visual Tests", function () {
         algorithmDrillerStatusPageCallback: () =>
           cy.percySnapshotWithProperName("Algorithm Driller Status Page"),
       });
-      cy.clock();
       for (let i = 0; i < 3; i++) {
-        pllTrainerElements.algorithmDrillerStatusPage.nextTestButton
-          .get()
-          .click();
-        fromGetReadyForTestThroughEvaluateResult({
-          cyClockAlreadyCalled: true,
-          milliseconds: 500,
+        completePLLTestInMilliseconds(500, {
           correct: true,
+          startingState: "algorithmDrillerStatusPage",
+          endingState: i < 2 ? "algorithmDrillerStatusPage" : undefined,
         });
       }
 

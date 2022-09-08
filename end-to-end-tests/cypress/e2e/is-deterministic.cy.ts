@@ -1,13 +1,15 @@
 import { applyDefaultIntercepts } from "support/interceptors";
 import {
+  completePLLTestInMilliseconds,
   pllTrainerElements,
-  pllTrainerStatesUserDone,
 } from "./pll-trainer/state-and-elements";
+import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
 
 type Aliases = { first: string; second: string; third: string };
 describe("randomness", function () {
   it("is deterministic under test", function () {
     applyDefaultIntercepts();
+    cy.setLocalStorage(fullyPopulatedLocalStorage);
     saveWrongStateTestCase("first");
     saveWrongStateTestCase("second");
     saveWrongStateTestCase("third");
@@ -24,7 +26,12 @@ describe("randomness", function () {
 });
 
 function saveWrongStateTestCase<Key extends keyof Aliases>(alias: Key) {
-  pllTrainerStatesUserDone.wrongPage.reloadAndNavigateTo();
+  completePLLTestInMilliseconds(7324, {
+    correct: false,
+    wrongType: "nearly there",
+    startingState: "doNewVisit",
+    endingState: "wrongPage",
+  });
   pllTrainerElements.wrongPage.testCaseName
     .get()
     .invoke("text")
