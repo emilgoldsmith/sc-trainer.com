@@ -1,16 +1,13 @@
 import { applyDefaultIntercepts } from "support/interceptors";
 import { Key } from "support/keys";
-import { forceReloadAndNavigateIfDotOnlyIsUsed } from "support/mocha-helpers";
+import { paths } from "support/paths";
 import { AUF, PLL, pllToAlgorithmString } from "support/pll";
 import {
+  completePLLTestInMilliseconds,
   evaluateResultIgnoreTransitionsWaitTime,
-  fromGetReadyForTestThroughEvaluateResult,
   getReadyWaitTime,
   pllTrainerElements,
-  pllTrainerStatesNewUser,
 } from "../state-and-elements";
-
-forceReloadAndNavigateIfDotOnlyIsUsed();
 
 /** iphone-8 dimensions from https://docs.cypress.io/api/commands/viewport#Arguments */
 const smallViewportConfigOverride: Cypress.TestConfigOverrides = {
@@ -37,10 +34,9 @@ describe("Algorithm Trainer Dynamic Viewport Tests", function () {
   });
   context("touch screen", function () {
     beforeEach(function () {
-      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo({
+      cy.visit(paths.pllTrainer, {
         onBeforeLoad: simulateIsTouchScreen,
       });
-      cy.clock();
     });
     context("large viewport", largeViewportConfigOverride, function () {
       it("displays shortcuts on large viewport with touch screen", function () {
@@ -60,8 +56,7 @@ describe("Algorithm Trainer Dynamic Viewport Tests", function () {
   context("non touch screen", function () {
     /** For a non touch screen we should always show shortcuts as they must have a keyboard */
     beforeEach(function () {
-      pllTrainerStatesNewUser.startPage.reloadAndNavigateTo();
-      cy.clock();
+      cy.visit(paths.pllTrainer);
     });
     context("large viewport", largeViewportConfigOverride, function () {
       it("displays shortcuts on a large viewport without touch screen", function () {
@@ -109,7 +104,9 @@ function checkWhetherShortcutsDisplay(
   const firstTestCase = [AUF.none, PLL.Aa, AUF.none] as const;
   const secondTestCase = [AUF.none, PLL.Aa, AUF.U2] as const;
   cy.overrideNextTestCase(firstTestCase);
+
   // Ensure that it's a fresh user
+  pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
   pllTrainerElements.newUserStartPage.welcomeText.waitFor();
   pllTrainerElements.newUserStartPage.startButton
     .get()
@@ -124,6 +121,7 @@ function checkWhetherShortcutsDisplay(
   }
 
   pllTrainerElements.newCasePage.container.waitFor();
+  cy.clock();
   pllTrainerElements.newCasePage.startTestButton
     .get()
     .invoke("text")
@@ -151,6 +149,7 @@ function checkWhetherShortcutsDisplay(
     .should(matcher, buildShortcutRegex("Space"));
 
   cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+  cy.clock().invoke("restore");
   if (method === "useKeyboard") {
     // Note this also checks the space shortcut actually works as the label implies
     cy.pressKey(Key.space);
@@ -181,6 +180,7 @@ function checkWhetherShortcutsDisplay(
     .should(matcher, buildShortcutRegex("Space"));
 
   cy.overrideNextTestCase(firstTestCase);
+  cy.clock();
   if (method === "useKeyboard") {
     // Note this also checks the space shortcut actually works as the label implies
     cy.pressKey(Key.space);
@@ -204,6 +204,7 @@ function checkWhetherShortcutsDisplay(
     .should(matcher, buildShortcutRegex("[wW]"));
 
   cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+  cy.clock().invoke("restore");
   if (method === "useKeyboard") {
     // Note this also checks the w shortcut actually works as the label implies
     cy.pressKey(Key.w);
@@ -253,12 +254,11 @@ function checkWhetherShortcutsDisplay(
     pllTrainerElements.wrongPage.nextButton.get().click();
   }
 
-  cy.clock();
-  pllTrainerElements.newCasePage.startTestButton.get().click();
-  fromGetReadyForTestThroughEvaluateResult({
-    cyClockAlreadyCalled: true,
-    milliseconds: 500,
-    wrong: "unrecoverable",
+  completePLLTestInMilliseconds(500, {
+    correct: false,
+    wrongType: "unrecoverable",
+    startingState: "newCasePage",
+    endingState: "algorithmDrillerExplanationPage",
   });
 
   pllTrainerElements.algorithmDrillerExplanationPage.continueButton
@@ -282,7 +282,7 @@ function checkWhetherShortcutsDisplay(
     .invoke("text")
     .should(matcher, buildShortcutRegex("Space"));
 
-  for (let i = 0; i < 3; i++) {
+  function navigator() {
     if (method === "useKeyboard") {
       // Check space actually works as a shortcut too as the label implies.
       // This is just to make sure we're asserting the right thing.
@@ -293,10 +293,12 @@ function checkWhetherShortcutsDisplay(
         .get()
         .click();
     }
-    fromGetReadyForTestThroughEvaluateResult({
-      cyClockAlreadyCalled: true,
-      milliseconds: 300,
+  }
+  for (let i = 0; i < 3; i++) {
+    completePLLTestInMilliseconds(300, {
       correct: true,
+      startingState: "algorithmDrillerStatusPage",
+      algorithmDrillerStatusPageNavigator: navigator,
     });
   }
 
