@@ -30,7 +30,7 @@ jobs:
           wait_interval=5
 
           while (( SECONDS  < max_wait_time )); do
-            curl --silent -f -lSL https://index.docker.io/v1/repositories/$REPOSITORY/tags/$PRODUCTION_TAG && break;
+            curl --silent -f -lSL https://hub.docker.com/v2/repositories/$REPOSITORY/tags/$PRODUCTION_TAG && break;
             echo "Failed so sleeping"
             sleep $wait_interval
             echo "Trying again"
@@ -47,7 +47,7 @@ jobs:
           wait_interval=5
 
           while (( SECONDS  < max_wait_time )); do
-            curl --silent -f -lSL https://index.docker.io/v1/repositories/$REPOSITORY/tags/$CHROME_TAG && break;
+            curl --silent -f -lSL https://hub.docker.com/v2/repositories/$REPOSITORY/tags/$CHROME_TAG && break;
             echo "Failed so sleeping"
             sleep $wait_interval
             echo "Trying again"

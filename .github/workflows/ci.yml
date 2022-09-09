@@ -59,7 +59,7 @@ jobs:
           wait_interval=5
 
           while (( SECONDS  < max_wait_time )); do
-            curl --silent -f -lSL https://index.docker.io/v1/repositories/${{ env.repository }}/tags/${{ steps.tags.outputs.ci-container }} && break;
+            curl --silent -f -lSL https://hub.docker.com/v2/repositories/${{ env.repository }}/tags/${{ steps.tags.outputs.ci-container }} && break;
             echo "Failed so sleeping"
             sleep $wait_interval
             echo "Trying again"
@@ -76,7 +76,7 @@ jobs:
           wait_interval=5
 
           while (( SECONDS  < max_wait_time )); do
-            curl --silent -f -lSL https://index.docker.io/v1/repositories/${{ env.repository }}/tags/${{ steps.tags.outputs.ci-chrome }} && break;
+            curl --silent -f -lSL https://hub.docker.com/v2/repositories/${{ env.repository }}/tags/${{ steps.tags.outputs.ci-chrome }} && break;
             echo "Failed so sleeping"
             sleep $wait_interval
             echo "Trying again"
@@ -93,7 +93,7 @@ jobs:
           wait_interval=5
 
           while (( SECONDS  < max_wait_time )); do
-            curl --silent -f -lSL https://index.docker.io/v1/repositories/${{ env.repository }}/tags/${{ steps.tags.outputs.production }} && break;
+            curl --silent -f -lSL https://hub.docker.com/v2/repositories/${{ env.repository }}/tags/${{ steps.tags.outputs.production }} && break;
             echo "Failed so sleeping"
             sleep $wait_interval
             echo "Trying again"
