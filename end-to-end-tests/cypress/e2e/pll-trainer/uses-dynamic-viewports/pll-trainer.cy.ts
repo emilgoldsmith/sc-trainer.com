@@ -7,7 +7,7 @@ import {
   evaluateResultIgnoreTransitionsWaitTime,
   getReadyWaitTime,
   pllTrainerElements,
-} from "../state-and-elements";
+} from "../elements-and-helper-functions";
 
 /** iphone-8 dimensions from https://docs.cypress.io/api/commands/viewport#Arguments */
 const smallViewportConfigOverride: Cypress.TestConfigOverrides = {
