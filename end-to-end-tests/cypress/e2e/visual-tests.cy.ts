@@ -8,7 +8,7 @@ import {
   completePLLTestInMilliseconds,
   getReadyWaitTime,
   pllTrainerElements,
-} from "./pll-trainer/state-and-elements";
+} from "./pll-trainer/elements-and-helper-functions";
 import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
 
 describe("Visual Tests", function () {

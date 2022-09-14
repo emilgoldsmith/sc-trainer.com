@@ -23,7 +23,7 @@ import {
   evaluateResultIgnoreTransitionsWaitTime,
   getReadyWaitTime,
   pllTrainerElements,
-} from "./pll-trainer/state-and-elements";
+} from "./pll-trainer/elements-and-helper-functions";
 
 describe("PLL Trainer", function () {
   beforeEach(function () {

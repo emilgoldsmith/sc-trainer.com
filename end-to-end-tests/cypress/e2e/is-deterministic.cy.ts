@@ -2,7 +2,7 @@ import { applyDefaultIntercepts } from "support/interceptors";
 import {
   completePLLTestInMilliseconds,
   pllTrainerElements,
-} from "./pll-trainer/state-and-elements";
+} from "./pll-trainer/elements-and-helper-functions";
 import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
 
 type Aliases = { first: string; second: string; third: string };
