@@ -1,4 +1,5 @@
 import {
+  assertCubeIsDifferentFromAlias,
   assertCubeMatchesAlias,
   assertCubeMatchesStateString,
   assertNonFalsyStringsDifferent,
@@ -36,14 +37,13 @@ describe("PLL Trainer", function () {
         cy.visit(paths.pllTrainer);
         pickTargetParametersPageNoSideEffectsButScroll();
         pickTargetParametersPageSideEffectsExceptNavigations();
-        testPickTargetParametersOnlySubmitsWithNoErrors(() =>
-          pllTrainerElements.pickTargetParametersPage.submitButton.get().click()
-        );
+        pickTargetParametersNavigateWithSomeDefaultValues();
         newUserStartPageBeginNavigateVariant1();
         pllTrainerElements.newCasePage.container.assertShows();
         cy.clock();
         newCasePageNavigateVariant1();
         pllTrainerElements.getReadyState.container.waitFor();
+        getReadyStateNoSideEffectsButScroll();
         cy.tick(getReadyWaitTime);
         testRunningNavigateVariant1();
         pllTrainerElements.evaluateResult.container.waitFor();
@@ -141,6 +141,7 @@ describe("PLL Trainer", function () {
           ({ testCaseCube }) =>
             algorithmDrillerExplanationPageNoSideEffectsButScroll({
               testCaseCube,
+              // Ensured because we manually did it above, didn't use navigate function
               defaultAlgorithmWasUsed: true,
             })
         );
@@ -153,6 +154,7 @@ describe("PLL Trainer", function () {
           algorithmDrillerStatusPageNoSideEffects({
             solvedFront,
             solvedBack,
+            // true because we used "nearly there" wrong type
             expectedCubeStateDidNotEqualSolvedJustBeforeThis: true,
           });
         });
@@ -161,6 +163,7 @@ describe("PLL Trainer", function () {
         completePLLTestInMilliseconds(time, {
           correct: true,
           startingState: "algorithmDrillerStatusPage",
+          endingState: "algorithmDrillerStatusPage",
           testRunningNavigator: testRunningNavigateVariant3,
           evaluateResultCallback: () => {
             evaluateResultTimeDependantNoSideEffects1({ timeInMs: time });
@@ -235,6 +238,7 @@ describe("PLL Trainer", function () {
               pllTrainerElements.root.stateAttributeValues.getReadyState,
             ]);
 
+          // And test variant 2 as well
           cy.setApplicationState(applicationState);
           pllTrainerElements.algorithmDrillerSuccessPage.container.waitFor();
 
@@ -248,21 +252,7 @@ describe("PLL Trainer", function () {
         });
       });
 
-      it("Very slow correct for new preAUF but same pll shows driller but with 'correct text' and not 'wrong text'", function () {
-        completePLLTestInMilliseconds(10000, {
-          correct: true,
-          startingState: "doNewVisit",
-          forceTestCase: [AUF.none, PLL.Gc, AUF.U2],
-          endingState: "algorithmDrillerExplanationPage",
-          getReadyCallback: getReadyStateNoSideEffectsButScroll,
-          testRunningNavigator: testRunningNavigateVariant7,
-        });
-
-        pllTrainerElements.algorithmDrillerExplanationPage.correctText.assertShows();
-        pllTrainerElements.algorithmDrillerExplanationPage.wrongText.assertDoesntExist();
-      });
-
-      it("goes to driller for new preAUF, and new postAUF exactly if it's not none, even when the pll and other AUF combination have been tested before; doesn't go to driller for new combination of seen pre and postAUF with seen pll", function () {
+      it("always goes to driller and displays new case page for new preAUF, and exactly if it's not none for new postAUF, even when the pll and other AUF combination have been tested before; doesn't go to driller or display new case page for new combination of seen pre and postAUF with seen pll; on a slow correct it shows correct text and not wrong text in driller explanation page", function () {
         const pll = PLL.Gc;
         const firstPreAUF = AUF.U2;
         const firstNotNonePostAUF = AUF.U;
@@ -274,12 +264,15 @@ describe("PLL Trainer", function () {
           startingState: "doNewVisit",
           forceTestCase: [firstPreAUF, pll, firstNotNonePostAUF],
           endingState: "correctPage",
+          newCasePageCallback: () =>
+            pllTrainerElements.newCasePage.container.assertShows(),
           testRunningNavigator: testRunningNavigateVariant8,
           evaluateResultCallback: () =>
             evaluateResultTimeDependantNoSideEffects5({ timeInMs: time }),
         });
         // We from now on very consciously switch between doing an incorrect test
         // and a slow correct test, in order to ensure this is true for both cases
+
         // Note that the time won't be 500 as we're using a changing clock variant
         // of the test running navigator
         completePLLTestInMilliseconds(500, {
@@ -288,9 +281,12 @@ describe("PLL Trainer", function () {
           startingState: "correctPage",
           forceTestCase: [firstPreAUF, pll, differentNotNonePostAUF],
           endingState: "algorithmDrillerExplanationPage",
+          newCasePageCallback: () =>
+            pllTrainerElements.newCasePage.container.assertShows(),
           testRunningNavigator: testRunningNavigateChangingClockVariant4,
           correctPageNavigator: correctPageNavigateVariant1,
         });
+        // Seen preAUF but new not none postAUF should go to driller
         pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
 
         completePLLTestInMilliseconds(10000, {
@@ -298,9 +294,15 @@ describe("PLL Trainer", function () {
           startingState: "doNewVisit",
           forceTestCase: [differentPreAUF, pll, firstNotNonePostAUF],
           endingState: "algorithmDrillerExplanationPage",
+          newCasePageCallback: () =>
+            pllTrainerElements.newCasePage.container.assertShows(),
           testRunningNavigator: testRunningNavigateVariant9,
         });
+        // new preAUF but seen not none postAUF should go to driller
         pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
+        // With a slow correct we should show exactly the correct text here
+        pllTrainerElements.algorithmDrillerExplanationPage.correctText.assertShows();
+        pllTrainerElements.algorithmDrillerExplanationPage.wrongText.assertDoesntExist();
 
         type Aliases = {
           testCaseFront: string;
@@ -314,6 +316,8 @@ describe("PLL Trainer", function () {
           startingState: "doNewVisit",
           forceTestCase: [firstPreAUF, pll, AUF.none],
           endingState: "wrongPage",
+          assertNewCasePageDidntDisplay: true,
+          startPageNavigator: recurringUserStartPageNavigateVariant2,
           testRunningCallback: () => {
             pllTrainerElements.testRunning.testCase
               .getStringRepresentationOfCube()
@@ -331,6 +335,7 @@ describe("PLL Trainer", function () {
         // that just means not to make a move in the end which shouldn't be considered new,
         // as learning post-AUF recognition has already been done when that preAUF was learned
         pllTrainerElements.wrongPage.container.assertShows();
+        // Just run our wrong page assertions here
         getVerifiedAliases<Aliases, "testCaseFront" | "testCaseBack">([
           "testCaseFront",
           "testCaseBack",
@@ -349,6 +354,7 @@ describe("PLL Trainer", function () {
           startingState: "wrongPage",
           forceTestCase: [differentPreAUF, pll, differentNotNonePostAUF],
           endingState: "wrongPage",
+          assertNewCasePageDidntDisplay: true,
           wrongPageNavigator: wrongPageNavigateVariant1,
           testRunningNavigator: testRunningNavigateVariant10,
           evaluateResultCallback: () =>
@@ -369,7 +375,7 @@ describe("PLL Trainer", function () {
           ]);
       });
 
-      it("doesn't go to driller on what is technically new pre and post aufs if they are equivalent by symmetry to cases that have been learned", function () {
+      it("doesn't go to driller or display new case page on what is technically new pre and post aufs if they are equivalent by symmetry to cases that have been learned", function () {
         const time = 120 as const;
         completePLLTestInMilliseconds(time, {
           correct: true,
@@ -385,6 +391,7 @@ describe("PLL Trainer", function () {
           startingState: "correctPage",
           forceTestCase: [AUF.none, PLL.H, AUF.U2],
           endingState: "correctPage",
+          assertNewCasePageDidntDisplay: true,
           testRunningNavigator: testRunningNavigateVariant12,
           correctPageNavigator: correctPageNavigateVariant2,
         });
@@ -407,7 +414,9 @@ describe("PLL Trainer", function () {
         pllTrainerElements.pickTargetParametersPage.targetTPSInput
           .get()
           .type("{selectall}{backspace}" + tps);
-        pickTargetParametersNavigateVariant1();
+        testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVariant1(
+          { currentValuesAreValid: true }
+        );
 
         assertItsNewUserNotRecurringUserStartPage();
 
@@ -460,106 +469,32 @@ describe("PLL Trainer", function () {
           .should("have.value", tps);
       });
     });
+  });
 
-    it("displays new case page exactly when a new pll, pre- or postAUF is next", function () {
-      cy.log("This is a completely new user so new case page should display");
-      completePLLTestInMilliseconds(500, {
-        forceTestCase: [AUF.UPrime, PLL.Aa, AUF.UPrime],
-        correct: true,
-        startingState: "doNewVisit",
-        endingState: "correctPage",
-        pickTargetParametersNavigator: pickTargetParametersNavigateVariant2,
-        newCasePageCallback() {
-          pllTrainerElements.newCasePage.container.assertShows();
-        },
-        testRunningNavigator: testRunningNavigateVariant13,
-      });
-
-      cy.log("This is a new preAUF so should display new case page");
-      completePLLTestInMilliseconds(500, {
-        forceTestCase: [AUF.U, PLL.Aa, AUF.UPrime],
-        correct: true,
-        startingState: "correctPage",
-        endingState: "correctPage",
-        newCasePageCallback() {
-          pllTrainerElements.newCasePage.container.assertShows();
-        },
-        testRunningNavigator: testRunningNavigateVariant14,
-      });
-
-      cy.log(
-        "This is the same case as last time so no new case page should display"
-      );
-      completePLLTestInMilliseconds(500, {
-        forceTestCase: [AUF.U, PLL.Aa, AUF.UPrime],
-        correct: true,
-        startingState: "correctPage",
-        endingState: "correctPage",
-        assertNewCasePageDidntDisplay: true,
-      });
-
-      cy.log(
-        "This is a new postAUF even with known preAUF so should still display new case page"
-      );
-      completePLLTestInMilliseconds(500, {
-        forceTestCase: [AUF.U, PLL.Aa, AUF.U2],
-        correct: true,
-        startingState: "correctPage",
-        endingState: "correctPage",
-        newCasePageCallback() {
-          pllTrainerElements.newCasePage.container.assertShows();
-        },
-      });
-
-      cy.log(
-        "This is a case that hasn't been seen before, but each type of pre- and post-AUF have been tested independently so it shouldn't count as a new case"
-      );
-      completePLLTestInMilliseconds(500, {
-        forceTestCase: [AUF.UPrime, PLL.Aa, AUF.U2],
-        correct: true,
-        startingState: "correctPage",
-        endingState: "correctPage",
-        assertNewCasePageDidntDisplay: true,
-      });
-
-      cy.log(
-        "This is the first time there is no postAUF, and while this is a \"new\" case we don't want to count it as it's simply the act of not making a move. Also note that the preAUF is of course seen before otherwise it would be a new case"
-      );
-      completePLLTestInMilliseconds(500, {
-        forceTestCase: [AUF.UPrime, PLL.Aa, AUF.none],
-        correct: true,
-        startingState: "correctPage",
-        endingState: "correctPage",
-        assertNewCasePageDidntDisplay: true,
-      });
-
-      cy.log("New PLL so should display");
-      completePLLTestInMilliseconds(500, {
-        forceTestCase: [AUF.U, PLL.H, AUF.none],
-        correct: true,
-        startingState: "correctPage",
-        endingState: "correctPage",
-        newCasePageCallback() {
-          pllTrainerElements.newCasePage.container.assertShows();
-        },
-      });
-
+  context("only algorithms picked otherwise new user", function () {
+    it("passes pick target parameters page with default values, shows new user start page, and doesn't display algorithm picker for the apps default generated cases whether solve was correct or wrong as in this case algorithms have already been picked", function () {
+      cy.setLocalStorage(allPLLsPickedLocalStorage);
       type Aliases = {
+        testCaseFront: string;
+        testCaseBack: string;
         originalExpectedCubeFront: string;
         originalExpectedCubeBack: string;
         nextExpectedCubeFront: string;
         nextExpectedCubeBack: string;
       };
-      cy.log(
-        "H perm is fully symmetrical so preAUF and postAUF are equivalent in that sense and this shouldn't be a new case"
-      );
+      // Correct path:
       completePLLTestInMilliseconds(500, {
-        forceTestCase: [AUF.none, PLL.H, AUF.U],
         correct: true,
-        startingState: "correctPage",
-        endingState: "correctPage",
-        assertNewCasePageDidntDisplay: true,
-        evaluateResultCallback() {
+        startingState: "doNewVisit",
+        pickTargetParametersNavigator: () =>
+          testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVariant2(
+            { currentValuesAreValid: true }
+          ),
+        startPageCallback: assertItsNewUserNotRecurringUserStartPage,
+        newCasePageCallback: newCasePageNoSideEffectsButScroll,
+        newCasePageNavigator: newCasePageNavigateVariant2,
+        testRunningNavigator: testRunningNavigateVariant7,
+        evaluateResultCallback: () => {
           pllTrainerElements.evaluateResult.expectedCubeFront
             .getStringRepresentationOfCube()
             .setAlias<Aliases, "originalExpectedCubeFront">(
@@ -571,56 +506,6 @@ describe("PLL Trainer", function () {
               "originalExpectedCubeBack"
             );
         },
-      });
-
-      cy.log(
-        "This is a different combination though so should display the new case page"
-      );
-      completePLLTestInMilliseconds(500, {
-        forceTestCase: [AUF.U2, PLL.H, AUF.none],
-        correct: false,
-        wrongType: "unrecoverable",
-        startingState: "correctPage",
-        endingState: "typeOfWrongPage",
-        newCasePageCallback() {
-          pllTrainerElements.newCasePage.container.assertShows();
-        },
-        evaluateResultCallback() {
-          pllTrainerElements.evaluateResult.expectedCubeFront
-            .getStringRepresentationOfCube()
-            .setAlias<Aliases, "nextExpectedCubeFront">(
-              "nextExpectedCubeFront"
-            );
-          pllTrainerElements.evaluateResult.expectedCubeBack
-            .getStringRepresentationOfCube()
-            .setAlias<Aliases, "nextExpectedCubeBack">("nextExpectedCubeBack");
-        },
-      });
-      getVerifiedAliases<
-        Aliases,
-        | "originalExpectedCubeFront"
-        | "originalExpectedCubeBack"
-        | "nextExpectedCubeFront"
-        | "nextExpectedCubeBack"
-      >([
-        "originalExpectedCubeFront",
-        "originalExpectedCubeBack",
-        "nextExpectedCubeFront",
-        "nextExpectedCubeBack",
-      ]).then(typeOfWrongPageNoSideEffects);
-    });
-  });
-
-  context("only algorithms picked otherwise new user", function () {
-    it("passes pick target parameters page with default values, shows new user start page, and doesn't display algorithm picker for apps generated cases whether solve was correct or wrong as in this case algorithms have already been picked", function () {
-      cy.setLocalStorage(allPLLsPickedLocalStorage);
-      // Correct path:
-      completePLLTestInMilliseconds(500, {
-        correct: true,
-        startingState: "doNewVisit",
-        startPageCallback: assertItsNewUserNotRecurringUserStartPage,
-        newCasePageCallback: newCasePageNoSideEffectsButScroll,
-        newCasePageNavigator: newCasePageNavigateVariant2,
         endingState: "correctPage",
       });
       pllTrainerElements.correctPage.container.assertShows();
@@ -631,11 +516,35 @@ describe("PLL Trainer", function () {
       completePLLTestInMilliseconds(500, {
         correct: false,
         wrongType: "unrecoverable",
-        startingState: "doNewVisit",
+        startingState: "correctPage",
         endingState: "algorithmDrillerExplanationPage",
         beginningOfTestRunningCallback: () =>
           testRunningWithTimeSideEffects({ timerIsCurrentlyAtZero: true }),
         testRunningNavigator: testRunningNavigateChangingClockVariant1,
+        evaluateResultCallback: () => {
+          pllTrainerElements.evaluateResult.expectedCubeFront
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "nextExpectedCubeFront">(
+              "nextExpectedCubeFront"
+            );
+          pllTrainerElements.evaluateResult.expectedCubeBack
+            .getStringRepresentationOfCube()
+            .setAlias<Aliases, "nextExpectedCubeBack">("nextExpectedCubeBack");
+        },
+        typeOfWrongPageCallback: () => {
+          getVerifiedAliases<
+            Aliases,
+            | "originalExpectedCubeFront"
+            | "originalExpectedCubeBack"
+            | "nextExpectedCubeFront"
+            | "nextExpectedCubeBack"
+          >([
+            "originalExpectedCubeFront",
+            "originalExpectedCubeBack",
+            "nextExpectedCubeFront",
+            "nextExpectedCubeBack",
+          ]).then(typeOfWrongPageNoSideEffects);
+        },
       });
       pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
       // We just navigate to the status page to test variant 2 of navigation, so if another
@@ -646,21 +555,8 @@ describe("PLL Trainer", function () {
   });
 
   context("user who has learned full pll", function () {
-    beforeEach(function () {
+    it("shows the recurring user start page, navigates correctly to edit target parameters, and doesn't show new case page on first attempt, it then changes the cube state correctly after choosing type of wrong", function () {
       cy.setLocalStorage(fullyPopulatedLocalStorage);
-    });
-
-    it("shows the recurring user start page, navigates correctly to edit target parameters, and doesn't show new case page on first attempt", function () {
-      cy.visit(paths.pllTrainer);
-      recurringUserStartPageNoSideEffectsButScroll();
-      recurringUserStartPageEditTargetParamsNavigateVariant1();
-      pllTrainerElements.pickTargetParametersPage.container.assertShows();
-      pickTargetParametersNavigateVariant3();
-      recurringUserStartPageNavigateVariant1();
-      pllTrainerElements.getReadyState.container.assertShows();
-    });
-
-    it("changes the cube state correctly after choosing type of wrong", function () {
       type Aliases = {
         solvedFront: string;
         solvedBack: string;
@@ -668,6 +564,8 @@ describe("PLL Trainer", function () {
         expectedBack: string;
       };
       cy.visit(paths.pllTrainer);
+      recurringUserStartPageNoSideEffectsButScroll();
+
       pllTrainerElements.recurringUserStartPage.cubeStartState
         .getStringRepresentationOfCube()
         .setAlias<Aliases, "solvedFront">("solvedFront");
@@ -676,8 +574,16 @@ describe("PLL Trainer", function () {
         .getStringRepresentationOfCube()
         .setAlias<Aliases, "solvedBack">("solvedBack");
       cy.overrideCubeDisplayAngle(null);
+
+      recurringUserStartPageEditTargetParamsNavigateVariant1();
+      pllTrainerElements.pickTargetParametersPage.container.assertShows();
+      testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVariant3(
+        { currentValuesAreValid: true }
+      );
+      // Force test case here to ensure we don't get inverted cases in a row
+      cy.overrideNextTestCase([AUF.none, PLL.E, AUF.none]);
       cy.clock();
-      recurringUserStartPageNavigateVariant2();
+      recurringUserStartPageNavigateVariant1();
       pllTrainerElements.getReadyState.container.assertShows();
       cy.tick(getReadyWaitTime);
       pllTrainerElements.testRunning.container.waitFor();
@@ -685,8 +591,20 @@ describe("PLL Trainer", function () {
       pllTrainerElements.evaluateResult.container.waitFor();
       evaluateResultWhileIgnoringTransitionsNoSideEffects();
       cy.tick(evaluateResultIgnoreTransitionsWaitTime);
+      cy.clock().invoke("restore");
       evaluateResultAfterIgnoringTransitionsNoSideEffects();
-      evaluateResultNavigateWrongVariant1();
+      evaluateResultNavigateCorrectVariant1();
+
+      // Do another test so that we have a no moves result that is different from solved
+      completePLLTestInMilliseconds(500, {
+        correct: false,
+        // Force test case here to ensure we don't get inverted cases in a row
+        forceTestCase: [AUF.none, PLL.Gc, AUF.none],
+        wrongType: "unrecoverable",
+        startingState: "correctPage",
+        endingState: "typeOfWrongPage",
+      });
+      pllTrainerElements.typeOfWrongPage.container.waitFor();
 
       cy.getApplicationState().then((typeOfWrongApplicationState) => {
         cy.withOverallNameLogged({ message: "no moves both variants" }, () => {
@@ -706,6 +624,13 @@ describe("PLL Trainer", function () {
           assertCubeMatchesAlias<Aliases, "expectedBack">(
             "expectedBack",
             pllTrainerElements.wrongPage.expectedCubeStateBack
+          );
+
+          // Just a little check that the tests are complex enough and don't have risk
+          // of being evergreen
+          assertCubeIsDifferentFromAlias<Aliases, "solvedFront">(
+            "solvedFront",
+            pllTrainerElements.wrongPage.expectedCubeStateFront
           );
 
           cy.setApplicationState(typeOfWrongApplicationState);
@@ -742,6 +667,13 @@ describe("PLL Trainer", function () {
             assertCubeMatchesAlias<Aliases, "expectedBack">(
               "expectedBack",
               pllTrainerElements.wrongPage.expectedCubeStateBack
+            );
+
+            // Just a little check that the tests are complex enough and don't have risk
+            // of being evergreen
+            assertCubeIsDifferentFromAlias<Aliases, "solvedFront">(
+              "solvedFront",
+              pllTrainerElements.wrongPage.expectedCubeStateFront
             );
 
             cy.setApplicationState(typeOfWrongApplicationState);
@@ -801,19 +733,19 @@ describe("PLL Trainer", function () {
       const ZAlgorithmLength = 9;
       const GcAlgorithmLength = 12;
 
-      cy.visit(paths.pllTrainer);
       completePLLTestInMilliseconds(1500, {
         // Try with no AUFs
         forceTestCase: [AUF.none, PLL.Aa, AUF.none],
         correct: true,
-        startingState: "pickTargetParametersPage",
+        startingState: "doNewVisit",
+        testRunningNavigator: testRunningNavigateVariant13,
       });
       cy.visit(paths.pllTrainer);
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            lastThreeResults: [{ timeMs: 1500, turns: AaAlgorithmLength }],
             pll: PLL.Aa,
+            lastThreeResults: [{ timeMs: 1500, turns: AaAlgorithmLength }],
           },
         ],
       });
@@ -822,17 +754,18 @@ describe("PLL Trainer", function () {
         forceTestCase: [AUF.U, PLL.Aa, AUF.none],
         correct: true,
         startingState: "startPage",
+        testRunningNavigator: testRunningNavigateVariant14,
       });
       cy.visit(paths.pllTrainer);
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
+            pll: PLL.Aa,
             lastThreeResults: [
               { timeMs: 1500, turns: AaAlgorithmLength },
               // The addition is for the extra AUF turn
               { timeMs: 2000, turns: AaAlgorithmLength + 1 },
             ],
-            pll: PLL.Aa,
           },
         ],
       });
@@ -846,12 +779,12 @@ describe("PLL Trainer", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
+            pll: PLL.Aa,
             lastThreeResults: [
               { timeMs: 1500, turns: AaAlgorithmLength },
               { timeMs: 2000, turns: AaAlgorithmLength + 1 },
               { timeMs: 1000, turns: AaAlgorithmLength + 1 },
             ],
-            pll: PLL.Aa,
           },
         ],
       });
@@ -867,12 +800,12 @@ describe("PLL Trainer", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
+            pll: PLL.Aa,
             lastThreeResults: [
               { timeMs: 1000, turns: AaAlgorithmLength + 1 },
               { timeMs: 2000, turns: AaAlgorithmLength + 1 },
               { timeMs: 1000, turns: AaAlgorithmLength + 2 },
             ],
-            pll: PLL.Aa,
           },
         ],
       });
@@ -885,16 +818,16 @@ describe("PLL Trainer", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
             pll: PLL.H,
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
           },
           {
+            pll: PLL.Aa,
             lastThreeResults: [
               { timeMs: 1000, turns: AaAlgorithmLength + 1 },
               { timeMs: 2000, turns: AaAlgorithmLength + 1 },
               { timeMs: 1000, turns: AaAlgorithmLength + 2 },
             ],
-            pll: PLL.Aa,
           },
         ],
       });
@@ -913,8 +846,8 @@ describe("PLL Trainer", function () {
             dnf: true,
           },
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
             pll: PLL.H,
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
           },
         ],
       });
@@ -931,8 +864,8 @@ describe("PLL Trainer", function () {
             dnf: true,
           },
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
             pll: PLL.H,
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
           },
         ],
       });
@@ -949,8 +882,8 @@ describe("PLL Trainer", function () {
             dnf: true,
           },
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
             pll: PLL.H,
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
           },
         ],
       });
@@ -963,16 +896,16 @@ describe("PLL Trainer", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
             pll: PLL.H,
+            lastThreeResults: [{ timeMs: 2000, turns: HAlgorithmLength }],
           },
           {
+            pll: PLL.Aa,
             lastThreeResults: [
               { timeMs: 2000, turns: AaAlgorithmLength + 1 },
               { timeMs: 1000, turns: AaAlgorithmLength },
               { timeMs: 3000, turns: AaAlgorithmLength + 2 },
             ],
-            pll: PLL.Aa,
           },
         ],
       });
@@ -992,19 +925,19 @@ describe("PLL Trainer", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
+            pll: PLL.H,
             lastThreeResults: [
               { timeMs: 2000, turns: HAlgorithmLength },
               { timeMs: 2000, turns: HAlgorithmLength },
             ],
-            pll: PLL.H,
           },
           {
+            pll: PLL.Aa,
             lastThreeResults: [
               { timeMs: 2000, turns: AaAlgorithmLength + 1 },
               { timeMs: 1000, turns: AaAlgorithmLength },
               { timeMs: 3000, turns: AaAlgorithmLength + 2 },
             ],
-            pll: PLL.Aa,
           },
         ],
       });
@@ -1018,20 +951,20 @@ describe("PLL Trainer", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
+            pll: PLL.H,
             lastThreeResults: [
               { timeMs: 2000, turns: HAlgorithmLength },
               { timeMs: 2000, turns: HAlgorithmLength },
               { timeMs: 2000, turns: HAlgorithmLength + 1 },
             ],
-            pll: PLL.H,
           },
           {
+            pll: PLL.Aa,
             lastThreeResults: [
               { timeMs: 2000, turns: AaAlgorithmLength + 1 },
               { timeMs: 1000, turns: AaAlgorithmLength },
               { timeMs: 3000, turns: AaAlgorithmLength + 2 },
             ],
-            pll: PLL.Aa,
           },
         ],
       });
@@ -1045,27 +978,26 @@ describe("PLL Trainer", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
+            pll: PLL.H,
             lastThreeResults: [
               { timeMs: 2000, turns: HAlgorithmLength },
               { timeMs: 2000, turns: HAlgorithmLength + 1 },
               { timeMs: 2000, turns: HAlgorithmLength + 1 },
             ],
-            pll: PLL.H,
           },
           {
+            pll: PLL.Aa,
             lastThreeResults: [
               { timeMs: 2000, turns: AaAlgorithmLength + 1 },
               { timeMs: 1000, turns: AaAlgorithmLength },
               { timeMs: 3000, turns: AaAlgorithmLength + 2 },
             ],
-            pll: PLL.Aa,
           },
         ],
       });
       /**
        * Z is partially symmetrical, having 2 possible preAUFs, either none or a U turn.
-       * We just do two tests (after picking the algorithm) to see that these partial
-       * symmetries seem handled too
+       * We just do two tests to see that these partial symmetries seem handled too
        */
       completePLLTestInMilliseconds(5000, {
         forceTestCase: [AUF.none, PLL.Z, AUF.none],
@@ -1076,24 +1008,24 @@ describe("PLL Trainer", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            lastThreeResults: [{ timeMs: 5000, turns: ZAlgorithmLength }],
             pll: PLL.Z,
+            lastThreeResults: [{ timeMs: 5000, turns: ZAlgorithmLength }],
           },
           {
+            pll: PLL.H,
             lastThreeResults: [
               { timeMs: 2000, turns: HAlgorithmLength },
               { timeMs: 2000, turns: HAlgorithmLength + 1 },
               { timeMs: 2000, turns: HAlgorithmLength + 1 },
             ],
-            pll: PLL.H,
           },
           {
+            pll: PLL.Aa,
             lastThreeResults: [
               { timeMs: 2000, turns: AaAlgorithmLength + 1 },
               { timeMs: 1000, turns: AaAlgorithmLength },
               { timeMs: 3000, turns: AaAlgorithmLength + 2 },
             ],
-            pll: PLL.Aa,
           },
         ],
       });
@@ -1107,27 +1039,27 @@ describe("PLL Trainer", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
+            pll: PLL.Z,
             lastThreeResults: [
               { timeMs: 5000, turns: ZAlgorithmLength },
               { timeMs: 5000, turns: ZAlgorithmLength + 2 },
             ],
-            pll: PLL.Z,
           },
           {
+            pll: PLL.H,
             lastThreeResults: [
               { timeMs: 2000, turns: HAlgorithmLength },
               { timeMs: 2000, turns: HAlgorithmLength + 1 },
               { timeMs: 2000, turns: HAlgorithmLength + 1 },
             ],
-            pll: PLL.H,
           },
           {
+            pll: PLL.Aa,
             lastThreeResults: [
               { timeMs: 2000, turns: AaAlgorithmLength + 1 },
               { timeMs: 1000, turns: AaAlgorithmLength },
               { timeMs: 3000, turns: AaAlgorithmLength + 2 },
             ],
-            pll: PLL.Aa,
           },
         ],
       });
@@ -1142,28 +1074,28 @@ describe("PLL Trainer", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
+            pll: PLL.Z,
             lastThreeResults: [
               { timeMs: 5000, turns: ZAlgorithmLength },
               { timeMs: 5000, turns: ZAlgorithmLength + 2 },
               { timeMs: 5000, turns: ZAlgorithmLength + 1 },
             ],
-            pll: PLL.Z,
           },
           {
+            pll: PLL.H,
             lastThreeResults: [
               { timeMs: 2000, turns: HAlgorithmLength },
               { timeMs: 2000, turns: HAlgorithmLength + 1 },
               { timeMs: 2000, turns: HAlgorithmLength + 1 },
             ],
-            pll: PLL.H,
           },
           {
+            pll: PLL.Aa,
             lastThreeResults: [
               { timeMs: 2000, turns: AaAlgorithmLength + 1 },
               { timeMs: 1000, turns: AaAlgorithmLength },
               { timeMs: 3000, turns: AaAlgorithmLength + 2 },
             ],
-            pll: PLL.Aa,
           },
         ],
       });
@@ -1180,24 +1112,24 @@ describe("PLL Trainer", function () {
       assertCorrectStatistics({
         worstCasesFromWorstToBetter: [
           {
-            lastThreeResults: [{ timeMs: 10000, turns: GcAlgorithmLength + 2 }],
             pll: PLL.Gc,
+            lastThreeResults: [{ timeMs: 10000, turns: GcAlgorithmLength + 2 }],
           },
           {
+            pll: PLL.Z,
             lastThreeResults: [
               { timeMs: 5000, turns: ZAlgorithmLength },
               { timeMs: 5000, turns: ZAlgorithmLength + 2 },
               { timeMs: 5000, turns: ZAlgorithmLength + 1 },
             ],
-            pll: PLL.Z,
           },
           {
+            pll: PLL.H,
             lastThreeResults: [
               { timeMs: 2000, turns: HAlgorithmLength },
               { timeMs: 2000, turns: HAlgorithmLength + 1 },
               { timeMs: 2000, turns: HAlgorithmLength + 1 },
             ],
-            pll: PLL.H,
           },
         ],
       });
@@ -1207,8 +1139,8 @@ describe("PLL Trainer", function () {
       }: {
         worstCasesFromWorstToBetter: (
           | {
-              lastThreeResults: { timeMs: number; turns: number }[];
               pll: PLL;
+              lastThreeResults: { timeMs: number; turns: number }[];
               dnf?: undefined;
             }
           | { pll: PLL; dnf: true }
@@ -2000,67 +1932,125 @@ function pickTargetParametersPageSideEffectsExceptNavigations() {
   );
 }
 
-function pickTargetParametersNavigateVariant1() {
+function pickTargetParametersNavigateWithSomeDefaultValues() {
+  const elements = pllTrainerElements.pickTargetParametersPage;
+
+  elements.targetTPSInput.get().type("{selectall}{backspace}2.5", { delay: 0 });
+  elements.recognitionTimeInput
+    .get()
+    .type("{selectall}{backspace}2", { delay: 0 });
+  elements.submitButton.get().click();
+}
+
+function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVariant1(params: {
+  currentValuesAreValid: true;
+}) {
   cy.withOverallNameLogged(
-    { message: "pickTargetParametersNavigateVariant1" },
+    { message: "testPickTargetParametersOnlySubmitsWithNoErrorsVariant1" },
     () => {
-      pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
-      pllTrainerElements.pickTargetParametersPage.container.assertDoesntExist();
+      testPickTargetParametersOnlySubmitsWithNoErrorsGivenSubmit({
+        submit: () =>
+          pllTrainerElements.pickTargetParametersPage.submitButton
+            .get()
+            .click(),
+        ...params,
+      });
     }
   );
 }
 
-function pickTargetParametersNavigateVariant2() {
+function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVariant2(params: {
+  currentValuesAreValid: true;
+}) {
   cy.withOverallNameLogged(
-    { message: "pickTargetParametersNavigateVariant2" },
+    { message: "testPickTargetParametersOnlySubmitsWithNoErrorsVariant2" },
     () => {
-      pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
-        .get()
-        .type("{enter}");
-      pllTrainerElements.pickTargetParametersPage.container.assertDoesntExist();
+      testPickTargetParametersOnlySubmitsWithNoErrorsGivenSubmit({
+        submit: () =>
+          pllTrainerElements.pickTargetParametersPage.targetTPSInput
+            .get()
+            .type("{enter}"),
+        ...params,
+      });
     }
   );
 }
 
-function pickTargetParametersNavigateVariant3() {
+function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVariant3(params: {
+  currentValuesAreValid: true;
+}) {
   cy.withOverallNameLogged(
-    { message: "pickTargetParametersNavigateVariant3" },
+    { message: "testPickTargetParametersOnlySubmitsWithNoErrorsVariant3" },
     () => {
-      pllTrainerElements.pickTargetParametersPage.targetTPSInput
-        .get()
-        .type("{enter}");
-      pllTrainerElements.pickTargetParametersPage.container.assertDoesntExist();
+      testPickTargetParametersOnlySubmitsWithNoErrorsGivenSubmit({
+        submit: () =>
+          pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+            .get()
+            .type("{enter}"),
+        ...params,
+      });
     }
   );
 }
-
-function testPickTargetParametersOnlySubmitsWithNoErrors(submit: () => void) {
+function testPickTargetParametersOnlySubmitsWithNoErrorsGivenSubmit({
+  submit,
+}: {
+  submit: () => void;
+  currentValuesAreValid: true;
+}) {
   cy.withOverallNameLogged(
     { message: "testPickTargetParametersOnlySubmitsWithNoErrors" },
     () => {
       const elements = pllTrainerElements.pickTargetParametersPage;
 
-      makeInvalid(elements.recognitionTimeInput, elements.recognitionTimeError);
-      submit();
-      elements.container.assertShows();
-      makeInvalid(elements.targetTPSInput, elements.tpsError);
-      submit();
-      elements.container.assertShows();
-      makeValid(elements.recognitionTimeInput, elements.recognitionTimeError);
-      submit();
-      elements.container.assertShows();
-      makeValid(elements.targetTPSInput, elements.tpsError);
-      submit();
-      pllTrainerElements.newUserStartPage.container.assertShows();
+      elements.targetTPSInput
+        .get()
+        .invoke("val")
+        .then((tps) =>
+          elements.recognitionTimeInput
+            .get()
+            .invoke("val")
+            .then((recognitionTime) => ({ tps, recognitionTime }))
+        )
+        .then(({ tps, recognitionTime }) => {
+          makeInvalid(
+            elements.recognitionTimeInput,
+            elements.recognitionTimeError
+          );
+          submit();
+          elements.container.assertShows();
+          makeInvalid(elements.targetTPSInput, elements.tpsError);
+          submit();
+          elements.container.assertShows();
+          makeValid(
+            elements.recognitionTimeInput,
+            elements.recognitionTimeError
+          );
+          submit();
+          elements.container.assertShows();
+          makeValid(elements.targetTPSInput, elements.tpsError);
+          submit();
+          pllTrainerElements.newUserStartPage.container.assertShows();
 
-      function makeInvalid(inputElement: OurElement, errorElement: OurElement) {
-        inputElement.get().type("abc", { delay: 0 });
-        errorElement.waitFor();
-      }
-      function makeValid(inputElement: OurElement, errorElement: OurElement) {
-        inputElement.get().type("{selectall}{backspace}2.0", { delay: 0 });
-        errorElement.assertDoesntExist();
-      }
+          function makeInvalid(
+            inputElement: OurElement,
+            errorElement: OurElement
+          ) {
+            inputElement.get().type("abc", { delay: 0 });
+            errorElement.waitFor();
+          }
+          function makeValid(
+            inputElement: OurElement,
+            errorElement: OurElement
+          ) {
+            const value =
+              inputElement === elements.targetTPSInput ? tps : recognitionTime;
+            inputElement
+              .get()
+              .type("{selectall}{backspace}" + value, { delay: 0 });
+            errorElement.assertDoesntExist();
+          }
+        });
     }
   );
 }

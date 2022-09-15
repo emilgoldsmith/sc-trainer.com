@@ -221,6 +221,7 @@ export function completePLLTestInMilliseconds(
     overrideDefaultAlgorithm?: string;
     pickTargetParametersNavigator?: () => void;
     startPageCallback?: () => void;
+    startPageNavigator?: () => void;
     newCasePageCallback?: () => void;
     assertNewCasePageDidntDisplay?: boolean;
     newCasePageNavigator?: () => void;
@@ -244,6 +245,7 @@ export function completePLLTestInMilliseconds(
         correct: false;
         wrongType: "unrecoverable" | "nearly there" | "no moves made";
         evaluateResultWrongNavigator?: () => void;
+        typeOfWrongPageCallback?: () => void;
       } & (
         | {
             wrongPageCallback?: () => void;
@@ -280,6 +282,7 @@ export function completePLLTestInMilliseconds(
         endingState,
         pickTargetParametersNavigator,
         startPageCallback,
+        startPageNavigator,
         newCasePageCallback,
         assertNewCasePageDidntDisplay,
         newCasePageNavigator,
@@ -340,7 +343,10 @@ export function completePLLTestInMilliseconds(
       if (atStartPage) {
         pllTrainerElements.newUserStartPage.container.waitFor();
         startPageCallback?.();
-        pllTrainerElements.newUserStartPage.startButton.get().click();
+        (
+          startPageNavigator ??
+          (() => pllTrainerElements.newUserStartPage.startButton.get().click())
+        )();
         pllTrainerElements.root.waitForStateChangeAwayFrom(
           stateAttributeValues.startPage
         );
@@ -416,6 +422,9 @@ export function completePLLTestInMilliseconds(
           params.evaluateResultWrongNavigator ??
           (() => pllTrainerElements.evaluateResult.wrongButton.get().click())
         )();
+        pllTrainerElements.typeOfWrongPage.container.waitFor();
+        params.typeOfWrongPageCallback?.();
+
         if (endingState === "typeOfWrongPage") return;
         if (params.wrongType === "unrecoverable") {
           pllTrainerElements.typeOfWrongPage.unrecoverableButton.get().click();
