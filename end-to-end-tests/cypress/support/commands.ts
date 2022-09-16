@@ -679,7 +679,8 @@ const touchScreen: Cypress.Chainable<undefined>["touchScreen"] = function (
 Cypress.Commands.add("touchScreen", touchScreen);
 
 const mouseClickScreen: Cypress.Chainable<undefined>["mouseClickScreen"] = function (
-  position
+  position,
+  options
 ) {
   const event = {
     eventConstructor: "MouseEvent",
@@ -692,7 +693,7 @@ const mouseClickScreen: Cypress.Chainable<undefined>["mouseClickScreen"] = funct
       consoleProps: () => ({ event }),
     },
     () => {
-      cy.get("body", { log: false }).click(position);
+      cy.get("body", { log: false }).click(position, options);
     }
   );
 };

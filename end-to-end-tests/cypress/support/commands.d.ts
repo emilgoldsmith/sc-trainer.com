@@ -271,7 +271,10 @@ declare namespace Cypress {
 
     touchScreen(position: Cypress.PositionType): void;
 
-    mouseClickScreen(position: Cypress.PositionType): void;
+    mouseClickScreen(
+      position: Cypress.PositionType,
+      options?: { log?: boolean }
+    ): void;
 
     percySnapshotWithProperName(
       name: string,

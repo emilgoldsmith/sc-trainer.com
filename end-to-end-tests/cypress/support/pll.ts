@@ -126,8 +126,6 @@ export function parsePLLString(str: string): PLL {
   }
 }
 
-// All these algorithms are verified to have the same AUFs as
-// the ones the app use through a test in support-tests
 export const pllToAlgorithmString: { [key in PLL]: string } = {
   [PLL.Aa]: "(x) R' U R' D2 R U' R' D2 R2 (x')",
   [PLL.Ab]: "(x) R D' R U2 R' D R U2 R2 (x')",

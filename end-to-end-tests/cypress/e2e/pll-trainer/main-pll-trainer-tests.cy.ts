@@ -35,6 +35,7 @@ describe("PLL Trainer", function () {
     describe("different paths in the app:", function () {
       it("shows new case for new user -> solved quickly + ending test by touching screen where correct button shows up doesn't press that button -> pick algorithm -> correct with goodjob text (no driller) -> same case again on a different visit, no new case page, doesn't display picker, doesn't display good job text", function () {
         cy.visit(paths.pllTrainer);
+        pickTargetParametersPageFirstThingNoSideEffects();
         pickTargetParametersPageNoSideEffectsButScroll();
         pickTargetParametersPageSideEffectsExceptNavigations();
         pickTargetParametersNavigateWithSomeDefaultValues();
@@ -151,7 +152,7 @@ describe("PLL Trainer", function () {
           "solvedFront",
           "solvedBack",
         ]).then(({ solvedFront, solvedBack }) => {
-          algorithmDrillerStatusPageNoSideEffects({
+          algorithmDrillerStatusPageRightAfterExplanationPageNoSideEffects({
             solvedFront,
             solvedBack,
             // true because we used "nearly there" wrong type
@@ -281,10 +282,11 @@ describe("PLL Trainer", function () {
           startingState: "correctPage",
           forceTestCase: [firstPreAUF, pll, differentNotNonePostAUF],
           endingState: "algorithmDrillerExplanationPage",
+          correctPageNavigator: correctPageNavigateVariant1,
           newCasePageCallback: () =>
             pllTrainerElements.newCasePage.container.assertShows(),
           testRunningNavigator: testRunningNavigateChangingClockVariant4,
-          correctPageNavigator: correctPageNavigateVariant1,
+          evaluateResultWrongNavigator: evaluateResultNavigateWrongVariant1,
         });
         // Seen preAUF but new not none postAUF should go to driller
         pllTrainerElements.algorithmDrillerExplanationPage.container.assertShows();
@@ -555,7 +557,7 @@ describe("PLL Trainer", function () {
   });
 
   context("user who has learned full pll", function () {
-    it("shows the recurring user start page, navigates correctly to edit target parameters, and doesn't show new case page on first attempt, it then changes the cube state correctly after choosing type of wrong", function () {
+    it("shows the recurring user start page displaying all cases attempted, navigates correctly to edit target parameters, and doesn't show new case page on first attempt, it then changes the cube state correctly after choosing type of wrong", function () {
       cy.setLocalStorage(fullyPopulatedLocalStorage);
       type Aliases = {
         solvedFront: string;
@@ -565,6 +567,13 @@ describe("PLL Trainer", function () {
       };
       cy.visit(paths.pllTrainer);
       recurringUserStartPageNoSideEffectsButScroll();
+
+      pllTrainerElements.recurringUserStartPage.numCasesTried
+        .get()
+        .should("include.text", ": 21");
+      pllTrainerElements.recurringUserStartPage.numCasesNotYetTried
+        .get()
+        .should("include.text", ": 0");
 
       pllTrainerElements.recurringUserStartPage.cubeStartState
         .getStringRepresentationOfCube()
@@ -1192,11 +1201,10 @@ describe("PLL Trainer", function () {
       const GaAlgorithmLength = 12;
       const totalPLLCases = 21;
 
-      cy.visit(paths.pllTrainer);
       completePLLTestInMilliseconds(1000, {
         forceTestCase: [AUF.UPrime, PLL.Aa, AUF.none],
         correct: true,
-        startingState: "pickTargetParametersPage",
+        startingState: "doNewVisit",
       });
       cy.visit(paths.pllTrainer);
       assertCorrectGlobalStatistics({
@@ -1338,10 +1346,11 @@ describe("PLL Trainer", function () {
       };
       cy.visit(paths.pllTrainer);
       pllTrainerElements.pickTargetParametersPage.container.waitFor();
-      cy.setPLLAlgorithm(PLL.Aa, pllToAlgorithmString[PLL.Aa]);
+      const testCase = [AUF.U2, PLL.Aa, AUF.UPrime] as const;
+      cy.setPLLAlgorithm(testCase[1], pllToAlgorithmString[testCase[1]]);
       completePLLTestInMilliseconds(1000, {
         startingState: "pickTargetParametersPage",
-        forceTestCase: [AUF.U2, PLL.Aa, AUF.UPrime],
+        forceTestCase: testCase,
         correct: true,
       });
 
@@ -1355,10 +1364,13 @@ describe("PLL Trainer", function () {
       cy.clearLocalStorage();
       cy.visit(paths.pllTrainer);
       pllTrainerElements.pickTargetParametersPage.container.waitFor();
-      cy.setPLLAlgorithm(PLL.Aa, "y' " + pllToAlgorithmString[PLL.Aa] + " y2");
+      cy.setPLLAlgorithm(
+        testCase[1],
+        "y' " + pllToAlgorithmString[testCase[1]] + " y2"
+      );
       completePLLTestInMilliseconds(1000, {
         startingState: "pickTargetParametersPage",
-        forceTestCase: [AUF.U2, PLL.Aa, AUF.UPrime],
+        forceTestCase: testCase,
         correct: true,
       });
       cy.visit(paths.pllTrainer);
@@ -1375,6 +1387,7 @@ describe("PLL Trainer", function () {
         );
       });
     });
+
     it("correctly calculates the TPS of the first attempt on a case, even though we don't know which AUF was used until the algorithm is input", function () {
       assertFirstAttemptIsCalculatedSameAsSecondAttempt({
         pll: PLL.Ua,
@@ -1540,8 +1553,8 @@ describe("PLL Trainer", function () {
           "displays exactly the same, even if there's a wide move in the algorithm that isn't corrected later",
         pll: PLL.Jb,
         algorithmWithRotation: "R U2 R' U' R U2 L' U R' U' r",
-        // The same algorithm but just converted the r move to a slice and outside face turn
-        algorithmWithoutRotation: "R U2 R' U' R U2 L' U R' U' R M'",
+        // The same algorithm but just used an L move instead of the r move
+        algorithmWithoutRotation: "R U2 R' U' R U2 L' U R' U' L",
       },
     ] as {
       testName: string;
@@ -1655,6 +1668,7 @@ describe("PLL Trainer", function () {
       });
     });
   });
+
   describe("other important things", function () {
     it("correctly identifies the optimal AUFs of symmetrical cases", function () {
       /**
@@ -1741,6 +1755,8 @@ describe("PLL Trainer", function () {
           startingState: startingStateOverride ?? "doNewVisit",
           endingState: "testRunning",
           testRunningCallback() {
+            // We need to restore the clock here in order for getCurrentTestCase to function
+            // as ports don't work properly while time is mocked
             cy.clock().invoke("restore");
             cy.getCurrentTestCase().should(([preAUF, , postAUF]) => {
               expect([preAUF, postAUF]).to.deep.equal(aufToExpect);
@@ -1752,6 +1768,25 @@ describe("PLL Trainer", function () {
   });
 });
 
+function pickTargetParametersPageFirstThingNoSideEffects() {
+  cy.withOverallNameLogged(
+    { message: "pickTargetParametersPageFirstThingNoSideEffects" },
+    () => {
+      ([
+        [
+          "errors behave properly at the start",
+          () => {
+            // No errors expected as you enter the page
+            pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
+          },
+        ],
+      ] as const).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
+  );
+}
+
 function pickTargetParametersPageNoSideEffectsButScroll() {
   const elements = pllTrainerElements.pickTargetParametersPage;
 
@@ -1762,16 +1797,7 @@ function pickTargetParametersPageNoSideEffectsButScroll() {
         [
           "looks right",
           () => {
-            elements.explanation.assertConsumableViaVerticalScroll(
-              elements.container.specifier
-            );
-            elements.recognitionTimeInput.assertConsumableViaVerticalScroll(
-              elements.container.specifier
-            );
-            elements.targetTPSInput.assertConsumableViaVerticalScroll(
-              elements.container.specifier
-            );
-            elements.submitButton.assertConsumableViaVerticalScroll(
+            elements.assertAllConsumableViaVerticalScroll(
               elements.container.specifier
             );
             cy.assertNoHorizontalScrollbar();
@@ -1872,74 +1898,11 @@ function pickTargetParametersPageSideEffectsExceptNavigations() {
             }
           },
         ],
-        ...([
-          {
-            method: "submit button",
-            submit: () => elements.submitButton.get().click(),
-          },
-          {
-            method: "enter in recognition time input",
-            submit: () => elements.recognitionTimeInput.get().type("{enter}"),
-          },
-          {
-            method: "enter in TPS input",
-            submit: () => elements.targetTPSInput.get().type("{enter}"),
-          },
-        ] as const).map(
-          ({ method, submit }) =>
-            [
-              "doesn't submit if there are errors using " + method,
-              () => {
-                makeInvalid(
-                  elements.recognitionTimeInput,
-                  elements.recognitionTimeError
-                );
-                submit();
-                elements.container.assertShows();
-                makeInvalid(elements.targetTPSInput, elements.tpsError);
-                submit();
-                elements.container.assertShows();
-                makeValid(
-                  elements.recognitionTimeInput,
-                  elements.recognitionTimeError
-                );
-                submit();
-                elements.container.assertShows();
-
-                function makeInvalid(
-                  inputElement: OurElement,
-                  errorElement: OurElement
-                ) {
-                  inputElement.get().type("abc", { delay: 0 });
-                  errorElement.waitFor();
-                }
-                function makeValid(
-                  inputElement: OurElement,
-                  errorElement: OurElement
-                ) {
-                  inputElement
-                    .get()
-                    .type("{selectall}{backspace}2.0", { delay: 0 });
-                  errorElement.assertDoesntExist();
-                }
-              },
-            ] as const
-        ),
       ] as const).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
   );
-}
-
-function pickTargetParametersNavigateWithSomeDefaultValues() {
-  const elements = pllTrainerElements.pickTargetParametersPage;
-
-  elements.targetTPSInput.get().type("{selectall}{backspace}2.5", { delay: 0 });
-  elements.recognitionTimeInput
-    .get()
-    .type("{selectall}{backspace}2", { delay: 0 });
-  elements.submitButton.get().click();
 }
 
 function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVariant1(params: {
@@ -1948,13 +1911,15 @@ function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVarian
   cy.withOverallNameLogged(
     { message: "testPickTargetParametersOnlySubmitsWithNoErrorsVariant1" },
     () => {
-      testPickTargetParametersOnlySubmitsWithNoErrorsGivenSubmit({
-        submit: () =>
-          pllTrainerElements.pickTargetParametersPage.submitButton
-            .get()
-            .click(),
-        ...params,
-      });
+      testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesGivenSubmit(
+        {
+          submit: () =>
+            pllTrainerElements.pickTargetParametersPage.submitButton
+              .get()
+              .click(),
+          ...params,
+        }
+      );
     }
   );
 }
@@ -1965,13 +1930,15 @@ function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVarian
   cy.withOverallNameLogged(
     { message: "testPickTargetParametersOnlySubmitsWithNoErrorsVariant2" },
     () => {
-      testPickTargetParametersOnlySubmitsWithNoErrorsGivenSubmit({
-        submit: () =>
-          pllTrainerElements.pickTargetParametersPage.targetTPSInput
-            .get()
-            .type("{enter}"),
-        ...params,
-      });
+      testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesGivenSubmit(
+        {
+          submit: () =>
+            pllTrainerElements.pickTargetParametersPage.targetTPSInput
+              .get()
+              .type("{enter}"),
+          ...params,
+        }
+      );
     }
   );
 }
@@ -1982,17 +1949,19 @@ function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVarian
   cy.withOverallNameLogged(
     { message: "testPickTargetParametersOnlySubmitsWithNoErrorsVariant3" },
     () => {
-      testPickTargetParametersOnlySubmitsWithNoErrorsGivenSubmit({
-        submit: () =>
-          pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
-            .get()
-            .type("{enter}"),
-        ...params,
-      });
+      testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesGivenSubmit(
+        {
+          submit: () =>
+            pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
+              .get()
+              .type("{enter}"),
+          ...params,
+        }
+      );
     }
   );
 }
-function testPickTargetParametersOnlySubmitsWithNoErrorsGivenSubmit({
+function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesGivenSubmit({
   submit,
 }: {
   submit: () => void;
@@ -2030,7 +1999,7 @@ function testPickTargetParametersOnlySubmitsWithNoErrorsGivenSubmit({
           elements.container.assertShows();
           makeValid(elements.targetTPSInput, elements.tpsError);
           submit();
-          pllTrainerElements.newUserStartPage.container.assertShows();
+          elements.container.assertDoesntExist();
 
           function makeInvalid(
             inputElement: OurElement,
@@ -2055,8 +2024,19 @@ function testPickTargetParametersOnlySubmitsWithNoErrorsGivenSubmit({
   );
 }
 
+function pickTargetParametersNavigateWithSomeDefaultValues() {
+  const elements = pllTrainerElements.pickTargetParametersPage;
+
+  elements.targetTPSInput.get().type("{selectall}{backspace}2.5", { delay: 0 });
+  elements.recognitionTimeInput
+    .get()
+    .type("{selectall}{backspace}2", { delay: 0 });
+  elements.submitButton.get().click();
+}
+
 function newUserStartPageNoSideEffectsButScroll() {
   const elements = pllTrainerElements.newUserStartPage;
+
   cy.withOverallNameLogged(
     { message: "newUserStartPageNoSideEffectsButScroll" },
     () => {
@@ -2067,8 +2047,7 @@ function newUserStartPageNoSideEffectsButScroll() {
             // These elements should all display without scrolling
             elements.welcomeText.assertShows();
             elements.welcomeText.assertContainedByWindow();
-            // These ones we accept possibly having to scroll for so just check it exists
-            // We check it's visibility including scroll in the element sizing
+            // The rest we accept having to scroll for
             elements.assertAllConsumableViaVerticalScroll(
               elements.container.specifier
             );
@@ -2175,6 +2154,7 @@ function recurringUserStartPageNoSideEffectsButScroll() {
               x.assertShows();
               x.assertContainedByWindow();
             });
+            // The rest should just be consumable by scroll
             elements.assertAllConsumableViaVerticalScroll(
               elements.container.specifier
             );
@@ -2219,6 +2199,7 @@ function recurringUserStartPageNavigateVariant2() {
   cy.withOverallNameLogged(
     { message: "recurringUserStartPageNavigateVariant2" },
     () => {
+      pllTrainerElements.recurringUserStartPage.container.waitFor();
       cy.pressKey(Key.space);
       pllTrainerElements.recurringUserStartPage.container.assertDoesntExist();
     }
@@ -2229,10 +2210,10 @@ function recurringUserStartPageEditTargetParamsNavigateVariant1() {
   cy.withOverallNameLogged(
     { message: "recurringUserStartPageEditTargetParamsNavigateVariant1" },
     () => {
-      pllTrainerElements.newUserStartPage.editTargetParametersButton
+      pllTrainerElements.recurringUserStartPage.editTargetParametersButton
         .get()
         .click();
-      pllTrainerElements.newUserStartPage.container.assertDoesntExist();
+      pllTrainerElements.recurringUserStartPage.container.assertDoesntExist();
     }
   );
 }
@@ -2328,9 +2309,11 @@ function testRunningWithTimeSideEffects(_: { timerIsCurrentlyAtZero: true }) {
         .then((startTime) => {
           ([
             [
-              "has all the correct elements",
+              "looks right",
               () => {
                 elements.assertAllShow();
+                cy.assertNoHorizontalScrollbar();
+                cy.assertNoVerticalScrollbar();
               },
             ],
             [
@@ -2360,8 +2343,9 @@ function testRunningWithTimeSideEffects(_: { timerIsCurrentlyAtZero: true }) {
                 pllTrainerElements.testRunning.timer
                   .get()
                   .should("have.text", "1.5");
-                // Switch to using time jumps as tick calls all setInterval times in the
-                // time interval resulting in slow tests and excessive cpu usage
+                // Switch to using time jumps as tick calls all setInterval and
+                // request animation frame calbacks in the time interval resulting
+                // in slow tests and excessive cpu usage
 
                 // Checking two digit seconds alone
                 cy.setSystemTimeWithLastFrameTicked(19.2 * second + startTime);
@@ -2375,7 +2359,7 @@ function testRunningWithTimeSideEffects(_: { timerIsCurrentlyAtZero: true }) {
                 pllTrainerElements.testRunning.timer
                   .get()
                   .should("have.text", "3:16.8");
-                // Checking single digit seconds when above minute still shows two digits
+                // Checking single digit seconds displays the 0 when above a minute
                 cy.setSystemTimeWithLastFrameTicked(
                   4 * minute + 7.3 * second + startTime
                 );
@@ -2629,7 +2613,11 @@ function testRunningNavigateChangingClockVariant5() {
         Key.w,
         Key.W,
       ]);
-      pllTrainerElements.testRunning.container.assertDoesntExist();
+      // We don't just assert leaving the test but also that we didn't pass through
+      // evaluate result by pressing w in our button  mash. This is important
+      // that it is avoided and it shouldn't be too brittle as test page navigating
+      // to evaluate result should be pretty stable
+      pllTrainerElements.evaluateResult.container.assertShows();
     }
   );
 }
@@ -2650,7 +2638,11 @@ function testRunningNavigateChangingClockVariant6() {
         Key.capsLock,
         Key.leftCtrl,
       ]);
-      pllTrainerElements.testRunning.container.assertDoesntExist();
+      // We don't just assert leaving the test but also that we didn't pass through
+      // evaluate result by pressing w in our button  mash. This is important
+      // that it is avoided and it shouldn't be too brittle as test page navigating
+      // to evaluate result should be pretty stable
+      pllTrainerElements.evaluateResult.container.assertShows();
     }
   );
 }
@@ -2671,7 +2663,11 @@ function testRunningNavigateChangingClockVariant7() {
         Key.capsLock,
         Key.leftCtrl,
       ]);
-      pllTrainerElements.testRunning.container.assertDoesntExist();
+      // We don't just assert leaving the test but also that we didn't pass through
+      // evaluate result by pressing w in our button  mash. This is important
+      // that it is avoided and it shouldn't be too brittle as test page navigating
+      // to evaluate result should be pretty stable
+      pllTrainerElements.evaluateResult.container.assertShows();
     }
   );
 }
@@ -2695,9 +2691,15 @@ function evaluateResultWhileIgnoringTransitionsNoSideEffects() {
           "doesn't change state when otherwise correct buttons or shortcuts are pressed",
           () => {
             elements.correctButton.get().click({ force: true });
+            elements.container.assertShows();
+
             elements.wrongButton.get().click({ force: true });
+            elements.container.assertShows();
+
             cy.pressKey(Key.space);
+            elements.container.assertShows();
             cy.pressKey(Key.w);
+            elements.container.assertShows();
             cy.pressKey(Key.W);
             elements.container.assertShows();
           },
@@ -2725,33 +2727,8 @@ function evaluateResultAfterIgnoringTransitionsNoSideEffects() {
           },
         ],
         [
-          "doesn't change state when mouse clicks or keyboard presses that shouldn't work are pressed",
+          "doesn't change state when pressing other keys than space and W",
           () => {
-            ([
-              "center",
-              "top",
-              "left",
-              "right",
-              "bottom",
-              "topLeft",
-              "topRight",
-              "bottomRight",
-              "bottomLeft",
-            ] as const).forEach((position) => {
-              cy.withOverallNameLogged(
-                {
-                  name: "testing click",
-                  displayName: "TESTING CLICK",
-                  message: `position ${position}`,
-                },
-                () => {
-                  cy.get("body", { log: false }).click(position, {
-                    log: false,
-                  });
-                }
-              );
-            });
-
             [Key.leftCtrl, Key.five, Key.l].forEach((key) => {
               cy.withOverallNameLogged(
                 {
@@ -2760,11 +2737,10 @@ function evaluateResultAfterIgnoringTransitionsNoSideEffects() {
                 },
                 () => {
                   cy.pressKey(key, { log: false });
+                  elements.container.assertShows();
                 }
               );
             });
-
-            elements.container.assertShows();
           },
         ],
       ] as const).forEach(([testDescription, testFunction]) =>
@@ -3040,7 +3016,7 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
         [
           "has correct links",
           () => {
-            type LocalAliases = {
+            type Aliases = {
               firstExpertLink: string;
             };
             cy.getCurrentTestCase().then((currentCase) => {
@@ -3067,13 +3043,13 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
                     .and("be.lessThan", 300)
                     .then(() => url);
                 })
-                .setAlias<LocalAliases, "firstExpertLink">("firstExpertLink");
+                .setAlias<Aliases, "firstExpertLink">("firstExpertLink");
 
               // We want to change the algorithm to something different so ensuring
-              // that we don't pick the same one again
+              // here that we don't pick the same one again
               let differentTestCase: [AUF, PLL, AUF];
               if (currentCase[1] === PLL.Ga) {
-                differentTestCase = [AUF.U, PLL.Gb, AUF.U2];
+                differentTestCase = [AUF.U, PLL.Ja, AUF.U2];
               } else {
                 differentTestCase = [AUF.U, PLL.Ga, AUF.U2];
               }
@@ -3096,14 +3072,17 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
                     .its("status")
                     .should("be.at.least", 200)
                     .and("be.lessThan", 300);
-                  return cy.getAliases<LocalAliases>().then((aliases) => ({
+                  return cy.getAliases<Aliases>().then((aliases) => ({
                     previous: aliases.firstExpertLink,
                     current: url,
                   }));
                 })
                 .should(({ previous, current }) => {
-                  expect(previous).to.not.be.undefined;
-                  expect(current).to.not.deep.equal(previous);
+                  assertNonFalsyStringsDifferent(
+                    previous,
+                    current,
+                    "first (previous url) is different from second (current url) after pll case change"
+                  );
                 });
 
               // Make sure to reset the test case so we don't have side effects
@@ -3149,7 +3128,7 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
           "all errors display exactly when expected, don't update unless an attempt at submitting has occurred, and stays on the page despite submit action when an error is expected",
           () => {
             let useEnterKeyToSubmit = true;
-            function clearInputTypeAndSubmit(input: string): void {
+            function clearInputThenTypeAndSubmit(input: string): void {
               elements.algorithmInput
                 .get()
                 .type(`{selectall}{backspace}${input}`, { delay: 0 });
@@ -3163,7 +3142,7 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
               useEnterKeyToSubmit = !useEnterKeyToSubmit;
             }
             // Should require input if input is empty
-            clearInputTypeAndSubmit("");
+            clearInputThenTypeAndSubmit("");
             elements.inputRequiredError.assertShows();
 
             // Should no longer require input after input
@@ -3171,15 +3150,15 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
             elements.inputRequiredError.assertDoesntExist();
 
             // Should require input again after deleting the input
-            clearInputTypeAndSubmit("");
+            clearInputThenTypeAndSubmit("");
             elements.inputRequiredError.assertShows();
 
             // Errors informatively when invalid turnable encountered
-            clearInputTypeAndSubmit("U B A");
+            clearInputThenTypeAndSubmit("U B A");
             elements.invalidTurnableError.assertShows();
 
             // Errors informatively when invalid turn length encountered
-            clearInputTypeAndSubmit("U4");
+            clearInputThenTypeAndSubmit("U4");
             elements.invalidTurnLengthError.assertShows();
 
             // Errors informatively when repeated turnable encountered
@@ -3205,37 +3184,37 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
             elements.wideMoveStylesMixedError.assertShows();
 
             // Errors informatively when space between turnable and apostrophe encountered
-            clearInputTypeAndSubmit("U '");
+            clearInputThenTypeAndSubmit("U '");
             elements.turnWouldWorkWithoutInterruptionError.assertShows();
 
             // Errors informatively when parenthesis between turnable and apostrophe encountered
-            clearInputTypeAndSubmit("(U)'");
+            clearInputThenTypeAndSubmit("(U)'");
             elements.turnWouldWorkWithoutInterruptionError.assertShows();
 
             // Errors informatively when apostrophe on wrong side of length encountered
-            clearInputTypeAndSubmit("U'2");
+            clearInputThenTypeAndSubmit("U'2");
             elements.apostropheWrongSideOfLengthError.assertShows();
 
             // Errors informatively when unclosed parenthesis encountered
-            clearInputTypeAndSubmit("U ( B F' D2");
+            clearInputThenTypeAndSubmit("U ( B F' D2");
             elements.unclosedParenthesisError.assertShows();
 
             // Errors informatively when unmatched closing parenthesis encountered
-            clearInputTypeAndSubmit("U B F' ) D2");
+            clearInputThenTypeAndSubmit("U B F' ) D2");
             elements.unmatchedClosingParenthesisError.assertShows();
 
             // Errors informatively when nested parentheses encountered
-            clearInputTypeAndSubmit("( U (B F') ) D2");
+            clearInputThenTypeAndSubmit("( U (B F') ) D2");
             elements.nestedParenthesesError.assertShows();
 
             // Errors informatively when invalid symbol encountered
-            clearInputTypeAndSubmit("( U B F') % D2");
+            clearInputThenTypeAndSubmit("( U B F') % D2");
             elements.invalidSymbolError.assertShows();
 
-            // Errors informatively an algorithm that doesn't match the case is encountered
+            // Errors informatively when an algorithm that doesn't match the case is encountered
             cy.getCurrentTestCase().then(([, correctPLL]) => {
               const wrongPLL = correctPLL === PLL.Ga ? PLL.Gb : PLL.Ga;
-              clearInputTypeAndSubmit(pllToAlgorithmString[wrongPLL]);
+              clearInputThenTypeAndSubmit(pllToAlgorithmString[wrongPLL]);
               elements.algorithmDoesntMatchCaseError.assertShows();
             });
           },
@@ -3336,7 +3315,9 @@ function correctPageNoSideEffects() {
         "doesn't start test when pressing keys other than space",
         () => {
           cy.pressKey(Key.a);
+          elements.container.assertShows();
           cy.pressKey(Key.x);
+          elements.container.assertShows();
           cy.pressKey(Key.capsLock);
           elements.container.assertShows();
         },
@@ -3414,9 +3395,9 @@ function typeOfWrongPageNoSideEffects({
           [Key.space, Key.w, Key.W, Key.five, Key.d, Key.shift].forEach(
             (key) => {
               cy.pressKey(key);
+              elements.container.assertShows();
             }
           );
-          elements.container.assertShows();
         },
       ],
     ] as const).forEach(([testDescription, testFunction]) =>
@@ -3515,21 +3496,16 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                 .get()
                 .invoke("text")
                 .should((displayedAlgorithm) => {
-                  const sanitizedDisplayAlgorithm = displayedAlgorithm.replace(
-                    /\s/g,
-                    ""
-                  );
                   const defaultAlgorithm =
                     aufToAlgorithmString[preAUF] +
                     pllToAlgorithmString[pll] +
                     aufToAlgorithmString[postAUF];
-                  const sanitizedDefaultAlgorithm = defaultAlgorithm.replace(
-                    /\(|\)|\s/g,
-                    ""
+                  expect(sanitizeAlgorithm(displayedAlgorithm)).to.equal(
+                    sanitizeAlgorithm(defaultAlgorithm)
                   );
-                  expect(sanitizedDisplayAlgorithm).to.equal(
-                    sanitizedDefaultAlgorithm
-                  );
+                  function sanitizeAlgorithm(algorithm: string): string {
+                    return algorithm.replace(/\(|\)|\s/g, "");
+                  }
                 });
             });
           },
@@ -3538,7 +3514,9 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
           "doesn't start test when pressing keys other than space",
           () => {
             cy.pressKey(Key.a);
+            elements.container.assertShows();
             cy.pressKey(Key.x);
+            elements.container.assertShows();
             cy.pressKey(Key.capsLock);
             elements.container.assertShows();
           },
@@ -3573,7 +3551,7 @@ function algorithmDrillerExplanationPageNavigateVariant2() {
   );
 }
 
-function algorithmDrillerStatusPageNoSideEffects({
+function algorithmDrillerStatusPageRightAfterExplanationPageNoSideEffects({
   solvedFront,
   solvedBack,
 }: {
@@ -3611,7 +3589,7 @@ function algorithmDrillerStatusPageNoSideEffects({
           },
         ],
         [
-          "initial attempts left value reads 3",
+          "initial correct attempts left value reads 3",
           () => {
             elements.correctConsecutiveAttemptsLeft
               .get()
@@ -3622,7 +3600,9 @@ function algorithmDrillerStatusPageNoSideEffects({
           "doesn't start test when pressing keys other than space",
           () => {
             cy.pressKey(Key.a);
+            elements.container.assertShows();
             cy.pressKey(Key.x);
+            elements.container.assertShows();
             cy.pressKey(Key.capsLock);
             elements.container.assertShows();
           },
@@ -3725,7 +3705,9 @@ function algorithmDrillerSuccessPageNoSideEffects() {
           "doesn't start test when pressing keys other than space",
           () => {
             cy.pressKey(Key.a);
+            elements.container.assertShows();
             cy.pressKey(Key.x);
+            elements.container.assertShows();
             cy.pressKey(Key.capsLock);
             elements.container.assertShows();
           },
@@ -3796,13 +3778,16 @@ function wrongPageNoSideEffects({
             pllTrainerElements.wrongPage.testCaseBack
           );
           cy.overrideDisplayCubeAnnotations(null);
+          // Expected state cubes are tested in a special type of wrong test
         },
       ],
       [
         "doesn't start test when pressing keys other than space",
         () => {
           cy.pressKey(Key.a);
+          elements.container.assertShows();
           cy.pressKey(Key.x);
+          elements.container.assertShows();
           cy.pressKey(Key.capsLock);
           elements.container.assertShows();
         },
