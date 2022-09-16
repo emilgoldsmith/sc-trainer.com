@@ -47,12 +47,15 @@ Cypress.Commands.overwrite("tick", (originalFn, milliseconds, options) => {
   return cy.clock({ log: false });
 });
 
-Cypress.Commands.overwrite("visit", function (originalFn, ...args) {
-  if (this.clock) {
-    throw new Error("Elm breaks if visit is called while time is mocked");
+Cypress.Commands.overwrite(
+  "visit",
+  function (this: Mocha.Context & Cypress.CypressThis, originalFn, ...args) {
+    if (this.clock) {
+      throw new Error("Elm breaks if visit is called while time is mocked");
+    }
+    return originalFn(...args);
   }
-  return originalFn(...args);
-});
+);
 
 /** CUSTOM COMMANDS */
 
@@ -759,7 +762,7 @@ const getCurrentTestCase: Cypress.Chainable<string>["getCurrentTestCase"] = func
           receiveCurrentTestCasePort.subscribe(receiveTestCase);
           sendMeCurrentTestCasePort.send(null);
           function receiveTestCase(testCase: [string, string, string]) {
-            // receiveCurrentTestCasePort.unsubscribe(receiveTestCase);
+            receiveCurrentTestCasePort.unsubscribe(receiveTestCase);
             resolve([
               parseAUFString(testCase[0]),
               parsePLLString(testCase[1]),

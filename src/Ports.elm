@@ -38,13 +38,12 @@ port logError : String -> Cmd msg
 port setPLLAlgorithmPort : ({ algorithm : String, pll : String } -> msg) -> Sub msg
 
 
-onTESTONLYSetPLLAlgorithm : (( Result Json.Decode.Error PLL, Result Algorithm.FromStringError Algorithm ) -> msg) -> Sub msg
+onTESTONLYSetPLLAlgorithm : (( Result String PLL, Result Algorithm.FromStringError Algorithm ) -> msg) -> Sub msg
 onTESTONLYSetPLLAlgorithm toMsg =
     setPLLAlgorithmPort
         (\{ algorithm, pll } ->
-            ( pll
-                |> Json.Encode.string
-                |> Json.Decode.decodeValue pllDecoder
+            ( stringToPll pll
+                |> Result.fromMaybe "Not a valid PLL case"
             , Algorithm.fromString algorithm
             )
                 |> toMsg
