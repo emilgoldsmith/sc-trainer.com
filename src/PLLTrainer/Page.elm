@@ -213,7 +213,7 @@ type InternalMsg
     | TESTONLYOverrideCubeDisplayAngle (Maybe Cube.DisplayAngle)
     | TESTONLYSetCubeSizeOverride (Maybe Int)
     | TESTONLYOverrideDisplayCubeAnnotations (Maybe Bool)
-    | TESTONLYSetPLLAlgorithm ( Result Json.Decode.Error PLL, Result Algorithm.FromStringError Algorithm )
+    | TESTONLYSetPLLAlgorithm ( Result String PLL, Result Algorithm.FromStringError Algorithm )
     | TESTONLYCurrentTestCaseRequested
 
 
@@ -614,7 +614,7 @@ update shared msg model =
                     , Effect.fromCmd <|
                         Ports.logError
                             ("Error in pll decode of test only set pll algorithm: "
-                                ++ Json.Decode.errorToString pllError
+                                ++ pllError
                             )
                     )
 

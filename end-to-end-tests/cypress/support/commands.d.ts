@@ -140,8 +140,8 @@ declare namespace Cypress {
     ): void;
 
     /**
-     * The last 60ms will be passed with cy.tick to ensure any timers are fun from for
-     * example requestAnimationFrame
+     * The last 60ms will be passed with cy.tick to ensure any timers are run, the most
+     * obvious example being when using requestAnimationFrame
      */
     setSystemTimeWithLastFrameTicked(now: number): void;
 
