@@ -1,6 +1,6 @@
 module PLLTrainer.States.PickTargetParametersPage exposing (Model, Msg, Transitions, state)
 
-import Css exposing (testid)
+import Css exposing (errorMessageTestType, testid)
 import Element exposing (..)
 import Element.Border as Border
 import Element.Font as Font
@@ -222,7 +222,7 @@ targetFloatInput params =
                     { maybeExtraErrorStyling =
                         [ Border.glow params.palette.errorText 3 ]
                     , maybeErrorText =
-                        el [ testid params.errorTestId, Font.color params.palette.errorText ] <|
+                        el [ testid params.errorTestId, errorMessageTestType, Font.color params.palette.errorText ] <|
                             text "Invalid Number"
                     }
 
