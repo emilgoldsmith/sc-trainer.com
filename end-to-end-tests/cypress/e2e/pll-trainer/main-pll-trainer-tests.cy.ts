@@ -197,6 +197,16 @@ describe("PLL Trainer", function () {
         });
         algorithmDrillerStatusPageAfter1Success1FailureNoSideEffects();
 
+        // Here we just do another failure to check that doing a slow correct also counts as a failure
+        completePLLTestInMilliseconds(10000, {
+          correct: true,
+          startingState: "algorithmDrillerStatusPage",
+          endingState: "algorithmDrillerStatusPage",
+        });
+        pllTrainerElements.algorithmDrillerStatusPage.correctConsecutiveAttemptsLeft
+          .get()
+          .should("have.text", "3");
+
         const time2 = 600 as const;
         completePLLTestInMilliseconds(time2, {
           correct: true,
