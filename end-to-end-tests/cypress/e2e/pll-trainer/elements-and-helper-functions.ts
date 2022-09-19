@@ -194,74 +194,10 @@ export const pllTrainerElements = {
 export const getReadyWaitTime = 2400;
 export const evaluateResultIgnoreTransitionsWaitTime = 300;
 
-export function completePLLTestInMilliseconds(
-  milliseconds: number,
-  params: {
-    startingState:
-      | "doNewVisit"
-      | "pickTargetParametersPage"
-      | "startPage"
-      | "newCasePage"
-      | "algorithmDrillerStatusPage"
-      | "algorithmDrillerSuccessPage"
-      | "correctPage"
-      | "wrongPage";
-    forceTestCase?: readonly [AUF, PLL, AUF];
-    // The function will not throw an error if it can't reach this state
-    // it's just simple decisions like ending early or continuing a bit further
-    // that this parameter is for.
-    endingState?:
-      | "testRunning"
-      | "pickAlgorithmPage"
-      | "correctPage"
-      | "typeOfWrongPage"
-      | "wrongPage"
-      | "algorithmDrillerExplanationPage"
-      | "algorithmDrillerStatusPage"
-      | "algorithmDrillerSuccessPage"
-      | undefined;
-    overrideDefaultAlgorithm?: string;
-    pickTargetParametersNavigator?: () => void;
-    startPageCallback?: () => void;
-    startPageNavigator?: () => void;
-    newCasePageCallback?: () => void;
-    assertNewCasePageDidntDisplay?: boolean;
-    newCasePageNavigator?: () => void;
-    getReadyCallback?: () => void;
-    beginningOfTestRunningCallback?: () => void;
-    testRunningCallback?: () => void;
-    testRunningNavigator?: () => void;
-    evaluateResultCallback?: () => void;
-    correctPageNavigator?: () => void;
-    wrongPageNavigator?: () => void;
-    algorithmDrillerStatusPageNavigator?: () => void;
-  } & (
-    | {
-        correct: true;
-        evaluateResultCorrectNavigator?: () => void;
-        correctPageCallback?: () => void;
-        algorithmDrillerExplanationPageCallback?: () => void;
-        algorithmDrillerStatusPageCallback?: () => void;
-      }
-    | ({
-        correct: false;
-        wrongType: "unrecoverable" | "nearly there" | "no moves made";
-        evaluateResultWrongNavigator?: () => void;
-        typeOfWrongPageCallback?: () => void;
-      } & (
-        | {
-            wrongPageCallback?: () => void;
-            algorithmDrillerExplanationPageCallback?: never;
-            algorithmDrillerStatusPageCallback?: never;
-          }
-        | {
-            wrongPageCallback?: never;
-            algorithmDrillerExplanationPageCallback?: () => void;
-            algorithmDrillerStatusPageCallback?: () => void;
-          }
-      ))
-  )
-): void {
+const completePLLTestHelper: typeof completePLLTestInMilliseconds = (
+  milliseconds,
+  params
+) => {
   cy.withOverallNameLogged(
     {
       message: `completePLLTestInMilliseconds, milliseconds: ${milliseconds.toString()}, params: ${JSON.stringify(
@@ -497,4 +433,149 @@ export function completePLLTestInMilliseconds(
       }
     }
   );
+};
+
+export function completePLLTestInMilliseconds(
+  milliseconds: number,
+  params: {
+    startingState:
+      | "doNewVisit"
+      | "pickTargetParametersPage"
+      | "startPage"
+      | "newCasePage"
+      | "algorithmDrillerStatusPage"
+      | "algorithmDrillerSuccessPage"
+      | "correctPage"
+      | "wrongPage"
+      | undefined;
+    forceTestCase?: readonly [AUF, PLL, AUF] | undefined;
+    // The function will not throw an error if it can't reach this state
+    // it's just simple decisions like ending early or continuing a bit further
+    // that this parameter is for.
+    endingState?:
+      | "testRunning"
+      | "pickAlgorithmPage"
+      | "correctPage"
+      | "typeOfWrongPage"
+      | "wrongPage"
+      | "algorithmDrillerExplanationPage"
+      | "algorithmDrillerStatusPage"
+      | "algorithmDrillerSuccessPage"
+      | undefined;
+    overrideDefaultAlgorithm?: string | undefined;
+    pickTargetParametersNavigator?: (() => void) | undefined;
+    startPageCallback?: (() => void) | undefined;
+    startPageNavigator?: (() => void) | undefined;
+    newCasePageCallback?: (() => void) | undefined;
+    assertNewCasePageDidntDisplay?: boolean | undefined;
+    newCasePageNavigator?: (() => void) | undefined;
+    getReadyCallback?: (() => void) | undefined;
+    beginningOfTestRunningCallback?: (() => void) | undefined;
+    testRunningCallback?: (() => void) | undefined;
+    testRunningNavigator?: (() => void) | undefined;
+    evaluateResultCallback?: (() => void) | undefined;
+    correctPageNavigator?: (() => void) | undefined;
+    wrongPageNavigator?: (() => void) | undefined;
+    algorithmDrillerStatusPageNavigator?: (() => void) | undefined;
+  } & (
+    | {
+        correct: true;
+        evaluateResultCorrectNavigator?: (() => void) | undefined;
+        correctPageCallback?: (() => void) | undefined;
+        algorithmDrillerExplanationPageCallback?: (() => void) | undefined;
+        algorithmDrillerStatusPageCallback?: (() => void) | undefined;
+      }
+    | ({
+        correct: false;
+        wrongType:
+          | "unrecoverable"
+          | "nearly there"
+          | "no moves made"
+          | undefined;
+        evaluateResultWrongNavigator?: (() => void) | undefined;
+        typeOfWrongPageCallback?: (() => void) | undefined;
+      } & (
+        | {
+            wrongPageCallback?: (() => void) | undefined;
+            algorithmDrillerExplanationPageCallback?: never;
+            algorithmDrillerStatusPageCallback?: never;
+          }
+        | {
+            wrongPageCallback?: never;
+            algorithmDrillerExplanationPageCallback?: (() => void) | undefined;
+            algorithmDrillerStatusPageCallback?: (() => void) | undefined;
+          }
+      ))
+  )
+): void {
+  const functionsCalled: { [functionName: string]: boolean } = {};
+
+  function withCallLogger(
+    fn: (() => void) | undefined
+  ): (() => void) | undefined {
+    if (fn === undefined) return undefined;
+    // Initialize it here so we know we expect this to be called
+    functionsCalled[fn.name] = false;
+    return () => {
+      functionsCalled[fn.name] = true;
+      return fn;
+    };
+  }
+
+  const commonParams = {
+    startingState: params.startingState,
+    forceTestCase: params.forceTestCase,
+    endingState: params.endingState,
+    overrideDefaultAlgorithm: params.overrideDefaultAlgorithm,
+    assertNewCasePageDidntDisplay: params.assertNewCasePageDidntDisplay,
+    pickTargetParametersNavigator: withCallLogger(
+      params.pickTargetParametersNavigator
+    ),
+    startPageCallback: withCallLogger(params.startPageCallback),
+    startPageNavigator: withCallLogger(params.startPageNavigator),
+    newCasePageCallback: withCallLogger(params.newCasePageCallback),
+    newCasePageNavigator: withCallLogger(params.newCasePageNavigator),
+    getReadyCallback: withCallLogger(params.getReadyCallback),
+    beginningOfTestRunningCallback: withCallLogger(
+      params.beginningOfTestRunningCallback
+    ),
+    testRunningCallback: withCallLogger(params.testRunningCallback),
+    testRunningNavigator: withCallLogger(params.testRunningNavigator),
+    evaluateResultCallback: withCallLogger(params.evaluateResultCallback),
+    correctPageNavigator: withCallLogger(params.correctPageNavigator),
+    wrongPageNavigator: withCallLogger(params.wrongPageNavigator),
+    algorithmDrillerStatusPageNavigator: withCallLogger(
+      params.algorithmDrillerStatusPageNavigator
+    ),
+    algorithmDrillerExplanationPageCallback: withCallLogger(
+      params.algorithmDrillerExplanationPageCallback
+    ),
+    algorithmDrillerStatusPageCallback: withCallLogger(
+      params.algorithmDrillerStatusPageCallback
+    ),
+  };
+
+  if (params.correct) {
+    completePLLTestHelper(milliseconds, {
+      ...commonParams,
+      correct: params.correct,
+      evaluateResultCorrectNavigator: withCallLogger(
+        params.evaluateResultCorrectNavigator
+      ),
+      correctPageCallback: withCallLogger(params.correctPageCallback),
+    });
+  } else {
+    completePLLTestHelper(milliseconds, {
+      ...commonParams,
+      correct: params.correct,
+      wrongType: params.wrongType,
+      evaluateResultWrongNavigator: withCallLogger(
+        params.evaluateResultWrongNavigator
+      ),
+      typeOfWrongPageCallback: withCallLogger(params.typeOfWrongPageCallback),
+    });
+  }
+  Cypress._.forEach(functionsCalled, (called, functionName) => {
+    expect(called, `${functionName} called`).to.be.true;
+  });
 }
