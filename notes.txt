@@ -1,14 +1,8 @@
 There's actually no need for identifying the type of wrong if you're going to the algorithm driller, correct?
 
-Should we just implement a getCurrentTestCase function that just asks the app what the current test case is so we can set the test case much less frequently?
-
-Should we implement a pick algorithm dev function? Upside faster tests, downside more surface area for wrong tests
-
 Are the AUFs on wrong page and/or driller explanation page properly tested after we remove the parse functions usage in other tests?
 
 Visual test for success and status page happening?
-
-Do we test that driller test fails after slow correct as well?
 
 Look through TODOs
 
