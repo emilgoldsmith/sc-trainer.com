@@ -9,5 +9,3 @@ Look through TODOs
 ensure all callbacks and navigator overrides are called and otherwise throw error;
 
 Make all the pll algorithms the shortest ones again
-
-Can you throw an error if calling elm ports before page has loaded?
