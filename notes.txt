@@ -6,6 +6,4 @@ Visual test for success and status page happening?
 
 Look through TODOs
 
-ensure all callbacks and navigator overrides are called and otherwise throw error;
-
 Make all the pll algorithms the shortest ones again
