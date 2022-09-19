@@ -53,6 +53,7 @@ Cypress.Commands.overwrite(
     if (this.clock) {
       throw new Error("Elm breaks if visit is called while time is mocked");
     }
+    // The return here is very important, see https://github.com/cypress-io/cypress/issues/23108
     return originalFn(...args);
   }
 );
