@@ -6,10 +6,14 @@ export function assertNonFalsyStringsEqual(
   msg: string
 ): void {
   if (first === undefined || first === null) {
-    expect.fail("First string in `" + msg + "` was " + JSON.stringify(first));
+    throw new Error(
+      "First string in `" + msg + "` was " + JSON.stringify(first)
+    );
   }
   if (second === undefined || second === null) {
-    expect.fail("Second string in `" + msg + "` was " + JSON.stringify(first));
+    throw new Error(
+      "Second string in `" + msg + "` was " + JSON.stringify(first)
+    );
   }
   if (first !== second) {
     console.log(msg);
@@ -31,10 +35,14 @@ export function assertNonFalsyStringsDifferent(
   msg: string
 ): void {
   if (first === undefined || first === null) {
-    expect.fail("First string in `" + msg + "` was " + JSON.stringify(first));
+    throw new Error(
+      "First string in `" + msg + "` was " + JSON.stringify(first)
+    );
   }
   if (second === undefined || second === null) {
-    expect.fail("Second string in `" + msg + "` was " + JSON.stringify(first));
+    throw new Error(
+      "Second string in `" + msg + "` was " + JSON.stringify(first)
+    );
   }
   if (first === second) {
     console.log(msg);

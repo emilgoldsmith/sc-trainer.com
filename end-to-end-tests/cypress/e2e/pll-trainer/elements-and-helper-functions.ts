@@ -516,7 +516,7 @@ export function completePLLTestInMilliseconds(
     functionsCalled[fn.name] = false;
     return () => {
       functionsCalled[fn.name] = true;
-      return fn;
+      return fn();
     };
   }
 
@@ -545,12 +545,6 @@ export function completePLLTestInMilliseconds(
     algorithmDrillerStatusPageNavigator: withCallLogger(
       params.algorithmDrillerStatusPageNavigator
     ),
-    algorithmDrillerExplanationPageCallback: withCallLogger(
-      params.algorithmDrillerExplanationPageCallback
-    ),
-    algorithmDrillerStatusPageCallback: withCallLogger(
-      params.algorithmDrillerStatusPageCallback
-    ),
   };
 
   if (params.correct) {
@@ -561,19 +555,43 @@ export function completePLLTestInMilliseconds(
         params.evaluateResultCorrectNavigator
       ),
       correctPageCallback: withCallLogger(params.correctPageCallback),
+      algorithmDrillerExplanationPageCallback: withCallLogger(
+        params.algorithmDrillerExplanationPageCallback
+      ),
+      algorithmDrillerStatusPageCallback: withCallLogger(
+        params.algorithmDrillerStatusPageCallback
+      ),
     });
   } else {
-    completePLLTestHelper(milliseconds, {
-      ...commonParams,
+    const commonWrongParams = {
       correct: params.correct,
       wrongType: params.wrongType,
       evaluateResultWrongNavigator: withCallLogger(
         params.evaluateResultWrongNavigator
       ),
       typeOfWrongPageCallback: withCallLogger(params.typeOfWrongPageCallback),
-    });
+    };
+    if (params.wrongPageCallback)
+      completePLLTestHelper(milliseconds, {
+        ...commonParams,
+        ...commonWrongParams,
+        wrongPageCallback: withCallLogger(params.wrongPageCallback),
+      });
+    else
+      completePLLTestHelper(milliseconds, {
+        ...commonParams,
+        ...commonWrongParams,
+        algorithmDrillerExplanationPageCallback: withCallLogger(
+          params.algorithmDrillerExplanationPageCallback
+        ),
+        algorithmDrillerStatusPageCallback: withCallLogger(
+          params.algorithmDrillerStatusPageCallback
+        ),
+      });
   }
-  Cypress._.forEach(functionsCalled, (called, functionName) => {
-    expect(called, `${functionName} called`).to.be.true;
+  cy.wrap(null, { log: false }).then(() => {
+    Cypress._.forEach(functionsCalled, (called, functionName) => {
+      expect(called, `${functionName} called`).to.be.true;
+    });
   });
 }
