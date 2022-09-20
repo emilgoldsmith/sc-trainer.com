@@ -5,5 +5,3 @@ Are the AUFs on wrong page and/or driller explanation page properly tested after
 Visual test for success and status page happening?
 
 Look through TODOs
-
-Make all the pll algorithms the shortest ones again
