@@ -25,8 +25,8 @@ build preAUF_ pll_ postAUF_ =
     TestCase ( optimizedPreAUF, pll_, optimizedPostAUF )
 
 
-toAlg : User -> TestCase -> Algorithm.Algorithm
-toAlg user (TestCase ( preAUF_, pll_, postAUF_ )) =
+toAlg : { addFinalReorientationToAlgorithm : Bool } -> User -> TestCase -> Algorithm.Algorithm
+toAlg { addFinalReorientationToAlgorithm } user (TestCase ( preAUF_, pll_, postAUF_ )) =
     let
         baseAlgorithm =
             User.getPLLAlgorithm pll_ user
@@ -47,7 +47,12 @@ toTriple (TestCase triple) =
 toCube : User -> TestCase -> Cube
 toCube user testCase =
     Cube.solved
-        |> Cube.applyAlgorithm (Algorithm.inverse <| toAlg user testCase)
+        |> Cube.applyAlgorithm
+            (Algorithm.inverse <|
+                -- We want the final reorientation or we will display the cube in the wrong
+                -- orientation
+                toAlg { addFinalReorientationToAlgorithm = True } user testCase
+            )
 
 
 preAUF : TestCase -> AUF
