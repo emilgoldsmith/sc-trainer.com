@@ -70,7 +70,6 @@ describe("PLL Trainer", function () {
         // Do same case again, but now pick algorithm should not be displayed
         cy.getCurrentTestCase().then((testCase) => {
           cy.visit(paths.pllTrainer);
-          pllTrainerElements.recurringUserStartPage.container.waitFor();
           cy.overrideNextTestCase(testCase);
           cy.clock();
           newUserStartPageBeginNavigateVariant2();
@@ -1355,7 +1354,6 @@ describe("PLL Trainer", function () {
         modified: string;
       };
       cy.visit(paths.pllTrainer);
-      pllTrainerElements.pickTargetParametersPage.container.waitFor();
       const testCase = [AUF.U2, PLL.Aa, AUF.UPrime] as const;
       cy.setPLLAlgorithm(testCase[1], pllToAlgorithmString[testCase[1]]);
       completePLLTestInMilliseconds(1000, {
@@ -1373,7 +1371,6 @@ describe("PLL Trainer", function () {
       // Reset and try again with modified
       cy.clearLocalStorage();
       cy.visit(paths.pllTrainer);
-      pllTrainerElements.pickTargetParametersPage.container.waitFor();
       cy.setPLLAlgorithm(
         testCase[1],
         "y' " + pllToAlgorithmString[testCase[1]] + " y2"
@@ -1588,7 +1585,6 @@ describe("PLL Trainer", function () {
           };
           // First we input the desired algorithm as our chosen one
           cy.visit(paths.pllTrainer);
-          pllTrainerElements.pickTargetParametersPage.container.waitFor();
           cy.setPLLAlgorithm(pll, algorithmWithRotation);
           // Then we run the test with that algorithm being used
           completePLLTestInMilliseconds(1000, {
@@ -1605,7 +1601,6 @@ describe("PLL Trainer", function () {
           cy.clearLocalStorage();
           // We again input the desired algorithm as our chosen one
           cy.visit(paths.pllTrainer);
-          pllTrainerElements.pickTargetParametersPage.container.waitFor();
           cy.setPLLAlgorithm(pll, algorithmWithoutRotation);
           // Then we run the test with that algorithm being used
           completePLLTestInMilliseconds(1000, {
@@ -1640,7 +1635,6 @@ describe("PLL Trainer", function () {
       const secondAlgorithm = "R2 U' R2 S R2 S' U R2";
 
       cy.visit(paths.pllTrainer);
-      pllTrainerElements.pickTargetParametersPage.container.waitFor();
       cy.setPLLAlgorithm(testCase[1], firstAlgorithm);
       completePLLTestInMilliseconds(1000, {
         forceTestCase: testCase,
@@ -1656,7 +1650,6 @@ describe("PLL Trainer", function () {
       cy.clearLocalStorage();
 
       cy.visit(paths.pllTrainer);
-      pllTrainerElements.pickTargetParametersPage.container.waitFor();
       cy.setPLLAlgorithm(testCase[1], secondAlgorithm);
       completePLLTestInMilliseconds(1000, {
         forceTestCase: testCase,
@@ -1698,7 +1691,6 @@ describe("PLL Trainer", function () {
       // H PERM TESTS - Full symmetry
       // First we make sure the algorithm is picked so AUFs are predictable
       cy.visit(paths.pllTrainer);
-      pllTrainerElements.pickTargetParametersPage.container.waitFor();
       cy.setPLLAlgorithm(PLL.H, pllToAlgorithmString[PLL.H]);
       assertAUFsDisplayedCorrectly({
         pll: PLL.H,

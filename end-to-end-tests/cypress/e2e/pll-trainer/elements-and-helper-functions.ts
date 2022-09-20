@@ -238,9 +238,7 @@ const completePLLTestHelper: typeof completePLLTestInMilliseconds = (
       let atStartPage = true;
 
       if (startingState === "doNewVisit") {
-        let loaded = false;
-        cy.visit(paths.pllTrainer, { onLoad: () => (loaded = true) });
-        cy.waitUntil(() => loaded);
+        cy.visit(paths.pllTrainer);
         pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
           if (
             stateValue ===

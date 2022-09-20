@@ -34,7 +34,6 @@ import {
   PLL,
   pllToPllLetters,
 } from "./pll";
-import "cypress-wait-until";
 
 /** OVERWRITES */
 Cypress.Commands.overwrite("tick", (originalFn, milliseconds, options) => {
