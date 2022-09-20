@@ -3508,24 +3508,6 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
             );
             assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
             cy.assertNoHorizontalScrollbar();
-
-            cy.getCurrentTestCase().then(([preAUF, pll, postAUF]) => {
-              elements.algorithmToDrill
-                .get()
-                .invoke("text")
-                .should((displayedAlgorithm) => {
-                  const defaultAlgorithm =
-                    aufToAlgorithmString[preAUF] +
-                    pllToAlgorithmString[pll] +
-                    aufToAlgorithmString[postAUF];
-                  expect(sanitizeAlgorithm(displayedAlgorithm)).to.equal(
-                    sanitizeAlgorithm(defaultAlgorithm)
-                  );
-                  function sanitizeAlgorithm(algorithm: string): string {
-                    return algorithm.replace(/\(|\)|\s/g, "");
-                  }
-                });
-            });
           },
         ],
         [
@@ -3537,6 +3519,68 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
             elements.container.assertShows();
             cy.pressKey(Key.capsLock);
             elements.container.assertShows();
+          },
+        ],
+        [
+          "the algorithm is displayed as expected and without any rotations appended to the end of it",
+          () => {
+            cy.getApplicationState().then((originalApplicationState) => {
+              cy.setCurrentTestCase([AUF.U, PLL.Gb, AUF.UPrime]);
+              const gbAlgorithmEndingOneYRotationAway =
+                "R' Dw' F R2 Uw R' U R U' R Uw' R2";
+              cy.setPLLAlgorithm(PLL.Gb, gbAlgorithmEndingOneYRotationAway);
+              elements.algorithmToDrill
+                .get()
+                .invoke("text")
+                .then(sanitizeAlgorithm)
+                .should(
+                  "equal",
+                  sanitizeAlgorithm(
+                    "U" + gbAlgorithmEndingOneYRotationAway + "U'"
+                  )
+                );
+
+              cy.setCurrentTestCase([AUF.U2, PLL.Aa, AUF.UPrime]);
+              const AaAlgorithmEndingOneXRotationAway =
+                "Lw' U R' D2 R U' R' D2 R2";
+              cy.setPLLAlgorithm(PLL.Aa, AaAlgorithmEndingOneXRotationAway);
+              elements.algorithmToDrill
+                .get()
+                .invoke("text")
+                .then(sanitizeAlgorithm)
+                .should(
+                  "equal",
+                  // Note that the last AUF here becomes a B move instead of rotating and
+                  // doing a U move
+                  sanitizeAlgorithm(
+                    "U2" + AaAlgorithmEndingOneXRotationAway + "B"
+                  )
+                );
+
+              // Try one here with no AUFs and also being a z rotation away instead of x or y
+              cy.setCurrentTestCase([AUF.none, PLL.Ra, AUF.none]);
+              const RaAlgorithmEndingOneZPrimeRotationAway =
+                "L U2 L' U2 L F' L' U' L U L Bw D2";
+              cy.setPLLAlgorithm(
+                PLL.Ra,
+                RaAlgorithmEndingOneZPrimeRotationAway
+              );
+              elements.algorithmToDrill
+                .get()
+                .invoke("text")
+                .then(sanitizeAlgorithm)
+                .should(
+                  "equal",
+                  sanitizeAlgorithm(RaAlgorithmEndingOneZPrimeRotationAway)
+                );
+
+              function sanitizeAlgorithm(algorithm: string): string {
+                return algorithm.replace(/\(|\)|\s/g, "");
+              }
+
+              // Undo all the side effects we just did
+              cy.setApplicationState(originalApplicationState);
+            });
           },
         ],
       ] as const).forEach(([testDescription, testFunction]) =>
