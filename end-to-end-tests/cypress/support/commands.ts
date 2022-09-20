@@ -865,6 +865,9 @@ const setPLLAlgorithm: Cypress.Chainable<undefined>["setPLLAlgorithm"] = functio
             )}`
           );
         setPLLAlgorithmPort.send(jsonValue);
+        // Release control of the thread to let the render loop do it's thing
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
+        cy.wait(0);
       });
     }
   );
