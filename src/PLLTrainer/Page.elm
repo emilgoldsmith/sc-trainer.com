@@ -27,7 +27,7 @@ import PLLTrainer.States.WrongPage
 import PLLTrainer.Subscription
 import PLLTrainer.TestCase exposing (TestCase)
 import Page
-import Ports exposing (onTESTONLYCurrentTestCaseRequested)
+import Ports
 import Process
 import Random
 import Shared
