@@ -746,10 +746,12 @@ describe("PLL Trainer", function () {
   describe("statistics", function () {
     it("displays the correct averages ordered correctly, and never displays more than 3 worst cases", function () {
       // Taken from the pllToAlgorithmString map
-      const AaAlgorithmLength = 10;
+      // We set the algorithms below in the first test to ensure
+      // that also the first case we run has the AUFs we expect it to
+      const AaAlgorithmLength = 9;
       const HAlgorithmLength = 7;
-      const ZAlgorithmLength = 9;
-      const GcAlgorithmLength = 12;
+      const ZAlgorithmLength = 7;
+      const GcAlgorithmLength = 11;
 
       completePLLTestInMilliseconds(1500, {
         // Try with no AUFs
@@ -757,6 +759,13 @@ describe("PLL Trainer", function () {
         correct: true,
         startingState: "doNewVisit",
         testRunningNavigator: testRunningNavigateVariant13,
+        startPageCallback: () => {
+          // Set all the algorithms we will be using so that AUFs
+          // are predictable
+          cy.setPLLAlgorithm(PLL.Aa, pllToAlgorithmString[PLL.Aa]);
+          cy.setPLLAlgorithm(PLL.H, pllToAlgorithmString[PLL.H]);
+          cy.setPLLAlgorithm(PLL.Z, pllToAlgorithmString[PLL.Z]);
+        },
       });
       cy.visit(paths.pllTrainer);
       assertCorrectStatistics({
@@ -1172,7 +1181,7 @@ describe("PLL Trainer", function () {
               const text = Cypress.$(elem).text();
               const caseInfo = worstCasesFromWorstToBetter[index];
               if (caseInfo === undefined) {
-                expect.fail(
+                throw new Error(
                   "Unexpected wrong index when lengths should be the same"
                 );
               }
@@ -1205,15 +1214,22 @@ describe("PLL Trainer", function () {
     });
     it("displays the global statistics correctly", function () {
       // Taken from pllToAlgorithmString
-      // It counts the first x rotation but not the last one
-      const AaAlgorithmLength = 10;
-      const GaAlgorithmLength = 12;
+      // We set the algorithms below in the first test to ensure
+      // that also the first case we run has the AUFs we expect it to
+      const AaAlgorithmLength = 9;
+      const GaAlgorithmLength = 11;
       const totalPLLCases = 21;
 
       completePLLTestInMilliseconds(1000, {
         forceTestCase: [AUF.UPrime, PLL.Aa, AUF.none],
         correct: true,
         startingState: "doNewVisit",
+        startPageCallback: () => {
+          // Set all the algorithms we will be using so that AUFs
+          // are predictable
+          cy.setPLLAlgorithm(PLL.Aa, pllToAlgorithmString[PLL.Aa]);
+          cy.setPLLAlgorithm(PLL.Ga, pllToAlgorithmString[PLL.Ga]);
+        },
       });
       cy.visit(paths.pllTrainer);
       assertCorrectGlobalStatistics({
