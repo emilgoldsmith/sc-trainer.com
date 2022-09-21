@@ -1,4 +1,4 @@
-module PLLTrainer.States.AlgorithmDrillerStatusPage exposing (Transitions, state)
+module PLLTrainer.States.AlgorithmDrillerStatusPage exposing (Arguments, PreviousTestResult(..), Transitions, state)
 
 import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
@@ -42,9 +42,16 @@ type alias Transitions msg =
     }
 
 
+type PreviousTestResult
+    = NoFailure
+    | CorrectButSlowFailure
+    | WrongFailure
+
+
 type alias Arguments =
     { expectedCube : Cube
     , correctAttemptsLeft : Int
+    , previousTestResult : PreviousTestResult
     }
 
 
@@ -53,7 +60,7 @@ type alias Arguments =
 
 
 view : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
-view shared transitions { expectedCube, correctAttemptsLeft } =
+view shared transitions { expectedCube, correctAttemptsLeft, previousTestResult } =
     { overlays = View.buildOverlays []
     , body =
         View.fullScreenBody
@@ -68,6 +75,25 @@ view shared transitions { expectedCube, correctAttemptsLeft } =
                     , UI.spacingVertical.medium
                     ]
                     [ paragraph
+                        [ Font.size (ViewportSize.minDimension shared.viewportSize // 23)
+                        , Font.bold
+                        , centerX
+                        , Font.center
+                        , Font.color shared.palette.errorText
+                        ]
+                        (case previousTestResult of
+                            NoFailure ->
+                                []
+
+                            CorrectButSlowFailure ->
+                                [ el [ testid "correct-but-slow-failure-text" ] <| text "Test Failed: Correct But Too Slow"
+                                ]
+
+                            WrongFailure ->
+                                [ el [ testid "wrong-failure-text" ] <| text "Test Failed: Incorrect Solve"
+                                ]
+                        )
+                    , paragraph
                         [ Font.size (ViewportSize.minDimension shared.viewportSize // 15)
                         , Font.bold
                         , centerX

@@ -182,6 +182,7 @@ describe("PLL Trainer", function () {
         >(["evaluateResultFront", "evaluateResultBack"]).then(
           algorithmDrillerStatusPageAfter1SuccessNoSideEffects
         );
+        algorithmDrillerStatusPageAfterSuccess();
 
         // Note that the time won't be 500 as we're using a changing clock variant
         // of the test running navigator
@@ -195,6 +196,7 @@ describe("PLL Trainer", function () {
           algorithmDrillerStatusPageNavigator: algorithmDrillerStatusPageNavigateVariant1,
         });
         algorithmDrillerStatusPageAfter1Success1FailureNoSideEffects();
+        algorithmDrillerStatusPageAfterWrongFailure();
 
         // Here we just do another failure to check that doing a slow correct also counts as a failure
         completePLLTestInMilliseconds(10000, {
@@ -205,6 +207,7 @@ describe("PLL Trainer", function () {
         pllTrainerElements.algorithmDrillerStatusPage.correctConsecutiveAttemptsLeft
           .get()
           .should("have.text", "3");
+        algorithmDrillerStatusPageAfterCorrectButSlowFailure();
 
         const time2 = 600 as const;
         completePLLTestInMilliseconds(time2, {
@@ -3633,6 +3636,8 @@ function algorithmDrillerStatusPageRightAfterExplanationPageNoSideEffects({
           "looks right",
           () => {
             elements.assertAllShow();
+            elements.wrongFailureText.assertDoesntExist();
+            elements.correctButSlowFailureText.assertDoesntExist();
             cy.assertNoHorizontalScrollbar();
             cy.assertNoVerticalScrollbar();
           },
@@ -3721,6 +3726,39 @@ function algorithmDrillerStatusPageAfter2SuccessesNoSideEffects() {
       pllTrainerElements.algorithmDrillerStatusPage.correctConsecutiveAttemptsLeft
         .get()
         .should("have.text", "1");
+    }
+  );
+}
+
+function algorithmDrillerStatusPageAfterWrongFailure() {
+  const elements = pllTrainerElements.algorithmDrillerStatusPage;
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerStatusPageAfterWrongFailure" },
+    () => {
+      elements.wrongFailureText.assertShows();
+      elements.correctButSlowFailureText.assertDoesntExist();
+    }
+  );
+}
+
+function algorithmDrillerStatusPageAfterCorrectButSlowFailure() {
+  const elements = pllTrainerElements.algorithmDrillerStatusPage;
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerStatusPageAfterCorrectButSlowFailure" },
+    () => {
+      elements.wrongFailureText.assertDoesntExist();
+      elements.correctButSlowFailureText.assertShows();
+    }
+  );
+}
+
+function algorithmDrillerStatusPageAfterSuccess() {
+  const elements = pllTrainerElements.algorithmDrillerStatusPage;
+  cy.withOverallNameLogged(
+    { message: "algorithmDrillerStatusPageAfterSuccess" },
+    () => {
+      elements.wrongFailureText.assertDoesntExist();
+      elements.correctButSlowFailureText.assertDoesntExist();
     }
   );
 }
