@@ -31,7 +31,12 @@ toAlg { addFinalReorientationToAlgorithm } user (TestCase ( preAUF_, pll_, postA
         baseAlgorithm =
             User.getPLLAlgorithm pll_ user
                 |> Maybe.withDefault (PLL.getAlgorithm PLL.referenceAlgorithms pll_)
-                |> Cube.makeAlgorithmMaintainOrientation
+                |> (if addFinalReorientationToAlgorithm then
+                        Cube.makeAlgorithmMaintainOrientation
+
+                    else
+                        identity
+                   )
     in
     baseAlgorithm
         |> Cube.addAUFsToAlgorithm ( preAUF_, postAUF_ )

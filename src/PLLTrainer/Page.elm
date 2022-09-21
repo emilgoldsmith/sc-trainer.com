@@ -372,7 +372,11 @@ update shared msg model =
                         , expectedCubeState =
                             model.expectedCubeState
                                 |> Cube.applyAlgorithm
-                                    (PLLTrainer.TestCase.toAlg shared.user model.currentTestCase.testCase)
+                                    (PLLTrainer.TestCase.toAlg
+                                        { addFinalReorientationToAlgorithm = True }
+                                        shared.user
+                                        model.currentTestCase.testCase
+                                    )
                       }
                     , Effect.fromCmd <|
                         Cmd.batch
@@ -426,7 +430,11 @@ update shared msg model =
                 AlgorithmPicked getNextTrainerState testResult algorithm ->
                     case
                         Cube.detectAUFs
-                            { toMatchTo = PLLTrainer.TestCase.toAlg shared.user model.currentTestCase.testCase
+                            { toMatchTo =
+                                PLLTrainer.TestCase.toAlg
+                                    { addFinalReorientationToAlgorithm = False }
+                                    shared.user
+                                    model.currentTestCase.testCase
                             , toDetectFor = algorithm
                             }
                     of
@@ -512,7 +520,10 @@ update shared msg model =
                             model.expectedCubeState
                                 |> Cube.applyAlgorithm
                                     (Algorithm.inverse <|
-                                        PLLTrainer.TestCase.toAlg shared.user model.currentTestCase.testCase
+                                        PLLTrainer.TestCase.toAlg
+                                            { addFinalReorientationToAlgorithm = True }
+                                            shared.user
+                                            model.currentTestCase.testCase
                                     )
                       }
                     , Tuple.second nextTrainerState

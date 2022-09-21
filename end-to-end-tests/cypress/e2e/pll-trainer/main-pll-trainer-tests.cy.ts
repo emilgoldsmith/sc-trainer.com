@@ -3553,7 +3553,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                   // Note that the last AUF here becomes a B move instead of rotating and
                   // doing a U move
                   sanitizeAlgorithm(
-                    "U2" + AaAlgorithmEndingOneXRotationAway + "B"
+                    "U2" + AaAlgorithmEndingOneXRotationAway + "B'"
                   )
                 );
 

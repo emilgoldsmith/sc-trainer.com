@@ -16,54 +16,95 @@ import User
 
 toAlgTests : Test
 toAlgTests =
-    only <|
-        describe "toAlg"
-            [ fuzz3 Fuzz.bool Fuzz.Extra.pll (Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf )) "adds the aufs correctly from the correct pll when user has pll picked" <|
-                \addFinalReorientationToAlgorithm pll ( preAUF, postAUF ) ->
-                    let
-                        algorithm =
-                            PLL.getAlgorithm PLL.referenceAlgorithms pll
+    describe "toAlg"
+        [ fuzz3 Fuzz.bool Fuzz.Extra.pll (Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf )) "adds the aufs correctly from the correct pll when user has pll picked" <|
+            \addFinalReorientationToAlgorithm pll ( preAUF, postAUF ) ->
+                let
+                    algorithm =
+                        PLL.getAlgorithm PLL.referenceAlgorithms pll
 
-                        testCase =
-                            PLLTrainer.TestCase.build preAUF pll postAUF
+                    testCase =
+                        PLLTrainer.TestCase.build preAUF pll postAUF
 
-                        user =
-                            User.changePLLAlgorithm pll algorithm User.new
+                    user =
+                        User.changePLLAlgorithm pll algorithm User.new
 
-                        result =
-                            PLLTrainer.TestCase.toAlg { addFinalReorientationToAlgorithm = addFinalReorientationToAlgorithm } user testCase
+                    result =
+                        PLLTrainer.TestCase.toAlg { addFinalReorientationToAlgorithm = addFinalReorientationToAlgorithm } user testCase
 
-                        expected =
-                            Cube.addAUFsToAlgorithm ( preAUF, postAUF ) algorithm
-                    in
-                    Cube.algorithmResultsAreEquivalentIndependentOfFinalRotation
-                        result
-                        expected
-                        |> Expect.true ("the algorithms should be equivalent\nExpected: " ++ Debug.toString expected ++ "\nResult: " ++ Debug.toString result)
-            , fuzz3 Fuzz.bool Fuzz.Extra.pll (Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf )) "adds the aufs correctly from the correct pll when user has not yet picked a pll" <|
-                \addFinalReorientationToAlgorithm pll ( preAUF, postAUF ) ->
-                    let
-                        testCase =
-                            PLLTrainer.TestCase.build preAUF pll postAUF
+                    expected =
+                        Cube.addAUFsToAlgorithm ( preAUF, postAUF ) algorithm
+                in
+                Cube.algorithmResultsAreEquivalentIndependentOfFinalRotation
+                    result
+                    expected
+                    |> Expect.true ("the algorithms should be equivalent\nExpected: " ++ Debug.toString expected ++ "\nResult: " ++ Debug.toString result)
+        , fuzz3 Fuzz.bool Fuzz.Extra.pll (Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf )) "adds the aufs correctly from the correct pll when user has not yet picked a pll" <|
+            \addFinalReorientationToAlgorithm pll ( preAUF, postAUF ) ->
+                let
+                    testCase =
+                        PLLTrainer.TestCase.build preAUF pll postAUF
 
-                        algorithmWithoutAUFs =
-                            PLLTrainer.TestCase.build AUF.None pll AUF.None
-                                |> PLLTrainer.TestCase.toAlg
-                                    { addFinalReorientationToAlgorithm = addFinalReorientationToAlgorithm }
-                                    User.new
-                    in
-                    PLLTrainer.TestCase.toAlg
-                        { addFinalReorientationToAlgorithm = addFinalReorientationToAlgorithm }
-                        User.new
-                        testCase
-                        |> Cube.algorithmResultsAreEquivalent
-                            (Algorithm.fromTurnList <|
-                                (AUF.toAlgorithm >> Algorithm.toTurnList) preAUF
-                                    ++ Algorithm.toTurnList algorithmWithoutAUFs
-                                    ++ (AUF.toAlgorithm >> Algorithm.toTurnList) postAUF
-                            )
-                        |> Expect.true "the algorithms should be equivalent"
-            ]
+                    algorithmWithoutAUFs =
+                        PLLTrainer.TestCase.build AUF.None pll AUF.None
+                            |> PLLTrainer.TestCase.toAlg
+                                { addFinalReorientationToAlgorithm = addFinalReorientationToAlgorithm }
+                                User.new
+                in
+                PLLTrainer.TestCase.toAlg
+                    { addFinalReorientationToAlgorithm = addFinalReorientationToAlgorithm }
+                    User.new
+                    testCase
+                    |> Cube.algorithmResultsAreEquivalent
+                        (Algorithm.fromTurnList <|
+                            (AUF.toAlgorithm >> Algorithm.toTurnList) preAUF
+                                ++ Algorithm.toTurnList algorithmWithoutAUFs
+                                ++ (AUF.toAlgorithm >> Algorithm.toTurnList) postAUF
+                        )
+                    |> Expect.true "the algorithms should be equivalent"
+        , test "simply retrieves the users algorithm when not adding final reorientation" <|
+            \_ ->
+                let
+                    pll =
+                        PLL.Aa
+
+                    algorithm =
+                        -- This is an algorithm that doesn't end in the starting orientation
+                        Algorithm.fromString "l' U R' D2 R U' R' D2 R2"
+                            |> Result.withDefault Algorithm.empty
+
+                    user =
+                        User.changePLLAlgorithm pll algorithm User.new
+
+                    testCase =
+                        PLLTrainer.TestCase.build AUF.None pll AUF.None
+                in
+                PLLTrainer.TestCase.toAlg { addFinalReorientationToAlgorithm = False } user testCase
+                    |> Expect.equal algorithm
+        , test "ends in starting orientation when setting the add final reorientation flag" <|
+            \_ ->
+                let
+                    pll =
+                        PLL.Aa
+
+                    notEndInStartOrientation =
+                        Algorithm.fromString "l' U R' D2 R U' R' D2 R2"
+                            |> Result.withDefault Algorithm.empty
+
+                    doesEndInStartOrientation =
+                        Algorithm.fromString "l' U R' D2 R U' R' D2 R2 x'"
+                            |> Result.withDefault Algorithm.empty
+
+                    user =
+                        User.changePLLAlgorithm pll notEndInStartOrientation User.new
+
+                    testCase =
+                        PLLTrainer.TestCase.build AUF.None pll AUF.None
+                in
+                PLLTrainer.TestCase.toAlg { addFinalReorientationToAlgorithm = True } user testCase
+                    |> Cube.algorithmResultsAreEquivalent doesEndInStartOrientation
+                    |> Expect.true "should be equivalent to an Aa algorithm ending in starting orientation"
+        ]
 
 
 generateTests : Test
