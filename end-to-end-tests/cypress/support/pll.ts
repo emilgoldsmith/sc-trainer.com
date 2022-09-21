@@ -55,6 +55,10 @@ export const allPLLs = [
   PLL.Z,
 ];
 
+if (allPLLs.length !== 21) {
+  throw new Error("allPLLs is not 21 long, so there must be an error");
+}
+
 export const aufToAlgorithmString: { [key in AUF]: string } = {
   [AUF.none]: "",
   [AUF.U]: "U",
@@ -150,6 +154,11 @@ export function parsePLLString(str: string): PLL {
   }
 }
 
+/**
+ * These algorithms are all just chosen as the shortest ones I could find on Algdb,
+ * so that there will be minimal computational / time cost when for example typing them
+ * into the browser in Cypress tests
+ */
 export const pllToAlgorithmString: { [key in PLL]: string } = {
   [PLL.Aa]: "Lw' U R' D2 R U' R' D2 R2",
   [PLL.Ab]: "R2 B2 R F R' B2 R F' R",
