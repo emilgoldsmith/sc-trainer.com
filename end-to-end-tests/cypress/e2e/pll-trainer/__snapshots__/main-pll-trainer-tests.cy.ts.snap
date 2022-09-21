@@ -1,0 +1,5 @@
+exports[
+  `PLL Trainer > completely new user > different paths in the app: > shows new case for new user -> solved quickly + ending test by touching screen where correct button shows up doesn't press that button -> pick algorithm -> correct with goodjob text (no driller) -> same case again on a different visit, no new case page, doesn't display picker, doesn't display good job text #0`
+] = `
+input required
+`;

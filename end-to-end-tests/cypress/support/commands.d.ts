@@ -1,4 +1,6 @@
 /// <reference types="cypress" />
+/// <reference types="cypress-plugin-snapshots" />
+declare module "cypress-plugin-snapshots/plugin";
 
 declare namespace Cypress {
   type ElmPorts = {

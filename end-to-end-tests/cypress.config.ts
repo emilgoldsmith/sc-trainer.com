@@ -1,4 +1,5 @@
 import { defineConfig } from "cypress";
+import { initPlugin } from "cypress-plugin-snapshots/plugin";
 
 // eslint-disable-next-line import/no-default-export
 export default defineConfig({
@@ -12,5 +13,8 @@ export default defineConfig({
   },
   e2e: {
     baseUrl: "http://localhost:4000",
+    setupNodeEvents(on, config) {
+      initPlugin(on, config);
+    },
   },
 });

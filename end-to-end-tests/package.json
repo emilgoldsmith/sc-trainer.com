@@ -5,6 +5,7 @@
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^5.9.1",
     "cypress": "^10.8.0",
+    "cypress-plugin-snapshots": "^1.4.4",
     "eslint": "7",
     "eslint-config-esnext": "^4.1.0",
     "eslint-config-prettier": "^8.2.0",
