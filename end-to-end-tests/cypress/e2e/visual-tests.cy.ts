@@ -291,7 +291,28 @@ describe("Visual Tests", function () {
           );
         },
         algorithmDrillerStatusPageCallback: () =>
-          cy.percySnapshotWithProperName("Algorithm Driller Status Page"),
+          cy.percySnapshotWithProperName(
+            "Algorithm Driller Status Page (Initial)"
+          ),
+      });
+      completePLLTestInMilliseconds(500, {
+        correct: false,
+        wrongType: "unrecoverable",
+        startingState: "algorithmDrillerStatusPage",
+        endingState: "algorithmDrillerStatusPage",
+        algorithmDrillerStatusPageCallback: () =>
+          cy.percySnapshotWithProperName(
+            "Algorithm Driller Status Page (Wrong Failure)"
+          ),
+      });
+      completePLLTestInMilliseconds(10000, {
+        correct: true,
+        startingState: "algorithmDrillerStatusPage",
+        endingState: "algorithmDrillerStatusPage",
+        algorithmDrillerStatusPageCallback: () =>
+          cy.percySnapshotWithProperName(
+            "Algorithm Driller Status Page (Correct But Slow Failure)"
+          ),
       });
       for (let i = 0; i < 3; i++) {
         completePLLTestInMilliseconds(500, {

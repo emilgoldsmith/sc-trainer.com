@@ -175,6 +175,8 @@ export const pllTrainerElements = {
   }),
   algorithmDrillerStatusPage: buildElementsCategory({
     container: "algorithm-driller-status-page-container",
+    wrongFailureText: optionalElement("wrong-failure-text"),
+    correctButSlowFailureText: optionalElement("correct-but-slow-failure-text"),
     correctConsecutiveAttemptsLeft: "correct-consecutive-attempts-left",
     expectedCubeStateFront: cubeElement("expected-cube-state-front"),
     expectedCubeStateBack: cubeElement("expected-cube-state-back"),

@@ -77,7 +77,11 @@ type alias Model =
     { trainerState : TrainerState
     , expectedCubeState : Cube
     , currentTestCase : { isNew : Bool, testCase : TestCase }
-    , maybeDrillerState : Maybe { correctAttemptsLeft : Int }
+    , maybeDrillerState :
+        Maybe
+            { correctAttemptsLeft : Int
+            , previousTestResult : PLLTrainer.States.AlgorithmDrillerStatusPage.PreviousTestResult
+            }
     , tESTONLY :
         { nextTestCaseOverride : Maybe TestCase
         }
@@ -484,7 +488,11 @@ update shared msg model =
                 StartAlgorithmDrills ->
                     ( { model
                         | trainerState = AlgorithmDrillerStatusPage
-                        , maybeDrillerState = Just { correctAttemptsLeft = correctAttemptsRequiredForDriller }
+                        , maybeDrillerState =
+                            Just
+                                { correctAttemptsLeft = correctAttemptsRequiredForDriller
+                                , previousTestResult = PLLTrainer.States.AlgorithmDrillerStatusPage.NoFailure
+                                }
                         , expectedCubeState = Cube.solved
                       }
                     , Effect.none
@@ -687,54 +695,68 @@ handleEvaluate testResult model shared =
                     in
                     ( WrongPage, Effect.fromCmd stateCmd )
 
-        ( withDrillerIncluded, newDrillerState ) =
+        withDrillerIncludedAndState =
             case model.maybeDrillerState of
                 Just { correctAttemptsLeft } ->
                     case testResult of
                         User.Correct _ ->
-                            if correctAttemptsLeft > 1 then
-                                ( always ( AlgorithmDrillerStatusPage, Effect.none )
-                                , Just { correctAttemptsLeft = correctAttemptsLeft - 1 }
-                                )
+                            \algorithm ->
+                                if wasCorrectTestFastEnoughToBeLearned shared.user algorithm testResult then
+                                    if correctAttemptsLeft > 1 then
+                                        ( ( AlgorithmDrillerStatusPage, Effect.none )
+                                        , Just
+                                            { correctAttemptsLeft = correctAttemptsLeft - 1
+                                            , previousTestResult = PLLTrainer.States.AlgorithmDrillerStatusPage.NoFailure
+                                            }
+                                        )
 
-                            else
-                                ( always ( AlgorithmDrillerSuccessPage, Effect.none ), Nothing )
+                                    else
+                                        ( ( AlgorithmDrillerSuccessPage, Effect.none ), Nothing )
+
+                                else
+                                    ( ( AlgorithmDrillerStatusPage, Effect.none )
+                                    , Just
+                                        { correctAttemptsLeft = correctAttemptsRequiredForDriller
+                                        , previousTestResult = PLLTrainer.States.AlgorithmDrillerStatusPage.CorrectButSlowFailure
+                                        }
+                                    )
 
                         User.Wrong _ ->
-                            ( always ( AlgorithmDrillerStatusPage, Effect.none )
-                            , Just { correctAttemptsLeft = correctAttemptsRequiredForDriller }
-                            )
+                            always
+                                ( ( AlgorithmDrillerStatusPage, Effect.none )
+                                , Just
+                                    { correctAttemptsLeft = correctAttemptsRequiredForDriller
+                                    , previousTestResult = PLLTrainer.States.AlgorithmDrillerStatusPage.WrongFailure
+                                    }
+                                )
 
                 Nothing ->
                     if not model.currentTestCase.isNew then
-                        ( always normalCorrectOrWrongState, Nothing )
+                        always ( normalCorrectOrWrongState, Nothing )
 
                     else
-                        (case testResult of
-                            User.Correct { resultInMilliseconds, preAUF, postAUF } ->
+                        case testResult of
+                            User.Correct _ ->
                                 \algorithm ->
-                                    let
-                                        { recognitionTimeInSeconds, tps } =
-                                            User.getPLLTargetParameters shared.user
-
-                                        targetTimeInSeconds =
-                                            recognitionTimeInSeconds + (Algorithm.Extra.complexity ( preAUF, postAUF ) algorithm / tps)
-                                    in
-                                    if toFloat resultInMilliseconds <= (targetTimeInSeconds * 1000) then
+                                    ( if wasCorrectTestFastEnoughToBeLearned shared.user algorithm testResult then
                                         normalCorrectOrWrongState
 
-                                    else
+                                      else
                                         ( AlgorithmDrillerExplanationPage { testResult = testResult }, Effect.none )
+                                    , Nothing
+                                    )
 
                             User.Wrong _ ->
-                                always ( AlgorithmDrillerExplanationPage { testResult = testResult }, Effect.none )
-                        )
-                            |> (\x -> ( x, Nothing ))
+                                always ( ( AlgorithmDrillerExplanationPage { testResult = testResult }, Effect.none ), Nothing )
 
-        ( withPickAlgorithmIncluded, maybeRecordResultEffect ) =
+        ( withPickAlgorithmIncluded, maybeRecordResultEffect, newDrillerState ) =
             case User.getPLLAlgorithm (PLLTrainer.TestCase.pll model.currentTestCase.testCase) shared.user of
                 Just algorithm ->
-                    ( withDrillerIncluded algorithm
+                    let
+                        ( withDrillerIncluded, newDrillerState_ ) =
+                            withDrillerIncludedAndState algorithm
+                    in
+                    ( withDrillerIncluded
                     , if model.maybeDrillerState == Nothing then
                         Effect.fromShared <|
                             Shared.ModifyUser <|
@@ -744,12 +766,13 @@ handleEvaluate testResult model shared =
 
                       else
                         Effect.none
+                    , newDrillerState_
                     )
 
                 Nothing ->
                     let
                         extraState =
-                            { getNextTrainerState = withDrillerIncluded
+                            { getNextTrainerState = withDrillerIncludedAndState >> Tuple.first
                             , testResult = testResult
                             }
 
@@ -760,6 +783,7 @@ handleEvaluate testResult model shared =
                       , Effect.fromCmd stateCmd
                       )
                     , Effect.none
+                    , Nothing
                     )
 
         withEverythingIncluded =
@@ -789,6 +813,26 @@ handleEvaluate testResult model shared =
         , maybeRecordResultEffect
         ]
     )
+
+
+{-| The function is only meant to be called with a correct test result, so always
+returns false for a wrong test result, it just makes the parameter passing cleaner
+-}
+wasCorrectTestFastEnoughToBeLearned : User -> Algorithm -> User.TestResult -> Bool
+wasCorrectTestFastEnoughToBeLearned user algorithm testResult =
+    case testResult of
+        User.Correct { resultInMilliseconds, preAUF, postAUF } ->
+            let
+                { recognitionTimeInSeconds, tps } =
+                    User.getPLLTargetParameters user
+
+                targetTimeInSeconds =
+                    recognitionTimeInSeconds + (Algorithm.Extra.complexity ( preAUF, postAUF ) algorithm / tps)
+            in
+            toFloat resultInMilliseconds <= (targetTimeInSeconds * 1000)
+
+        User.Wrong _ ->
+            False
 
 
 recordPLLTestResultWithErrorHandling : PLL -> User.TestResult -> User -> ( User, Maybe { errorMessage : String } )
@@ -1017,6 +1061,10 @@ states shared =
                     model.maybeDrillerState
                         |> Maybe.map .correctAttemptsLeft
                         |> Maybe.withDefault correctAttemptsRequiredForDriller
+                , previousTestResult =
+                    model.maybeDrillerState
+                        |> Maybe.map .previousTestResult
+                        |> Maybe.withDefault PLLTrainer.States.AlgorithmDrillerStatusPage.NoFailure
                 }
     , algorithmDrillerSuccessPage =
         always <|
