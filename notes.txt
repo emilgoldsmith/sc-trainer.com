@@ -5,3 +5,7 @@ Are the AUFs on wrong page and/or driller explanation page properly tested after
 Visual test for success and status page happening?
 
 Look through TODOs
+
+Make a tooltip on the perm segment on Wrong Page
+
+Make tooltips for all the terminology etc.
