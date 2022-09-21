@@ -70,7 +70,14 @@ view { user, viewportSize, palette, hardwareAvailable, cubeViewOptions } transit
             (\{ scrollableContainerId } ->
                 let
                     noMovesCube =
-                        arguments.expectedCubeState |> Cube.applyAlgorithm (Algorithm.inverse <| PLLTrainer.TestCase.toAlg user arguments.testCase)
+                        arguments.expectedCubeState
+                            |> Cube.applyAlgorithm
+                                (Algorithm.inverse <|
+                                    PLLTrainer.TestCase.toAlg
+                                        { addFinalReorientationToAlgorithm = True }
+                                        user
+                                        arguments.testCase
+                                )
 
                     nearlyThereCube =
                         arguments.expectedCubeState

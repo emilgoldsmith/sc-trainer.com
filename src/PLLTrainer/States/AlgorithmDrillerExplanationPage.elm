@@ -113,7 +113,9 @@ view shared transitions { testCase, wasCorrect } =
                         ]
                         [ text
                             (testCase
-                                |> PLLTrainer.TestCase.toAlg shared.user
+                                |> PLLTrainer.TestCase.toAlg
+                                    { addFinalReorientationToAlgorithm = False }
+                                    shared.user
                                 |> Algorithm.toString
                             )
                         ]
