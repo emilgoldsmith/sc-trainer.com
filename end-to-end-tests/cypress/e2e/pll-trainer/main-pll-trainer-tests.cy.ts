@@ -3146,7 +3146,7 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
           },
         ],
         [
-          "all errors display exactly when expected, don't update unless an attempt at submitting has occurred, and stays on the page despite submit action when an error is expected",
+          "all errors display exactly when expected, don't update unless an attempt at submitting has occurred, have the correct text, and stay on the page despite submit action when an error is expected",
           () => {
             let useEnterKeyToSubmit = true;
             function clearInputThenTypeAndSubmit(input: string): void {
@@ -3162,6 +3162,7 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
 
               useEnterKeyToSubmit = !useEnterKeyToSubmit;
             }
+
             // Should require input if input is empty
             clearInputThenTypeAndSubmit("");
             elements.inputRequiredError.assertShows();
@@ -3172,7 +3173,11 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
 
             // Should require input again after deleting the input
             clearInputThenTypeAndSubmit("");
-            elements.inputRequiredError.assertShows();
+            elements.inputRequiredError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .toMatchSnapshot({ name: "inputRequiredError" });
 
             // Errors informatively when invalid turnable encountered
             clearInputThenTypeAndSubmit("U B A");
@@ -3208,13 +3213,13 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
             clearInputThenTypeAndSubmit("U '");
             elements.turnWouldWorkWithoutInterruptionError.assertShows();
 
-            // Errors informatively when parenthesis between turnable and apostrophe encountered
-            clearInputThenTypeAndSubmit("(U)'");
-            elements.turnWouldWorkWithoutInterruptionError.assertShows();
-
             // Errors informatively when apostrophe on wrong side of length encountered
             clearInputThenTypeAndSubmit("U'2");
             elements.apostropheWrongSideOfLengthError.assertShows();
+
+            // Errors informatively when parenthesis between turnable and apostrophe encountered
+            clearInputThenTypeAndSubmit("(U)'");
+            elements.turnWouldWorkWithoutInterruptionError.assertShows();
 
             // Errors informatively when unclosed parenthesis encountered
             clearInputThenTypeAndSubmit("U ( B F' D2");
