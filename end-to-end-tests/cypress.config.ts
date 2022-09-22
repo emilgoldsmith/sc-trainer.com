@@ -1,5 +1,12 @@
-/* eslint-disable import/no-nodejs-modules */
 import { defineConfig } from "cypress";
+/** It was simply too bothersome to try figuring out adding node
+ * types here as then it propagates to all our non node files
+ * which was a mess of errors, and we only use a node type in one
+ * place here so for now we just hack it
+ */
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+// eslint-disable-next-line import/no-nodejs-modules
 import fs from "fs";
 
 // eslint-disable-next-line import/no-default-export
