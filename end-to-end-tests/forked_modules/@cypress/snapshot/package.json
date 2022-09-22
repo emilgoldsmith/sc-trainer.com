@@ -41,7 +41,6 @@
     "test": "npm run unit",
     "unit": "mocha src/*-spec.js",
     "unused-deps": "dependency-check --unused --no-dev . --entry src/add-initial-snapshot-file.js",
-    "postinstall": "node src/add-initial-snapshot-file.js",
     "semantic-release": "semantic-release",
     "cypress:open": "cypress open",
     "cypress:run": "cypress run"
