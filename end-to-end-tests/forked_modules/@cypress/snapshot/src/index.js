@@ -17,14 +17,6 @@ const {
 
 console.log = () => {};
 
-const DEFAULT_CONFIG_OPTIONS = {
-  // using relative snapshots requires a simple
-  // 'readFileMaybe' plugin to be configured
-  // see https://on.cypress.io/task#Read-a-file-that-might-not-exist
-  useRelativeSnapshots: false,
-  snapshotFileName: "snapshots.js",
-};
-
 /* eslint-disable no-console */
 
 function compareValues({ expected, value }) {
@@ -37,17 +29,6 @@ function registerCypressSnapshot() {
   la(is.fn(global.before), "missing global before function");
   la(is.fn(global.after), "missing global after function");
   la(is.object(global.Cypress), "missing Cypress object");
-
-  const useRelative = Cypress.config("useRelativeSnapshots");
-  const config = {
-    useRelativeSnapshots:
-      useRelative === undefined
-        ? DEFAULT_CONFIG_OPTIONS.useRelativeSnapshots
-        : useRelative,
-    snapshotFileName:
-      Cypress.config("snapshotFileName") ||
-      DEFAULT_CONFIG_OPTIONS.snapshotFileName,
-  };
 
   console.log("registering @cypress/snapshot");
 
@@ -71,29 +52,27 @@ function registerCypressSnapshot() {
     return counters[key];
   }
 
-  let snapshotFileName = config.snapshotFileName;
-  if (config.useRelativeSnapshots) {
-    let relative = Cypress.spec.relative;
-    if (Cypress.platform === "win32") {
-      relative = relative.replace(/\\/g, path.sep);
-    }
-
-    snapshotFileName = path.join(
-      path.dirname(relative),
-      config.snapshotFileName
-    );
+  let relative = Cypress.spec.relative;
+  if (Cypress.platform === "win32") {
+    relative = relative.replace(/\\/g, path.sep);
   }
 
-  function nameArrayToName(names) {
+  const snapshotFileName = path.join(
+    path.dirname(relative),
+    "__snapshots__",
+    Cypress.spec.name.split(".")[0] + ".snapshot"
+  );
+
+  function nameListToName(names) {
     return names.join(" // ");
   }
 
-  function getAllNames(store) {
+  function getAllNameLists(store) {
     if (store === null || typeof store !== "object") return [];
     const { __version, ...nonMetaDataStore } = store;
     const ret = [];
     Cypress._.forEach(nonMetaDataStore, (value, key) => {
-      const childrenNames = getAllNames(value);
+      const childrenNames = getAllNameLists(value);
       if (childrenNames.length === 0) ret.push([key]);
       else {
         childrenNames.forEach((name) => {
@@ -101,7 +80,30 @@ function registerCypressSnapshot() {
         });
       }
     });
-    return ret.map(nameArrayToName);
+    return ret;
+  }
+
+  function recursivelyBuildTestTree(currentRoot) {
+    const ret = {};
+    currentRoot.suites.forEach((suite) => {
+      ret[suite.title] = recursivelyBuildTestTree(suite);
+    });
+    currentRoot.tests.forEach((test) => {
+      ret[test.title] = {};
+    });
+    return ret;
+  }
+
+  function buildTestTree(mochaContext) {
+    let root = mochaContext.test;
+    while (root.parent) root = root.parent;
+    return recursivelyBuildTestTree(root);
+  }
+
+  function detectIfDotOnlyIsUsed(mochaContext) {
+    let root = mochaContext.test;
+    while (root.parent) root = root.parent;
+    return root.hasOnly();
   }
 
   function evaluateLoadedSnapShots(js) {
@@ -116,19 +118,28 @@ function registerCypressSnapshot() {
     }
 
     storeSnapshot = initStore(store);
-    snapshotsThatHaventBeenSeenYet = new Set(getAllNames(store));
+    const allNameLists = getAllNameLists(store);
+    if (detectIfDotOnlyIsUsed(this)) {
+      const testTree = buildTestTree(this);
+      snapshotsThatHaventBeenSeenYet = new Set();
+      allNameLists.forEach((nameList) => {
+        let cur = testTree;
+        const isBeingTested = nameList.slice(0, -1).every((name) => {
+          return (cur = cur[name]);
+        });
+        if (isBeingTested) snapshotsThatHaventBeenSeenYet.add(nameList);
+      });
+    } else {
+      snapshotsThatHaventBeenSeenYet = new Set(
+        allNameLists.map(nameListToName)
+      );
+    }
   }
 
   global.before(function loadSnapshots() {
-    let readFile;
-
-    if (config.useRelativeSnapshots) {
-      readFile = cy.task("readFileMaybe", snapshotFileName);
-    } else {
-      readFile = cy.readFile(snapshotFileName, "utf-8");
-    }
-
-    readFile.then(evaluateLoadedSnapShots);
+    cy.task("readFileMaybe", snapshotFileName).then(
+      evaluateLoadedSnapShots.bind(this)
+    );
     // no way to catch an error yet
   });
 
@@ -156,7 +167,7 @@ function registerCypressSnapshot() {
     const message = Cypress._.last(name);
     console.log("current snapshot name", name);
 
-    snapshotsThatHaventBeenSeenYet.delete(nameArrayToName(name));
+    snapshotsThatHaventBeenSeenYet.delete(nameListToName(name));
 
     const devToolsLog = {
       value,
