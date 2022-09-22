@@ -19,10 +19,13 @@ export default defineConfig({
     runMode: 2,
     openMode: 0,
   },
-  // For @cypress/snapshots package
+  // For @cypress/snapshot package
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   useRelativeSnapshots: true,
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  snapshotFileName: "__snapshots__/snapshots.js",
   e2e: {
     baseUrl: "http://localhost:4000",
     setupNodeEvents(on) {
