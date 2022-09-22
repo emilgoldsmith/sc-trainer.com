@@ -20,6 +20,7 @@
   "typescript.tsdk": "./end-to-end-tests/node_modules/typescript/lib",
   // Javascript stuff
   "prettier.prettierPath": "./end-to-end-tests/node_modules/prettier",
+  "prettier.ignorePath": "./end-to-end-tests/.prettierignore",
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.tabSize": 2

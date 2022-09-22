@@ -3177,15 +3177,23 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
               .get()
               .should("be.visible")
               .invoke("text")
-              .toMatchSnapshot({ name: "inputRequiredError" });
+              .snapshot({ name: "inputRequiredError" });
 
             // Errors informatively when invalid turnable encountered
             clearInputThenTypeAndSubmit("U B A");
-            elements.invalidTurnableError.assertShows();
+            elements.invalidTurnableError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .snapshot({ name: "invalidTurnableError" });
 
             // Errors informatively when invalid turn length encountered
             clearInputThenTypeAndSubmit("U4");
-            elements.invalidTurnLengthError.assertShows();
+            elements.invalidTurnLengthError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .snapshot({ name: "invalidTurnLengthError" });
 
             // Errors informatively when repeated turnable encountered
             // And doesn't update the error until the submit action
@@ -3196,7 +3204,11 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
             elements.invalidTurnLengthError.assertShows();
             elements.submitButton.get().click();
             // Error now updated after submit action
-            elements.repeatedTurnableError.assertShows();
+            elements.repeatedTurnableError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .snapshot({ name: "repeatedTurnableError" });
 
             // Errors informatively when mixed wide move styles encountered
             // And doesn't update the error until the submit action, this time using enter key
@@ -3207,41 +3219,82 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
             elements.repeatedTurnableError.assertShows();
             elements.algorithmInput.get().type("{enter}", { delay: 0 });
             // Error now updated after submit action
-            elements.wideMoveStylesMixedError.assertShows();
+            elements.wideMoveStylesMixedError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .snapshot({ name: "wideMoveStylesMixedError" });
 
             // Errors informatively when space between turnable and apostrophe encountered
             clearInputThenTypeAndSubmit("U '");
-            elements.turnWouldWorkWithoutInterruptionError.assertShows();
+            elements.turnWouldWorkWithoutInterruptionError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .snapshot({
+                name: "turnWouldWorkWithoutInterruptionError -- space between",
+              });
 
             // Errors informatively when apostrophe on wrong side of length encountered
             clearInputThenTypeAndSubmit("U'2");
-            elements.apostropheWrongSideOfLengthError.assertShows();
+            elements.apostropheWrongSideOfLengthError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .snapshot({ name: "apostropheWrongSideOfLengthError" });
 
             // Errors informatively when parenthesis between turnable and apostrophe encountered
             clearInputThenTypeAndSubmit("(U)'");
-            elements.turnWouldWorkWithoutInterruptionError.assertShows();
+            elements.turnWouldWorkWithoutInterruptionError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .snapshot({
+                name:
+                  "turnWouldWorkWithoutInterruptionError -- parenthesis between",
+              });
 
             // Errors informatively when unclosed parenthesis encountered
             clearInputThenTypeAndSubmit("U ( B F' D2");
-            elements.unclosedParenthesisError.assertShows();
+            elements.unclosedParenthesisError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .snapshot({ name: "unclosedParenthesisError" });
 
             // Errors informatively when unmatched closing parenthesis encountered
             clearInputThenTypeAndSubmit("U B F' ) D2");
-            elements.unmatchedClosingParenthesisError.assertShows();
+            elements.unmatchedClosingParenthesisError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .snapshot({ name: "unmatchedClosingParenthesisError" });
 
             // Errors informatively when nested parentheses encountered
             clearInputThenTypeAndSubmit("( U (B F') ) D2");
-            elements.nestedParenthesesError.assertShows();
+            elements.nestedParenthesesError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .snapshot({ name: "nestedParenthesesError" });
 
             // Errors informatively when invalid symbol encountered
             clearInputThenTypeAndSubmit("( U B F') % D2");
-            elements.invalidSymbolError.assertShows();
+            elements.invalidSymbolError
+              .get()
+              .should("be.visible")
+              .invoke("text")
+              .snapshot({ name: "invalidSymbolError" });
 
             // Errors informatively when an algorithm that doesn't match the case is encountered
             cy.getCurrentTestCase().then(([, correctPLL]) => {
               const wrongPLL = correctPLL === PLL.Ga ? PLL.Gb : PLL.Ga;
               clearInputThenTypeAndSubmit(pllToAlgorithmString[wrongPLL]);
-              elements.algorithmDoesntMatchCaseError.assertShows();
+              elements.algorithmDoesntMatchCaseError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({ name: "algorithmDoesntMatchCaseError" });
             });
           },
         ],

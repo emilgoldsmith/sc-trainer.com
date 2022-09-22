@@ -1,7 +1,5 @@
 /// <reference types="cypress" />
-/// <reference types="cypress-plugin-snapshots" />
-declare module "cypress-plugin-snapshots/plugin";
-
+declare module "@cypress/snapshot";
 declare namespace Cypress {
   type ElmPorts = {
     [portName: string]:
@@ -61,6 +59,8 @@ declare namespace Cypress {
   };
 
   interface Chainable<Subject> {
+    // The command from the @cypress/snapshot package
+    snapshot(options?: { name?: string }): Cypress.Chainable<Subject>;
     /**
      * Gets the window variable, but also asserts that it has our custom additions
      * to the window for test purposes and returns the extended window type
