@@ -29,6 +29,6 @@
     "no-invalid-this": "off"
   },
   "globals": { "Parameters": false, "ReturnType": false },
-  "ignorePatterns": "*.d.ts",
+  "ignorePatterns": ["*.d.ts", "snapshots.js", "forked_modules"],
   "parserOptions": { "ecmaVersion": 2021 }
 }

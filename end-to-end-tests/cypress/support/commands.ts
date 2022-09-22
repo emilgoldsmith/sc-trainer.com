@@ -34,7 +34,9 @@ import {
   PLL,
   pllToPllLetters,
 } from "./pll";
-import "cypress-plugin-snapshots/commands";
+import { register } from "@cypress/snapshot";
+
+register();
 
 /** OVERWRITES */
 Cypress.Commands.overwrite("tick", (originalFn, milliseconds, options) => {
