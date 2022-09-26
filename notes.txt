@@ -1,10 +1,4 @@
-There's actually no need for identifying the type of wrong if you're going to the algorithm driller, correct?
-
 Are the AUFs on wrong page and/or driller explanation page properly tested after we remove the parse functions usage in other tests?
-
-Visual test for success and status page happening?
-
-Look through TODOs
 
 Make a tooltip on the perm segment on Wrong Page
 

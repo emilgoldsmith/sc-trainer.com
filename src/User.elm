@@ -775,7 +775,7 @@ pllDataDecoder :
     Json.Decode.Decoder (Dict String Algorithm)
     -> Json.Decode.Decoder (Dict String (List TestResult))
     -> Json.Decode.Decoder PLLData
-pllDataDecoder =
+pllDataDecoder algorithmsDecoder resultsDecoder =
     Json.Decode.map2
         (\algorithms results ->
             PLL.all
@@ -799,28 +799,70 @@ pllDataDecoder =
                     )
                     emptyPLLData
         )
+        algorithmsDecoder
+        resultsDecoder
+        |> Json.Decode.andThen
+            (\data ->
+                let
+                    failures =
+                        PLL.all
+                            |> List.Nonempty.toList
+                            |> List.filter
+                                (\pll ->
+                                    getPLLAlgorithm_ pll data
+                                        |> Maybe.map
+                                            (\algorithm -> not <| PLL.solvedBy algorithm pll)
+                                        |> Maybe.withDefault False
+                                )
+                            |> List.map PLL.getLetters
+                in
+                if List.length failures > 0 then
+                    Json.Decode.fail
+                        ("Some algorithms did not solve the pll they were assigned to, those plls were: "
+                            ++ String.join ", " failures
+                        )
+
+                else
+                    Json.Decode.succeed data
+            )
 
 
 pllAlgorithmsDecoder : Json.Decode.Decoder (Dict String Algorithm)
 pllAlgorithmsDecoder =
     Json.Decode.dict Json.Decode.string
-        -- TODO: Log an error here somehow instead of just silently swallowing invalid
-        -- algorithms in local storage?
-        |> Json.Decode.map (dictFilterMap (Algorithm.fromString >> Result.toMaybe))
+        |> Json.Decode.andThen
+            (Dict.foldl
+                (\key value dictResultOrFailuresList ->
+                    case Algorithm.fromString value of
+                        Ok algorithm ->
+                            dictResultOrFailuresList
+                                |> Result.map (Dict.insert key algorithm)
 
+                        Err error ->
+                            let
+                                errorString =
+                                    key ++ ": " ++ Algorithm.debugFromStringError error
+                            in
+                            case dictResultOrFailuresList of
+                                Ok _ ->
+                                    Err [ errorString ]
 
-dictFilterMap : (a -> Maybe b) -> Dict comparable a -> Dict comparable b
-dictFilterMap fn =
-    Dict.foldl
-        (\key value curDict ->
-            case fn value of
-                Nothing ->
-                    curDict
+                                Err failures ->
+                                    Err <| errorString :: failures
+                )
+                (Ok Dict.empty)
+                >> (\dictResultOrFailuresList ->
+                        case dictResultOrFailuresList of
+                            Ok dictResult ->
+                                Json.Decode.succeed dictResult
 
-                Just x ->
-                    Dict.insert key x curDict
-        )
-        Dict.empty
+                            Err failures ->
+                                Json.Decode.fail
+                                    ("Some pll algorithms were invalid. The errors are: "
+                                        ++ String.join "; " failures
+                                    )
+                   )
+            )
 
 
 pllResultsDecoder : Json.Decode.Decoder (Dict String (List TestResult))

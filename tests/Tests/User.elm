@@ -217,6 +217,33 @@ serializationTests =
             \_ ->
                 User.deserialize Json.Encode.null
                     |> Expect.err
+        , test "deserializing an invalid algorithm that would otherwise solve the case fails" <|
+            \_ ->
+                User.new
+                    |> User.changePLLAlgorithm PLL.F
+                        -- It is invalid because we don't allow repeated turns of the same turnable, they should be simplified
+                        (PLL.getAlgorithm PLL.referenceAlgorithms PLL.F
+                            |> Algorithm.append
+                                (let
+                                    repeatedTurnables =
+                                        Algorithm.fromTurnList (List.repeat 10 (Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise))
+                                 in
+                                 -- We inverse it again here so the net effect should be no change to the cube
+                                 Algorithm.append repeatedTurnables (Algorithm.inverse repeatedTurnables)
+                                )
+                        )
+                    |> User.serialize
+                    |> User.deserialize
+                    |> Expect.err
+        , test "deserializing an otherwise valid algorithm that doesn't solve the case fails" <|
+            \_ ->
+                User.new
+                    |> User.changePLLAlgorithm PLL.H
+                        -- It is invalid because we don't allow repeated turns of the same turnable, they should be simplified
+                        (Algorithm.fromTurnList [ Algorithm.Turn Algorithm.U Algorithm.OneQuarter Algorithm.Clockwise ])
+                    |> User.serialize
+                    |> User.deserialize
+                    |> Expect.err
         , fuzz Fuzz.string "deserializing a random string fails" <|
             \string ->
                 User.deserialize (Json.Encode.string string)
