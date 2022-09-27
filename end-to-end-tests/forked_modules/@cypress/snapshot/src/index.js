@@ -1,6 +1,5 @@
 "use strict";
 
-/* global cy, Cypress */
 const itsName = require("its-name");
 const { initStore } = require("snap-shot-store");
 const la = require("lazy-ass");
@@ -8,16 +7,14 @@ const is = require("check-more-types");
 const compare = require("snap-shot-compare");
 const path = require("path");
 
+const doDebugLogs = false;
+
 const {
   serializeDomElement,
   serializeReactToHTML,
   identity,
   countSnapshots,
 } = require("./utils");
-
-console.log = () => {};
-
-/* eslint-disable no-console */
 
 function compareValues({ expected, value }) {
   const noColor = true;
@@ -30,7 +27,7 @@ function registerCypressSnapshot() {
   la(is.fn(global.after), "missing global after function");
   la(is.object(global.Cypress), "missing Cypress object");
 
-  console.log("registering @cypress/snapshot");
+  if (doDebugLogs) console.log("registering @cypress/snapshot");
 
   let storeSnapshot;
   let snapshotsThatHaventBeenSeenYet;
@@ -110,11 +107,12 @@ function registerCypressSnapshot() {
     let store = {};
 
     if (js !== null) {
-      console.log(js);
+      if (doDebugLogs) console.log(js);
       la(is.string(js), "expected JavaScript snapshot source", js);
-      console.log("read snapshots.js file");
+      if (doDebugLogs) console.log("read snapshots.js file");
       store = eval(js);
-      console.log("have %d snapshot(s)", countSnapshots(store));
+      if (doDebugLogs)
+        console.log("have %d snapshot(s)", countSnapshots(store));
     }
 
     storeSnapshot = initStore(store);
@@ -125,9 +123,11 @@ function registerCypressSnapshot() {
       allNameLists.forEach((nameList) => {
         let cur = testTree;
         const isBeingTested = nameList.slice(0, -1).every((name) => {
+          // using the fact that undefined is falsy
           return (cur = cur[name]);
         });
-        if (isBeingTested) snapshotsThatHaventBeenSeenYet.add(nameList);
+        if (isBeingTested)
+          snapshotsThatHaventBeenSeenYet.add(nameListToName(nameList));
       });
     } else {
       snapshotsThatHaventBeenSeenYet = new Set(
@@ -165,7 +165,7 @@ function registerCypressSnapshot() {
 
     // show just the last part of the name list (the index)
     const message = Cypress._.last(name);
-    console.log("current snapshot name", name);
+    if (doDebugLogs) console.log("current snapshot name", name);
 
     snapshotsThatHaventBeenSeenYet.delete(nameListToName(name));
 
@@ -225,7 +225,7 @@ function registerCypressSnapshot() {
   };
 
   function snapshot(value, { name, json } = {}) {
-    console.log("human name", name);
+    if (doDebugLogs) console.log("human name", name);
     const snapshotName = getSnapshotName(this.test, name);
     const serializer = pickSerializer(json, value);
     const serialized = serializer(value);
@@ -265,8 +265,8 @@ function registerCypressSnapshot() {
   global.after(function saveSnapshots() {
     const snapshots = storeSnapshot();
     const count = countSnapshots(snapshots);
-    console.log("%d snapshot(s) on finish", count);
-    console.log(snapshots);
+    if (doDebugLogs) console.log("%d snapshot(s) on finish", count);
+    if (doDebugLogs) console.log(snapshots);
 
     if (count) {
       snapshots.__version = Cypress.version;
