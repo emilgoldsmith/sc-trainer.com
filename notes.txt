@@ -1,5 +1,3 @@
-Are the AUFs on wrong page and/or driller explanation page properly tested after we remove the parse functions usage in other tests?
-
 Make a tooltip on the perm segment on Wrong Page
 
 Make tooltips for all the terminology etc.
