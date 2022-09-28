@@ -1,3 +1,13 @@
+Change default TPS to 4
+
+Make sure some test would fail on a long long string of new cases
+
+To-Figure-Out for doing a preAUF instead of a postAUF for symmetric cases and whether it is considered a new case
+
+Explain recognition pattern
+
+Implement (time since last attempt) x TPS weighting for randomness in selecting already learned cases
+
 Make a tooltip on the perm segment on Wrong Page
 
 Make tooltips for all the terminology etc.
