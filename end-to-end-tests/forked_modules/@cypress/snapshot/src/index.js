@@ -184,6 +184,7 @@ function registerCypressSnapshot() {
       name: "snapshot",
       message,
       consoleProps: () => devToolsLog,
+      autoEnd: false,
     };
 
     if ($el) {
@@ -211,13 +212,13 @@ function registerCypressSnapshot() {
       });
     };
 
-    Cypress.log(options);
+    const log = Cypress.log(options);
     storeSnapshot({
       value,
       name,
       raiser: cyRaiser,
     });
-    snapshotsThatHaventBeenSeenYet.del;
+    log.end();
   }
 
   const pickSerializer = (asJson, value) => {
