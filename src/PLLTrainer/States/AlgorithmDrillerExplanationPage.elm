@@ -7,6 +7,7 @@ import Element exposing (..)
 import Element.Font as Font
 import Html.Attributes
 import Key
+import PLL
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
 import PLLTrainer.TestCase
@@ -117,6 +118,18 @@ view shared transitions { testCase, wasCorrect } =
                                     { addFinalReorientationToAlgorithm = False }
                                     shared.user
                                 |> Algorithm.toString
+                            )
+                        ]
+                    , paragraph
+                        [ testid "recognition-explanation"
+                        , centerX
+                        , Font.bold
+                        , Font.center
+                        ]
+                        [ text
+                            (testCase
+                                |> PLLTrainer.TestCase.pll
+                                |> PLL.getLetters
                             )
                         ]
                     , PLLTrainer.ButtonWithShortcut.view

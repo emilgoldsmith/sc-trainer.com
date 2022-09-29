@@ -434,6 +434,12 @@ const setApplicationState: Cypress.Chainable<undefined>["setApplicationState"] =
       cy.getCustomWindow({ log: false }).then((window) =>
         window.END_TO_END_TEST_HELPERS.setModel(state)
       );
+      // Force us to wait for a render loop as otherwise the update won't
+      // necessarily render for commands made right after, and there isn't
+      // really anything we can wait for as it's still the same page, and
+      // it depends on the page what will change on it
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(0);
     };
 
     if (options?.log === false) {

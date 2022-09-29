@@ -171,6 +171,7 @@ export const pllTrainerElements = {
     wrongText: optionalElement("wrong-text"),
     caseToDrill: cubeElement("case-to-drill"),
     algorithmToDrill: "algorithm-to-drill",
+    recognitionExplanation: "recognition-explanation",
     continueButton: "continue-button",
   }),
   algorithmDrillerStatusPage: buildElementsCategory({

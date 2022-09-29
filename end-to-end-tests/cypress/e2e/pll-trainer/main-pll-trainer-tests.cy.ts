@@ -13,6 +13,7 @@ import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.j
 import allPLLsPickedLocalStorage from "fixtures/local-storage/all-plls-picked.json";
 import {
   allAUFs,
+  allPLLs,
   AUF,
   aufToAlgorithmString,
   PLL,
@@ -3670,6 +3671,72 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
 
                 // Undo all the side effects we just did
                 cy.setApplicationState(originalApplicationState);
+              });
+            },
+          ],
+          [
+            "recognition explanation does not change when postAUF changes, but otherwise does",
+            () => {
+              cy.getCurrentTestCase().then((originalTestCase) => {
+                type Aliases = { originalExplanation: string };
+                const originalPostAUF = originalTestCase[2];
+                const otherPostAUFs = allAUFs.filter(
+                  (auf) => auf !== originalPostAUF
+                );
+                elements.recognitionExplanation
+                  .get()
+                  .invoke("text")
+                  .setAlias<Aliases, "originalExplanation">(
+                    "originalExplanation"
+                  );
+                otherPostAUFs.forEach((otherPostAUF) => {
+                  cy.setCurrentTestCase([
+                    originalTestCase[0],
+                    originalTestCase[1],
+                    otherPostAUF,
+                  ]);
+                  elements.recognitionExplanation
+                    .get()
+                    .invoke("text")
+                    .then((nextExplanation) => {
+                      cy.getAliases<Aliases>().then(({ originalExplanation }) =>
+                        assertNonFalsyStringsEqual(
+                          nextExplanation,
+                          originalExplanation,
+                          "nextExplanation (first) is not equal to originalExplanation (second)"
+                        )
+                      );
+                    });
+                });
+
+                // If we change to a different pll though, it should be different
+                const otherPLL = allPLLs.filter(
+                  (pll) => pll !== originalTestCase[1]
+                )[0];
+                if (otherPLL === undefined)
+                  throw new Error(
+                    "this shouldn't happen, we're just using it as a type guard"
+                  );
+                cy.setCurrentTestCase([
+                  originalTestCase[0],
+                  otherPLL,
+                  originalTestCase[2],
+                ]);
+                elements.recognitionExplanation
+                  .get()
+                  .invoke("text")
+                  .then((otherPLLExplanation) => {
+                    cy.getAliases<Aliases>().then(({ originalExplanation }) =>
+                      assertNonFalsyStringsDifferent(
+                        otherPLLExplanation,
+                        originalExplanation,
+                        "otherPLLExplanation (first) is equal to originalExplanation (second)"
+                      )
+                    );
+                  });
+
+                // Reset to the original case
+                cy.setCurrentTestCase(originalTestCase);
               });
             },
           ],
