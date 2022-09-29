@@ -20,5 +20,5 @@ module.exports = {
       }
     }
   },
-  "__version": "10.8.0"
+  "__Cypress_version": "10.9.0"
 }

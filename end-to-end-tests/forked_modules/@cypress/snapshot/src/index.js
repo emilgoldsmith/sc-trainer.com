@@ -163,6 +163,10 @@ function registerCypressSnapshot() {
       throw new Error("Snapshots should have been initialized");
     }
 
+    if (typeof name === "string") {
+      name = [name];
+    }
+
     // show just the last part of the name list (the index)
     const message = Cypress._.last(name);
     if (doDebugLogs) console.log("current snapshot name", name);
@@ -263,14 +267,13 @@ function registerCypressSnapshot() {
   });
 
   global.after(function saveSnapshots() {
-    const snapshots = storeSnapshot();
-    const count = countSnapshots(snapshots);
+    const count = countSnapshots(storeSnapshot());
     if (doDebugLogs) console.log("%d snapshot(s) on finish", count);
-    if (doDebugLogs) console.log(snapshots);
 
     if (count) {
-      snapshots.__version = Cypress.version;
-      const s = JSON.stringify(snapshots, null, 2);
+      setSnapshot("__Cypress_version", Cypress.version);
+      if (doDebugLogs) console.log(storeSnapshot());
+      const s = JSON.stringify(storeSnapshot(), null, 2);
       const str = `module.exports = ${s}\n`;
       cy.writeFile(snapshotFileName, str, "utf-8", { log: false });
     }
