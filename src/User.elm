@@ -289,7 +289,7 @@ be prompted to choose these values if they haven't yet.
 getPLLTargetParameters : User -> PLLTargetParameters
 getPLLTargetParameters =
     getInternalPLLTargetParameters
-        >> Maybe.withDefault { recognitionTimeInSeconds = 2, tps = 2.5 }
+        >> Maybe.withDefault { recognitionTimeInSeconds = 2, tps = 4 }
 
 
 {-| Update the target parameters the user has for PLL cases

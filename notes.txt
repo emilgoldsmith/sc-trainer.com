@@ -1,5 +1,3 @@
-Change default TPS to 4
-
 Make sure some test would fail on a long long string of new cases
 
 To-Figure-Out for doing a preAUF instead of a postAUF for symmetric cases and whether it is considered a new case

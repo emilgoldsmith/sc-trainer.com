@@ -1828,7 +1828,7 @@ function pickTargetParametersPageNoSideEffectsButScroll() {
           "has correct default values",
           () => {
             elements.recognitionTimeInput.get().should("have.value", "2");
-            elements.targetTPSInput.get().should("have.value", "2.5");
+            elements.targetTPSInput.get().should("have.value", "4");
           },
         ],
         [
@@ -2048,7 +2048,7 @@ function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesGivenS
 function pickTargetParametersNavigateWithSomeDefaultValues() {
   const elements = pllTrainerElements.pickTargetParametersPage;
 
-  elements.targetTPSInput.get().type("{selectall}{backspace}2.5", { delay: 0 });
+  elements.targetTPSInput.get().type("{selectall}{backspace}4", { delay: 0 });
   elements.recognitionTimeInput
     .get()
     .type("{selectall}{backspace}2", { delay: 0 });
