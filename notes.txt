@@ -9,3 +9,5 @@ Implement (time since last attempt) x TPS weighting for randomness in selecting 
 Make a tooltip on the perm segment on Wrong Page
 
 Make tooltips for all the terminology etc.
+
+Make people select themselves their preferred AUF combination for symmetrical cases
