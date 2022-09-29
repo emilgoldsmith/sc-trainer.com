@@ -193,7 +193,8 @@ describe("PLL Trainer", function () {
           endingState: "algorithmDrillerStatusPage",
           testRunningNavigator: testRunningNavigateChangingClockVariant3,
           evaluateResultWrongNavigator: evaluateResultNavigateWrongVariant3,
-          algorithmDrillerStatusPageNavigator: algorithmDrillerStatusPageNavigateVariant1,
+          algorithmDrillerStatusPageNavigator:
+            algorithmDrillerStatusPageNavigateVariant1,
         });
         algorithmDrillerStatusPageAfter1Success1FailureNoSideEffects();
         algorithmDrillerStatusPageAfterWrongFailure();
@@ -217,7 +218,8 @@ describe("PLL Trainer", function () {
           testRunningNavigator: testRunningNavigateVariant4,
           evaluateResultCallback: () =>
             evaluateResultTimeDependantNoSideEffects2({ timeInMs: time2 }),
-          algorithmDrillerStatusPageNavigator: algorithmDrillerStatusPageNavigateVariant2,
+          algorithmDrillerStatusPageNavigator:
+            algorithmDrillerStatusPageNavigateVariant2,
         });
         const time3 = 1030 as const;
         completePLLTestInMilliseconds(time3, {
@@ -1326,9 +1328,8 @@ describe("PLL Trainer", function () {
         numTried: number;
         casesWithLastThreeCasesValid: { timeMs: number; turns: number }[][];
       }): void {
-        const eachCasePrecomputed = casesWithLastThreeCasesValid.map(
-          computeAverages
-        );
+        const eachCasePrecomputed =
+          casesWithLastThreeCasesValid.map(computeAverages);
         const globalTimeAverageSeconds =
           average(eachCasePrecomputed.map((x) => x.averageTimeMs)) / 1000;
         const globalTPSAverage = average(
@@ -1532,63 +1533,65 @@ describe("PLL Trainer", function () {
 
   describe("the test case cube displays correctly during tests", function () {
     /* eslint-disable mocha/no-setup-in-describe */
-    ([
-      {
-        testName:
-          "displays exactly the same whether there's a y rotation in the beginning or not as it's redundant",
-        pll: PLL.Gc,
-        algorithmWithRotation: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
-        // The same algorithm with no y rotation
-        algorithmWithoutRotation: "R2 U' R U' R U R' U R2 D' U R U' R' D",
-      },
-      {
-        testName:
-          "displays exactly the same whether there's a U or Dw move in the beginning or not as it's redundant",
-        pll: PLL.Gc,
-        algorithmWithRotation: "U Dw R2 U' R U' R U R' U R2 D' U R U' R' D",
-        // The same algorithm with no initial U or Dw move. Note the moves are in the opposite
-        // directions, so this is not just equivalent to a y rotation
-        algorithmWithoutRotation: "R2 U' R U' R U R' U R2 D' U R U' R' D",
-      },
-      {
-        testName:
-          "displays exactly the same, even if there's a y rotation in the middle of the algorithm that isn't corrected later",
-        pll: PLL.V,
-        algorithmWithRotation: "R' U R' U' (y) R' F' R2 U' R' U R' F R F",
-        // The same algorithm but just modified to move the faces without the rotation
-        algorithmWithoutRotation: "R' U R' U' B' R' B2 U' B' U B' R B R",
-      },
-      {
-        testName:
-          "displays exactly the same, even if there's an x rotation in the beginning of the algorithm that isn't corrected later",
-        pll: PLL.E,
-        algorithmWithRotation: "x U R' U' L U R U' r2 U' R U L U' R' U",
-        // The same algorithm but just modified to move the faces without the rotation
-        algorithmWithoutRotation: "F R' F' L F R F' r2 F' R F L F' R' F",
-      },
-      {
-        testName:
-          "displays exactly the same, even if there's a z rotation in the beginning of the algorithm that isn't corrected later",
-        pll: PLL.V,
-        algorithmWithRotation: "z D' R2 D R2 U R' D' R U' R U R' D R U'",
-        // The same algorithm but just modified to move the faces without the rotation
-        algorithmWithoutRotation: "R' U2 R U2 L U' R' U L' U L U' R U L'",
-      },
-      {
-        testName:
-          "displays exactly the same, even if there's a wide move in the algorithm that isn't corrected later",
-        pll: PLL.Jb,
-        algorithmWithRotation: "R U2 R' U' R U2 L' U R' U' r",
-        // The same algorithm but just used an L move instead of the r move
-        algorithmWithoutRotation: "R U2 R' U' R U2 L' U R' U' L",
-      },
-    ] as {
-      testName: string;
-      pll: PLL;
-      algorithmWithRotation: string;
-      algorithmWithoutRotation: string;
-      only?: boolean;
-    }[]).forEach(
+    (
+      [
+        {
+          testName:
+            "displays exactly the same whether there's a y rotation in the beginning or not as it's redundant",
+          pll: PLL.Gc,
+          algorithmWithRotation: "(y) R2 U' R U' R U R' U R2 D' U R U' R' D",
+          // The same algorithm with no y rotation
+          algorithmWithoutRotation: "R2 U' R U' R U R' U R2 D' U R U' R' D",
+        },
+        {
+          testName:
+            "displays exactly the same whether there's a U or Dw move in the beginning or not as it's redundant",
+          pll: PLL.Gc,
+          algorithmWithRotation: "U Dw R2 U' R U' R U R' U R2 D' U R U' R' D",
+          // The same algorithm with no initial U or Dw move. Note the moves are in the opposite
+          // directions, so this is not just equivalent to a y rotation
+          algorithmWithoutRotation: "R2 U' R U' R U R' U R2 D' U R U' R' D",
+        },
+        {
+          testName:
+            "displays exactly the same, even if there's a y rotation in the middle of the algorithm that isn't corrected later",
+          pll: PLL.V,
+          algorithmWithRotation: "R' U R' U' (y) R' F' R2 U' R' U R' F R F",
+          // The same algorithm but just modified to move the faces without the rotation
+          algorithmWithoutRotation: "R' U R' U' B' R' B2 U' B' U B' R B R",
+        },
+        {
+          testName:
+            "displays exactly the same, even if there's an x rotation in the beginning of the algorithm that isn't corrected later",
+          pll: PLL.E,
+          algorithmWithRotation: "x U R' U' L U R U' r2 U' R U L U' R' U",
+          // The same algorithm but just modified to move the faces without the rotation
+          algorithmWithoutRotation: "F R' F' L F R F' r2 F' R F L F' R' F",
+        },
+        {
+          testName:
+            "displays exactly the same, even if there's a z rotation in the beginning of the algorithm that isn't corrected later",
+          pll: PLL.V,
+          algorithmWithRotation: "z D' R2 D R2 U R' D' R U' R U R' D R U'",
+          // The same algorithm but just modified to move the faces without the rotation
+          algorithmWithoutRotation: "R' U2 R U2 L U' R' U L' U L U' R U L'",
+        },
+        {
+          testName:
+            "displays exactly the same, even if there's a wide move in the algorithm that isn't corrected later",
+          pll: PLL.Jb,
+          algorithmWithRotation: "R U2 R' U' R U2 L' U R' U' r",
+          // The same algorithm but just used an L move instead of the r move
+          algorithmWithoutRotation: "R U2 R' U' R U2 L' U R' U' L",
+        },
+      ] as {
+        testName: string;
+        pll: PLL;
+        algorithmWithRotation: string;
+        algorithmWithoutRotation: string;
+        only?: boolean;
+      }[]
+    ).forEach(
       /* eslint-enable mocha/no-setup-in-describe */
       ({
         pll,
@@ -1793,15 +1796,17 @@ function pickTargetParametersPageFirstThingNoSideEffects() {
   cy.withOverallNameLogged(
     { message: "pickTargetParametersPageFirstThingNoSideEffects" },
     () => {
-      ([
+      (
         [
-          "errors behave properly at the start",
-          () => {
-            // No errors expected as you enter the page
-            pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+          [
+            "errors behave properly at the start",
+            () => {
+              // No errors expected as you enter the page
+              pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -1814,35 +1819,37 @@ function pickTargetParametersPageNoSideEffectsButScroll() {
   cy.withOverallNameLogged(
     { message: "pickTargetParametersPageNoSideEffectsButScroll" },
     () => {
-      ([
+      (
         [
-          "looks right",
-          () => {
-            elements.assertAllConsumableViaVerticalScroll(
-              elements.container.specifier
-            );
-            cy.assertNoHorizontalScrollbar();
-          },
-        ],
-        [
-          "has correct default values",
-          () => {
-            elements.recognitionTimeInput.get().should("have.value", "2");
-            elements.targetTPSInput.get().should("have.value", "4");
-          },
-        ],
-        [
-          "displays decimal keyboard on mobile devices",
-          () => {
-            elements.recognitionTimeInput
-              .get()
-              .should("have.attr", "inputmode", "decimal");
-            elements.targetTPSInput
-              .get()
-              .should("have.attr", "inputmode", "decimal");
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+          [
+            "looks right",
+            () => {
+              elements.assertAllConsumableViaVerticalScroll(
+                elements.container.specifier
+              );
+              cy.assertNoHorizontalScrollbar();
+            },
+          ],
+          [
+            "has correct default values",
+            () => {
+              elements.recognitionTimeInput.get().should("have.value", "2");
+              elements.targetTPSInput.get().should("have.value", "4");
+            },
+          ],
+          [
+            "displays decimal keyboard on mobile devices",
+            () => {
+              elements.recognitionTimeInput
+                .get()
+                .should("have.attr", "inputmode", "decimal");
+              elements.targetTPSInput
+                .get()
+                .should("have.attr", "inputmode", "decimal");
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -1855,71 +1862,73 @@ function pickTargetParametersPageSideEffectsExceptNavigations() {
   cy.withOverallNameLogged(
     { message: "pickTargetParametersPageSideEffectsExceptNavigations" },
     () => {
-      ([
+      (
         [
-          "correctly inputs decimal inputs including converting commas to periods",
-          () => {
-            elements.recognitionTimeInput
-              .get()
-              .type("{selectall}{backspace}13.5", { delay: 0 })
-              .should("have.value", "13.5");
-            elements.targetTPSInput
-              .get()
-              .type("{selectall}{backspace}23.7", { delay: 0 })
-              .should("have.value", "23.7");
-            elements.recognitionTimeInput
-              .get()
-              .type("{selectall}{backspace}1,3", { delay: 0 })
-              .should("have.value", "1.3");
-            elements.targetTPSInput
-              .get()
-              .type("{selectall}{backspace}2,9", { delay: 0 })
-              .should("have.value", "2.9");
-          },
-        ],
-        [
-          "displays error exactly if there's an invalid number",
-          () => {
-            testInput(
-              elements.recognitionTimeInput,
-              elements.recognitionTimeError
-            );
-            testInput(elements.targetTPSInput, elements.tpsError);
+          [
+            "correctly inputs decimal inputs including converting commas to periods",
+            () => {
+              elements.recognitionTimeInput
+                .get()
+                .type("{selectall}{backspace}13.5", { delay: 0 })
+                .should("have.value", "13.5");
+              elements.targetTPSInput
+                .get()
+                .type("{selectall}{backspace}23.7", { delay: 0 })
+                .should("have.value", "23.7");
+              elements.recognitionTimeInput
+                .get()
+                .type("{selectall}{backspace}1,3", { delay: 0 })
+                .should("have.value", "1.3");
+              elements.targetTPSInput
+                .get()
+                .type("{selectall}{backspace}2,9", { delay: 0 })
+                .should("have.value", "2.9");
+            },
+          ],
+          [
+            "displays error exactly if there's an invalid number",
+            () => {
+              testInput(
+                elements.recognitionTimeInput,
+                elements.recognitionTimeError
+              );
+              testInput(elements.targetTPSInput, elements.tpsError);
 
-            function testInput(
-              inputElement: OurElement,
-              expectedError: OurElement
-            ) {
-              inputElement
-                .get()
-                .type("{selectall}{backspace}abc", { delay: 0 })
-                .blur();
-              expectedError.assertShows();
-              inputElement
-                .get()
-                .type("{selectall}{backspace}3.5", { delay: 0 })
-                .blur();
-              expectedError.assertDoesntExist();
-              inputElement
-                .get()
-                .type("{selectall}{backspace}3.5.5", { delay: 0 })
-                .blur();
-              expectedError.assertShows();
-              inputElement
-                .get()
-                .type("{selectall}{backspace}61.1", { delay: 0 })
-                .blur();
-              expectedError.assertDoesntExist();
-              // Empty input should also error
-              inputElement
-                .get()
-                .type("{selectall}{backspace}", { delay: 0 })
-                .blur();
-              expectedError.assertShows();
-            }
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+              function testInput(
+                inputElement: OurElement,
+                expectedError: OurElement
+              ) {
+                inputElement
+                  .get()
+                  .type("{selectall}{backspace}abc", { delay: 0 })
+                  .blur();
+                expectedError.assertShows();
+                inputElement
+                  .get()
+                  .type("{selectall}{backspace}3.5", { delay: 0 })
+                  .blur();
+                expectedError.assertDoesntExist();
+                inputElement
+                  .get()
+                  .type("{selectall}{backspace}3.5.5", { delay: 0 })
+                  .blur();
+                expectedError.assertShows();
+                inputElement
+                  .get()
+                  .type("{selectall}{backspace}61.1", { delay: 0 })
+                  .blur();
+                expectedError.assertDoesntExist();
+                // Empty input should also error
+                inputElement
+                  .get()
+                  .type("{selectall}{backspace}", { delay: 0 })
+                  .blur();
+                expectedError.assertShows();
+              }
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -2061,38 +2070,40 @@ function newUserStartPageNoSideEffectsButScroll() {
   cy.withOverallNameLogged(
     { message: "newUserStartPageNoSideEffectsButScroll" },
     () => {
-      ([
+      (
         [
-          "looks right",
-          () => {
-            // These elements should all display without scrolling
-            elements.welcomeText.assertShows();
-            elements.welcomeText.assertContainedByWindow();
-            // The rest we accept having to scroll for
-            elements.assertAllConsumableViaVerticalScroll(
-              elements.container.specifier
-            );
+          [
+            "looks right",
+            () => {
+              // These elements should all display without scrolling
+              elements.welcomeText.assertShows();
+              elements.welcomeText.assertContainedByWindow();
+              // The rest we accept having to scroll for
+              elements.assertAllConsumableViaVerticalScroll(
+                elements.container.specifier
+              );
 
-            // A smoke test that we have added some links for the cubing terms
-            elements.container.get().within(() => {
-              cy.get("a").should("have.length.above", 0);
-            });
+              // A smoke test that we have added some links for the cubing terms
+              elements.container.get().within(() => {
+                cy.get("a").should("have.length.above", 0);
+              });
 
-            cy.assertNoHorizontalScrollbar();
-          },
-        ],
-        [
-          "doesn't start test when pressing other keys than space",
-          () => {
-            cy.pressKey(Key.a);
-            elements.container.assertShows();
-            cy.pressKey(Key.x);
-            elements.container.assertShows();
-            cy.pressKey(Key.capsLock);
-            elements.container.assertShows();
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+              cy.assertNoHorizontalScrollbar();
+            },
+          ],
+          [
+            "doesn't start test when pressing other keys than space",
+            () => {
+              cy.pressKey(Key.a);
+              elements.container.assertShows();
+              cy.pressKey(Key.x);
+              elements.container.assertShows();
+              cy.pressKey(Key.capsLock);
+              elements.container.assertShows();
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -2160,46 +2171,48 @@ function recurringUserStartPageNoSideEffectsButScroll() {
   cy.withOverallNameLogged(
     { message: "recurringUserStartPageNoSideEffects" },
     () => {
-      ([
+      (
         [
-          "looks right",
-          () => {
-            // These elements should all display without scrolling
-            [
-              pllTrainerElements.recurringUserStartPage.numCasesTried,
-              pllTrainerElements.recurringUserStartPage.numCasesNotYetTried,
-              pllTrainerElements.recurringUserStartPage.worstThreeCases,
-              pllTrainerElements.recurringUserStartPage.averageTPS,
-              pllTrainerElements.recurringUserStartPage.averageTime,
-            ].forEach((x) => {
-              x.assertShows();
-              x.assertContainedByWindow();
-            });
-            // The rest should just be consumable by scroll
-            elements.assertAllConsumableViaVerticalScroll(
-              elements.container.specifier
-            );
-            cy.assertNoHorizontalScrollbar();
-            // A smoke test that we have added some links for the cubing terms
-            pllTrainerElements.recurringUserStartPage.container
-              .get()
-              .within(() => {
-                cy.get("a").should("have.length.above", 0);
+          [
+            "looks right",
+            () => {
+              // These elements should all display without scrolling
+              [
+                pllTrainerElements.recurringUserStartPage.numCasesTried,
+                pllTrainerElements.recurringUserStartPage.numCasesNotYetTried,
+                pllTrainerElements.recurringUserStartPage.worstThreeCases,
+                pllTrainerElements.recurringUserStartPage.averageTPS,
+                pllTrainerElements.recurringUserStartPage.averageTime,
+              ].forEach((x) => {
+                x.assertShows();
+                x.assertContainedByWindow();
               });
-          },
-        ],
-        [
-          "doesn't start test when pressing other keys than space",
-          () => {
-            cy.pressKey(Key.a);
-            elements.container.assertShows();
-            cy.pressKey(Key.x);
-            elements.container.assertShows();
-            cy.pressKey(Key.capsLock);
-            elements.container.assertShows();
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+              // The rest should just be consumable by scroll
+              elements.assertAllConsumableViaVerticalScroll(
+                elements.container.specifier
+              );
+              cy.assertNoHorizontalScrollbar();
+              // A smoke test that we have added some links for the cubing terms
+              pllTrainerElements.recurringUserStartPage.container
+                .get()
+                .within(() => {
+                  cy.get("a").should("have.length.above", 0);
+                });
+            },
+          ],
+          [
+            "doesn't start test when pressing other keys than space",
+            () => {
+              cy.pressKey(Key.a);
+              elements.container.assertShows();
+              cy.pressKey(Key.x);
+              elements.container.assertShows();
+              cy.pressKey(Key.capsLock);
+              elements.container.assertShows();
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -2245,27 +2258,29 @@ function newCasePageNoSideEffectsButScroll() {
   cy.withOverallNameLogged(
     { message: "newCasePageNoSideEffectsButScroll" },
     () => {
-      ([
+      (
         [
-          "looks right",
-          () => {
-            elements.assertAllShow();
-            cy.assertNoHorizontalScrollbar();
-            cy.assertNoVerticalScrollbar();
-          },
-        ],
-        [
-          "doesn't start test when pressing other keys than space",
-          () => {
-            cy.pressKey(Key.a);
-            elements.container.assertShows();
-            cy.pressKey(Key.x);
-            elements.container.assertShows();
-            cy.pressKey(Key.capsLock);
-            elements.container.assertShows();
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+          [
+            "looks right",
+            () => {
+              elements.assertAllShow();
+              cy.assertNoHorizontalScrollbar();
+              cy.assertNoVerticalScrollbar();
+            },
+          ],
+          [
+            "doesn't start test when pressing other keys than space",
+            () => {
+              cy.pressKey(Key.a);
+              elements.container.assertShows();
+              cy.pressKey(Key.x);
+              elements.container.assertShows();
+              cy.pressKey(Key.capsLock);
+              elements.container.assertShows();
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -2293,23 +2308,25 @@ function getReadyStateNoSideEffectsButScroll() {
   cy.withOverallNameLogged(
     { message: "getReadyStateNoSideEffectsButScroll" },
     () => {
-      ([
+      (
         [
-          "looks right",
-          () => {
-            elements.container.assertShows();
-            elements.getReadyOverlay.assertShows();
-            elements.getReadyExplanation.assertShows();
-            // Since they are behind the overlay they don't actually show, so we just assert
-            // they are contained by the window instead
-            elements.timer.assertContainedByWindow();
-            elements.cubePlaceholder.assertContainedByWindow();
+          [
+            "looks right",
+            () => {
+              elements.container.assertShows();
+              elements.getReadyOverlay.assertShows();
+              elements.getReadyExplanation.assertShows();
+              // Since they are behind the overlay they don't actually show, so we just assert
+              // they are contained by the window instead
+              elements.timer.assertContainedByWindow();
+              elements.cubePlaceholder.assertContainedByWindow();
 
-            cy.assertNoHorizontalScrollbar();
-            cy.assertNoVerticalScrollbar();
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+              cy.assertNoHorizontalScrollbar();
+              cy.assertNoVerticalScrollbar();
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -2328,125 +2345,129 @@ function testRunningWithTimeSideEffects(_: { timerIsCurrentlyAtZero: true }) {
       cy.window()
         .then((window) => new window.Date().getTime())
         .then((startTime) => {
-          ([
+          (
             [
-              "looks right",
-              () => {
-                elements.assertAllShow();
-                cy.assertNoHorizontalScrollbar();
-                cy.assertNoVerticalScrollbar();
-              },
-            ],
-            [
-              "tracks time correctly",
-              () => {
-                const second = 1000;
-                const minute = 60 * second;
-                const hour = 60 * minute;
-                // Should start at 0
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should("have.text", "0.0");
-                // Just testing here that nothing happens with small increments
-                cy.tick(3);
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should("have.text", "0.0");
-                cy.tick(10);
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should("have.text", "0.0");
-                cy.tick(0.2 * second);
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should("have.text", "0.2");
-                cy.tick(1.3 * second);
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should("have.text", "1.5");
-                // Switch to using time jumps as tick calls all setInterval and
-                // request animation frame calbacks in the time interval resulting
-                // in slow tests and excessive cpu usage
+              [
+                "looks right",
+                () => {
+                  elements.assertAllShow();
+                  cy.assertNoHorizontalScrollbar();
+                  cy.assertNoVerticalScrollbar();
+                },
+              ],
+              [
+                "tracks time correctly",
+                () => {
+                  const second = 1000;
+                  const minute = 60 * second;
+                  const hour = 60 * minute;
+                  // Should start at 0
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should("have.text", "0.0");
+                  // Just testing here that nothing happens with small increments
+                  cy.tick(3);
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should("have.text", "0.0");
+                  cy.tick(10);
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should("have.text", "0.0");
+                  cy.tick(0.2 * second);
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should("have.text", "0.2");
+                  cy.tick(1.3 * second);
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should("have.text", "1.5");
+                  // Switch to using time jumps as tick calls all setInterval and
+                  // request animation frame calbacks in the time interval resulting
+                  // in slow tests and excessive cpu usage
 
-                // Checking two digit seconds alone
-                cy.setSystemTimeWithLastFrameTicked(19.2 * second + startTime);
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should("have.text", "19.2");
-                // Checking "normal" minute
-                cy.setSystemTimeWithLastFrameTicked(
-                  3 * minute + 16.8 * second + startTime
-                );
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should("have.text", "3:16.8");
-                // Checking single digit seconds displays the 0 when above a minute
-                cy.setSystemTimeWithLastFrameTicked(
-                  4 * minute + 7.3 * second + startTime
-                );
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should("have.text", "4:07.3");
-                // Check that it shows hours
-                cy.setSystemTimeWithLastFrameTicked(
-                  4 * hour + 38 * minute + 45.7 * second + startTime
-                );
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should("have.text", "4:38:45.7");
-                // Check that it shows double digits for minutes and seconds when in hours
-                cy.setSystemTimeWithLastFrameTicked(
-                  5 * hour + 1 * minute + 4 * second + startTime
-                );
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should("have.text", "5:01:04.0");
-                // Just ensuring a ridiculous amount works too, note we don't break it down to days
-                cy.setSystemTimeWithLastFrameTicked(
-                  234 * hour + 59 * minute + 18.1 * second + startTime
-                );
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should("have.text", "234:59:18.1");
-              },
-            ],
-            [
-              "all looks good also after timer has run for 15 hours",
-              () => {
-                // We set the timer to double digit hours to test the limits of the width, that seems like it could be plausible
-                // for a huge multiblind attempt if we for some reason support that in the future,
-                // but three digit hours seems implausible so no need to test that
-                cy.setSystemTimeWithLastFrameTicked(
-                  1000 * 60 * 60 * 15 + startTime
-                );
-                cy.assertNoHorizontalScrollbar();
-                cy.assertNoVerticalScrollbar();
-                const minDimension = Math.min(
-                  Cypress.config().viewportWidth,
-                  Cypress.config().viewportHeight
-                );
-                pllTrainerElements.testRunning.timer
-                  .get()
-                  .should((timerElement) => {
-                    expect(timerElement.height()).to.be.at.least(
-                      0.2 * minDimension
-                    );
-                  });
-                pllTrainerElements.testRunning.testCase
-                  .assertShows()
-                  .and((cubeElement) => {
-                    expect(
-                      cubeElement.width(),
-                      "cube width to fill at least half of screen"
-                    ).to.be.at.least(minDimension * 0.5 - 1);
-                    expect(
-                      cubeElement.height(),
-                      "cube height to fill at least half of screen"
-                    ).to.be.at.least(minDimension * 0.5 - 1);
-                  });
-              },
-            ],
-          ] as const).forEach(([testDescription, testFunction]) =>
+                  // Checking two digit seconds alone
+                  cy.setSystemTimeWithLastFrameTicked(
+                    19.2 * second + startTime
+                  );
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should("have.text", "19.2");
+                  // Checking "normal" minute
+                  cy.setSystemTimeWithLastFrameTicked(
+                    3 * minute + 16.8 * second + startTime
+                  );
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should("have.text", "3:16.8");
+                  // Checking single digit seconds displays the 0 when above a minute
+                  cy.setSystemTimeWithLastFrameTicked(
+                    4 * minute + 7.3 * second + startTime
+                  );
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should("have.text", "4:07.3");
+                  // Check that it shows hours
+                  cy.setSystemTimeWithLastFrameTicked(
+                    4 * hour + 38 * minute + 45.7 * second + startTime
+                  );
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should("have.text", "4:38:45.7");
+                  // Check that it shows double digits for minutes and seconds when in hours
+                  cy.setSystemTimeWithLastFrameTicked(
+                    5 * hour + 1 * minute + 4 * second + startTime
+                  );
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should("have.text", "5:01:04.0");
+                  // Just ensuring a ridiculous amount works too, note we don't break it down to days
+                  cy.setSystemTimeWithLastFrameTicked(
+                    234 * hour + 59 * minute + 18.1 * second + startTime
+                  );
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should("have.text", "234:59:18.1");
+                },
+              ],
+              [
+                "all looks good also after timer has run for 15 hours",
+                () => {
+                  // We set the timer to double digit hours to test the limits of the width, that seems like it could be plausible
+                  // for a huge multiblind attempt if we for some reason support that in the future,
+                  // but three digit hours seems implausible so no need to test that
+                  cy.setSystemTimeWithLastFrameTicked(
+                    1000 * 60 * 60 * 15 + startTime
+                  );
+                  cy.assertNoHorizontalScrollbar();
+                  cy.assertNoVerticalScrollbar();
+                  const minDimension = Math.min(
+                    Cypress.config().viewportWidth,
+                    Cypress.config().viewportHeight
+                  );
+                  pllTrainerElements.testRunning.timer
+                    .get()
+                    .should((timerElement) => {
+                      expect(timerElement.height()).to.be.at.least(
+                        0.2 * minDimension
+                      );
+                    });
+                  pllTrainerElements.testRunning.testCase
+                    .assertShows()
+                    .and((cubeElement) => {
+                      expect(
+                        cubeElement.width(),
+                        "cube width to fill at least half of screen"
+                      ).to.be.at.least(minDimension * 0.5 - 1);
+                      expect(
+                        cubeElement.height(),
+                        "cube height to fill at least half of screen"
+                      ).to.be.at.least(minDimension * 0.5 - 1);
+                    });
+                },
+              ],
+            ] as const
+          ).forEach(([testDescription, testFunction]) =>
             cy.withOverallNameLogged({ message: testDescription }, testFunction)
           );
         });
@@ -2699,33 +2720,35 @@ function evaluateResultWhileIgnoringTransitionsNoSideEffects() {
   cy.withOverallNameLogged(
     { message: "evaluateResultWhileIgnoringTransitionsNoSideEffects" },
     () => {
-      ([
+      (
         [
-          "looks right",
-          () => {
-            elements.assertAllShow();
-            cy.assertNoHorizontalScrollbar();
-            cy.assertNoVerticalScrollbar();
-          },
-        ],
-        [
-          "doesn't change state when otherwise correct buttons or shortcuts are pressed",
-          () => {
-            elements.correctButton.get().click({ force: true });
-            elements.container.assertShows();
+          [
+            "looks right",
+            () => {
+              elements.assertAllShow();
+              cy.assertNoHorizontalScrollbar();
+              cy.assertNoVerticalScrollbar();
+            },
+          ],
+          [
+            "doesn't change state when otherwise correct buttons or shortcuts are pressed",
+            () => {
+              elements.correctButton.get().click({ force: true });
+              elements.container.assertShows();
 
-            elements.wrongButton.get().click({ force: true });
-            elements.container.assertShows();
+              elements.wrongButton.get().click({ force: true });
+              elements.container.assertShows();
 
-            cy.pressKey(Key.space);
-            elements.container.assertShows();
-            cy.pressKey(Key.w);
-            elements.container.assertShows();
-            cy.pressKey(Key.W);
-            elements.container.assertShows();
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+              cy.pressKey(Key.space);
+              elements.container.assertShows();
+              cy.pressKey(Key.w);
+              elements.container.assertShows();
+              cy.pressKey(Key.W);
+              elements.container.assertShows();
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -2738,33 +2761,35 @@ function evaluateResultAfterIgnoringTransitionsNoSideEffects() {
   cy.withOverallNameLogged(
     { message: "evaluateResultAfterIgnoringTransitionsNoSideEffects" },
     () => {
-      ([
+      (
         [
-          "looks right",
-          () => {
-            elements.assertAllShow();
-            cy.assertNoHorizontalScrollbar();
-            cy.assertNoVerticalScrollbar();
-          },
-        ],
-        [
-          "doesn't change state when pressing other keys than space and W",
-          () => {
-            [Key.leftCtrl, Key.five, Key.l].forEach((key) => {
-              cy.withOverallNameLogged(
-                {
-                  displayName: "TESTING KEY",
-                  message: "'" + getKeyValue(key) + "'",
-                },
-                () => {
-                  cy.pressKey(key, { log: false });
-                  elements.container.assertShows();
-                }
-              );
-            });
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+          [
+            "looks right",
+            () => {
+              elements.assertAllShow();
+              cy.assertNoHorizontalScrollbar();
+              cy.assertNoVerticalScrollbar();
+            },
+          ],
+          [
+            "doesn't change state when pressing other keys than space and W",
+            () => {
+              [Key.leftCtrl, Key.five, Key.l].forEach((key) => {
+                cy.withOverallNameLogged(
+                  {
+                    displayName: "TESTING KEY",
+                    message: "'" + getKeyValue(key) + "'",
+                  },
+                  () => {
+                    cy.pressKey(key, { log: false });
+                    elements.container.assertShows();
+                  }
+                );
+              });
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -2859,66 +2884,68 @@ function evaluateResultTimeDependantNoSideEffects7(_: { timeInMs: 45296780 }) {
   cy.withOverallNameLogged(
     { message: "evaluateResultTimeDependantNoSideEffects7" },
     () => {
-      ([
+      (
         [
-          "displays the very large time correctly",
-          () => {
-            elements.timeResult.get().should("have.text", "12:34:56.78");
-          },
-        ],
-        [
-          "displays everything nicely and correctly even with very large time",
-          () => {
-            cy.assertNoHorizontalScrollbar();
-            cy.assertNoVerticalScrollbar();
-            const minDimension = Math.min(
-              Cypress.config().viewportWidth,
-              Cypress.config().viewportHeight
-            );
-            [elements.expectedCubeFront, elements.expectedCubeBack].forEach(
-              (cubeElement) =>
-                cubeElement.get().should((jqueryCube) => {
-                  expect(
-                    jqueryCube.width(),
-                    "cube width to fill at least a quarter of min dimension"
-                  ).to.be.at.least(minDimension / 4);
-                  expect(
-                    jqueryCube.height(),
-                    "cube height to fill at least a quarter of min dimension"
-                  ).to.be.at.least(minDimension / 4);
-                  expect(
-                    jqueryCube.height(),
-                    "cube height to fill at most half of screen height"
-                  ).to.be.at.most(Cypress.config().viewportHeight / 2);
-                })
-            );
-            elements.timeResult.get().should((timerElement) => {
-              expect(
-                timerElement.height(),
-                "time result height at least 10% of min dimension"
-              ).to.be.at.least(minDimension / 10);
-              expect(
-                timerElement.height(),
-                "time result at most a third of screen height"
-              ).to.be.at.most(Cypress.config().viewportHeight / 3);
-            });
-            [elements.correctButton, elements.wrongButton].forEach(
-              (buttonGetter) => {
-                buttonGetter.get().should((buttonElement) => {
-                  expect(
-                    buttonElement.height(),
-                    "button height at least 5% of min dimension"
-                  ).to.be.at.least(minDimension / 20);
-                  expect(
-                    buttonElement.height(),
-                    "button height at most a third of screen height"
-                  ).to.be.at.most(Cypress.config().viewportHeight / 3);
-                });
-              }
-            );
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+          [
+            "displays the very large time correctly",
+            () => {
+              elements.timeResult.get().should("have.text", "12:34:56.78");
+            },
+          ],
+          [
+            "displays everything nicely and correctly even with very large time",
+            () => {
+              cy.assertNoHorizontalScrollbar();
+              cy.assertNoVerticalScrollbar();
+              const minDimension = Math.min(
+                Cypress.config().viewportWidth,
+                Cypress.config().viewportHeight
+              );
+              [elements.expectedCubeFront, elements.expectedCubeBack].forEach(
+                (cubeElement) =>
+                  cubeElement.get().should((jqueryCube) => {
+                    expect(
+                      jqueryCube.width(),
+                      "cube width to fill at least a quarter of min dimension"
+                    ).to.be.at.least(minDimension / 4);
+                    expect(
+                      jqueryCube.height(),
+                      "cube height to fill at least a quarter of min dimension"
+                    ).to.be.at.least(minDimension / 4);
+                    expect(
+                      jqueryCube.height(),
+                      "cube height to fill at most half of screen height"
+                    ).to.be.at.most(Cypress.config().viewportHeight / 2);
+                  })
+              );
+              elements.timeResult.get().should((timerElement) => {
+                expect(
+                  timerElement.height(),
+                  "time result height at least 10% of min dimension"
+                ).to.be.at.least(minDimension / 10);
+                expect(
+                  timerElement.height(),
+                  "time result at most a third of screen height"
+                ).to.be.at.most(Cypress.config().viewportHeight / 3);
+              });
+              [elements.correctButton, elements.wrongButton].forEach(
+                (buttonGetter) => {
+                  buttonGetter.get().should((buttonElement) => {
+                    expect(
+                      buttonElement.height(),
+                      "button height at least 5% of min dimension"
+                    ).to.be.at.least(minDimension / 20);
+                    expect(
+                      buttonElement.height(),
+                      "button height at most a third of screen height"
+                    ).to.be.at.most(Cypress.config().viewportHeight / 3);
+                  });
+                }
+              );
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -2983,24 +3010,26 @@ function pickAlgorithmPageFirstThingNoSideEffects() {
   cy.withOverallNameLogged(
     { message: "pickAlgorithmPageFirstThingNoSideEffects" },
     () => {
-      ([
+      (
         [
-          "auto focuses the algorithm input",
-          () => {
-            elements.algorithmInput.assertIsFocused();
-          },
-        ],
-        [
-          "errors behave properly at the start",
-          () => {
-            // No errors expected as you enter the page
-            pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
-            // Should require input if pressing enter right away
-            elements.algorithmInput.get().type("{enter}");
-            elements.inputRequiredError.assertShows();
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+          [
+            "auto focuses the algorithm input",
+            () => {
+              elements.algorithmInput.assertIsFocused();
+            },
+          ],
+          [
+            "errors behave properly at the start",
+            () => {
+              // No errors expected as you enter the page
+              pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
+              // Should require input if pressing enter right away
+              elements.algorithmInput.get().type("{enter}");
+              elements.inputRequiredError.assertShows();
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -3012,293 +3041,294 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
   cy.withOverallNameLogged(
     { message: "pickAlgorithmPageSideEffectsExceptNavigations" },
     () => {
-      ([
+      (
         [
-          "looks right",
-          () => {
-            elements.assertAllShow();
-            // Produce a very long error and assert it still displays, and that it didn't
-            // trigger any scrollbars
-            pllTrainerElements.pickAlgorithmPage.algorithmInput
-              .get()
-              .type("U B F2 A ".repeat(20) + "{enter}", { delay: 0 });
-            pllTrainerElements.pickAlgorithmPage.invalidTurnableError.assertShows();
-            cy.assertNoHorizontalScrollbar();
-            cy.assertNoVerticalScrollbar();
-
-            // The text should somehow communicate which pll we are picking an algorithm for
-            cy.getCurrentTestCase().then(([, pll]) =>
-              pllTrainerElements.pickAlgorithmPage.explanationText
+          [
+            "looks right",
+            () => {
+              elements.assertAllShow();
+              // Produce a very long error and assert it still displays, and that it didn't
+              // trigger any scrollbars
+              pllTrainerElements.pickAlgorithmPage.algorithmInput
                 .get()
-                .should("contain.text", pllToPllLetters[pll])
-            );
-          },
-        ],
-        [
-          "has correct links",
-          () => {
-            type Aliases = {
-              firstExpertLink: string;
-            };
-            cy.getCurrentTestCase().then((currentCase) => {
-              // The page should have an AlgDB link to the case being picked for
-              testAlgdbLink(currentCase[1]);
-              // The page should have any type of expert guidance link, any further assertions
-              // would make for too brittle tests
-              pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
-                .get()
-                .should((link) => {
-                  expect(link.prop("tagName")).to.equal("A");
-                  // Assert it opens in new tab
-                  expect(link.attr("target"), "target").to.equal("_blank");
-                })
-                .then((link) => {
-                  const url =
-                    link.attr("href") ||
-                    "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
-                  // Check that the link actually works
-                  return cy
-                    .request(url)
-                    .its("status")
-                    .should("be.at.least", 200)
-                    .and("be.lessThan", 300)
-                    .then(() => url);
-                })
-                .setAlias<Aliases, "firstExpertLink">("firstExpertLink");
+                .type("U B F2 A ".repeat(20) + "{enter}", { delay: 0 });
+              pllTrainerElements.pickAlgorithmPage.invalidTurnableError.assertShows();
+              cy.assertNoHorizontalScrollbar();
+              cy.assertNoVerticalScrollbar();
 
-              // We want to change the algorithm to something different so ensuring
-              // here that we don't pick the same one again
-              let differentTestCase: [AUF, PLL, AUF];
-              if (currentCase[1] === PLL.Ga) {
-                differentTestCase = [AUF.U, PLL.Ja, AUF.U2];
-              } else {
-                differentTestCase = [AUF.U, PLL.Ga, AUF.U2];
-              }
-              cy.setCurrentTestCase(differentTestCase);
-
-              testAlgdbLink(differentTestCase[1]);
-              pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
-                .get()
-                .should((link) => {
-                  expect(link.prop("tagName")).to.equal("A");
-                  // Assert it opens in new tab
-                  expect(link.attr("target"), "target").to.equal("_blank");
-                })
-                .then((link) => {
-                  const url =
-                    link.attr("href") ||
-                    "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
-                  // Check that the link actually works
-                  cy.request(url)
-                    .its("status")
-                    .should("be.at.least", 200)
-                    .and("be.lessThan", 300);
-                  return cy.getAliases<Aliases>().then((aliases) => ({
-                    previous: aliases.firstExpertLink,
-                    current: url,
-                  }));
-                })
-                .should(({ previous, current }) => {
-                  assertNonFalsyStringsDifferent(
-                    previous,
-                    current,
-                    "first (previous url) is different from second (current url) after pll case change"
-                  );
-                });
-
-              // Make sure to reset the test case so we don't have side effects
-              cy.setCurrentTestCase(currentCase);
-
-              function testAlgdbLink(currentPLL: PLL) {
-                pllTrainerElements.pickAlgorithmPage.algDbLink
+              // The text should somehow communicate which pll we are picking an algorithm for
+              cy.getCurrentTestCase().then(([, pll]) =>
+                pllTrainerElements.pickAlgorithmPage.explanationText
+                  .get()
+                  .should("contain.text", pllToPllLetters[pll])
+              );
+            },
+          ],
+          [
+            "has correct links",
+            () => {
+              type Aliases = {
+                firstExpertLink: string;
+              };
+              cy.getCurrentTestCase().then((currentCase) => {
+                // The page should have an AlgDB link to the case being picked for
+                testAlgdbLink(currentCase[1]);
+                // The page should have any type of expert guidance link, any further assertions
+                // would make for too brittle tests
+                pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
                   .get()
                   .should((link) => {
                     expect(link.prop("tagName")).to.equal("A");
                     // Assert it opens in new tab
                     expect(link.attr("target"), "target").to.equal("_blank");
-
-                    expect(link.prop("href"), "href")
-                      .to.be.a("string")
-                      .and.contain("algdb.net")
-                      .and.satisfy(
-                        (href: string) =>
-                          href
-                            .toLowerCase()
-                            .endsWith(
-                              "/" + pllToPllLetters[currentPLL].toLowerCase()
-                            ),
-                        "ends with /" +
-                          pllToPllLetters[currentPLL].toLowerCase()
-                      );
                   })
                   .then((link) => {
-                    // Check that the link actually works
-                    cy.request(
+                    const url =
                       link.attr("href") ||
-                        "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
-                    )
+                      "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
+                    // Check that the link actually works
+                    return cy
+                      .request(url)
+                      .its("status")
+                      .should("be.at.least", 200)
+                      .and("be.lessThan", 300)
+                      .then(() => url);
+                  })
+                  .setAlias<Aliases, "firstExpertLink">("firstExpertLink");
+
+                // We want to change the algorithm to something different so ensuring
+                // here that we don't pick the same one again
+                let differentTestCase: [AUF, PLL, AUF];
+                if (currentCase[1] === PLL.Ga) {
+                  differentTestCase = [AUF.U, PLL.Ja, AUF.U2];
+                } else {
+                  differentTestCase = [AUF.U, PLL.Ga, AUF.U2];
+                }
+                cy.setCurrentTestCase(differentTestCase);
+
+                testAlgdbLink(differentTestCase[1]);
+                pllTrainerElements.pickAlgorithmPage.expertPLLGuidanceLink
+                  .get()
+                  .should((link) => {
+                    expect(link.prop("tagName")).to.equal("A");
+                    // Assert it opens in new tab
+                    expect(link.attr("target"), "target").to.equal("_blank");
+                  })
+                  .then((link) => {
+                    const url =
+                      link.attr("href") ||
+                      "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
+                    // Check that the link actually works
+                    cy.request(url)
                       .its("status")
                       .should("be.at.least", 200)
                       .and("be.lessThan", 300);
+                    return cy.getAliases<Aliases>().then((aliases) => ({
+                      previous: aliases.firstExpertLink,
+                      current: url,
+                    }));
+                  })
+                  .should(({ previous, current }) => {
+                    assertNonFalsyStringsDifferent(
+                      previous,
+                      current,
+                      "first (previous url) is different from second (current url) after pll case change"
+                    );
                   });
-              }
-            });
-          },
-        ],
-        [
-          "all errors display exactly when expected, don't update unless an attempt at submitting has occurred, have the correct text, and stay on the page despite submit action when an error is expected",
-          () => {
-            let useEnterKeyToSubmit = true;
-            function clearInputThenTypeAndSubmit(input: string): void {
-              elements.algorithmInput
-                .get()
-                .type(`{selectall}{backspace}${input}`, { delay: 0 });
 
-              if (useEnterKeyToSubmit) {
-                elements.algorithmInput.get().type("{enter}", { delay: 0 });
-              } else {
-                elements.submitButton.get().click();
-              }
+                // Make sure to reset the test case so we don't have side effects
+                cy.setCurrentTestCase(currentCase);
 
-              useEnterKeyToSubmit = !useEnterKeyToSubmit;
-            }
+                function testAlgdbLink(currentPLL: PLL) {
+                  pllTrainerElements.pickAlgorithmPage.algDbLink
+                    .get()
+                    .should((link) => {
+                      expect(link.prop("tagName")).to.equal("A");
+                      // Assert it opens in new tab
+                      expect(link.attr("target"), "target").to.equal("_blank");
 
-            // Should require input if input is empty
-            clearInputThenTypeAndSubmit("");
-            elements.inputRequiredError.assertShows();
-
-            // Should no longer require input after input
-            elements.algorithmInput.get().type("asdfgfda{enter}");
-            elements.inputRequiredError.assertDoesntExist();
-
-            // Should require input again after deleting the input
-            clearInputThenTypeAndSubmit("");
-            elements.inputRequiredError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({ name: "inputRequiredError" });
-
-            // Errors informatively when invalid turnable encountered
-            clearInputThenTypeAndSubmit("U B A");
-            elements.invalidTurnableError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({ name: "invalidTurnableError" });
-
-            // Errors informatively when invalid turn length encountered
-            clearInputThenTypeAndSubmit("U4");
-            elements.invalidTurnLengthError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({ name: "invalidTurnLengthError" });
-
-            // Errors informatively when repeated turnable encountered
-            // And doesn't update the error until the submit action
-            elements.algorithmInput
-              .get()
-              .type("{selectall}{backspace}U2U", { delay: 0 });
-            // Still old error before submit
-            elements.invalidTurnLengthError.assertShows();
-            elements.submitButton.get().click();
-            // Error now updated after submit action
-            elements.repeatedTurnableError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({ name: "repeatedTurnableError" });
-
-            // Errors informatively when mixed wide move styles encountered
-            // And doesn't update the error until the submit action, this time using enter key
-            elements.algorithmInput
-              .get()
-              .type("{selectall}{backspace}u B Rw", { delay: 0 });
-            // Still old error before submit
-            elements.repeatedTurnableError.assertShows();
-            elements.algorithmInput.get().type("{enter}", { delay: 0 });
-            // Error now updated after submit action
-            elements.wideMoveStylesMixedError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({ name: "wideMoveStylesMixedError" });
-
-            // Errors informatively when space between turnable and apostrophe encountered
-            clearInputThenTypeAndSubmit("U '");
-            elements.turnWouldWorkWithoutInterruptionError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({
-                name: "turnWouldWorkWithoutInterruptionError -- space between",
+                      expect(link.prop("href"), "href")
+                        .to.be.a("string")
+                        .and.contain("algdb.net")
+                        .and.satisfy(
+                          (href: string) =>
+                            href
+                              .toLowerCase()
+                              .endsWith(
+                                "/" + pllToPllLetters[currentPLL].toLowerCase()
+                              ),
+                          "ends with /" +
+                            pllToPllLetters[currentPLL].toLowerCase()
+                        );
+                    })
+                    .then((link) => {
+                      // Check that the link actually works
+                      cy.request(
+                        link.attr("href") ||
+                          "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
+                      )
+                        .its("status")
+                        .should("be.at.least", 200)
+                        .and("be.lessThan", 300);
+                    });
+                }
               });
+            },
+          ],
+          [
+            "all errors display exactly when expected, don't update unless an attempt at submitting has occurred, have the correct text, and stay on the page despite submit action when an error is expected",
+            () => {
+              let useEnterKeyToSubmit = true;
+              function clearInputThenTypeAndSubmit(input: string): void {
+                elements.algorithmInput
+                  .get()
+                  .type(`{selectall}{backspace}${input}`, { delay: 0 });
 
-            // Errors informatively when apostrophe on wrong side of length encountered
-            clearInputThenTypeAndSubmit("U'2");
-            elements.apostropheWrongSideOfLengthError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({ name: "apostropheWrongSideOfLengthError" });
+                if (useEnterKeyToSubmit) {
+                  elements.algorithmInput.get().type("{enter}", { delay: 0 });
+                } else {
+                  elements.submitButton.get().click();
+                }
 
-            // Errors informatively when parenthesis between turnable and apostrophe encountered
-            clearInputThenTypeAndSubmit("(U)'");
-            elements.turnWouldWorkWithoutInterruptionError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({
-                name:
-                  "turnWouldWorkWithoutInterruptionError -- parenthesis between",
-              });
+                useEnterKeyToSubmit = !useEnterKeyToSubmit;
+              }
 
-            // Errors informatively when unclosed parenthesis encountered
-            clearInputThenTypeAndSubmit("U ( B F' D2");
-            elements.unclosedParenthesisError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({ name: "unclosedParenthesisError" });
+              // Should require input if input is empty
+              clearInputThenTypeAndSubmit("");
+              elements.inputRequiredError.assertShows();
 
-            // Errors informatively when unmatched closing parenthesis encountered
-            clearInputThenTypeAndSubmit("U B F' ) D2");
-            elements.unmatchedClosingParenthesisError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({ name: "unmatchedClosingParenthesisError" });
+              // Should no longer require input after input
+              elements.algorithmInput.get().type("asdfgfda{enter}");
+              elements.inputRequiredError.assertDoesntExist();
 
-            // Errors informatively when nested parentheses encountered
-            clearInputThenTypeAndSubmit("( U (B F') ) D2");
-            elements.nestedParenthesesError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({ name: "nestedParenthesesError" });
-
-            // Errors informatively when invalid symbol encountered
-            clearInputThenTypeAndSubmit("( U B F') % D2");
-            elements.invalidSymbolError
-              .get()
-              .should("be.visible")
-              .invoke("text")
-              .snapshot({ name: "invalidSymbolError" });
-
-            // Errors informatively when an algorithm that doesn't match the case is encountered
-            cy.getCurrentTestCase().then(([, correctPLL]) => {
-              const wrongPLL = correctPLL === PLL.Ga ? PLL.Gb : PLL.Ga;
-              clearInputThenTypeAndSubmit(pllToAlgorithmString[wrongPLL]);
-              elements.algorithmDoesntMatchCaseError
+              // Should require input again after deleting the input
+              clearInputThenTypeAndSubmit("");
+              elements.inputRequiredError
                 .get()
                 .should("be.visible")
                 .invoke("text")
-                .snapshot({ name: "algorithmDoesntMatchCaseError" });
-            });
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+                .snapshot({ name: "inputRequiredError" });
+
+              // Errors informatively when invalid turnable encountered
+              clearInputThenTypeAndSubmit("U B A");
+              elements.invalidTurnableError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({ name: "invalidTurnableError" });
+
+              // Errors informatively when invalid turn length encountered
+              clearInputThenTypeAndSubmit("U4");
+              elements.invalidTurnLengthError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({ name: "invalidTurnLengthError" });
+
+              // Errors informatively when repeated turnable encountered
+              // And doesn't update the error until the submit action
+              elements.algorithmInput
+                .get()
+                .type("{selectall}{backspace}U2U", { delay: 0 });
+              // Still old error before submit
+              elements.invalidTurnLengthError.assertShows();
+              elements.submitButton.get().click();
+              // Error now updated after submit action
+              elements.repeatedTurnableError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({ name: "repeatedTurnableError" });
+
+              // Errors informatively when mixed wide move styles encountered
+              // And doesn't update the error until the submit action, this time using enter key
+              elements.algorithmInput
+                .get()
+                .type("{selectall}{backspace}u B Rw", { delay: 0 });
+              // Still old error before submit
+              elements.repeatedTurnableError.assertShows();
+              elements.algorithmInput.get().type("{enter}", { delay: 0 });
+              // Error now updated after submit action
+              elements.wideMoveStylesMixedError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({ name: "wideMoveStylesMixedError" });
+
+              // Errors informatively when space between turnable and apostrophe encountered
+              clearInputThenTypeAndSubmit("U '");
+              elements.turnWouldWorkWithoutInterruptionError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({
+                  name: "turnWouldWorkWithoutInterruptionError -- space between",
+                });
+
+              // Errors informatively when apostrophe on wrong side of length encountered
+              clearInputThenTypeAndSubmit("U'2");
+              elements.apostropheWrongSideOfLengthError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({ name: "apostropheWrongSideOfLengthError" });
+
+              // Errors informatively when parenthesis between turnable and apostrophe encountered
+              clearInputThenTypeAndSubmit("(U)'");
+              elements.turnWouldWorkWithoutInterruptionError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({
+                  name: "turnWouldWorkWithoutInterruptionError -- parenthesis between",
+                });
+
+              // Errors informatively when unclosed parenthesis encountered
+              clearInputThenTypeAndSubmit("U ( B F' D2");
+              elements.unclosedParenthesisError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({ name: "unclosedParenthesisError" });
+
+              // Errors informatively when unmatched closing parenthesis encountered
+              clearInputThenTypeAndSubmit("U B F' ) D2");
+              elements.unmatchedClosingParenthesisError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({ name: "unmatchedClosingParenthesisError" });
+
+              // Errors informatively when nested parentheses encountered
+              clearInputThenTypeAndSubmit("( U (B F') ) D2");
+              elements.nestedParenthesesError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({ name: "nestedParenthesesError" });
+
+              // Errors informatively when invalid symbol encountered
+              clearInputThenTypeAndSubmit("( U B F') % D2");
+              elements.invalidSymbolError
+                .get()
+                .should("be.visible")
+                .invoke("text")
+                .snapshot({ name: "invalidSymbolError" });
+
+              // Errors informatively when an algorithm that doesn't match the case is encountered
+              cy.getCurrentTestCase().then(([, correctPLL]) => {
+                const wrongPLL = correctPLL === PLL.Ga ? PLL.Gb : PLL.Ga;
+                clearInputThenTypeAndSubmit(pllToAlgorithmString[wrongPLL]);
+                elements.algorithmDoesntMatchCaseError
+                  .get()
+                  .should("be.visible")
+                  .invoke("text")
+                  .snapshot({ name: "algorithmDoesntMatchCaseError" });
+              });
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -3338,17 +3368,11 @@ function typeInAlgorithm(currentPLL: PLL) {
   if (postAUF === undefined) {
     throw new Error("No postAUF found");
   }
-  const allRotations = [
-    "",
-    "x",
-    "x2",
-    "x'",
-    "z",
-    "z'",
-  ].flatMap((determineUpFace) =>
-    ["", "y", "y2", "y'"].map(
-      (determineFrontFace) => determineUpFace + " " + determineFrontFace
-    )
+  const allRotations = ["", "x", "x2", "x'", "z", "z'"].flatMap(
+    (determineUpFace) =>
+      ["", "y", "y2", "y'"].map(
+        (determineFrontFace) => determineUpFace + " " + determineFrontFace
+      )
   );
   const rotation =
     allRotations[Math.floor(Math.random() * allRotations.length)];
@@ -3380,28 +3404,30 @@ function typeInAlgorithm(currentPLL: PLL) {
 function correctPageNoSideEffects() {
   cy.withOverallNameLogged({ message: "correctPageNoSideEffects" }, () => {
     const elements = pllTrainerElements.correctPage;
-    ([
+    (
       [
-        "looks right",
-        () => {
-          elements.assertAllShow();
-          cy.assertNoHorizontalScrollbar();
-          cy.assertNoVerticalScrollbar();
-          assertFunctioningFeedbackButtonShows();
-        },
-      ],
-      [
-        "doesn't start test when pressing keys other than space",
-        () => {
-          cy.pressKey(Key.a);
-          elements.container.assertShows();
-          cy.pressKey(Key.x);
-          elements.container.assertShows();
-          cy.pressKey(Key.capsLock);
-          elements.container.assertShows();
-        },
-      ],
-    ] as const).forEach(([testDescription, testFunction]) =>
+        [
+          "looks right",
+          () => {
+            elements.assertAllShow();
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
+            assertFunctioningFeedbackButtonShows();
+          },
+        ],
+        [
+          "doesn't start test when pressing keys other than space",
+          () => {
+            cy.pressKey(Key.a);
+            elements.container.assertShows();
+            cy.pressKey(Key.x);
+            elements.container.assertShows();
+            cy.pressKey(Key.capsLock);
+            elements.container.assertShows();
+          },
+        ],
+      ] as const
+    ).forEach(([testDescription, testFunction]) =>
       cy.withOverallNameLogged({ message: testDescription }, testFunction)
     );
   });
@@ -3435,51 +3461,53 @@ function typeOfWrongPageNoSideEffects({
 }) {
   const elements = pllTrainerElements.typeOfWrongPage;
   cy.withOverallNameLogged({ message: "typeOfWrongPageNoSideEffects" }, () => {
-    ([
+    (
       [
-        "looks right",
-        () => {
-          // Make sure all elements present and no scrollbars
-          elements.assertAllShow();
-          cy.assertNoHorizontalScrollbar();
-          cy.assertNoVerticalScrollbar();
+        [
+          "looks right",
+          () => {
+            // Make sure all elements present and no scrollbars
+            elements.assertAllShow();
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
 
-          // Check all the cubes look right
+            // Check all the cubes look right
 
-          // The cube for 'no moves applied' should be the same state as the previous/original expected cube state
-          assertCubeMatchesStateString(
-            originalExpectedCubeFront,
-            elements.noMoveCubeStateFront
-          );
-          assertCubeMatchesStateString(
-            originalExpectedCubeBack,
-            elements.noMoveCubeStateBack
-          );
-          // The cube for 'nearly there' should look like the expected state if you had
-          // solved the case correctly
-          assertCubeMatchesStateString(
-            nextExpectedCubeFront,
-            elements.nearlyThereCubeStateFront
-          );
-          assertCubeMatchesStateString(
-            nextExpectedCubeBack,
-            elements.nearlyThereCubeStateBack
-          );
-        },
-      ],
-      [
-        "doesn't start test when pressing arbitrary keys",
-        () => {
-          // on purpose use some of the ones we often use like space and w
-          [Key.space, Key.w, Key.W, Key.five, Key.d, Key.shift].forEach(
-            (key) => {
-              cy.pressKey(key);
-              elements.container.assertShows();
-            }
-          );
-        },
-      ],
-    ] as const).forEach(([testDescription, testFunction]) =>
+            // The cube for 'no moves applied' should be the same state as the previous/original expected cube state
+            assertCubeMatchesStateString(
+              originalExpectedCubeFront,
+              elements.noMoveCubeStateFront
+            );
+            assertCubeMatchesStateString(
+              originalExpectedCubeBack,
+              elements.noMoveCubeStateBack
+            );
+            // The cube for 'nearly there' should look like the expected state if you had
+            // solved the case correctly
+            assertCubeMatchesStateString(
+              nextExpectedCubeFront,
+              elements.nearlyThereCubeStateFront
+            );
+            assertCubeMatchesStateString(
+              nextExpectedCubeBack,
+              elements.nearlyThereCubeStateBack
+            );
+          },
+        ],
+        [
+          "doesn't start test when pressing arbitrary keys",
+          () => {
+            // on purpose use some of the ones we often use like space and w
+            [Key.space, Key.w, Key.W, Key.five, Key.d, Key.shift].forEach(
+              (key) => {
+                cy.pressKey(key);
+                elements.container.assertShows();
+              }
+            );
+          },
+        ],
+      ] as const
+    ).forEach(([testDescription, testFunction]) =>
       cy.withOverallNameLogged({ message: testDescription }, testFunction)
     );
   });
@@ -3560,91 +3588,93 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
   cy.withOverallNameLogged(
     { message: "algorithmDrillerExplanationPageNoSideEffectsButScroll" },
     () => {
-      ([
+      (
         [
-          "looks right",
-          () => {
-            elements.assertAllConsumableViaVerticalScroll(
-              elements.container.specifier
-            );
-            assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
-            cy.assertNoHorizontalScrollbar();
-          },
-        ],
-        [
-          "doesn't start test when pressing keys other than space",
-          () => {
-            cy.pressKey(Key.a);
-            elements.container.assertShows();
-            cy.pressKey(Key.x);
-            elements.container.assertShows();
-            cy.pressKey(Key.capsLock);
-            elements.container.assertShows();
-          },
-        ],
-        [
-          "the algorithm is displayed as expected and without any rotations appended to the end of it",
-          () => {
-            cy.getApplicationState().then((originalApplicationState) => {
-              cy.setCurrentTestCase([AUF.U, PLL.Gb, AUF.UPrime]);
-              const gbAlgorithmEndingOneYRotationAway =
-                "R' Dw' F R2 Uw R' U R U' R Uw' R2";
-              cy.setPLLAlgorithm(PLL.Gb, gbAlgorithmEndingOneYRotationAway);
-              elements.algorithmToDrill
-                .get()
-                .invoke("text")
-                .then(sanitizeAlgorithm)
-                .should(
-                  "equal",
-                  sanitizeAlgorithm(
-                    "U" + gbAlgorithmEndingOneYRotationAway + "U'"
-                  )
-                );
-
-              cy.setCurrentTestCase([AUF.U2, PLL.Aa, AUF.UPrime]);
-              const AaAlgorithmEndingOneXRotationAway =
-                "Lw' U R' D2 R U' R' D2 R2";
-              cy.setPLLAlgorithm(PLL.Aa, AaAlgorithmEndingOneXRotationAway);
-              elements.algorithmToDrill
-                .get()
-                .invoke("text")
-                .then(sanitizeAlgorithm)
-                .should(
-                  "equal",
-                  // Note that the last AUF here becomes a B move instead of rotating and
-                  // doing a U move
-                  sanitizeAlgorithm(
-                    "U2" + AaAlgorithmEndingOneXRotationAway + "B'"
-                  )
-                );
-
-              // Try one here with no AUFs and also being a z rotation away instead of x or y
-              cy.setCurrentTestCase([AUF.none, PLL.Ra, AUF.none]);
-              const RaAlgorithmEndingOneZPrimeRotationAway =
-                "L U2 L' U2 L F' L' U' L U L Bw D2";
-              cy.setPLLAlgorithm(
-                PLL.Ra,
-                RaAlgorithmEndingOneZPrimeRotationAway
+          [
+            "looks right",
+            () => {
+              elements.assertAllConsumableViaVerticalScroll(
+                elements.container.specifier
               );
-              elements.algorithmToDrill
-                .get()
-                .invoke("text")
-                .then(sanitizeAlgorithm)
-                .should(
-                  "equal",
-                  sanitizeAlgorithm(RaAlgorithmEndingOneZPrimeRotationAway)
+              assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
+              cy.assertNoHorizontalScrollbar();
+            },
+          ],
+          [
+            "doesn't start test when pressing keys other than space",
+            () => {
+              cy.pressKey(Key.a);
+              elements.container.assertShows();
+              cy.pressKey(Key.x);
+              elements.container.assertShows();
+              cy.pressKey(Key.capsLock);
+              elements.container.assertShows();
+            },
+          ],
+          [
+            "the algorithm is displayed as expected and without any rotations appended to the end of it",
+            () => {
+              cy.getApplicationState().then((originalApplicationState) => {
+                cy.setCurrentTestCase([AUF.U, PLL.Gb, AUF.UPrime]);
+                const gbAlgorithmEndingOneYRotationAway =
+                  "R' Dw' F R2 Uw R' U R U' R Uw' R2";
+                cy.setPLLAlgorithm(PLL.Gb, gbAlgorithmEndingOneYRotationAway);
+                elements.algorithmToDrill
+                  .get()
+                  .invoke("text")
+                  .then(sanitizeAlgorithm)
+                  .should(
+                    "equal",
+                    sanitizeAlgorithm(
+                      "U" + gbAlgorithmEndingOneYRotationAway + "U'"
+                    )
+                  );
+
+                cy.setCurrentTestCase([AUF.U2, PLL.Aa, AUF.UPrime]);
+                const AaAlgorithmEndingOneXRotationAway =
+                  "Lw' U R' D2 R U' R' D2 R2";
+                cy.setPLLAlgorithm(PLL.Aa, AaAlgorithmEndingOneXRotationAway);
+                elements.algorithmToDrill
+                  .get()
+                  .invoke("text")
+                  .then(sanitizeAlgorithm)
+                  .should(
+                    "equal",
+                    // Note that the last AUF here becomes a B move instead of rotating and
+                    // doing a U move
+                    sanitizeAlgorithm(
+                      "U2" + AaAlgorithmEndingOneXRotationAway + "B'"
+                    )
+                  );
+
+                // Try one here with no AUFs and also being a z rotation away instead of x or y
+                cy.setCurrentTestCase([AUF.none, PLL.Ra, AUF.none]);
+                const RaAlgorithmEndingOneZPrimeRotationAway =
+                  "L U2 L' U2 L F' L' U' L U L Bw D2";
+                cy.setPLLAlgorithm(
+                  PLL.Ra,
+                  RaAlgorithmEndingOneZPrimeRotationAway
                 );
+                elements.algorithmToDrill
+                  .get()
+                  .invoke("text")
+                  .then(sanitizeAlgorithm)
+                  .should(
+                    "equal",
+                    sanitizeAlgorithm(RaAlgorithmEndingOneZPrimeRotationAway)
+                  );
 
-              function sanitizeAlgorithm(algorithm: string): string {
-                return algorithm.replace(/\(|\)|\s/g, "");
-              }
+                function sanitizeAlgorithm(algorithm: string): string {
+                  return algorithm.replace(/\(|\)|\s/g, "");
+                }
 
-              // Undo all the side effects we just did
-              cy.setApplicationState(originalApplicationState);
-            });
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+                // Undo all the side effects we just did
+                cy.setApplicationState(originalApplicationState);
+              });
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -3689,50 +3719,52 @@ function algorithmDrillerStatusPageRightAfterExplanationPageNoSideEffects({
   cy.withOverallNameLogged(
     { message: "algorithmDrillerStatusPageNoSideEffects" },
     () => {
-      ([
+      (
         [
-          "looks right",
-          () => {
-            elements.assertAllShow();
-            elements.wrongFailureText.assertDoesntExist();
-            elements.correctButSlowFailureText.assertDoesntExist();
-            cy.assertNoHorizontalScrollbar();
-            cy.assertNoVerticalScrollbar();
-          },
-        ],
-        [
-          "the expected cube state at first is always solved even if expected cube state was not solved before",
-          () => {
-            assertCubeMatchesStateString(
-              solvedFront,
-              elements.expectedCubeStateFront
-            );
-            assertCubeMatchesStateString(
-              solvedBack,
-              elements.expectedCubeStateBack
-            );
-          },
-        ],
-        [
-          "initial correct attempts left value reads 3",
-          () => {
-            elements.correctConsecutiveAttemptsLeft
-              .get()
-              .should("have.text", "3");
-          },
-        ],
-        [
-          "doesn't start test when pressing keys other than space",
-          () => {
-            cy.pressKey(Key.a);
-            elements.container.assertShows();
-            cy.pressKey(Key.x);
-            elements.container.assertShows();
-            cy.pressKey(Key.capsLock);
-            elements.container.assertShows();
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+          [
+            "looks right",
+            () => {
+              elements.assertAllShow();
+              elements.wrongFailureText.assertDoesntExist();
+              elements.correctButSlowFailureText.assertDoesntExist();
+              cy.assertNoHorizontalScrollbar();
+              cy.assertNoVerticalScrollbar();
+            },
+          ],
+          [
+            "the expected cube state at first is always solved even if expected cube state was not solved before",
+            () => {
+              assertCubeMatchesStateString(
+                solvedFront,
+                elements.expectedCubeStateFront
+              );
+              assertCubeMatchesStateString(
+                solvedBack,
+                elements.expectedCubeStateBack
+              );
+            },
+          ],
+          [
+            "initial correct attempts left value reads 3",
+            () => {
+              elements.correctConsecutiveAttemptsLeft
+                .get()
+                .should("have.text", "3");
+            },
+          ],
+          [
+            "doesn't start test when pressing keys other than space",
+            () => {
+              cy.pressKey(Key.a);
+              elements.container.assertShows();
+              cy.pressKey(Key.x);
+              elements.container.assertShows();
+              cy.pressKey(Key.capsLock);
+              elements.container.assertShows();
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -3850,27 +3882,29 @@ function algorithmDrillerSuccessPageNoSideEffects() {
   cy.withOverallNameLogged(
     { message: "algorithmDrillerSuccessPageNoSideEffects" },
     () => {
-      ([
+      (
         [
-          "looks right",
-          () => {
-            elements.assertAllShow();
-            cy.assertNoHorizontalScrollbar();
-            cy.assertNoVerticalScrollbar();
-          },
-        ],
-        [
-          "doesn't start test when pressing keys other than space",
-          () => {
-            cy.pressKey(Key.a);
-            elements.container.assertShows();
-            cy.pressKey(Key.x);
-            elements.container.assertShows();
-            cy.pressKey(Key.capsLock);
-            elements.container.assertShows();
-          },
-        ],
-      ] as const).forEach(([testDescription, testFunction]) =>
+          [
+            "looks right",
+            () => {
+              elements.assertAllShow();
+              cy.assertNoHorizontalScrollbar();
+              cy.assertNoVerticalScrollbar();
+            },
+          ],
+          [
+            "doesn't start test when pressing keys other than space",
+            () => {
+              cy.pressKey(Key.a);
+              elements.container.assertShows();
+              cy.pressKey(Key.x);
+              elements.container.assertShows();
+              cy.pressKey(Key.capsLock);
+              elements.container.assertShows();
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
         cy.withOverallNameLogged({ message: testDescription }, testFunction)
       );
     }
@@ -3916,75 +3950,77 @@ function wrongPageNoSideEffects({
   const elements = pllTrainerElements.wrongPage;
 
   cy.withOverallNameLogged({ message: "wrongPageNoSideEffects" }, () => {
-    ([
+    (
       [
-        "looks right",
-        () => {
-          elements.assertAllShow();
-          assertFunctioningFeedbackButtonShows();
-          cy.assertNoHorizontalScrollbar();
-          cy.assertNoVerticalScrollbar();
+        [
+          "looks right",
+          () => {
+            elements.assertAllShow();
+            assertFunctioningFeedbackButtonShows();
+            cy.assertNoHorizontalScrollbar();
+            cy.assertNoVerticalScrollbar();
 
-          cy.overrideDisplayCubeAnnotations(false);
-          // Test case cubes look correct
-          assertCubeMatchesStateString(
-            testCaseFront,
-            pllTrainerElements.wrongPage.testCaseFront
-          );
-          assertCubeMatchesStateString(
-            testCaseBack,
-            pllTrainerElements.wrongPage.testCaseBack
-          );
-          cy.overrideDisplayCubeAnnotations(null);
-          // Expected state cubes are tested in a special type of wrong test
-        },
-      ],
-      [
-        "doesn't start test when pressing keys other than space",
-        () => {
-          cy.pressKey(Key.a);
-          elements.container.assertShows();
-          cy.pressKey(Key.x);
-          elements.container.assertShows();
-          cy.pressKey(Key.capsLock);
-          elements.container.assertShows();
-        },
-      ],
-      [
-        "has the right correct answer text",
-        () => {
-          cy.getCurrentTestCase().then((testCase) => {
-            // Verify U, U2 and a pll display correctly
-            const firstTestCase = [AUF.U, PLL.Aa, AUF.U2] as const;
-            cy.setCurrentTestCase(firstTestCase);
-            pllTrainerElements.wrongPage.testCaseName
-              .get()
-              .invoke("text")
-              .should("match", testCaseToWrongPageRegex(firstTestCase));
+            cy.overrideDisplayCubeAnnotations(false);
+            // Test case cubes look correct
+            assertCubeMatchesStateString(
+              testCaseFront,
+              pllTrainerElements.wrongPage.testCaseFront
+            );
+            assertCubeMatchesStateString(
+              testCaseBack,
+              pllTrainerElements.wrongPage.testCaseBack
+            );
+            cy.overrideDisplayCubeAnnotations(null);
+            // Expected state cubes are tested in a special type of wrong test
+          },
+        ],
+        [
+          "doesn't start test when pressing keys other than space",
+          () => {
+            cy.pressKey(Key.a);
+            elements.container.assertShows();
+            cy.pressKey(Key.x);
+            elements.container.assertShows();
+            cy.pressKey(Key.capsLock);
+            elements.container.assertShows();
+          },
+        ],
+        [
+          "has the right correct answer text",
+          () => {
+            cy.getCurrentTestCase().then((testCase) => {
+              // Verify U, U2 and a pll display correctly
+              const firstTestCase = [AUF.U, PLL.Aa, AUF.U2] as const;
+              cy.setCurrentTestCase(firstTestCase);
+              pllTrainerElements.wrongPage.testCaseName
+                .get()
+                .invoke("text")
+                .should("match", testCaseToWrongPageRegex(firstTestCase));
 
-            // Verify U' and nothing display correctly, while also trying a different PLL
-            const secondTestCase = [AUF.UPrime, PLL.Ab, AUF.none] as const;
-            cy.setCurrentTestCase(secondTestCase);
-            pllTrainerElements.wrongPage.testCaseName
-              .get()
-              .invoke("text")
-              .should("match", testCaseToWrongPageRegex(secondTestCase));
+              // Verify U' and nothing display correctly, while also trying a different PLL
+              const secondTestCase = [AUF.UPrime, PLL.Ab, AUF.none] as const;
+              cy.setCurrentTestCase(secondTestCase);
+              pllTrainerElements.wrongPage.testCaseName
+                .get()
+                .invoke("text")
+                .should("match", testCaseToWrongPageRegex(secondTestCase));
 
-            // Verify no AUFs displays correctly and also trying a third PLL
-            const thirdTestCase = [AUF.none, PLL.H, AUF.none] as const;
-            cy.setCurrentTestCase(thirdTestCase);
-            pllTrainerElements.wrongPage.testCaseName
-              .get()
-              .invoke("text")
-              .should("match", testCaseToWrongPageRegex(thirdTestCase));
+              // Verify no AUFs displays correctly and also trying a third PLL
+              const thirdTestCase = [AUF.none, PLL.H, AUF.none] as const;
+              cy.setCurrentTestCase(thirdTestCase);
+              pllTrainerElements.wrongPage.testCaseName
+                .get()
+                .invoke("text")
+                .should("match", testCaseToWrongPageRegex(thirdTestCase));
 
-            // Reset to the previous test case, which is very important to uphold the
-            // promise of no side effects
-            cy.setCurrentTestCase(testCase);
-          });
-        },
-      ],
-    ] as const).forEach(([testDescription, testFunction]) =>
+              // Reset to the previous test case, which is very important to uphold the
+              // promise of no side effects
+              cy.setCurrentTestCase(testCase);
+            });
+          },
+        ],
+      ] as const
+    ).forEach(([testDescription, testFunction]) =>
       cy.withOverallNameLogged({ message: testDescription }, testFunction)
     );
   });

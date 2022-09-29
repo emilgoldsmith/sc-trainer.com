@@ -215,11 +215,17 @@ function checkWhetherShortcutsDisplay(
 
   // For easy return here to check all the branches
   cy.getApplicationState("type of wrong").then((typeOfWrongState) => {
-    ([
-      [pllTrainerElements.typeOfWrongPage.noMoveButton, "1", Key.one],
-      [pllTrainerElements.typeOfWrongPage.nearlyThereButton, "2", Key.two],
-      [pllTrainerElements.typeOfWrongPage.unrecoverableButton, "3", Key.three],
-    ] as const).forEach(([element, shortcutText, key]) => {
+    (
+      [
+        [pllTrainerElements.typeOfWrongPage.noMoveButton, "1", Key.one],
+        [pllTrainerElements.typeOfWrongPage.nearlyThereButton, "2", Key.two],
+        [
+          pllTrainerElements.typeOfWrongPage.unrecoverableButton,
+          "3",
+          Key.three,
+        ],
+      ] as const
+    ).forEach(([element, shortcutText, key]) => {
       cy.setApplicationState(typeOfWrongState, "type of wrong");
       pllTrainerElements.typeOfWrongPage.container.waitFor();
 

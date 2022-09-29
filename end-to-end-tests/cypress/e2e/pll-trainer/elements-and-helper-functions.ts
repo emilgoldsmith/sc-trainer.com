@@ -379,20 +379,18 @@ const completePLLTestHelper: typeof completePLLTestInMilliseconds = (
       if (endingState === "pickAlgorithmPage") return;
       pllTrainerElements.root
         .getStateAttributeValue()
-        .then(
-          (stateValue): Cypress.Chainable<{ pll: PLL | null }> => {
-            if (stateValue === stateAttributeValues.pickAlgorithmPage) {
-              if (forceTestCase)
-                return cy.wrap({ pll: forceTestCase[1] } as {
-                  pll: PLL | null;
-                });
-              return cy
-                .getCurrentTestCase()
-                .then(([, pll]) => ({ pll } as { pll: PLL | null }));
-            }
-            return cy.wrap({ pll: null } as { pll: PLL | null });
+        .then((stateValue): Cypress.Chainable<{ pll: PLL | null }> => {
+          if (stateValue === stateAttributeValues.pickAlgorithmPage) {
+            if (forceTestCase)
+              return cy.wrap({ pll: forceTestCase[1] } as {
+                pll: PLL | null;
+              });
+            return cy
+              .getCurrentTestCase()
+              .then(([, pll]) => ({ pll } as { pll: PLL | null }));
           }
-        )
+          return cy.wrap({ pll: null } as { pll: PLL | null });
+        })
         .then(({ pll: pllIfOnPickAlgorithmPage }) => {
           if (pllIfOnPickAlgorithmPage !== null) {
             const pll = pllIfOnPickAlgorithmPage;

@@ -50,9 +50,10 @@ function getMeta(specifier: ElementSpecifier): ElementMeta {
   return { optional: false };
 }
 
-function getFullSpecifier(
-  specifier: ElementSpecifier
-): { meta: ElementMeta; testId: string | null } {
+function getFullSpecifier(specifier: ElementSpecifier): {
+  meta: ElementMeta;
+  testId: string | null;
+} {
   if (typeof specifier === "string") {
     return {
       meta: { optional: false },
@@ -213,11 +214,9 @@ export function buildElementsCategory<keys extends string>(
   };
 }
 
-export function buildGlobalsCategory<keys extends string>(
-  specifiers: {
-    [key in keys]: ElementSpecifier;
-  }
-): {
+export function buildGlobalsCategory<keys extends string>(specifiers: {
+  [key in keys]: ElementSpecifier;
+}): {
   [key in keys]: OurElement;
 } {
   return Cypress._.mapValues(specifiers, buildElement);
@@ -264,17 +263,14 @@ function buildElement(specifier: ElementSpecifier): InternalElement {
     assertShows: buildVisibleAsserter(specifier),
     assertDoesntExist: buildNotExistAsserter(specifier),
     assertContainedByWindow: buildContainedByWindowAsserter(specifier),
-    assertConsumableViaVerticalScroll: buildConsumableViaVerticalScrollAsserter(
-      specifier
-    ),
-    assertConsumableViaHorizontalScroll: buildConsumableViaHorizontalScrollAsserter(
-      specifier
-    ),
+    assertConsumableViaVerticalScroll:
+      buildConsumableViaVerticalScrollAsserter(specifier),
+    assertConsumableViaHorizontalScroll:
+      buildConsumableViaHorizontalScrollAsserter(specifier),
     isContainedByWindow: buildContainedByWindow(specifier),
     assertIsFocused: buildAssertIsFocused(specifier),
-    getStringRepresentationOfCube: buildGetStringRepresentationOfCube(
-      specifier
-    ),
+    getStringRepresentationOfCube:
+      buildGetStringRepresentationOfCube(specifier),
     specifier,
     meta: getMeta(specifier),
   };

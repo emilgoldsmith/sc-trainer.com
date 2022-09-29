@@ -270,9 +270,8 @@ function addE2ETestHelpersToWindow() {
   "use strict";
   const documentEventListeners = trackDocumentEventListeners();
   let model: Cypress.OurApplicationState | null = null;
-  let modelUpdater:
-    | ((newModel: Cypress.OurApplicationState) => void)
-    | null = null;
+  let modelUpdater: ((newModel: Cypress.OurApplicationState) => void) | null =
+    null;
   let ports: Cypress.ElmPorts | null = null;
 
   (window as Cypress.CustomWindow).END_TO_END_TEST_HELPERS = {
@@ -494,19 +493,16 @@ function parseTheJavascript(htmlString: string) {
     subscriptionsFunctionName,
   } = parseSendToAppFunction(htmlString);
 
-  const [
-    initializeStartIndex,
-    initializeEndIndex,
-  ] = getIndiciesForSurroundingFunction({
-    curStartIndex: beforeSendToApp.length,
-    curEndIndex: htmlString.length - afterSendToApp.length + 1,
-    htmlString,
-  });
+  const [initializeStartIndex, initializeEndIndex] =
+    getIndiciesForSurroundingFunction({
+      curStartIndex: beforeSendToApp.length,
+      curEndIndex: htmlString.length - afterSendToApp.length + 1,
+      htmlString,
+    });
 
   const beforeInitialize = beforeSendToApp.substring(0, initializeStartIndex);
-  const beforeSendToAppInInitialize = beforeSendToApp.substring(
-    initializeStartIndex
-  );
+  const beforeSendToAppInInitialize =
+    beforeSendToApp.substring(initializeStartIndex);
   const afterSendToAppInInitialize = htmlString.substring(
     htmlString.length - afterSendToApp.length,
     initializeEndIndex
