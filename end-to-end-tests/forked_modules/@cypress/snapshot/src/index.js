@@ -66,9 +66,8 @@ function registerCypressSnapshot() {
 
   function getAllNameLists(store) {
     if (store === null || typeof store !== "object") return [];
-    const { __version, ...nonMetaDataStore } = store;
     const ret = [];
-    Cypress._.forEach(nonMetaDataStore, (value, key) => {
+    Cypress._.forEach(store, (value, key) => {
       const childrenNames = getAllNameLists(value);
       if (childrenNames.length === 0) ret.push([key]);
       else {
@@ -254,18 +253,6 @@ function registerCypressSnapshot() {
     return suiteHasFailedTests(root);
   }
 
-  global.after(function checkIfAnySnapshotsAreMissing() {
-    // If the test already failed we won't have been able to detect all the snapshots that should've run if there had been no failure
-    if (detectIfThereAreAlreadyFailedTests(this)) return;
-    if (snapshotsThatHaventBeenSeenYet.size > 0) {
-      throw new Error(
-        "Missing snapshots:\n" +
-          [...snapshotsThatHaventBeenSeenYet.values()].join(",\n\n") +
-          ".\n\n\nTo update, delete snapshot and rerun test."
-      );
-    }
-  });
-
   global.after(function saveSnapshots() {
     const count = countSnapshots(storeSnapshot());
     if (doDebugLogs) console.log("%d snapshot(s) on finish", count);
@@ -273,6 +260,17 @@ function registerCypressSnapshot() {
     if (count) {
       setSnapshot("__Cypress_version", Cypress.version);
       if (doDebugLogs) console.log(storeSnapshot());
+      // If the test already failed we won't have been able to detect all the snapshots that should've run if there had been no failure
+      if (
+        !detectIfThereAreAlreadyFailedTests(this) &&
+        snapshotsThatHaventBeenSeenYet.size > 0
+      ) {
+        throw new Error(
+          "Missing snapshots:\n" +
+            [...snapshotsThatHaventBeenSeenYet.values()].join(",\n\n") +
+            ".\n\n\nTo update, delete snapshot and rerun test."
+        );
+      }
       const s = JSON.stringify(storeSnapshot(), null, 2);
       const str = `module.exports = ${s}\n`;
       cy.writeFile(snapshotFileName, str, "utf-8", { log: false });
