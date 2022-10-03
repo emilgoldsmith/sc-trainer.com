@@ -20,7 +20,7 @@ user =
                     (\pll_ index ->
                         User.changePLLAlgorithm pll_
                             (Dict.get (PLL.getLetters pll_) pllAlgorithms
-                                |> Maybe.withDefault []
+                                |> Maybe.withDefault [ Algorithm.empty ]
                                 |> Array.fromList
                                 |> (\array -> Array.get (modBy (Array.length array) index) array)
                                 |> Maybe.withDefault Algorithm.empty
@@ -189,25 +189,25 @@ listToFuzzer list =
     Fuzz.oneOf <| List.map Fuzz.constant list
 
 
-
 {-| Generated using the following Cypress code, followed by some semi-manual filtering on straight up
 wrong algorithms that were in AlgDB:
 
-  it.only("temp", function () {
-    allPLLs.forEach((pll) => {
-      const pllString = pllToPllLetters[pll];
-      cy.visit("http://algdb.net/puzzle/333/pll/" + pllString.toLowerCase());
-      cy.get("td:nth-child(1)").then((nodes) => {
-        let text = `("${pllString}", [`;
-        nodes.each((_, node) => {
-          text += `"${node.innerText}", `;
-        });
-        text +=
-          "] |> List.map (Algorithm.fromString >> Result.withDefault Algorithm.empty)), ";
-        cy.log(text);
-      });
-    });
-  });
+it.only("temp", function () {
+allPLLs.forEach((pll) => {
+const pllString = pllToPllLetters[pll];
+cy.visit("<http://algdb.net/puzzle/333/pll/"> + pllString.toLowerCase());
+cy.get("td:nth-child(1)").then((nodes) => {
+let text = `("${pllString}", [`;
+nodes.each((\_, node) => {
+text += `"${node.innerText}",`;
+});
+text +=
+"] |> List.map (Algorithm.fromString >> Result.withDefault Algorithm.empty)), ";
+cy.log(text);
+});
+});
+});
+
 -}
 pllAlgorithms : Dict String (List Algorithm)
 pllAlgorithms =
