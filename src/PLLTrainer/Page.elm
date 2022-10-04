@@ -989,7 +989,7 @@ states shared =
     , testRunning =
         \extraState ->
             let
-                argument =
+                arguments =
                     case extraState of
                         GettingReadyExtraState generator ->
                             PLLTrainer.States.TestRunning.GetReadyArgument
@@ -1003,7 +1003,7 @@ states shared =
             in
             PLLTrainer.States.TestRunning.state
                 shared
-                argument
+                arguments
                 (StateMsg << TestRunningMsg)
     , evaluateResult =
         \model extraState ->
