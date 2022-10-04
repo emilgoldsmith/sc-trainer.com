@@ -3722,6 +3722,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                   otherPLL,
                   originalTestCase[2],
                 ]);
+                cy.setPLLAlgorithm(otherPLL, pllToAlgorithmString[otherPLL]);
                 elements.recognitionExplanation
                   .get()
                   .invoke("text")
