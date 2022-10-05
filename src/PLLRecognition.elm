@@ -263,13 +263,12 @@ specToString spec =
 type Article
     = NoArticle
     | Definite
-    | Indefinite
 
 
 elementToString : { article : Article, forcePlural : Bool } -> PLL.RecognitionElement -> String
 elementToString { article, forcePlural } element =
     let
-        { indefiniteArticle, object, pluralized } =
+        { object, pluralized } =
             case element of
                 PLL.Pattern pattern ->
                     case pattern of
@@ -349,13 +348,12 @@ elementToString { article, forcePlural } element =
         NoArticle ->
             pluralHandledObject
 
-        Indefinite ->
-            (indefiniteArticle
-                |> Maybe.map (\x -> x ++ " ")
-                |> Maybe.withDefault ""
-            )
-                ++ pluralHandledObject
-
+        -- Indefinite ->
+        --     (indefiniteArticle
+        --         |> Maybe.map (\x -> x ++ " ")
+        --         |> Maybe.withDefault ""
+        --     )
+        --         ++ pluralHandledObject
         Definite ->
             "the " ++ pluralHandledObject
 

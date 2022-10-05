@@ -142,6 +142,8 @@ describe("PLL Trainer", function () {
           ({ testCaseCube }) =>
             algorithmDrillerExplanationPageNoSideEffectsButScroll({
               testCaseCube,
+              // We know the only case done right now is the Gb that was forced above
+              pllThatDoesntHaveAlgorithmPickedForItYet: PLL.E,
               // Ensured because we manually did it above, didn't use navigate function
               defaultAlgorithmWasUsed: true,
             })
@@ -3579,8 +3581,10 @@ function typeOfWrongPageUnrecoverableNavigateVariant2() {
 
 function algorithmDrillerExplanationPageNoSideEffectsButScroll({
   testCaseCube,
+  pllThatDoesntHaveAlgorithmPickedForItYet,
 }: {
   testCaseCube: string;
+  pllThatDoesntHaveAlgorithmPickedForItYet: PLL;
   // Just for communicating expectations to caller
   defaultAlgorithmWasUsed: true;
 }) {
@@ -3597,6 +3601,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
               elements.assertAllConsumableViaVerticalScroll(
                 elements.container.specifier
               );
+              pllTrainerElements.globals.errorPopup.assertDoesntExist();
               assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
               cy.assertNoHorizontalScrollbar();
             },
@@ -3678,65 +3683,83 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
             "recognition explanation does not change when postAUF changes, but otherwise does",
             () => {
               cy.getCurrentTestCase().then((originalTestCase) => {
-                type Aliases = { originalExplanation: string };
-                const originalPostAUF = originalTestCase[2];
-                const otherPostAUFs = allAUFs.filter(
-                  (auf) => auf !== originalPostAUF
-                );
-                elements.recognitionExplanation
-                  .get()
-                  .invoke("text")
-                  .setAlias<Aliases, "originalExplanation">(
-                    "originalExplanation"
+                cy.getApplicationState().then((originalApplicationState) => {
+                  type Aliases = { originalExplanation: string };
+                  const originalPostAUF = originalTestCase[2];
+                  const otherPostAUFs = allAUFs.filter(
+                    (auf) => auf !== originalPostAUF
                   );
-                otherPostAUFs.forEach((otherPostAUF) => {
-                  cy.setCurrentTestCase([
-                    originalTestCase[0],
-                    originalTestCase[1],
-                    otherPostAUF,
-                  ]);
                   elements.recognitionExplanation
                     .get()
                     .invoke("text")
-                    .then((nextExplanation) => {
+                    .setAlias<Aliases, "originalExplanation">(
+                      "originalExplanation"
+                    );
+                  otherPostAUFs.forEach((otherPostAUF) => {
+                    cy.setCurrentTestCase([
+                      originalTestCase[0],
+                      originalTestCase[1],
+                      otherPostAUF,
+                    ]);
+                    elements.recognitionExplanation
+                      .get()
+                      .invoke("text")
+                      .then((nextExplanation) => {
+                        cy.getAliases<Aliases>().then(
+                          ({ originalExplanation }) =>
+                            assertNonFalsyStringsEqual(
+                              nextExplanation,
+                              originalExplanation,
+                              "nextExplanation (first) is not equal to originalExplanation (second)"
+                            )
+                        );
+                      });
+                  });
+
+                  // If we change to a different pll though, it should be different
+                  const otherPLL = allPLLs.filter(
+                    (pll) => pll !== originalTestCase[1]
+                  )[0];
+                  if (otherPLL === undefined)
+                    throw new Error(
+                      "this shouldn't happen, we're just using it as a type guard"
+                    );
+                  cy.setCurrentTestCase([
+                    originalTestCase[0],
+                    otherPLL,
+                    originalTestCase[2],
+                  ]);
+                  cy.setPLLAlgorithm(otherPLL, pllToAlgorithmString[otherPLL]);
+                  elements.recognitionExplanation
+                    .get()
+                    .invoke("text")
+                    .then((otherPLLExplanation) => {
                       cy.getAliases<Aliases>().then(({ originalExplanation }) =>
-                        assertNonFalsyStringsEqual(
-                          nextExplanation,
+                        assertNonFalsyStringsDifferent(
+                          otherPLLExplanation,
                           originalExplanation,
-                          "nextExplanation (first) is not equal to originalExplanation (second)"
+                          "otherPLLExplanation (first) is equal to originalExplanation (second)"
                         )
                       );
                     });
+
+                  // Reset to the original state
+                  cy.setApplicationState(originalApplicationState);
                 });
-
-                // If we change to a different pll though, it should be different
-                const otherPLL = allPLLs.filter(
-                  (pll) => pll !== originalTestCase[1]
-                )[0];
-                if (otherPLL === undefined)
-                  throw new Error(
-                    "this shouldn't happen, we're just using it as a type guard"
-                  );
+              });
+            },
+          ],
+          [
+            "shows error message if algorithm not picked for pll",
+            () => {
+              cy.getCurrentTestCase().then((originalTestCase) => {
                 cy.setCurrentTestCase([
-                  originalTestCase[0],
-                  otherPLL,
-                  originalTestCase[2],
+                  AUF.none,
+                  pllThatDoesntHaveAlgorithmPickedForItYet,
+                  AUF.none,
                 ]);
-                cy.setPLLAlgorithm(otherPLL, pllToAlgorithmString[otherPLL]);
-                elements.recognitionExplanation
-                  .get()
-                  .invoke("text")
-                  .then((otherPLLExplanation) => {
-                    cy.getAliases<Aliases>().then(({ originalExplanation }) =>
-                      assertNonFalsyStringsDifferent(
-                        otherPLLExplanation,
-                        originalExplanation,
-                        "otherPLLExplanation (first) is equal to originalExplanation (second)"
-                      )
-                    );
-                  });
-
-                // Reset to the original case
+                pllTrainerElements.globals.errorPopup.assertShows();
+                elements.recognitionExplanation.assertDoesntExist();
                 cy.setCurrentTestCase(originalTestCase);
               });
             },
