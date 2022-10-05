@@ -1,6 +1,7 @@
 module PLLTrainer.States.TestRunning exposing (Arguments(..), Model, Msg, state, tESTONLYUpdateMemoizedCube)
 
 import Browser.Events
+import Color
 import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
@@ -175,10 +176,10 @@ view : Shared.Model -> Model msg -> PLLTrainer.State.View msg
 view { viewportSize, cubeViewOptions, user } model =
     let
         black =
-            ( 0, 0, 0 )
+            Color.rgb255 0 0 0
 
         grey =
-            ( 100, 100, 100 )
+            Color.rgb255 100 100 100
 
         parameters =
             case model of
