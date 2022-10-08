@@ -3,7 +3,7 @@ module UI exposing (Button, Palette, defaultPalette, fontSize, formatFloatTwoDec
 -- We can't expose all of Element as it clashes with the spacing export
 
 import Css exposing (testid)
-import Element as El
+import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
@@ -35,14 +35,14 @@ formatFloatTwoDecimals =
 -- Views
 
 
-viewWebResourceLink : List (El.Attribute msg) -> Palette -> WebResource.WebResource -> String -> El.Element msg
+viewWebResourceLink : List (Attribute msg) -> Palette -> WebResource.WebResource -> String -> Element msg
 viewWebResourceLink attributes palette resource labelText =
-    El.newTabLink
+    newTabLink
         ([ Font.underline
-         , El.mouseOver
+         , mouseOver
             [ Font.color palette.mouseOverLink
             ]
-         , El.focused
+         , focused
             [ Border.shadow
                 { offset = ( 0, 0 )
                 , blur = 0
@@ -53,25 +53,25 @@ viewWebResourceLink attributes palette resource labelText =
          ]
             ++ attributes
         )
-        { label = El.text labelText
+        { label = text labelText
         , url = WebResource.getUrl resource
         }
 
 
-viewDivider : Palette -> El.Element msg
+viewDivider : Palette -> Element msg
 viewDivider palette =
-    El.el
+    el
         [ testid "divider"
         , Border.solid
-        , El.width El.fill
+        , width fill
         , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
         , Border.color palette.black
         ]
-        El.none
+        none
 
 
 type alias Button msg =
-    List (El.Attribute msg) -> { onPress : Maybe msg, color : El.Color, label : Int -> El.Element msg } -> El.Element msg
+    List (Attribute msg) -> { onPress : Maybe msg, color : Color, label : Int -> Element msg } -> Element msg
 
 
 baseButton : Int -> Button msg
@@ -83,7 +83,7 @@ baseButton size attributes { onPress, label, color } =
         roundingSize =
             (paddingSize + size) // 5
     in
-    Input.button ([ Background.color color, El.padding paddingSize, Border.rounded roundingSize ] ++ attributes) { onPress = onPress, label = label size }
+    Input.button ([ Background.color color, padding paddingSize, Border.rounded roundingSize ] ++ attributes) { onPress = onPress, label = label size }
 
 
 viewButton : { large : Button msg1, customSize : Int -> Button msg2 }
@@ -91,28 +91,28 @@ viewButton =
     { large = baseButton <| fontScale 2, customSize = baseButton }
 
 
-viewUnorderedList : List (El.Attribute msg) -> List (El.Element msg) -> El.Element msg
+viewUnorderedList : List (Attribute msg) -> List (Element msg) -> Element msg
 viewUnorderedList attributes listItemContents =
     let
         listItems =
-            List.map (\content -> El.row [ spacingAll.verySmall ] [ El.text "-", content ]) listItemContents
+            List.map (\content -> row [ spacingAll.verySmall ] [ text "-", content ]) listItemContents
     in
-    El.column (spacingAll.small :: attributes) listItems
+    column (spacingAll.small :: attributes) listItems
 
 
-viewOrderedList : List (El.Attribute msg) -> List (El.Element msg) -> El.Element msg
+viewOrderedList : List (Attribute msg) -> List (Element msg) -> Element msg
 viewOrderedList attributes listItemContents =
     let
         listItems =
             List.indexedMap
                 (\index content ->
-                    El.row
+                    row
                         [ spacingHorizontal.verySmall ]
-                        [ El.text (String.fromInt (index + 1) ++ "."), El.paragraph [] [ content ] ]
+                        [ text (String.fromInt (index + 1) ++ "."), paragraph [] [ content ] ]
                 )
                 listItemContents
     in
-    El.column attributes listItems
+    column attributes listItems
 
 
 
@@ -121,36 +121,36 @@ viewOrderedList attributes listItemContents =
 
 type alias Palette =
     { -- General
-      primary : El.Color
-    , correct : El.Color
-    , wrong : El.Color
-    , black : El.Color
-    , label : El.Color
-    , errorText : El.Color
+      primary : Color
+    , correct : Color
+    , wrong : Color
+    , black : Color
+    , label : Color
+    , errorText : Color
 
     -- Link
-    , mouseOverLink : El.Color
+    , mouseOverLink : Color
 
     -- Focus
-    , focusBorder : El.Color
+    , focusBorder : Color
     }
 
 
 defaultPalette : Palette
 defaultPalette =
     { -- General
-      primary = El.rgb255 0 128 0
-    , correct = El.rgb255 0 128 0
-    , wrong = El.rgb255 255 0 0
-    , black = El.rgb255 0 0 0
-    , label = El.rgb255 125 125 125
-    , errorText = El.rgb255 255 0 0
+      primary = rgb255 0 128 0
+    , correct = rgb255 0 128 0
+    , wrong = rgb255 255 0 0
+    , black = rgb255 0 0 0
+    , label = rgb255 125 125 125
+    , errorText = rgb255 255 0 0
 
     -- Link
-    , mouseOverLink = El.rgb255 125 125 125
+    , mouseOverLink = rgb255 125 125 125
 
     -- Focus
-    , focusBorder = El.rgb255 155 203 255
+    , focusBorder = rgb255 155 203 255
     }
 
 
@@ -159,13 +159,13 @@ defaultPalette =
 
 
 type alias Sizes decorative msg =
-    { extremelySmall : El.Attr decorative msg
-    , verySmall : El.Attr decorative msg
-    , small : El.Attr decorative msg
-    , medium : El.Attr decorative msg
-    , large : El.Attr decorative msg
-    , veryLarge : El.Attr decorative msg
-    , extremelyLarge : El.Attr decorative msg
+    { extremelySmall : Attr decorative msg
+    , verySmall : Attr decorative msg
+    , small : Attr decorative msg
+    , medium : Attr decorative msg
+    , large : Attr decorative msg
+    , veryLarge : Attr decorative msg
+    , extremelyLarge : Attr decorative msg
     }
 
 
@@ -173,7 +173,7 @@ type alias Scale =
     Int -> Int
 
 
-buildSizes : (Int -> El.Attr decorative msg) -> Scale -> Sizes decorative msg
+buildSizes : (Int -> Attr decorative msg) -> Scale -> Sizes decorative msg
 buildSizes buildAttribute scale =
     { extremelySmall = buildAttribute <| scale -3
     , verySmall = buildAttribute <| scale -2
@@ -187,7 +187,7 @@ buildSizes buildAttribute scale =
 
 fontScale : Int -> Int
 fontScale =
-    El.modular 16 (4 / 3) >> round
+    modular 16 (4 / 3) >> round
 
 
 fontSize : Sizes decorative msg
@@ -197,39 +197,39 @@ fontSize =
 
 spaceScale : Int -> Int
 spaceScale =
-    El.modular 21 (4 / 3) >> round
+    modular 21 (4 / 3) >> round
 
 
 spacingAll : Sizes () msg
 spacingAll =
-    buildSizes El.spacing spaceScale
+    buildSizes spacing spaceScale
 
 
 spacingVertical : Sizes () msg
 spacingVertical =
-    buildSizes (El.spacingXY 0) spaceScale
+    buildSizes (spacingXY 0) spaceScale
 
 
 spacingHorizontal : Sizes () msg
 spacingHorizontal =
-    buildSizes (\space -> El.spacingXY space 0) spaceScale
+    buildSizes (\space -> spacingXY space 0) spaceScale
 
 
 paddingScale : Int -> Int
 paddingScale =
-    El.modular 4 2 >> round
+    modular 4 2 >> round
 
 
 paddingAll : Sizes () msg
 paddingAll =
-    buildSizes El.padding paddingScale
+    buildSizes padding paddingScale
 
 
 paddingVertical : Sizes () msg
 paddingVertical =
-    buildSizes (El.paddingXY 0) paddingScale
+    buildSizes (paddingXY 0) paddingScale
 
 
 paddingHorizontal : Sizes () msg
 paddingHorizontal =
-    buildSizes (\xPadding -> El.paddingXY xPadding 0) paddingScale
+    buildSizes (\xPadding -> paddingXY xPadding 0) paddingScale
