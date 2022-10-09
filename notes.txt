@@ -11,3 +11,5 @@ Make a tooltip on the perm segment on Wrong Page
 Make tooltips for all the terminology etc.
 
 Make people select themselves their preferred AUF combination for symmetrical cases
+
+Test it doesn't show NaN in averages when no corrects yet, which will be a very normal case for beginners. Maybe even just don't display those averages until there are corrects
