@@ -1,13 +1,15 @@
-module UI exposing (Button, Palette, defaultPalette, fontSize, formatFloatTwoDecimals, formatMilliseconds, formatTPS, paddingAll, paddingHorizontal, paddingVertical, spacingAll, spacingHorizontal, spacingVertical, viewButton, viewDivider, viewOrderedList, viewUnorderedList, viewWebResourceLink)
+module UI exposing (Button, Palette, defaultPalette, fontSize, formatFloatTwoDecimals, formatMilliseconds, formatTPS, materialIconColor, paddingAll, paddingHorizontal, paddingVertical, spacingAll, spacingHorizontal, spacingVertical, viewButton, viewDarkDivider, viewLightDivider, viewOrderedList, viewUnorderedList, viewWebResourceLink)
 
 -- We can't expose all of Element as it clashes with the spacing export
 
+import Color
 import Css exposing (testid)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Element.Input as Input
+import Material.Icons.Types
 import Round
 import WebResource
 
@@ -58,14 +60,26 @@ viewWebResourceLink attributes palette resource labelText =
         }
 
 
-viewDivider : Palette -> Element msg
-viewDivider palette =
+viewDarkDivider : Palette -> Element msg
+viewDarkDivider palette =
     el
         [ testid "divider"
         , Border.solid
         , width fill
         , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
-        , Border.color palette.black
+        , Border.color palette.darkText
+        ]
+        none
+
+
+viewLightDivider : Palette -> Element msg
+viewLightDivider palette =
+    el
+        [ testid "divider"
+        , Border.solid
+        , width fill
+        , Border.widthEach { top = 2, left = 0, right = 0, bottom = 0 }
+        , Border.color palette.lightText
         ]
         none
 
@@ -121,12 +135,16 @@ viewOrderedList attributes listItemContents =
 
 type alias Palette =
     { -- General
-      primary : Color
+      background : Color
+    , primary : Color
+    , secondary : Color
     , correct : Color
     , wrong : Color
-    , black : Color
-    , label : Color
+    , darkText : Color
+    , lightText : Color
     , errorText : Color
+    , label : Color
+    , transparent : Color
 
     -- Link
     , mouseOverLink : Color
@@ -139,12 +157,16 @@ type alias Palette =
 defaultPalette : Palette
 defaultPalette =
     { -- General
-      primary = rgb255 0 128 0
+      background = rgb255 255 255 255
+    , primary = rgb255 0 128 0
+    , secondary = rgb255 0 0 128
     , correct = rgb255 0 128 0
     , wrong = rgb255 255 0 0
-    , black = rgb255 0 0 0
-    , label = rgb255 125 125 125
+    , darkText = rgb255 0 0 0
+    , lightText = rgb255 255 255 255
     , errorText = rgb255 255 0 0
+    , label = rgb255 125 125 125
+    , transparent = rgba 0 0 0 0
 
     -- Link
     , mouseOverLink = rgb255 125 125 125
@@ -154,12 +176,21 @@ defaultPalette =
     }
 
 
+materialIconColor : Color -> Material.Icons.Types.Coloring
+materialIconColor color =
+    color
+        |> toRgb
+        |> Color.fromRgba
+        |> Material.Icons.Types.Color
+
+
 
 -- Sizings
 
 
 type alias Sizes decorative msg =
-    { extremelySmall : Attr decorative msg
+    { verySmallest : Attr decorative msg
+    , extremelySmall : Attr decorative msg
     , verySmall : Attr decorative msg
     , small : Attr decorative msg
     , medium : Attr decorative msg
@@ -175,7 +206,8 @@ type alias Scale =
 
 buildSizes : (Int -> Attr decorative msg) -> Scale -> Sizes decorative msg
 buildSizes buildAttribute scale =
-    { extremelySmall = buildAttribute <| scale -3
+    { verySmallest = buildAttribute <| scale -4
+    , extremelySmall = buildAttribute <| scale -3
     , verySmall = buildAttribute <| scale -2
     , small = buildAttribute <| scale -1
     , medium = buildAttribute <| scale 1

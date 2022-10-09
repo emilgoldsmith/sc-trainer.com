@@ -83,7 +83,7 @@ view shared transitions =
 
                           else
                             newUserWelcome shared
-                        , UI.viewDivider shared.palette
+                        , UI.viewDarkDivider shared.palette
                         , paragraph
                             [ UI.fontSize.veryLarge
                             , centerX
@@ -113,7 +113,7 @@ view shared transitions =
                             , keyboardShortcut = Key.Space
                             }
                             UI.viewButton.large
-                        , UI.viewDivider shared.palette
+                        , UI.viewDarkDivider shared.palette
                         , column
                             [ testid "instructions-text"
                             , Font.center
@@ -150,7 +150,7 @@ view shared transitions =
                                 [ text "If you got it wrong the application will help you decide if you need to solve the cube to reset it before being able to continue to the next case, avoiding it where possible."
                                 ]
                             ]
-                        , UI.viewDivider shared.palette
+                        , UI.viewDarkDivider shared.palette
                         , column
                             [ testid "learning-resources"
                             , centerX
@@ -176,7 +176,7 @@ view shared transitions =
                                     [ text "And just generally make sure you drill you algorithms until you can do them without looking!" ]
                                 ]
                             ]
-                        , UI.viewDivider shared.palette
+                        , UI.viewDarkDivider shared.palette
                         , UI.viewButton.large
                             [ testid "edit-target-parameters-button"
                             , centerX
@@ -238,7 +238,7 @@ recurringUserStatistics shared =
     column
         [ width (fill |> maximum 600), Font.center, UI.spacingVertical.extremelySmall, centerX ]
         [ paragraph [ Region.heading 1, UI.fontSize.veryLarge ] [ text "Statistics:" ]
-        , UI.viewDivider shared.palette
+        , UI.viewDarkDivider shared.palette
         , wrappedRow [ width fill, UI.spacingHorizontal.extremelySmall ]
             [ paragraph [ testid "num-cases-tried" ]
                 [ text "Cases Tried: "
@@ -249,7 +249,7 @@ recurringUserStatistics shared =
                 , text <| String.fromInt <| List.Nonempty.length PLL.all - numCasesAttempted
                 ]
             ]
-        , UI.viewDivider shared.palette
+        , UI.viewDarkDivider shared.palette
         , paragraph [] [ text "Cases most in need of practice by last three attempts:" ]
         , UI.viewOrderedList [ testid "worst-three-cases", centerX, UI.spacingVertical.extremelySmall ] <|
             (allStatistics
@@ -279,13 +279,13 @@ recurringUserStatistics shared =
                             |> Maybe.map (el [ testid "worst-case-list-item" ])
                     )
             )
-        , UI.viewDivider shared.palette
+        , UI.viewDarkDivider shared.palette
         , paragraph [] [ text "Overall:" ]
         , wrappedRow [ width fill, UI.spacingHorizontal.extremelySmall ]
             [ paragraph [ testid "average-tps" ] [ text "Average TPS: ", text <| UI.formatFloatTwoDecimals averageTPS ]
             , paragraph [ testid "average-time" ] [ text "Average Time: ", text <| UI.formatMilliseconds averageTimeMs ]
             ]
-        , UI.viewDivider shared.palette
+        , UI.viewDarkDivider shared.palette
         , paragraph [ testid "statistics-shortcomings-explanation" ] [ el [ Font.bold ] <| text "Disclaimer: ", text "These statistics still leave a lot to be wanted. They are not yet comprehensive, and are for example also biased towards longer algorithms scoring better in TPS as recognition time is included. We aspire for much better statistics in the future but this will do for a start as it is non-trivial to improve." ]
         ]
 
