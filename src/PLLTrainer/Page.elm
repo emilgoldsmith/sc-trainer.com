@@ -100,7 +100,7 @@ type TrainerState
     | TestRunning (PLLTrainer.States.TestRunning.Model Msg) TestRunningExtraState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
     | PickAlgorithmPage PLLTrainer.States.PickAlgorithmPage.Model PickAlgorithmExtraState
-    | AlgorithmDrillerExplanationPage AlgorithmDrillerExplanationExtraState
+    | AlgorithmDrillerExplanationPage PLLTrainer.States.AlgorithmDrillerExplanationPage.Model AlgorithmDrillerExplanationExtraState
     | AlgorithmDrillerStatusPage
     | AlgorithmDrillerSuccessPage
     | CorrectPage
@@ -209,6 +209,7 @@ type StateMsg
     | TestRunningMsg PLLTrainer.States.TestRunning.Msg
     | EvaluateResultMsg PLLTrainer.States.EvaluateResult.Msg
     | PickAlgorithmMsg PLLTrainer.States.PickAlgorithmPage.Msg
+    | AlgorithmDrillerExplanationMsg PLLTrainer.States.AlgorithmDrillerExplanationPage.Msg
 
 
 type InternalMsg
@@ -742,12 +743,26 @@ handleEvaluate testResult model shared =
                                         normalCorrectOrWrongState
 
                                       else
-                                        ( AlgorithmDrillerExplanationPage { testResult = testResult }, Effect.none )
+                                        let
+                                            extraState =
+                                                { testResult = testResult }
+
+                                            ( stateModel, stateCmd ) =
+                                                ((states shared).algorithmDrillerExplanationPage model extraState).init
+                                        in
+                                        ( AlgorithmDrillerExplanationPage stateModel extraState, Effect.fromCmd stateCmd )
                                     , Nothing
                                     )
 
                             User.Wrong _ ->
-                                always ( ( AlgorithmDrillerExplanationPage { testResult = testResult }, Effect.none ), Nothing )
+                                let
+                                    extraState =
+                                        { testResult = testResult }
+
+                                    ( stateModel, stateCmd ) =
+                                        ((states shared).algorithmDrillerExplanationPage model extraState).init
+                                in
+                                always ( ( AlgorithmDrillerExplanationPage stateModel extraState, Effect.fromCmd stateCmd ), Nothing )
 
         ( withPickAlgorithmIncluded, maybeRecordResultEffect, newDrillerState ) =
             case User.getPLLAlgorithm (PLLTrainer.TestCase.pll model.currentTestCase.testCase) shared.user of
@@ -956,7 +971,13 @@ states :
                     PLLTrainer.States.PickAlgorithmPage.Msg
                     PLLTrainer.States.PickAlgorithmPage.Model
                     PickAlgorithmExtraState
-        , algorithmDrillerExplanationPage : Model -> StateBuilder () () AlgorithmDrillerExplanationExtraState
+        , algorithmDrillerExplanationPage :
+            Model
+            ->
+                StateBuilder
+                    PLLTrainer.States.AlgorithmDrillerExplanationPage.Msg
+                    PLLTrainer.States.AlgorithmDrillerExplanationPage.Model
+                    AlgorithmDrillerExplanationExtraState
         , algorithmDrillerStatusPage : Model -> StateBuilder () () ()
         , algorithmDrillerSuccessPage : StateBuilder () () ()
         , correctPage : Model -> StateBuilder () () ()
@@ -1049,6 +1070,7 @@ states shared =
                         User.Wrong _ ->
                             False
                 }
+                (StateMsg << AlgorithmDrillerExplanationMsg)
     , algorithmDrillerStatusPage =
         \model _ ->
             PLLTrainer.States.AlgorithmDrillerStatusPage.state
@@ -1141,6 +1163,13 @@ handleStateMsgBoilerplate shared model stateMsg =
                         { model | trainerState = PickAlgorithmPage newStateModel extraState }
                     )
 
+        ( AlgorithmDrillerExplanationMsg localMsg, AlgorithmDrillerExplanationPage localModel extraState ) ->
+            ((states shared).algorithmDrillerExplanationPage model extraState).update localMsg localModel
+                |> Tuple.mapFirst
+                    (\newStateModel ->
+                        { model | trainerState = AlgorithmDrillerExplanationPage newStateModel extraState }
+                    )
+
         ( unexpectedStateMsg, unexpectedTrainerState ) ->
             ( model
             , Ports.logError
@@ -1167,6 +1196,9 @@ stateMsgToString stateMsg =
 
         PickAlgorithmMsg _ ->
             "PickAlgorithmMsg"
+
+        AlgorithmDrillerExplanationMsg _ ->
+            "AlgorithmDrillerExplanationPage"
 
 
 trainerStateToString : TrainerState -> String
@@ -1203,7 +1235,7 @@ trainerStateToString trainerState =
         PickAlgorithmPage _ _ ->
             "PickAlgorithmPage"
 
-        AlgorithmDrillerExplanationPage _ ->
+        AlgorithmDrillerExplanationPage _ _ ->
             "AlgorithmDrillerExplanationPage"
 
         AlgorithmDrillerStatusPage ->
@@ -1252,8 +1284,8 @@ handleStateSubscriptionsBoilerplate shared model =
         PickAlgorithmPage stateModel extraState ->
             ((states shared).pickAlgorithmPage model extraState).subscriptions stateModel
 
-        AlgorithmDrillerExplanationPage extraState ->
-            ((states shared).algorithmDrillerExplanationPage model extraState).subscriptions ()
+        AlgorithmDrillerExplanationPage stateModel extraState ->
+            ((states shared).algorithmDrillerExplanationPage model extraState).subscriptions stateModel
 
         AlgorithmDrillerStatusPage ->
             ((states shared).algorithmDrillerStatusPage model ()).subscriptions ()
@@ -1295,8 +1327,8 @@ handleStateViewBoilerplate shared model =
         PickAlgorithmPage stateModel extraState ->
             ((states shared).pickAlgorithmPage model extraState).view stateModel
 
-        AlgorithmDrillerExplanationPage extraState ->
-            ((states shared).algorithmDrillerExplanationPage model extraState).view ()
+        AlgorithmDrillerExplanationPage stateModel extraState ->
+            ((states shared).algorithmDrillerExplanationPage model extraState).view stateModel
 
         AlgorithmDrillerSuccessPage ->
             ((states shared).algorithmDrillerSuccessPage ()).view ()
@@ -1340,7 +1372,7 @@ getTestOnlyStateAttributeValue model =
         PickAlgorithmPage _ _ ->
             "pick-algorithm-page"
 
-        AlgorithmDrillerExplanationPage _ ->
+        AlgorithmDrillerExplanationPage _ _ ->
             "algorithm-driller-explanation-page"
 
         AlgorithmDrillerStatusPage ->
@@ -1380,7 +1412,7 @@ uniquePageIdentifier model =
         PickAlgorithmPage _ _ ->
             "pick-algorithm-page"
 
-        AlgorithmDrillerExplanationPage _ ->
+        AlgorithmDrillerExplanationPage _ _ ->
             "algorithm-driller-explanation-page"
 
         AlgorithmDrillerStatusPage ->
