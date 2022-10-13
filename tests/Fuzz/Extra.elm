@@ -16,18 +16,15 @@ user =
     let
         changePLLOperationsFuzzer =
             Fuzz.list <|
-                Fuzz.map2
-                    (\pll_ index ->
-                        User.changePLLAlgorithm pll_
-                            (Dict.get (PLL.getLetters pll_) pllAlgorithms
+                (pll
+                    |> Fuzz.andThen
+                        (\pll_ ->
+                            Dict.get (PLL.getLetters pll_) pllAlgorithms
                                 |> Maybe.withDefault [ Algorithm.empty ]
-                                |> Array.fromList
-                                |> (\array -> Array.get (modBy (Array.length array) index) array)
-                                |> Maybe.withDefault Algorithm.empty
-                            )
-                    )
-                    pll
-                    (Fuzz.intRange 0 100000)
+                                |> Fuzz.oneOfValues
+                                |> Fuzz.map (User.changePLLAlgorithm pll_)
+                        )
+                )
 
         recordResultOperationsFuzzer =
             Fuzz.list <| Fuzz.map2 User.recordPLLTestResult pll testResult

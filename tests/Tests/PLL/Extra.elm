@@ -12,12 +12,11 @@ import Test exposing (..)
 getPreferredEquivalentAUFsTests : Test
 getPreferredEquivalentAUFsTests =
     describe "getPreferredEquivalentAUFs"
-        [ fuzzWith { runs = 10 }
-            (Fuzz.tuple3
-                ( Fuzz.oneOf <| List.map Fuzz.constant [ PLL.H, PLL.Z, PLL.Na, PLL.Nb, PLL.E ]
-                , Fuzz.Extra.auf
-                , Fuzz.Extra.auf
-                )
+        [ fuzzWith { runs = 10, distribution = noDistribution }
+            (Fuzz.triple
+                (Fuzz.oneOf <| List.map Fuzz.constant [ PLL.H, PLL.Z, PLL.Na, PLL.Nb, PLL.E ])
+                Fuzz.Extra.auf
+                Fuzz.Extra.auf
             )
             "never chooses a pair that makes the total moves longer symmetrical cases"
           <|
