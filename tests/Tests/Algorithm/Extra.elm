@@ -13,7 +13,7 @@ catpsTests : Test
 catpsTests =
     describe "complexityAdjustedTPS"
         [ fuzz3 Fuzz.Extra.algorithm
-            (Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf ))
+            (Fuzz.pair Fuzz.Extra.auf Fuzz.Extra.auf)
             (Fuzz.intRange 1 100000000)
             "it's just complexity per second"
           <|
@@ -22,7 +22,7 @@ catpsTests =
                     |> Expect.within (Expect.Absolute 0.0000000001)
                         (Algorithm.Extra.complexity aufs algorithm / (toFloat milliseconds / 1000))
         , fuzz2 Fuzz.Extra.algorithmWithoutTPSIgnoredTurns
-            (Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf ))
+            (Fuzz.pair Fuzz.Extra.auf Fuzz.Extra.auf)
             "same algorithm executed in slower time should give lower catps"
           <|
             \algorithm aufs ->
@@ -36,13 +36,12 @@ complexityTests : Test
 complexityTests =
     describe "complexity"
         [ fuzz3
-            (Fuzz.tuple
-                ( Fuzz.Extra.algorithm
-                , Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf )
-                )
+            (Fuzz.pair
+                Fuzz.Extra.algorithm
+                (Fuzz.pair Fuzz.Extra.auf Fuzz.Extra.auf)
             )
-            (Fuzz.tuple ( Fuzz.Extra.turnLength, Fuzz.Extra.turnDirection ))
-            (Fuzz.tuple ( Fuzz.Extra.turnLength, Fuzz.Extra.turnDirection ))
+            (Fuzz.pair Fuzz.Extra.turnLength Fuzz.Extra.turnDirection)
+            (Fuzz.pair Fuzz.Extra.turnLength Fuzz.Extra.turnDirection)
             "y rotations in start and beginning don't affect complexity"
           <|
             \( algorithm, aufs ) ( length1, direction1 ) ( length2, direction2 ) ->
@@ -59,7 +58,7 @@ complexityTests =
                     |> Expect.within (Expect.Absolute 0.0000001)
                         (Algorithm.Extra.complexityAdjustedTPS { milliseconds = 1000 } aufs algorithm)
         , fuzz2 Fuzz.Extra.algorithm
-            (Fuzz.tuple ( Fuzz.Extra.auf, Fuzz.Extra.auf ))
+            (Fuzz.pair Fuzz.Extra.auf Fuzz.Extra.auf)
             "adding a turn increases complexity"
           <|
             \algorithm aufs ->
