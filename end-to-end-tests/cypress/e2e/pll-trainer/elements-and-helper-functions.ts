@@ -1,8 +1,6 @@
 import {
   buildElementsCategory,
-  buildGlobalsCategory,
   cubeElement,
-  anyErrorMessage,
   errorMessageElement,
   optionalElement,
   buildRootCategory,
@@ -187,16 +185,6 @@ export const pllTrainerElements = {
     container: "algorithm-driller-success-page-container",
     explanation: "driller-success-explanation",
     nextTestButton: "next-test-button",
-  }),
-  globals: buildGlobalsCategory({
-    anyErrorMessage: anyErrorMessage(),
-    feedbackButton: "feedback-button",
-  }),
-  globalErrorPopup: buildElementsCategory({
-    container: errorMessageElement("error-popup-container"),
-    closeButton: "close-button",
-    sendErrorButton: "send-error-button",
-    dontSendErrorButton: "dont-send-error-button",
   }),
 };
 

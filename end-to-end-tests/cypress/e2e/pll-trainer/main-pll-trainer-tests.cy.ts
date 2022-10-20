@@ -26,6 +26,7 @@ import {
   getReadyWaitTime,
   pllTrainerElements,
 } from "e2e/pll-trainer/elements-and-helper-functions";
+import { globalElements } from "e2e/global-elements";
 
 describe("PLL Trainer", function () {
   beforeEach(function () {
@@ -1806,7 +1807,7 @@ function pickTargetParametersPageFirstThingNoSideEffects() {
             "errors behave properly at the start",
             () => {
               // No errors expected as you enter the page
-              pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
+              globalElements.misc.anyErrorMessage.assertDoesntExist();
             },
           ],
         ] as const
@@ -3026,7 +3027,7 @@ function pickAlgorithmPageFirstThingNoSideEffects() {
             "errors behave properly at the start",
             () => {
               // No errors expected as you enter the page
-              pllTrainerElements.globals.anyErrorMessage.assertDoesntExist();
+              globalElements.misc.anyErrorMessage.assertDoesntExist();
               // Should require input if pressing enter right away
               elements.algorithmInput.get().type("{enter}");
               elements.inputRequiredError.assertShows();
@@ -3602,7 +3603,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
               elements.assertAllConsumableViaVerticalScroll(
                 elements.container.specifier
               );
-              pllTrainerElements.globalErrorPopup.container.assertDoesntExist();
+              globalElements.errorPopup.container.assertDoesntExist();
               assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
               cy.assertNoHorizontalScrollbar();
             },
@@ -3759,7 +3760,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                   pllThatDoesntHaveAlgorithmPickedForItYet,
                   AUF.none,
                 ]);
-                pllTrainerElements.globalErrorPopup.container.assertShows();
+                globalElements.errorPopup.container.assertShows();
                 elements.recognitionExplanation.assertDoesntExist();
                 cy.setCurrentTestCase(originalTestCase);
               });
@@ -4146,7 +4147,7 @@ function wrongPageNavigateVariant2() {
 }
 
 function assertFunctioningFeedbackButtonShows() {
-  pllTrainerElements.globals.feedbackButton
+  globalElements.misc.feedbackButton
     .assertShows()
     .parent()
     .within(() => {

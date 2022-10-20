@@ -10,6 +10,7 @@ import {
   pllTrainerElements,
 } from "./pll-trainer/elements-and-helper-functions";
 import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
+import { globalElements } from "./global-elements";
 
 describe("Visual Tests", function () {
   beforeEach(function () {
@@ -268,7 +269,7 @@ describe("Visual Tests", function () {
       it("looks right", function () {
         cy.visit(unexposedInternalPaths.componentTests.errorPopup);
         cy.getByTestId("display-error-button").click();
-        pllTrainerElements.globalErrorPopup.container.waitFor();
+        globalElements.errorPopup.container.waitFor();
         cy.percySnapshotWithProperName("Component: Error Popup");
       });
     });
