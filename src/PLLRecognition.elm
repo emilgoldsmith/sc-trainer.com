@@ -1,4 +1,4 @@
-module PLLRecognition exposing (specToString)
+module PLLRecognition exposing (specToPLLRecognitionString, specToPostAUFString)
 
 import Cube.Advanced
 import Html exposing (..)
@@ -8,17 +8,14 @@ import PLL
 import UI.Text
 
 
-specToString : PLL.RecognitionSpecification -> String
-specToString spec =
+specToPLLRecognitionString : PLL.RecognitionSpecification -> String
+specToPLLRecognitionString spec =
     let
         sortedSpec =
             sortForDisplay spec
 
         { patterns, absentPatterns, oppositelyColored, adjacentlyColored, identicallyColored, differentlyColored, noOtherStickersMatchThanThese, noOtherBlocksPresent } =
             sortedSpec.caseRecognition
-
-        { postAUFRecognition } =
-            sortedSpec
 
         separator =
             UI.Text.Comma
@@ -206,6 +203,25 @@ specToString spec =
                 |> Maybe.map List.singleton
                 |> Maybe.withDefault []
             ]
+    in
+    parts
+        |> List.concat
+        |> List.map UI.Text.capitalizeFirst
+        |> String.join ". "
+        |> String.trim
+
+
+specToPostAUFString : PLL.RecognitionSpecification -> String
+specToPostAUFString spec =
+    let
+        separator =
+            UI.Text.Comma
+
+        sortedSpec =
+            sortForDisplay spec
+
+        { postAUFRecognition } =
+            sortedSpec
 
         listOfPostAUFPatternsToLookAt =
             postAUFRecognition
@@ -247,17 +263,10 @@ specToString spec =
                                )
                     )
     in
-    (parts
-        |> List.concat
-        |> List.map UI.Text.capitalizeFirst
-        |> String.join ". "
-        |> String.trim
-    )
-        ++ ". You can identify what the last AUF will be by looking at "
-        ++ UI.Text.grammaticalList
-            { finalConjunction = UI.Text.Or, separator = UI.Text.Semicolon }
-            listOfPostAUFPatternsToLookAt
-        ++ "."
+    UI.Text.grammaticalList
+        { finalConjunction = UI.Text.Or, separator = UI.Text.Semicolon }
+        listOfPostAUFPatternsToLookAt
+        |> UI.Text.capitalizeFirst
 
 
 type Article
