@@ -1,5 +1,5 @@
 import { unexposedInternalPaths } from "support/paths";
-import { pllTrainerElements } from "./pll-trainer/elements-and-helper-functions";
+import { globalElements } from "./global-elements";
 
 describe("Component Tests", function () {
   describe("Error Popup", function () {
@@ -9,21 +9,21 @@ describe("Component Tests", function () {
 
       cy.visit(unexposedInternalPaths.componentTests.errorPopup);
 
-      pllTrainerElements.globalErrorPopup.container.assertDoesntExist();
+      globalElements.errorPopup.container.assertDoesntExist();
       cy.getByTestId(displayErrorTestId).click();
 
-      pllTrainerElements.globalErrorPopup.closeButton.get().click();
-      pllTrainerElements.globalErrorPopup.container.assertDoesntExist();
+      globalElements.errorPopup.closeButton.get().click();
+      globalElements.errorPopup.container.assertDoesntExist();
       cy.getByTestId(sentErrorMessageTestId).should("not.exist");
 
       cy.getByTestId(displayErrorTestId).click();
-      pllTrainerElements.globalErrorPopup.dontSendErrorButton.get().click();
-      pllTrainerElements.globalErrorPopup.container.assertDoesntExist();
+      globalElements.errorPopup.dontSendErrorButton.get().click();
+      globalElements.errorPopup.container.assertDoesntExist();
       cy.getByTestId(sentErrorMessageTestId).should("not.exist");
 
       cy.getByTestId(displayErrorTestId).click();
-      pllTrainerElements.globalErrorPopup.sendErrorButton.get().click();
-      pllTrainerElements.globalErrorPopup.container.assertDoesntExist();
+      globalElements.errorPopup.sendErrorButton.get().click();
+      globalElements.errorPopup.container.assertDoesntExist();
       cy.getByTestId(sentErrorMessageTestId).should("be.visible");
     });
   });
