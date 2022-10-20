@@ -22,4 +22,4 @@ echo "${RED}NOTE: Elm SPA generated files don't rebuild. Therefore a restart of 
 echo "${RED}NOTE:${RESET_COLOUR}"
 echo
 
-elm-live src/Main.elm --port 4000 --hot --dir build/public -- --output=build/public/main.js "$@"
+elm-live src/Main.elm --port 4000 --hot --pushstate --dir build/public -- --output=build/public/main.js "$@"
