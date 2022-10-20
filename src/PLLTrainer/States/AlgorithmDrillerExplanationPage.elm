@@ -218,6 +218,7 @@ view shared transitions { testCase, wasCorrect } toMsg model =
                             , centerX
                             , Font.bold
                             , Font.center
+                            , UI.fontSize.large
                             ]
                             [ text
                                 (testCase
@@ -232,13 +233,21 @@ view shared transitions { testCase, wasCorrect } toMsg model =
                                 none
 
                             Just recognitionSpec ->
-                                paragraph
+                                column
                                     [ testid "recognition-explanation"
                                     , centerX
-                                    , Font.bold
-                                    , Font.center
+                                    , UI.spacingVertical.extremelySmall
+                                    , UI.fontSize.medium
                                     ]
-                                    [ text (PLLRecognition.specToString recognitionSpec)
+                                    [ paragraph
+                                        []
+                                        [ el [ Font.bold ] <| text "PLL Recognition: "
+                                        , text (PLLRecognition.specToPLLRecognitionString recognitionSpec)
+                                        ]
+                                    , paragraph []
+                                        [ el [ Font.bold ] <| text "Post-AUF Recognition: "
+                                        , text (PLLRecognition.specToPostAUFString recognitionSpec)
+                                        ]
                                     ]
                         , PLLTrainer.ButtonWithShortcut.view
                             shared.hardwareAvailable
