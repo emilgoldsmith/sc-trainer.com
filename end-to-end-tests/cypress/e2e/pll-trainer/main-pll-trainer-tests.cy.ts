@@ -104,6 +104,7 @@ describe("PLL Trainer", function () {
           evaluateResultFront: string;
           evaluateResultBack: string;
         };
+
         // Note that the time won't be 500 as we're using a changing clock variant
         // of the test running navigator
         completePLLTestInMilliseconds(500, {
@@ -3601,7 +3602,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
               elements.assertAllConsumableViaVerticalScroll(
                 elements.container.specifier
               );
-              pllTrainerElements.globals.errorPopup.assertDoesntExist();
+              pllTrainerElements.globalErrorPopup.container.assertDoesntExist();
               assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
               cy.assertNoHorizontalScrollbar();
             },
@@ -3758,7 +3759,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                   pllThatDoesntHaveAlgorithmPickedForItYet,
                   AUF.none,
                 ]);
-                pllTrainerElements.globals.errorPopup.assertShows();
+                pllTrainerElements.globalErrorPopup.container.assertShows();
                 elements.recognitionExplanation.assertDoesntExist();
                 cy.setCurrentTestCase(originalTestCase);
               });

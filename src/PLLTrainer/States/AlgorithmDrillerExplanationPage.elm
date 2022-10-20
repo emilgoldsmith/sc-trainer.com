@@ -90,7 +90,7 @@ update msg _ =
 
 
 subscriptions : Transitions msg -> Model -> PLLTrainer.Subscription.Subscription msg
-subscriptions transitions model =
+subscriptions transitions _ =
     PLLTrainer.Subscription.onlyBrowserEvents <|
         Browser.Events.onKeyUp <|
             Json.Decode.map
@@ -117,12 +117,11 @@ view shared transitions { testCase, wasCorrect } toMsg model =
                 shared.palette
                 { errorDescription = description
                 , closeWithoutSending = toMsg CloseErrorWithoutSending
-                , sendError = toMsg CloseErrorWithoutSending
+                , sendError = toMsg (SendError description)
                 }
 
         maybePLLAlgorithm =
-            -- User.getPLLAlgorithm (PLLTrainer.TestCase.pll testCase) shared.user
-            Nothing
+            User.getPLLAlgorithm (PLLTrainer.TestCase.pll testCase) shared.user
 
         ( maybeRecognitionSpec, maybeErrorPopupOverlay ) =
             case maybePLLAlgorithm of
@@ -142,7 +141,7 @@ view shared transitions { testCase, wasCorrect } toMsg model =
                     of
                         Err (PLL.IncorrectPLLAlgorithm _ _) ->
                             ( Nothing
-                            , Just <| errorPopup "Unexpected Error: Stored PLL Algorithm Doesn't Match The PLL Case"
+                            , Just <| errorPopup "Stored PLL algorithm doesn't solve the case"
                             )
 
                         Ok recognitionSpec ->

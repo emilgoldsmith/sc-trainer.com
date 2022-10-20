@@ -23,7 +23,7 @@ overlay viewportSize palette { errorDescription, sendError, closeWithoutSending 
     in
     inFront <|
         column
-            [ testid "error-popup"
+            [ testid "error-popup-container"
             , errorMessageTestType
             , alignBottom
             , centerX
@@ -52,7 +52,7 @@ overlay viewportSize palette { errorDescription, sendError, closeWithoutSending 
                         FilledIcons.error 35 (UI.materialIconColor palette.lightText)
                     , el [ moveDown 3 ] <| text "Error"
                     , Input.button
-                        [ alignRight ]
+                        [ alignRight, testid "close-button" ]
                         { onPress = Just closeWithoutSending
                         , label =
                             html <|
@@ -79,13 +79,13 @@ overlay viewportSize palette { errorDescription, sendError, closeWithoutSending 
                     ]
                 , row [ width fill ]
                     [ el [ width fill ] <|
-                        UI.viewButton.large [ centerX ]
+                        UI.viewButton.large [ centerX, testid "dont-send-error-button" ]
                             { onPress = Just closeWithoutSending
                             , color = rgb255 125 125 125
                             , label = \size -> el [ Font.size size ] <| text "No"
                             }
                     , el [ width fill ] <|
-                        UI.viewButton.large [ centerX ]
+                        UI.viewButton.large [ centerX, testid "send-error-button" ]
                             { onPress = Just sendError
                             , color = palette.errorText
                             , label = \size -> el [ Font.size size ] <| text "Yes"

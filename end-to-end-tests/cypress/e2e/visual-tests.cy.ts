@@ -2,7 +2,7 @@ import {
   addPercyCanvasStyleFixers,
   applyDefaultIntercepts,
 } from "support/interceptors";
-import { paths } from "support/paths";
+import { paths, unexposedInternalPaths } from "support/paths";
 import { AUF, PLL } from "support/pll";
 import {
   completePLLTestInMilliseconds,
@@ -260,6 +260,17 @@ describe("Visual Tests", function () {
 
       pllTrainerElements.algorithmDrillerSuccessPage.container.waitFor();
       cy.percySnapshotWithProperName("Algorithm Driller Success Page");
+    });
+  });
+
+  describe("Components", function () {
+    describe("Error Popup", function () {
+      it("looks right", function () {
+        cy.visit(unexposedInternalPaths.componentTests.errorPopup);
+        cy.getByTestId("display-error-button").click();
+        pllTrainerElements.globalErrorPopup.container.waitFor();
+        cy.percySnapshotWithProperName("Component: Error Popup");
+      });
     });
   });
 });

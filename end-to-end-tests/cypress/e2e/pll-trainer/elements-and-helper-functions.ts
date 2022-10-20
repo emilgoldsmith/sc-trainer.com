@@ -191,7 +191,12 @@ export const pllTrainerElements = {
   globals: buildGlobalsCategory({
     anyErrorMessage: anyErrorMessage(),
     feedbackButton: "feedback-button",
-    errorPopup: errorMessageElement("error-popup"),
+  }),
+  globalErrorPopup: buildElementsCategory({
+    container: errorMessageElement("error-popup-container"),
+    closeButton: "close-button",
+    sendErrorButton: "send-error-button",
+    dontSendErrorButton: "dont-send-error-button",
   }),
 };
 
