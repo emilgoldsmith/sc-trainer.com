@@ -182,3 +182,27 @@ export const pllToAlgorithmString: { [key in PLL]: string } = {
   [PLL.Y]: "R' U' R F2 R' U R Dw R2 U' R2 U' R2",
   [PLL.Z]: "M2 Uw M2 Uw' S M2 S'",
 };
+
+export const pllToJpermsAlgorithm: { [key in PLL]: string } = {
+  [PLL.Ua]: "M2 U M U2 M' U M2",
+  [PLL.Ub]: "M2 U' M U2 M' U' M2",
+  [PLL.H]: "M2 U M2 U2 M2 U M2",
+  [PLL.Z]: "M U M2 U M2 U M U2 M2",
+  [PLL.Aa]: "x L2 D2 (L' U' L) D2 (L' U L')",
+  [PLL.Ab]: "x (L U' L) D2 (L' U L) D2 L2",
+  [PLL.E]: "x' (L' U L D') (L' U' L D) (L' U' L D') (L' U L D)",
+  [PLL.T]: "(R U R' U') R' F R2 U' R' U' (R U R') F'",
+  [PLL.F]: "R' U' F' (R U R' U') R' F R2 U' R' U' (R U R') U R",
+  [PLL.Jb]: "(R U R' F') (R U R' U') R' F R2 U' R'",
+  [PLL.Ja]: "x (R2 F R F') R U2 (r' U r) U2",
+  [PLL.Ra]: "(R U' R' U') (R U R D) (R' U' R D') (R' U2 R')",
+  [PLL.Rb]: "R2 F R (U R U' R') F' R U2 R' U2 R",
+  [PLL.Y]: "F (R U' R' U') (R U R') F' (R U R' U') (R' F R F')",
+  [PLL.V]: "R U' (R U R') D R D' R (U' D) R2 U R2 D' R2",
+  [PLL.Na]: "(R U R' U) (R U R' F' R U R' U' R' F R2 U' R') (U2 R U' R')",
+  [PLL.Nb]: "r' D' F (r U' r') F' D (r2 U r' U') (r' F r F')",
+  [PLL.Ga]: "R2 U R' U R' U' R U' R2 (U' D) (R' U R) D'",
+  [PLL.Gb]: "(R' U' R) (U D') R2 U R' U R U' R U' R2 D",
+  [PLL.Gc]: "R2 U' R U' R U R' U R2 (U D') (R U' R') D",
+  [PLL.Gd]: "(R U R') (U' D) R2 U' R U' R' U R' U R2 D'",
+};
