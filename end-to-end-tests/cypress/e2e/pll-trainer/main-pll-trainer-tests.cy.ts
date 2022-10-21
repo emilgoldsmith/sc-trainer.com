@@ -18,6 +18,7 @@ import {
   aufToAlgorithmString,
   PLL,
   pllToAlgorithmString,
+  pllToJpermsAlgorithm,
   pllToPllLetters,
 } from "support/pll";
 import {
@@ -3748,6 +3749,40 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                   // Reset to the original state
                   cy.setApplicationState(originalApplicationState);
                 });
+              });
+            },
+          ],
+          [
+            "snapshot all of the pll recognition explanations",
+            () => {
+              cy.getApplicationState().then((originalApplicationState) => {
+                const allPreAUFAndPLLCombinations: [AUF, PLL][] =
+                  allPLLs.flatMap((pll) => {
+                    // Set all the algorithms here both in case of them not being set in advance
+                    // and to be able to control that we use Jperms algorithms for ease of understanding
+                    // any test failures etc.
+                    cy.setPLLAlgorithm(pll, pllToJpermsAlgorithm[pll]);
+                    return allAUFs.map((auf) => [auf, pll] as [AUF, PLL]);
+                  });
+
+                allPreAUFAndPLLCombinations.forEach(([preAUF, pll]) => {
+                  // PostAUF doesn't matter for the recognition angle
+                  cy.setCurrentTestCase([preAUF, pll, AUF.none]);
+                  elements.recognitionExplanation
+                    .get()
+                    .invoke("text")
+                    .snapshot({
+                      name:
+                        "Driller explanation page recognition explanation using Jperm's algorithms for " +
+                        aufToAlgorithmString[preAUF] +
+                        " [" +
+                        pllToPllLetters[pll] +
+                        "]",
+                    });
+                });
+
+                // To avoid any side effects
+                cy.setApplicationState(originalApplicationState);
               });
             },
           ],
