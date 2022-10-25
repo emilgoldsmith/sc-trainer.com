@@ -21,13 +21,15 @@ helperTests =
                 \_ ->
                     User.new
                         |> User.hasAttemptedAnyPLLTestCase
-                        |> Expect.false "a new user has not attempted a pll test case"
+                        |> Expect.equal False
+                        |> Expect.onFail "a new user has not attempted a pll test case"
             , fuzz Fuzz.Extra.pll "should return false for a user that only picked algorithms but didn't yet attempt a test case" <|
                 \pll ->
                     User.new
                         |> User.changePLLAlgorithm pll Algorithm.empty
                         |> User.hasAttemptedAnyPLLTestCase
-                        |> Expect.false "user only picked algorithms didn't attempt a case yet"
+                        |> Expect.equal False
+                        |> Expect.onFail "user only picked algorithms didn't attempt a case yet"
             , fuzz Fuzz.Extra.pll "should return true when there is a recorded test for a pll" <|
                 \pll ->
                     User.new
@@ -261,7 +263,8 @@ serializationTests =
                             [ Expect.ok
                             , Result.withDefault User.new
                                 >> User.hasChosenPLLAlgorithmFor PLL.H
-                                >> Expect.true "an H perm should have been chosen"
+                                >> Expect.equal True
+                                >> Expect.onFail "an H perm should have been chosen"
                             ]
             , test "it still works for the v2" <|
                 \_ ->
@@ -275,7 +278,8 @@ serializationTests =
                             [ Expect.ok
                             , Result.withDefault User.new
                                 >> User.hasChosenPLLAlgorithmFor PLL.H
-                                >> Expect.true "an H perm should have been chosen"
+                                >> Expect.equal True
+                                >> Expect.onFail "an H perm should have been chosen"
                             , Result.withDefault User.new
                                 >> User.getPLLTargetParameters
                                 >> Expect.equal { recognitionTimeInSeconds = 1.3, tps = 6.3 }
