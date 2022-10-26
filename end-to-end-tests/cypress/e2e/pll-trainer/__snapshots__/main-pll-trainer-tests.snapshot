@@ -19,6 +19,5 @@ module.exports = {
         }
       }
     }
-  },
-  "__Cypress_version": "10.10.0"
+  }
 }

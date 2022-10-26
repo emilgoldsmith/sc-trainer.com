@@ -259,7 +259,6 @@ function registerCypressSnapshot() {
     if (doDebugLogs) console.log("%d snapshot(s) on finish", count);
 
     if (count) {
-      setSnapshot("__Cypress_version", Cypress.version);
       if (doDebugLogs) console.log(storeSnapshot());
       // If the test already failed we won't have been able to detect all the snapshots that should've run if there had been no failure
       if (
