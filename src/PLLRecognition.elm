@@ -112,7 +112,13 @@ specToPLLRecognitionString spec =
                                     "the enclosed sticker"
 
                                 else
-                                    nonemptyElementsToGrammaticalList { article = Definite, finalConjunction = UI.Text.And, separator = separator, forcePlural = False } second
+                                    nonemptyElementsToGrammaticalList
+                                        { article = Definite
+                                        , finalConjunction = UI.Text.And
+                                        , separator = separator
+                                        , forcePlural = False
+                                        }
+                                        second
                                )
                     )
             , adjacentlyColored
@@ -147,7 +153,13 @@ specToPLLRecognitionString spec =
                                     "the enclosed sticker"
 
                                 else
-                                    nonemptyElementsToGrammaticalList { article = Definite, finalConjunction = UI.Text.And, separator = separator, forcePlural = False } second
+                                    nonemptyElementsToGrammaticalList
+                                        { article = Definite
+                                        , finalConjunction = UI.Text.And
+                                        , separator = separator
+                                        , forcePlural = False
+                                        }
+                                        second
                                )
                     )
             , identicallyColored
@@ -518,7 +530,9 @@ sortPatternsByFurthestLeftComparison a b =
     sortByFurthestLeftComparison (PLL.Pattern a) (PLL.Pattern b)
 
 
-ensurePatternsAreInFirstSpot : ( List.Nonempty.Nonempty PLL.RecognitionElement, List.Nonempty.Nonempty PLL.RecognitionElement ) -> ( List.Nonempty.Nonempty PLL.RecognitionElement, List.Nonempty.Nonempty PLL.RecognitionElement )
+ensurePatternsAreInFirstSpot :
+    ( List.Nonempty.Nonempty PLL.RecognitionElement, List.Nonempty.Nonempty PLL.RecognitionElement )
+    -> ( List.Nonempty.Nonempty PLL.RecognitionElement, List.Nonempty.Nonempty PLL.RecognitionElement )
 ensurePatternsAreInFirstSpot ( a, b ) =
     if
         b
