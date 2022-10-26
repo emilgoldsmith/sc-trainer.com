@@ -3685,70 +3685,78 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
           [
             "recognition explanation does not change when postAUF changes, but otherwise does",
             () => {
-              cy.getCurrentTestCase().then((originalTestCase) => {
-                cy.getApplicationState().then((originalApplicationState) => {
-                  type Aliases = { originalExplanation: string };
-                  const originalPostAUF = originalTestCase[2];
-                  const otherPostAUFs = allAUFs.filter(
-                    (auf) => auf !== originalPostAUF
-                  );
-                  elements.recognitionExplanation
-                    .get()
-                    .invoke("text")
-                    .setAlias<Aliases, "originalExplanation">(
-                      "originalExplanation"
-                    );
-                  otherPostAUFs.forEach((otherPostAUF) => {
-                    cy.setCurrentTestCase([
-                      originalTestCase[0],
-                      originalTestCase[1],
-                      otherPostAUF,
-                    ]);
-                    elements.recognitionExplanation
-                      .get()
-                      .invoke("text")
-                      .then((nextExplanation) => {
-                        cy.getAliases<Aliases>().then(
-                          ({ originalExplanation }) =>
-                            assertNonFalsyStringsEqual(
-                              nextExplanation,
-                              originalExplanation,
-                              "nextExplanation (first) is not equal to originalExplanation (second)"
-                            )
-                        );
-                      });
-                  });
+              cy.getApplicationState().then((originalApplicationState) => {
+                // We choose F perm as it is not symmetrical, just to have an even more confidence building test
+                const originalTestCase = [AUF.U, PLL.F, AUF.U2] as const;
+                // We need to set the algorithm as that is required for recognition explanations
+                // and F perm may not have an algorithm set when this test is run
+                cy.setPLLAlgorithm(
+                  originalTestCase[1],
+                  pllToAlgorithmString[originalTestCase[1]]
+                );
+                cy.setCurrentTestCase(originalTestCase);
 
-                  // If we change to a different pll though, it should be different
-                  const otherPLL = allPLLs.filter(
-                    (pll) => pll !== originalTestCase[1]
-                  )[0];
-                  if (otherPLL === undefined)
-                    throw new Error(
-                      "this shouldn't happen, we're just using it as a type guard"
-                    );
+                type Aliases = { originalExplanation: string };
+                const originalPostAUF = originalTestCase[2];
+                const otherPostAUFs = allAUFs.filter(
+                  (auf) => auf !== originalPostAUF
+                );
+                elements.recognitionExplanation
+                  .get()
+                  .invoke("text")
+                  .setAlias<Aliases, "originalExplanation">(
+                    "originalExplanation"
+                  );
+                otherPostAUFs.forEach((otherPostAUF) => {
                   cy.setCurrentTestCase([
                     originalTestCase[0],
-                    otherPLL,
-                    originalTestCase[2],
+                    originalTestCase[1],
+                    otherPostAUF,
                   ]);
-                  cy.setPLLAlgorithm(otherPLL, pllToAlgorithmString[otherPLL]);
                   elements.recognitionExplanation
                     .get()
                     .invoke("text")
-                    .then((otherPLLExplanation) => {
+                    .then((nextExplanation) => {
                       cy.getAliases<Aliases>().then(({ originalExplanation }) =>
-                        assertNonFalsyStringsDifferent(
-                          otherPLLExplanation,
+                        assertNonFalsyStringsEqual(
+                          nextExplanation,
                           originalExplanation,
-                          "otherPLLExplanation (first) is equal to originalExplanation (second)"
+                          "nextExplanation (first) is not equal to originalExplanation (second)"
                         )
                       );
                     });
-
-                  // Reset to the original state
-                  cy.setApplicationState(originalApplicationState);
                 });
+
+                // If we change to a different pll though, it should be different
+                const otherPLL = allPLLs.filter(
+                  (pll) => pll !== originalTestCase[1]
+                )[0];
+                if (otherPLL === undefined)
+                  throw new Error(
+                    "this shouldn't happen, we're just using it as a type guard"
+                  );
+                // Again we need to set the algorithm as it's required
+                cy.setPLLAlgorithm(otherPLL, pllToAlgorithmString[otherPLL]);
+                cy.setCurrentTestCase([
+                  originalTestCase[0],
+                  otherPLL,
+                  originalTestCase[2],
+                ]);
+                elements.recognitionExplanation
+                  .get()
+                  .invoke("text")
+                  .then((otherPLLExplanation) => {
+                    cy.getAliases<Aliases>().then(({ originalExplanation }) =>
+                      assertNonFalsyStringsDifferent(
+                        otherPLLExplanation,
+                        originalExplanation,
+                        "otherPLLExplanation (first) is equal to originalExplanation (second)"
+                      )
+                    );
+                  });
+
+                // Reset to the original state
+                cy.setApplicationState(originalApplicationState);
               });
             },
           ],
@@ -3772,12 +3780,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                     .get()
                     .invoke("text")
                     .snapshot({
-                      name:
-                        "Driller explanation page recognition explanation using Jperm's algorithms for " +
-                        aufToAlgorithmString[preAUF] +
-                        " [" +
-                        pllToPllLetters[pll] +
-                        "]",
+                      name: `Driller explanation page recognition explanation using Jperm's algorithms for ${aufToAlgorithmString[preAUF]} [${pllToPllLetters[pll]}]`,
                     });
                 });
 

@@ -48,8 +48,9 @@ overlay viewportSize palette { errorDescription, sendError, closeWithoutSending 
                     , Font.color palette.lightText
                     , width fill
                     ]
-                    [ html <|
-                        FilledIcons.error 35 (UI.materialIconColor palette.lightText)
+                    [ el [] <|
+                        html <|
+                            FilledIcons.error 35 (UI.materialIconColor palette.lightText)
                     , el [ moveDown 3 ] <| text "Error"
                     , Input.button
                         [ alignRight, testid "close-button" ]

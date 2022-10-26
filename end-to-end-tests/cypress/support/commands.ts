@@ -436,8 +436,7 @@ const setApplicationState: Cypress.Chainable<undefined>["setApplicationState"] =
       );
       // Force us to wait for a render loop as otherwise the update won't
       // necessarily render for commands made right after, and there isn't
-      // really anything we can wait for as it's still the same page, and
-      // it depends on the page what will change on it
+      // really anything we can wait for as we don't know the target page
       // eslint-disable-next-line cypress/no-unnecessary-waiting
       cy.wait(0);
     };
@@ -803,7 +802,8 @@ const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] =
         // Force us to wait for a render loop as otherwise the update won't
         // necessarily render for commands made right after, and there isn't
         // really anything we can wait for as it's still the same page, and
-        // it depends on the page what will change on it
+        // we don't know which page it is which is what determines what might
+        // change on the page
         // eslint-disable-next-line cypress/no-unnecessary-waiting
         cy.wait(0);
       }

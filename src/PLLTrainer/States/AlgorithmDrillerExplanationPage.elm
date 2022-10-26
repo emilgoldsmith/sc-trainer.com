@@ -149,15 +149,13 @@ view shared transitions { testCase, wasCorrect } toMsg model =
     in
     { overlays =
         View.buildOverlays
-            (List.filterMap
-                (\x ->
-                    if model.errorMessageClosed then
-                        Nothing
+            (List.filterMap identity
+                [ if model.errorMessageClosed then
+                    Nothing
 
-                    else
-                        x
-                )
-                [ maybeErrorPopupOverlay ]
+                  else
+                    maybeErrorPopupOverlay
+                ]
             )
     , body =
         View.fullScreenBody
