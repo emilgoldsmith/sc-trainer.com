@@ -3773,17 +3773,27 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                     return allAUFs.map((auf) => [auf, pll] as [AUF, PLL]);
                   });
 
+                const seen = new Set();
                 allPreAUFAndPLLCombinations.forEach(([preAUF, pll]) => {
                   // PostAUF doesn't matter for the recognition angle
                   cy.setCurrentTestCase([preAUF, pll, AUF.none]);
-                  elements.recognitionExplanation
-                    .get()
-                    .invoke("text")
-                    .snapshot({
-                      name:
-                        "Driller explanation page recognition explanation from ufr angle using Jperm's algorithms for " +
-                        `${aufToAlgorithmString[preAUF]} [${pllToPllLetters[pll]}]`.trim(),
-                    });
+                  // To check that we aren't repeating any snapshots that are optimized away by symmetricalities
+                  cy.getCurrentTestCase().then((testCase) => {
+                    const testCaseString = `${
+                      aufToAlgorithmString[testCase[0]]
+                    } [${pllToPllLetters[testCase[1]]}]`;
+                    if (seen.has(testCaseString)) return;
+                    seen.add(testCaseString);
+
+                    elements.recognitionExplanation
+                      .get()
+                      .invoke("text")
+                      .snapshot({
+                        name:
+                          "Driller explanation page recognition explanation from ufr angle using Jperm's algorithms for " +
+                          `${aufToAlgorithmString[preAUF]} [${pllToPllLetters[pll]}]`.trim(),
+                      });
+                  });
                 });
 
                 // To avoid any side effects
