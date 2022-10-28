@@ -216,11 +216,14 @@ specToPLLRecognitionString spec =
                 |> Maybe.withDefault []
             ]
     in
-    parts
-        |> List.concat
-        |> List.map UI.Text.capitalizeFirst
-        |> String.join ". "
-        |> String.trim
+    String.append
+        (parts
+            |> List.concat
+            |> List.map UI.Text.capitalizeFirst
+            |> String.join ". "
+            |> String.trim
+        )
+        "."
 
 
 specToPostAUFString : PLL.RecognitionSpecification -> String
@@ -275,10 +278,13 @@ specToPostAUFString spec =
                                )
                     )
     in
-    UI.Text.grammaticalList
-        { finalConjunction = UI.Text.Or, separator = UI.Text.Semicolon }
-        listOfPostAUFPatternsToLookAt
-        |> UI.Text.capitalizeFirst
+    String.append
+        (UI.Text.grammaticalList
+            { finalConjunction = UI.Text.Or, separator = UI.Text.Semicolon }
+            listOfPostAUFPatternsToLookAt
+            |> UI.Text.capitalizeFirst
+        )
+        "."
 
 
 type Article

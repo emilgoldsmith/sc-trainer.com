@@ -3780,7 +3780,9 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                     .get()
                     .invoke("text")
                     .snapshot({
-                      name: `Driller explanation page recognition explanation using Jperm's algorithms for ${aufToAlgorithmString[preAUF]} [${pllToPllLetters[pll]}]`,
+                      name:
+                        "Driller explanation page recognition explanation from ufr angle using Jperm's algorithms for " +
+                        `${aufToAlgorithmString[preAUF]} [${pllToPllLetters[pll]}]`.trim(),
                     });
                 });
 
