@@ -707,6 +707,8 @@ Cypress.Commands.add("mouseClickScreen", mouseClickScreen);
 
 const percySnapshotWithProperName: Cypress.Chainable<undefined>["percySnapshotWithProperName"] =
   function (name, options) {
+    // TEMP TEMP TEMP TODO
+    if (name !== "Algorithm Driller Explanation Page (Correct Case)") return;
     // Wait for all canvases to fully render before snapshotting
     cy.get("canvas").should((elements) => {
       elements.each((_, canvas) => {

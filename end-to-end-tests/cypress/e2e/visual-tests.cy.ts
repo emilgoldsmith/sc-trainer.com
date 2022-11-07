@@ -1,7 +1,4 @@
-import {
-  addPercyCanvasStyleFixers,
-  applyDefaultIntercepts,
-} from "support/interceptors";
+import { applyDefaultIntercepts } from "support/interceptors";
 import { paths, unexposedInternalPaths } from "support/paths";
 import { AUF, PLL } from "support/pll";
 import {
@@ -14,8 +11,9 @@ import { globalElements } from "./global-elements";
 
 describe("Visual Tests", function () {
   beforeEach(function () {
-    applyDefaultIntercepts({ extraHtmlModifiers: [addPercyCanvasStyleFixers] });
+    applyDefaultIntercepts();
   });
+
   describe("PLL Trainer", function () {
     it("looks right", function () {
       cy.visit(paths.pllTrainer);
