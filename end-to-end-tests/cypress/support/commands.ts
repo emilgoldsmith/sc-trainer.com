@@ -715,11 +715,7 @@ const percySnapshotWithProperName: Cypress.Chainable<undefined>["percySnapshotWi
     });
     const width = Cypress.config().viewportWidth;
     const properName = `${name}-${width}`;
-    cy.percySnapshot(properName, {
-      ...options,
-      // This is what ensures we get full page snapshots
-      percyCSS: "* { overflow-y: visible !important;}",
-    });
+    cy.percySnapshot(properName, options);
   };
 Cypress.Commands.add(
   "percySnapshotWithProperName",
