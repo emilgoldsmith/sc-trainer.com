@@ -124,13 +124,25 @@ specToPLLRecognitionString spec =
             , adjacentlyColored
                 |> List.map
                     (\( first, second ) ->
-                        nonemptyElementsToGrammaticalList
-                            { article = Definite
-                            , finalConjunction = UI.Text.And
-                            , separator = separator
-                            , forcePlural = False
-                            }
-                            first
+                        (if List.Nonempty.length first > 1 then
+                            "the identically colored "
+                                ++ nonemptyElementsToGrammaticalList
+                                    { article = NoArticle
+                                    , finalConjunction = UI.Text.And
+                                    , separator = separator
+                                    , forcePlural = False
+                                    }
+                                    first
+
+                         else
+                            nonemptyElementsToGrammaticalList
+                                { article = Definite
+                                , finalConjunction = UI.Text.And
+                                , separator = separator
+                                , forcePlural = False
+                                }
+                                first
+                        )
                             ++ " "
                             ++ (if
                                     (List.Nonempty.length first > 1)
@@ -151,6 +163,16 @@ specToPLLRecognitionString spec =
                                            )
                                 then
                                     "the enclosed sticker"
+
+                                else if List.Nonempty.length second > 1 then
+                                    "the identically colored "
+                                        ++ nonemptyElementsToGrammaticalList
+                                            { article = NoArticle
+                                            , finalConjunction = UI.Text.And
+                                            , separator = separator
+                                            , forcePlural = False
+                                            }
+                                            second
 
                                 else
                                     nonemptyElementsToGrammaticalList
