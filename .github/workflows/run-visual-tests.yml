@@ -59,8 +59,8 @@ jobs:
       - name: Output the container names
         id: outputter
         run: |
-          echo "::set-output name=ci-chrome::$REPOSITORY:$CHROME_TAG"
-          echo "::set-output name=production::$REPOSITORY:$PRODUCTION_TAG"
+          echo "ci-chrome=$REPOSITORY:$CHROME_TAG" >> $GITHUB_OUTPUT
+          echo "production=$REPOSITORY:$PRODUCTION_TAG" >> $GITHUB_OUTPUT
 
   run-visual-tests:
     name: Run Visual Tests on ${{ matrix.sizes.name }} screen size

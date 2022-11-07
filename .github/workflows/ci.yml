@@ -47,9 +47,9 @@ jobs:
             ) \
           )
 
-          echo "::set-output name=ci-container::ci-container-v3"
-          echo "::set-output name=ci-chrome::ci-chrome-v2"
-          echo "::set-output name=production::production-$SHA"
+          echo "ci-container=ci-container-v3" >> $GITHUB_OUTPUT
+          echo "ci-chrome=ci-chrome-v2" >> $GITHUB_OUTPUT
+          echo "production=production-$SHA" >> $GITHUB_OUTPUT
 
       - name: Wait for CI Container image to exist
         shell: bash
@@ -105,9 +105,9 @@ jobs:
       - name: Output the container names
         id: outputter
         run: |
-          echo "::set-output name=ci-container::${{ env.repository }}:${{ steps.tags.outputs.ci-container }}"
-          echo "::set-output name=ci-chrome::${{ env.repository }}:${{ steps.tags.outputs.ci-chrome }}"
-          echo "::set-output name=production::${{ env.repository }}:${{ steps.tags.outputs.production }}"
+          echo "ci-container=${{ env.repository }}:${{ steps.tags.outputs.ci-container }}" >> $GITHUB_OUTPUT
+          echo "ci-chrome=${{ env.repository }}:${{ steps.tags.outputs.ci-chrome }}" >> $GITHUB_OUTPUT
+          echo "production=${{ env.repository }}:${{ steps.tags.outputs.production }}" >> $GITHUB_OUTPUT
 
   lint-and-unit-tests:
     name: Linting And Unit Tests
