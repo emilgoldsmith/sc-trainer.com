@@ -715,17 +715,11 @@ const percySnapshotWithProperName: Cypress.Chainable<undefined>["percySnapshotWi
     });
     const width = Cypress.config().viewportWidth;
     const properName = `${name}-${width}`;
-
-    if (options?.ensureFullHeightIsCaptured) {
-      getTopAndBottomElements().then(({ positions }) => {
-        cy.percySnapshot(properName, {
-          ...Cypress._.omit(options, "ensureFullHeightIsCaptured"),
-          minHeight: positions.bottom,
-        });
-      });
-    } else {
-      cy.percySnapshot(properName, options);
-    }
+    cy.percySnapshot(properName, {
+      ...options,
+      // This is what ensures we get full page snapshots
+      percyCSS: "* { overflow-y: visible !important;}",
+    });
   };
 Cypress.Commands.add(
   "percySnapshotWithProperName",

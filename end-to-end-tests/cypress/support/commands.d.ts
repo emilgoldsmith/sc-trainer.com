@@ -280,9 +280,7 @@ declare namespace Cypress {
 
     percySnapshotWithProperName(
       name: string,
-      options?: import("@percy/core").SnapshotOptions & {
-        ensureFullHeightIsCaptured?: boolean;
-      }
+      options?: import("@percy/core").SnapshotOptions
     ): void;
 
     getCurrentTestCase(): Chainable<

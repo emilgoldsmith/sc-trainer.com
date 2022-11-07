@@ -19,15 +19,10 @@ describe("Visual Tests", function () {
   describe("PLL Trainer", function () {
     it("looks right", function () {
       cy.visit(paths.pllTrainer);
-      cy.percySnapshotWithProperName(
-        "PLL Trainer Pick Target Parameters Page",
-        { ensureFullHeightIsCaptured: true }
-      );
+      cy.percySnapshotWithProperName("PLL Trainer Pick Target Parameters Page");
       pllTrainerElements.pickTargetParametersPage.submitButton.get().click();
       pllTrainerElements.newUserStartPage.container.waitFor();
-      cy.percySnapshotWithProperName("PLL Trainer Start Page New User", {
-        ensureFullHeightIsCaptured: true,
-      });
+      cy.percySnapshotWithProperName("PLL Trainer Start Page New User", {});
       pllTrainerElements.newUserStartPage.startButton.get().click();
       pllTrainerElements.newCasePage.container.waitFor();
       cy.percySnapshotWithProperName("PLL Trainer New Case Page");
@@ -107,9 +102,7 @@ describe("Visual Tests", function () {
         startingState: "doNewVisit",
       });
       cy.visit(paths.pllTrainer);
-      cy.percySnapshotWithProperName("PLL Trainer Recurring User Start Page", {
-        ensureFullHeightIsCaptured: true,
-      });
+      cy.percySnapshotWithProperName("PLL Trainer Recurring User Start Page");
 
       // Just an assurance that our AUFs and cases are displaying correctly.
       cy.clearLocalStorage();
