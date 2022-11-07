@@ -152,8 +152,6 @@ jobs:
           PERCY_PULL_REQUEST: ${{ github.event.workflow_run.pull_requests[0].number }}
           PERCY_COMMIT: ${{ github.event.workflow_run.head_sha }}
           PERCY_DEBUG: "*"
-          # TEMP TEMP TEMP TODO
-          PERCY_TARGET_COMMIT: 9d9f0d9cb36e3a552cc4794be1f373f9ec126bd3
         run: >
           ./node_modules/.bin/percy exec --parallel --config percy-config.json --
           ./node_modules/.bin/cypress run
