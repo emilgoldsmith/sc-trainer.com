@@ -134,7 +134,7 @@ jobs:
       - name: Setup Percy Configuration
         working-directory: end-to-end-tests
         # The percyCSS override is what ensures full page snapshots
-        run: 'echo ''{ "version": 2, "snapshot": { "widths": [${{ matrix.sizes.width }}], "percyCSS": "* { overflow-y: visible !important; } img { max-width: none !important; }" } }'' > percy-config.json'
+        run: 'echo ''{ "version": 2, "snapshot": { "widths": [${{ matrix.sizes.width }}], ${{ matrix.sizes.height }}, "percyCSS": "* { overflow-y: visible !important; } img { max-width: none !important; }" } }'' > percy-config.json'
 
       ### This is the only place we run the untrusted code
       ### We have made sure that the github token has minimum

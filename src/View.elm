@@ -155,7 +155,7 @@ toBrowserDocument { pageSubtitle, body, topLevelEventListeners, extraTopLevelAtt
         List.singleton <|
             case body of
                 FullScreen element ->
-                    Element.layout (Element.inFront element :: topLevelAttributes) Element.none
+                    Element.layout topLevelAttributes element
 
                 WithNavigation element ->
                     Element.layout topLevelAttributes element
