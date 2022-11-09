@@ -136,6 +136,11 @@ Cypress.Commands.add("setAlias", { prevSubject: true }, setAlias);
 Cypress.Commands.add("setSystemTimeWithLastFrameTicked", (now) => {
   cy.clock().invoke("setSystemTime", now - 60);
   cy.tick(60);
+  // We have previously experienced problems with this not going into effect properly
+  // so we're experimenting with a wait here
+  //
+  // eslint-disable-next-line cypress/no-unnecessary-waiting
+  cy.wait(0, { log: false });
 });
 
 Cypress.Commands.add(
