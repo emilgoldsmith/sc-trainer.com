@@ -5,7 +5,6 @@ import Css exposing (htmlTestid, testid)
 import Cube exposing (Cube)
 import Element exposing (..)
 import Element.Font as Font
-import FeedbackButton
 import Html.Attributes
 import Key
 import PLL
@@ -58,7 +57,7 @@ type alias Transitions msg =
 
 view : Shared.Model -> Transitions msg -> Arguments -> PLLTrainer.State.View msg
 view { palette, viewportSize, hardwareAvailable, user, cubeViewOptions } transitions arguments =
-    { overlays = View.buildOverlays [ FeedbackButton.overlay viewportSize ]
+    { overlays = View.buildOverlays []
     , body =
         let
             testCaseCube =

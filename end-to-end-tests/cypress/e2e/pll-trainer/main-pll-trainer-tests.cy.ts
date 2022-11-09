@@ -3418,7 +3418,6 @@ function correctPageNoSideEffects() {
             elements.assertAllShow();
             cy.assertNoHorizontalScrollbar();
             cy.assertNoVerticalScrollbar();
-            assertFunctioningFeedbackButtonShows();
           },
         ],
         [
@@ -4099,7 +4098,6 @@ function wrongPageNoSideEffects({
           "looks right",
           () => {
             elements.assertAllShow();
-            assertFunctioningFeedbackButtonShows();
             cy.assertNoHorizontalScrollbar();
             cy.assertNoVerticalScrollbar();
 
@@ -4196,35 +4194,35 @@ function wrongPageNavigateVariant2() {
   });
 }
 
-function assertFunctioningFeedbackButtonShows() {
-  globalElements.misc.feedbackButton
-    .assertShows()
-    .parent()
-    .within(() => {
-      // It should be a link going to a google form
-      cy.get("a")
-        .should((linkElement) => {
-          expect(linkElement.prop("href"), "href")
-            .to.be.a("string")
-            .and.satisfy(
-              (href: string) => href.startsWith("https://forms.gle/"),
-              "starts with https://forms.gle/"
-            );
-          // Asserts it opens in new tab
-          expect(linkElement.attr("target"), "target").to.equal("_blank");
-        })
-        .then((link) => {
-          // Check that the link actually works
-          cy.request(
-            link.attr("href") ||
-              "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
-          )
-            .its("status")
-            .should("be.at.least", 200)
-            .and("be.lessThan", 300);
-        });
-    });
-}
+// function assertFunctioningFeedbackButtonShows() {
+//   globalElements.misc.feedbackButton
+//     .assertShows()
+//     .parent()
+//     .within(() => {
+//       // It should be a link going to a google form
+//       cy.get("a")
+//         .should((linkElement) => {
+//           expect(linkElement.prop("href"), "href")
+//             .to.be.a("string")
+//             .and.satisfy(
+//               (href: string) => href.startsWith("https://forms.gle/"),
+//               "starts with https://forms.gle/"
+//             );
+//           // Asserts it opens in new tab
+//           expect(linkElement.attr("target"), "target").to.equal("_blank");
+//         })
+//         .then((link) => {
+//           // Check that the link actually works
+//           cy.request(
+//             link.attr("href") ||
+//               "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
+//           )
+//             .its("status")
+//             .should("be.at.least", 200)
+//             .and("be.lessThan", 300);
+//         });
+//     });
+// }
 
 function getVerifiedAliases<
   Aliases extends { [key: string]: string },

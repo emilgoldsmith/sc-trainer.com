@@ -3,7 +3,6 @@ module PLLTrainer.States.CorrectPage exposing (Transitions, state)
 import Css exposing (testid)
 import Element exposing (..)
 import Element.Font as Font
-import FeedbackButton
 import Html.Attributes
 import Key
 import PLLTrainer.ButtonWithShortcut
@@ -51,7 +50,7 @@ type alias Transitions msg =
 
 view : Shared.Model -> Arguments -> Transitions msg -> PLLTrainer.State.View msg
 view shared { wasNewCase } transitions =
-    { overlays = View.buildOverlays [ FeedbackButton.overlay shared.viewportSize ]
+    { overlays = View.buildOverlays []
     , body =
         View.fullScreenBody
             (\{ scrollableContainerId } ->
