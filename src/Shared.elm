@@ -85,6 +85,13 @@ type alias Model =
     , featureFlags : FeatureFlags
     , user : User
     , cubeViewOptions : CubeViewOptions
+    , errorMessages :
+        List
+            { userFacingErrorMessage : String
+            , developerErrorMessage : String
+            , uniqueId : Int
+            }
+    , nextErrorMessageId : Int
     }
 
 
@@ -115,6 +122,8 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser, cubeViewO
                 , sizeOverride = Nothing
                 , displayCubeAnnotationsOverride = Nothing
                 }
+      , errorMessages = []
+      , nextErrorMessageId = 0
       }
     , Cmd.none
     )
@@ -180,6 +189,12 @@ type InternalMsg
 
 type PublicMsg
     = ModifyUser (User -> ( User, Maybe { errorMessage : String } ))
+    | AddErrorPopup
+        { userFacingErrorMessage : String
+        , developerErrorMessage : String
+        }
+    | CancelErrorPopup { id : Int }
+    | SendErrorPopup { id : Int, errorMessage : String }
     | TESTONLYOverrideDisplayAngle (Maybe Cube.DisplayAngle)
     | TESTONLYSetCubeSizeOverride (Maybe Int)
     | TESTONLYOverrideDisplayCubeAnnotations (Maybe Bool)
@@ -227,6 +242,37 @@ update _ msg model =
                                 , Cmd.batch [ cmd, Ports.updateStoredUser newModel.user ]
                                 )
                            )
+
+                AddErrorPopup args ->
+                    ( { model
+                        | errorMessages =
+                            { developerErrorMessage = args.developerErrorMessage
+                            , userFacingErrorMessage = args.userFacingErrorMessage
+                            , uniqueId = model.nextErrorMessageId
+                            }
+                                :: model.errorMessages
+                        , nextErrorMessageId = model.nextErrorMessageId + 1
+                      }
+                    , Cmd.none
+                    )
+
+                CancelErrorPopup { id } ->
+                    ( { model
+                        | errorMessages =
+                            model.errorMessages
+                                |> List.filter (\{ uniqueId } -> uniqueId /= id)
+                      }
+                    , Cmd.none
+                    )
+
+                SendErrorPopup { id, errorMessage } ->
+                    ( { model
+                        | errorMessages =
+                            model.errorMessages
+                                |> List.filter (\{ uniqueId } -> uniqueId /= id)
+                      }
+                    , Ports.logError errorMessage
+                    )
 
                 TESTONLYOverrideDisplayAngle newDisplayAngle ->
                     let

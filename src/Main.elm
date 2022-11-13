@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav exposing (Key)
 import Effect
+import ErrorPopup
 import Gen.Model
 import Gen.Pages as Pages
 import Gen.Route as Route
@@ -127,8 +128,32 @@ update msg model =
 
 view : Model -> Browser.Document Msg
 view model =
+    let
+        extraOverlays =
+            model.shared.errorMessages
+                |> List.map
+                    (\{ userFacingErrorMessage, developerErrorMessage, uniqueId } ->
+                        ErrorPopup.overlay
+                            model.shared.viewportSize
+                            model.shared.palette
+                            { errorDescription = userFacingErrorMessage
+                            , sendError =
+                                Shared <|
+                                    Shared.buildSharedMessage <|
+                                        Shared.SendErrorPopup
+                                            { id = uniqueId
+                                            , errorMessage = developerErrorMessage
+                                            }
+                            , closeWithoutSending =
+                                Shared <|
+                                    Shared.buildSharedMessage <|
+                                        Shared.CancelErrorPopup { id = uniqueId }
+                            }
+                    )
+    in
     Pages.view model.page model.shared model.url model.key
         |> View.map Page
+        |> View.addOverlays extraOverlays
         |> View.toBrowserDocument
 
 
