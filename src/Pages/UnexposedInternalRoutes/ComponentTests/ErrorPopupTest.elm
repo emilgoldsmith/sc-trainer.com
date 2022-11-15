@@ -4,7 +4,7 @@ import Css exposing (testid)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Input as Input
-import ErrorPopup
+import ErrorMessage
 import Gen.Params.UnexposedInternalRoutes.ComponentTests.ErrorPopupTest exposing (Params)
 import Page
 import Request
@@ -60,7 +60,7 @@ view shared model =
     , overlays =
         View.buildOverlays
             (if model.popupShowing then
-                [ ErrorPopup.overlay
+                [ ErrorMessage.popupOverlay
                     shared.viewportSize
                     shared.palette
                     { errorDescription = "Some error occurred"

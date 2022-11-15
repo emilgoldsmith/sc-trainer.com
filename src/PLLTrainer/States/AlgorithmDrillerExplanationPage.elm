@@ -6,7 +6,7 @@ import Css exposing (htmlTestid, testid)
 import Cube
 import Element exposing (..)
 import Element.Font as Font
-import ErrorPopup
+import ErrorMessage
 import Html.Attributes
 import Json.Decode
 import Key
@@ -113,7 +113,7 @@ view : Shared.Model -> Transitions msg -> Arguments -> (Msg -> msg) -> Model -> 
 view shared transitions { testCase, wasCorrect } toMsg model =
     let
         errorPopup description =
-            ErrorPopup.overlay shared.viewportSize
+            ErrorMessage.popupOverlay shared.viewportSize
                 shared.palette
                 { errorDescription = description
                 , closeWithoutSending = toMsg CloseErrorWithoutSending

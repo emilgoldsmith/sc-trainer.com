@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Browser.Navigation as Nav exposing (Key)
 import Effect
-import ErrorPopup
+import ErrorMessage
 import Gen.Model
 import Gen.Pages as Pages
 import Gen.Route as Route
@@ -133,7 +133,7 @@ view model =
             model.shared.errorMessages
                 |> List.map
                     (\{ userFacingErrorMessage, developerErrorMessage, uniqueId } ->
-                        ErrorPopup.overlay
+                        ErrorMessage.popupOverlay
                             model.shared.viewportSize
                             model.shared.palette
                             { errorDescription = userFacingErrorMessage
