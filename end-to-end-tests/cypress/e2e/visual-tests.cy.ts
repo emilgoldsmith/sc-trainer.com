@@ -264,5 +264,13 @@ describe("Visual Tests", function () {
         cy.percySnapshotWithProperName("Component: Error Popup");
       });
     });
+
+    describe("Inline Error", function () {
+      it("looks right", function () {
+        cy.visit(unexposedInternalPaths.componentTests.inlineError);
+        globalElements.inlineError.container.waitFor();
+        cy.percySnapshotWithProperName("Component: Inline Error");
+      });
+    });
   });
 });

@@ -1,4 +1,4 @@
-module ErrorPopup exposing (overlay)
+module ErrorMessage exposing (popupOverlay, viewInline)
 
 import Css exposing (errorMessageTestType, testid)
 import Element exposing (..)
@@ -11,12 +11,12 @@ import UI
 import ViewportSize exposing (ViewportSize)
 
 
-overlay :
+popupOverlay :
     ViewportSize
     -> UI.Palette
     -> { errorDescription : String, sendError : msg, closeWithoutSending : msg }
     -> Attribute msg
-overlay viewportSize palette { errorDescription, sendError, closeWithoutSending } =
+popupOverlay viewportSize palette { errorDescription, sendError, closeWithoutSending } =
     let
         maxWidth =
             min 500 (ViewportSize.width viewportSize * 9 // 10)
@@ -94,3 +94,66 @@ overlay viewportSize palette { errorDescription, sendError, closeWithoutSending 
                     ]
                 ]
             ]
+
+
+viewInline :
+    UI.Palette
+    -> { errorDescription : String, sendError : msg }
+    -> Element msg
+viewInline palette { errorDescription, sendError } =
+    column
+        [ testid "inline-error-container"
+        , errorMessageTestType
+        , width fill
+        , Border.shadow
+            { offset = ( 0, 5 )
+            , size = 0
+            , blur = 15
+            , color = rgba255 0 0 0 0.35
+            }
+        ]
+        [ column
+            [ Background.color palette.errorText
+            , UI.spacingVertical.verySmallest
+            , width fill
+            , UI.paddingAll.large
+            ]
+            [ row
+                [ UI.fontSize.veryLarge
+                , Font.bold
+                , Font.color palette.lightText
+                , width fill
+                ]
+                [ el [] <|
+                    html <|
+                        FilledIcons.error 35 (UI.materialIconColor palette.lightText)
+                , el [ moveDown 3 ] <| text "Error"
+                ]
+            , UI.viewLightDivider palette
+            , paragraph
+                [ Font.center
+                , UI.fontSize.medium
+                , Font.color palette.lightText
+                ]
+                [ text errorDescription ]
+            ]
+        , column
+            [ Background.color palette.background
+            , width fill
+            , UI.paddingAll.large
+            , UI.fontSize.medium
+            , UI.spacingVertical.verySmallest
+            ]
+            [ paragraph []
+                [ text "Send error to developers to notify them it needs fixing?"
+                ]
+            , row [ width fill ]
+                [ el [ width fill ] <|
+                    UI.viewButton.large [ centerX, testid "send-error-button" ]
+                        { onPress = Just sendError
+                        , color = palette.errorText
+                        , label = \size -> el [ Font.size size ] <| text "Send Error"
+                        }
+                ]
+            ]
+        ]

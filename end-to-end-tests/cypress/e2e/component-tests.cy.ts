@@ -27,4 +27,19 @@ describe("Component Tests", function () {
       cy.getByTestId(sentErrorMessageTestId).should("be.visible");
     });
   });
+
+  describe("Inline Error", function () {
+    it("displays and sends error exactly when expected", function () {
+      const sentErrorMessageTestId = "sent-error-message";
+      cy.visit(unexposedInternalPaths.componentTests.inlineError);
+
+      globalElements.inlineError.assertAllShow();
+
+      cy.getByTestId(sentErrorMessageTestId).should("not.exist");
+
+      globalElements.inlineError.sendErrorButton.get().click();
+
+      cy.getByTestId(sentErrorMessageTestId).should("be.visible");
+    });
+  });
 });

@@ -7,6 +7,7 @@ export const paths = {
 export const unexposedInternalPaths = {
   componentTests: {
     errorPopup: "/unexposed-internal-routes/component-tests/error-popup-test",
+    inlineError: "/unexposed-internal-routes/component-tests/inline-error-test",
   },
 };
 

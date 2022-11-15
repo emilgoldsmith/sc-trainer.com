@@ -16,4 +16,8 @@ export const globalElements = {
     sendErrorButton: "send-error-button",
     dontSendErrorButton: "dont-send-error-button",
   }),
+  inlineError: buildElementsCategory({
+    container: errorMessageElement("inline-error-container"),
+    sendErrorButton: "send-error-button",
+  }),
 };
