@@ -3,6 +3,7 @@ module View exposing
     , Overlays
     , TopLevelEventListeners
     , View
+    , addOverlays
     , buildOverlays
     , buildTopLevelEventListeners
     , customBody
@@ -88,6 +89,17 @@ topLevelEventListenersToElement (TopLevelEventListeners listeners) =
 
 type Overlays msg
     = Overlays (List (Element.Attribute msg))
+
+
+addOverlays : List (Element.Attribute msg) -> View msg -> View msg
+addOverlays newOverlayElements view =
+    let
+        (Overlays oldOverlayElements) =
+            view.overlays
+    in
+    { view
+        | overlays = Overlays <| oldOverlayElements ++ newOverlayElements
+    }
 
 
 buildOverlays : List (Element.Attribute msg) -> Overlays msg
