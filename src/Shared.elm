@@ -8,6 +8,7 @@ module Shared exposing
     , buildSharedMessage
     , getDisplayAngleOverride
     , getDisplayCubeAnnotationsOverride
+    , getGlobalErrorOverlays
     , getSizeOverride
     , init
     , shouldUseDebugViewForVisualTesting
@@ -17,6 +18,8 @@ module Shared exposing
 
 import Browser.Events as Events
 import Cube
+import Element
+import ErrorMessage
 import Json.Decode
 import Key
 import Ports
@@ -127,6 +130,28 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser, cubeViewO
       }
     , Cmd.none
     )
+
+
+getGlobalErrorOverlays : Model -> List (Element.Attribute Msg)
+getGlobalErrorOverlays shared =
+    shared.errorMessages
+        |> List.map
+            (\{ userFacingErrorMessage, developerErrorMessage, uniqueId } ->
+                ErrorMessage.popupOverlay
+                    shared.viewportSize
+                    shared.palette
+                    { errorDescription = userFacingErrorMessage
+                    , sendError =
+                        buildSharedMessage <|
+                            SendErrorPopup
+                                { id = uniqueId
+                                , errorMessage = developerErrorMessage
+                                }
+                    , closeWithoutSending =
+                        buildSharedMessage <|
+                            CancelErrorPopup { id = uniqueId }
+                    }
+            )
 
 
 type alias HardwareAvailable =

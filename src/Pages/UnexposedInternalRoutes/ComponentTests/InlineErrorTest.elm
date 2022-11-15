@@ -2,8 +2,6 @@ module Pages.UnexposedInternalRoutes.ComponentTests.InlineErrorTest exposing (Mo
 
 import Css exposing (testid)
 import Element exposing (..)
-import Element.Background as Background
-import Element.Input as Input
 import ErrorMessage
 import Gen.Params.UnexposedInternalRoutes.ComponentTests.ErrorPopupTest exposing (Params)
 import Page
@@ -57,6 +55,7 @@ view shared model =
                         [ paragraph []
                             [ model.sentErrorMessage
                                 |> Maybe.map text
+                                |> Maybe.map (el [ testid "sent-error-message" ])
                                 |> Maybe.withDefault none
                             ]
                         , el
