@@ -187,7 +187,7 @@ view shared transitions toMsg model =
                             , maxExpectedMainDigits = 2
                             }
                         , UI.viewButton.large [ testid "submit-button", centerX ]
-                            { color = shared.palette.primary
+                            { color = shared.palette.primaryButton
                             , label = always (text "Submit")
                             , onPress = submitMsg
                             }
@@ -220,9 +220,9 @@ targetFloatInput params =
 
                 Nothing ->
                     { maybeExtraErrorStyling =
-                        [ Border.glow params.palette.errorText 3 ]
+                        [ Border.glow params.palette.error 3 ]
                     , maybeErrorText =
-                        el [ testid params.errorTestId, errorMessageTestType, Font.color params.palette.errorText ] <|
+                        el [ testid params.errorTestId, errorMessageTestType, Font.color params.palette.error ] <|
                             text "Invalid Number"
                     }
 

@@ -255,7 +255,7 @@ view shared transitions { testCase, wasCorrect } toMsg model =
                             { onPress = Just transitions.startDrills
                             , labelText = "Continue"
                             , keyboardShortcut = Key.Space
-                            , color = shared.palette.primary
+                            , color = shared.palette.primaryButton
                             }
                             UI.viewButton.large
                         ]

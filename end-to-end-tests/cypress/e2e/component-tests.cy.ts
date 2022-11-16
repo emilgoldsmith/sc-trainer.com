@@ -42,4 +42,27 @@ describe("Component Tests", function () {
       cy.getByTestId(sentErrorMessageTestId).should("be.visible");
     });
   });
+
+  describe("Notification", function () {
+    it("displays and dissappears three different types of notifications", function () {
+      const successNotificationTestId = "success-notification";
+      const errorNotificationTestId = "error-notification";
+      const messageNotificationTestId = "message-notification";
+      const startButtonTestId = "start-button";
+
+      cy.visit(unexposedInternalPaths.componentTests.notification);
+
+      cy.getByTestId(startButtonTestId).click();
+
+      [
+        errorNotificationTestId,
+        successNotificationTestId,
+        messageNotificationTestId,
+      ].forEach((notificationType) => {
+        cy.getByTestId(notificationType).should("not.exist");
+        cy.getByTestId(notificationType).should("be.visible");
+        cy.getByTestId(notificationType).should("not.exist");
+      });
+    });
+  });
 });

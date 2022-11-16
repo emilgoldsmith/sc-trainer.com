@@ -272,5 +272,24 @@ describe("Visual Tests", function () {
         cy.percySnapshotWithProperName("Component: Inline Error");
       });
     });
+
+    describe("Notification", function () {
+      it("looks right", function () {
+        const successNotificationTestId = "success-notification";
+        const errorNotificationTestId = "error-notification";
+        const messageNotificationTestId = "message-notification";
+        const startButtonTestId = "start-button";
+
+        cy.visit(unexposedInternalPaths.componentTests.notification);
+
+        cy.getByTestId(startButtonTestId).click();
+        cy.getByTestId(errorNotificationTestId);
+        cy.percySnapshotWithProperName("Component: Error Notification");
+        cy.getByTestId(successNotificationTestId);
+        cy.percySnapshotWithProperName("Component: Success Notification");
+        cy.getByTestId(messageNotificationTestId);
+        cy.percySnapshotWithProperName("Component: Message Notification");
+      });
+    });
   });
 });

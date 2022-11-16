@@ -129,7 +129,7 @@ view { user, viewportSize, palette, hardwareAvailable, cubeViewOptions } transit
                     , PLLTrainer.ButtonWithShortcut.viewSmall
                         hardwareAvailable
                         [ testid "no-move-button", centerX ]
-                        { onPress = Just transitions.noMoveWasApplied, color = palette.primary, labelText = "No Moves Applied", keyboardShortcut = Key.One }
+                        { onPress = Just transitions.noMoveWasApplied, color = palette.primaryButton, labelText = "No Moves Applied", keyboardShortcut = Key.One }
                         (UI.viewButton.customSize buttonSize)
                     , paragraph [ testid "nearly-there-explanation", centerX, Font.center ]
                         [ text "2. I can get to the expected state. I for example just got the AUF wrong"
@@ -155,7 +155,7 @@ view { user, viewportSize, palette, hardwareAvailable, cubeViewOptions } transit
                     , PLLTrainer.ButtonWithShortcut.viewSmall
                         hardwareAvailable
                         [ testid "nearly-there-button", centerX ]
-                        { onPress = Just transitions.expectedStateWasReached, color = palette.primary, labelText = "Cube Is As Expected", keyboardShortcut = Key.Two }
+                        { onPress = Just transitions.expectedStateWasReached, color = palette.primaryButton, labelText = "Cube Is As Expected", keyboardShortcut = Key.Two }
                         (UI.viewButton.customSize buttonSize)
                     , paragraph [ testid "unrecoverable-explanation", centerX, Font.center ]
                         [ text "3. I can't get to either of the above states, so I will just solve it to reset it" ]
@@ -163,7 +163,7 @@ view { user, viewportSize, palette, hardwareAvailable, cubeViewOptions } transit
                         hardwareAvailable
                         [ testid "unrecoverable-button", centerX ]
                         { onPress = Just transitions.cubeUnrecoverable
-                        , color = palette.primary
+                        , color = palette.primaryButton
                         , labelText = "Reset To Solved"
                         , keyboardShortcut = Key.Three
                         }

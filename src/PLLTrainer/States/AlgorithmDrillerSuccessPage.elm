@@ -80,7 +80,7 @@ view viewportSize palette hardwareAvailable transitions =
                         { onPress = Just transitions.startTest
                         , labelText = "Next"
                         , keyboardShortcut = Key.Space
-                        , color = palette.primary
+                        , color = palette.primaryButton
                         }
                         (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 10)
                     ]
