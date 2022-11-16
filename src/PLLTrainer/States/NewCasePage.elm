@@ -82,7 +82,7 @@ view palette hardwareAvailable transitions =
                         { onPress = Just transitions.startTest
                         , labelText = "Start"
                         , keyboardShortcut = Key.Space
-                        , color = palette.primary
+                        , color = palette.primaryButton
                         }
                         UI.viewButton.large
                     ]

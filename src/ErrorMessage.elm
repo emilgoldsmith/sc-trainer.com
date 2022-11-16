@@ -37,7 +37,7 @@ popupOverlay viewportSize palette { errorDescription, sendError, closeWithoutSen
                 }
             ]
             [ column
-                [ Background.color palette.errorText
+                [ Background.color palette.error
                 , UI.spacingVertical.verySmallest
                 , width fill
                 , UI.paddingAll.large
@@ -88,7 +88,7 @@ popupOverlay viewportSize palette { errorDescription, sendError, closeWithoutSen
                     , el [ width fill ] <|
                         UI.viewButton.large [ centerX, testid "send-error-button" ]
                             { onPress = Just sendError
-                            , color = palette.errorText
+                            , color = palette.error
                             , label = \size -> el [ Font.size size ] <| text "Yes"
                             }
                     ]
@@ -113,7 +113,7 @@ viewInline palette { errorDescription, sendError } =
             }
         ]
         [ column
-            [ Background.color palette.errorText
+            [ Background.color palette.error
             , UI.spacingVertical.verySmallest
             , width fill
             , UI.paddingAll.large
@@ -151,7 +151,7 @@ viewInline palette { errorDescription, sendError } =
                 [ el [ width fill ] <|
                     UI.viewButton.large [ centerX, testid "send-error-button" ]
                         { onPress = Just sendError
-                        , color = palette.errorText
+                        , color = palette.error
                         , label = \size -> el [ Font.size size ] <| text "Send Error"
                         }
                 ]

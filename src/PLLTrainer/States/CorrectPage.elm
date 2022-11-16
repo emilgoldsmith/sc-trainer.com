@@ -95,7 +95,7 @@ view shared { wasNewCase } transitions =
                         { onPress = Just transitions.startTest
                         , labelText = "Next"
                         , keyboardShortcut = Key.Space
-                        , color = shared.palette.primary
+                        , color = shared.palette.primaryButton
                         }
                         (UI.viewButton.customSize <| ViewportSize.minDimension shared.viewportSize // 20)
                     ]

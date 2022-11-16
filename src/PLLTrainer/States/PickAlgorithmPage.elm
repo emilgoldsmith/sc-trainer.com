@@ -293,7 +293,7 @@ view currentTestCase testResult toMsg shared model =
                             ]
                             { onPress = Just (toMsg Submit)
                             , labelText = "Submit"
-                            , color = shared.palette.primary
+                            , color = shared.palette.primaryButton
                             , keyboardShortcut = Key.Enter
                             }
                             UI.viewButton.large
@@ -336,7 +336,7 @@ viewError palette error =
 sharedErrorAttributes : UI.Palette -> List (Attribute msg)
 sharedErrorAttributes palette =
     [ errorMessageTestType
-    , Font.color palette.errorText
+    , Font.color palette.error
     , UI.fontSize.medium
     , UI.spacingAll.verySmall
     , Font.center

@@ -79,7 +79,7 @@ view shared transitions { expectedCube, correctAttemptsLeft, previousTestResult 
                         , Font.bold
                         , centerX
                         , Font.center
-                        , Font.color shared.palette.errorText
+                        , Font.color shared.palette.error
                         ]
                         (case previousTestResult of
                             NoFailure ->
@@ -139,7 +139,7 @@ view shared transitions { expectedCube, correctAttemptsLeft, previousTestResult 
                         { onPress = Just transitions.startTest
                         , labelText = "Next Test"
                         , keyboardShortcut = Key.Space
-                        , color = shared.palette.primary
+                        , color = shared.palette.primaryButton
                         }
                         (UI.viewButton.customSize <| ViewportSize.minDimension shared.viewportSize // 25)
                     ]

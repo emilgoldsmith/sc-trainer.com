@@ -136,14 +136,15 @@ viewOrderedList attributes listItemContents =
 type alias Palette =
     { -- General
       background : Color
-    , primary : Color
-    , secondary : Color
+    , primaryButton : Color
+    , secondaryButton : Color
     , correct : Color
     , wrong : Color
     , darkText : Color
     , lightText : Color
-    , errorText : Color
+    , error : Color
     , label : Color
+    , greyBackground : Color
     , transparent : Color
 
     -- Link
@@ -158,14 +159,15 @@ defaultPalette : Palette
 defaultPalette =
     { -- General
       background = rgb255 255 255 255
-    , primary = rgb255 0 128 0
-    , secondary = rgb255 0 0 128
+    , primaryButton = rgb255 0 128 0
+    , secondaryButton = rgb255 0 0 128
     , correct = rgb255 0 128 0
     , wrong = rgb255 255 0 0
     , darkText = rgb255 0 0 0
     , lightText = rgb255 255 255 255
-    , errorText = rgb255 255 0 0
+    , error = rgb255 255 0 0
     , label = rgb255 125 125 125
+    , greyBackground = rgb255 180 180 180
     , transparent = rgba 0 0 0 0
 
     -- Link

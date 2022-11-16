@@ -160,7 +160,7 @@ view { palette, viewportSize, hardwareAvailable, user, cubeViewOptions } transit
                         { onPress = Just transitions.startNextTest
                         , labelText = "Next"
                         , keyboardShortcut = Key.Space
-                        , color = palette.primary
+                        , color = palette.primaryButton
                         }
                         (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 20)
                     ]
