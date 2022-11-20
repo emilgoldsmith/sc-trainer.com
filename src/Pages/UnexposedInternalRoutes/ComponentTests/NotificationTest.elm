@@ -26,30 +26,73 @@ page shared _ =
 type alias Model =
     { notificationQueue : List { notificationType : Notification.Type, testId : String }
     , currentNotification : Maybe { notificationType : Notification.Type, testId : String }
+    , notificationDisplayTimeMs : Int
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { notificationQueue =
-            [ { notificationType = Notification.Error, testId = "error-notification" }
-            , { notificationType = Notification.Success, testId = "success-notification" }
-            , { notificationType = Notification.Message, testId = "message-notification" }
-            ]
+    ( { notificationQueue = []
       , currentNotification = Nothing
+      , notificationDisplayTimeMs = 5000
       }
     , Cmd.none
     )
 
 
 type Msg
-    = HandleNotificationDone
+    = DisplayOnlyErrorNotification
+    | DisplayOnlySuccessNotification
+    | DisplayOnlyMessageNotification
+    | InitiateAllNotificationsInSeries
+    | HandleNotificationDone
     | DisplayNextNotification
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        DisplayOnlyErrorNotification ->
+            ( { model
+                | notificationQueue = []
+                , currentNotification = Just { notificationType = Notification.Error, testId = "error-notification" }
+                , notificationDisplayTimeMs = 5000
+              }
+            , Cmd.none
+            )
+
+        DisplayOnlySuccessNotification ->
+            ( { model
+                | notificationQueue = []
+                , currentNotification = Just { notificationType = Notification.Success, testId = "success-notification" }
+                , notificationDisplayTimeMs = 5000
+              }
+            , Cmd.none
+            )
+
+        DisplayOnlyMessageNotification ->
+            ( { model
+                | notificationQueue = []
+                , currentNotification =
+                    Just { notificationType = Notification.Message, testId = "message-notification" }
+                , notificationDisplayTimeMs = 5000
+              }
+            , Cmd.none
+            )
+
+        InitiateAllNotificationsInSeries ->
+            ( { model
+                | notificationQueue =
+                    [ { notificationType = Notification.Error, testId = "error-notification" }
+                    , { notificationType = Notification.Success, testId = "success-notification" }
+                    , { notificationType = Notification.Message, testId = "message-notification" }
+                    ]
+                , currentNotification = Nothing
+                , notificationDisplayTimeMs = 100
+              }
+            , Task.perform (always DisplayNextNotification) <| Process.sleep 100
+            )
+
         HandleNotificationDone ->
             ( { model
                 | currentNotification = Nothing
@@ -84,7 +127,7 @@ view shared model =
                             , animationOverrides =
                                 Just
                                     { entryExitTimeMs = 1
-                                    , notificationDisplayTimeMs = 100
+                                    , notificationDisplayTimeMs = model.notificationDisplayTimeMs
                                     }
                             }
                             [ testid testId ]
@@ -95,9 +138,23 @@ view shared model =
     , body =
         View.fullScreenBody
             (\_ ->
-                Element.Input.button [ testid "start-button" ]
-                    { onPress = Just HandleNotificationDone
-                    , label = text "Start"
-                    }
+                wrappedRow []
+                    [ Element.Input.button [ testid "start-notification-series-button" ]
+                        { onPress = Just InitiateAllNotificationsInSeries
+                        , label = text "Start Notification Series"
+                        }
+                    , Element.Input.button [ testid "show-error-notification-button" ]
+                        { onPress = Just DisplayOnlyErrorNotification
+                        , label = text "Show Error Notification"
+                        }
+                    , Element.Input.button [ testid "show-success-notification-button" ]
+                        { onPress = Just DisplayOnlySuccessNotification
+                        , label = text "Show Success Notification"
+                        }
+                    , Element.Input.button [ testid "show-message-notification-button" ]
+                        { onPress = Just DisplayOnlyMessageNotification
+                        , label = text "Show Message Notification"
+                        }
+                    ]
             )
     }
