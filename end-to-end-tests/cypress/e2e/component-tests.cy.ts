@@ -48,11 +48,12 @@ describe("Component Tests", function () {
       const successNotificationTestId = "success-notification";
       const errorNotificationTestId = "error-notification";
       const messageNotificationTestId = "message-notification";
-      const startButtonTestId = "start-button";
+      const startNotificationSeriesButtonTestId =
+        "start-notification-series-button";
 
       cy.visit(unexposedInternalPaths.componentTests.notification);
 
-      cy.getByTestId(startButtonTestId).click();
+      cy.getByTestId(startNotificationSeriesButtonTestId).click();
 
       [
         errorNotificationTestId,
