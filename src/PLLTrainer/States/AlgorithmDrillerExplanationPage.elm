@@ -1,22 +1,18 @@
-module PLLTrainer.States.AlgorithmDrillerExplanationPage exposing (Model, Msg, Transitions, state)
+module PLLTrainer.States.AlgorithmDrillerExplanationPage exposing (Transitions, state)
 
 import Algorithm
-import Browser.Events
 import Css exposing (htmlTestid, testid)
 import Cube
 import Element exposing (..)
 import Element.Font as Font
 import ErrorMessage
 import Html.Attributes
-import Json.Decode
 import Key
 import PLL
 import PLLRecognition
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
-import PLLTrainer.Subscription
 import PLLTrainer.TestCase
-import Ports
 import Shared
 import UI
 import User
@@ -24,76 +20,12 @@ import View
 import ViewCube
 
 
-state : Shared.Model -> Transitions msg -> Arguments -> (Msg -> msg) -> PLLTrainer.State.State msg Msg Model
-state shared transitions arguments toMsg =
-    PLLTrainer.State.element
-        { init = init
-        , update = update
-        , subscriptions = subscriptions transitions
-        , view = view shared transitions arguments toMsg
-        }
-
-
-
--- TRANSITIONS
-
-
-type alias Transitions msg =
-    { startDrills : msg
-    , noOp : msg
-    }
-
-
-type alias Arguments =
-    { testCase : PLLTrainer.TestCase.TestCase
-    , wasCorrect : Bool
-    }
-
-
-
--- INIT
-
-
-type alias Model =
-    { errorMessageClosed : Bool
-    }
-
-
-init : ( Model, Cmd msg )
-init =
-    ( { errorMessageClosed = False }, Cmd.none )
-
-
-
--- UPDATE
-
-
-type Msg
-    = CloseErrorWithoutSending
-    | SendError String
-
-
-update : Msg -> Model -> ( Model, Cmd msg )
-update msg _ =
-    case msg of
-        CloseErrorWithoutSending ->
-            ( { errorMessageClosed = True }, Cmd.none )
-
-        SendError error ->
-            ( { errorMessageClosed = True }
-            , Ports.logError error
-            )
-
-
-
--- SUBSCRIPTIONS
-
-
-subscriptions : Transitions msg -> Model -> PLLTrainer.Subscription.Subscription msg
-subscriptions transitions _ =
-    PLLTrainer.Subscription.onlyBrowserEvents <|
-        Browser.Events.onKeyUp <|
-            Json.Decode.map
+state : Shared.Model -> Transitions msg -> Arguments msg -> PLLTrainer.State.State msg () ()
+state shared transitions arguments =
+    PLLTrainer.State.static
+        { view = view shared transitions arguments
+        , nonRepeatedKeyUpHandler =
+            Just
                 (\key ->
                     case key of
                         Key.Space ->
@@ -102,33 +34,40 @@ subscriptions transitions _ =
                         _ ->
                             transitions.noOp
                 )
-                Key.decodeNonRepeatedKeyEvent
+        }
+
+
+
+-- TRANSITIONS AND ARGUMENTS
+
+
+type alias Transitions msg =
+    { startDrills : msg
+    , noOp : msg
+    }
+
+
+type alias Arguments msg =
+    { testCase : PLLTrainer.TestCase.TestCase
+    , wasCorrect : Bool
+    , sendError : String -> msg
+    }
 
 
 
 -- VIEW
 
 
-view : Shared.Model -> Transitions msg -> Arguments -> (Msg -> msg) -> Model -> PLLTrainer.State.View msg
-view shared transitions { testCase, wasCorrect } toMsg model =
+view : Shared.Model -> Transitions msg -> Arguments msg -> PLLTrainer.State.View msg
+view shared transitions { testCase, wasCorrect, sendError } =
     let
-        errorPopup description =
-            ErrorMessage.popupOverlay shared.viewportSize
-                shared.palette
-                { errorDescription = description
-                , closeWithoutSending = toMsg CloseErrorWithoutSending
-                , sendError = toMsg (SendError description)
-                }
-
         maybePLLAlgorithm =
             User.getPLLAlgorithm (PLLTrainer.TestCase.pll testCase) shared.user
 
-        ( maybeRecognitionSpec, maybeErrorPopupOverlay ) =
+        recognitionSpecResult =
             case maybePLLAlgorithm of
                 Nothing ->
-                    ( Nothing
-                    , Just <| errorPopup "No PLL algorithm was stored for this case"
-                    )
+                    Err "No PLL algorithm was stored for this case"
 
                 Just pllAlgorithm ->
                     case
@@ -140,23 +79,12 @@ view shared transitions { testCase, wasCorrect } toMsg model =
                             }
                     of
                         Err (PLL.IncorrectPLLAlgorithm _ _) ->
-                            ( Nothing
-                            , Just <| errorPopup "Stored PLL algorithm doesn't solve the case"
-                            )
+                            Err "Stored PLL algorithm doesn't solve the case"
 
                         Ok recognitionSpec ->
-                            ( Just recognitionSpec, Nothing )
+                            Ok recognitionSpec
     in
-    { overlays =
-        View.buildOverlays
-            (List.filterMap identity
-                [ if model.errorMessageClosed then
-                    Nothing
-
-                  else
-                    maybeErrorPopupOverlay
-                ]
-            )
+    { overlays = View.buildOverlays []
     , body =
         View.fullScreenBody
             (\{ scrollableContainerId } ->
@@ -226,11 +154,15 @@ view shared transitions { testCase, wasCorrect } toMsg model =
                                     |> Algorithm.toString
                                 )
                             ]
-                        , case maybeRecognitionSpec of
-                            Nothing ->
-                                none
+                        , case recognitionSpecResult of
+                            Err errorDescription ->
+                                ErrorMessage.viewInline
+                                    shared.palette
+                                    { errorDescription = errorDescription
+                                    , sendError = sendError errorDescription
+                                    }
 
-                            Just recognitionSpec ->
+                            Ok recognitionSpec ->
                                 column
                                     [ testid "recognition-explanation"
                                     , centerX

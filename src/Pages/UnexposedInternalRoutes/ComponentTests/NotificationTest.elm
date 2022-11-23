@@ -24,8 +24,8 @@ page shared _ =
 
 
 type alias Model =
-    { notificationQueue : List { notificationType : Notification.Type, testId : String }
-    , currentNotification : Maybe { notificationType : Notification.Type, testId : String }
+    { notificationQueue : List Notification.Type
+    , currentNotification : Maybe Notification.Type
     , notificationDisplayTimeMs : Int
     }
 
@@ -55,7 +55,7 @@ update msg model =
         DisplayOnlyErrorNotification ->
             ( { model
                 | notificationQueue = []
-                , currentNotification = Just { notificationType = Notification.Error, testId = "error-notification" }
+                , currentNotification = Just Notification.Error
                 , notificationDisplayTimeMs = 5000
               }
             , Cmd.none
@@ -64,7 +64,7 @@ update msg model =
         DisplayOnlySuccessNotification ->
             ( { model
                 | notificationQueue = []
-                , currentNotification = Just { notificationType = Notification.Success, testId = "success-notification" }
+                , currentNotification = Just Notification.Success
                 , notificationDisplayTimeMs = 5000
               }
             , Cmd.none
@@ -74,7 +74,7 @@ update msg model =
             ( { model
                 | notificationQueue = []
                 , currentNotification =
-                    Just { notificationType = Notification.Message, testId = "message-notification" }
+                    Just Notification.Message
                 , notificationDisplayTimeMs = 5000
               }
             , Cmd.none
@@ -83,9 +83,9 @@ update msg model =
         InitiateAllNotificationsInSeries ->
             ( { model
                 | notificationQueue =
-                    [ { notificationType = Notification.Error, testId = "error-notification" }
-                    , { notificationType = Notification.Success, testId = "success-notification" }
-                    , { notificationType = Notification.Message, testId = "message-notification" }
+                    [ Notification.Error
+                    , Notification.Success
+                    , Notification.Message
                     ]
                 , currentNotification = Nothing
                 , notificationDisplayTimeMs = 100
@@ -116,7 +116,7 @@ view shared model =
     , overlays =
         model.currentNotification
             |> Maybe.map
-                (\{ notificationType, testId } ->
+                (\notificationType ->
                     View.buildOverlays
                         [ Notification.overlay
                             shared.viewportSize
@@ -130,7 +130,6 @@ view shared model =
                                     , notificationDisplayTimeMs = model.notificationDisplayTimeMs
                                     }
                             }
-                            [ testid testId ]
                         ]
                 )
             |> Maybe.withDefault (View.buildOverlays [])

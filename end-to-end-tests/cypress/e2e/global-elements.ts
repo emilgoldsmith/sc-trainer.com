@@ -3,6 +3,7 @@ import {
   buildElementsCategory,
   buildGlobalsCategory,
   errorMessageElement,
+  optionalElement,
 } from "support/elements";
 
 export const globalElements = {
@@ -19,5 +20,11 @@ export const globalElements = {
   inlineError: buildElementsCategory({
     container: errorMessageElement("inline-error-container"),
     sendErrorButton: "send-error-button",
+  }),
+  notification: buildGlobalsCategory({
+    container: "notification-container",
+    errorNotification: "error-notification",
+    successNotification: "success-notification",
+    messageNotification: "message-notification",
   }),
 };
