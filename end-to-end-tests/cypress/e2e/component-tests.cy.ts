@@ -45,9 +45,6 @@ describe("Component Tests", function () {
 
   describe("Notification", function () {
     it("displays and dissappears three different types of notifications", function () {
-      const successNotificationTestId = "success-notification";
-      const errorNotificationTestId = "error-notification";
-      const messageNotificationTestId = "message-notification";
       const startNotificationSeriesButtonTestId =
         "start-notification-series-button";
 
@@ -56,13 +53,13 @@ describe("Component Tests", function () {
       cy.getByTestId(startNotificationSeriesButtonTestId).click();
 
       [
-        errorNotificationTestId,
-        successNotificationTestId,
-        messageNotificationTestId,
-      ].forEach((notificationType) => {
-        cy.getByTestId(notificationType).should("not.exist");
-        cy.getByTestId(notificationType).should("be.visible");
-        cy.getByTestId(notificationType).should("not.exist");
+        globalElements.notification.errorNotification,
+        globalElements.notification.successNotification,
+        globalElements.notification.messageNotification,
+      ].forEach((notificationElement) => {
+        notificationElement.assertDoesntExist();
+        notificationElement.assertShows();
+        notificationElement.assertDoesntExist();
       });
     });
   });

@@ -3603,7 +3603,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
               elements.assertAllConsumableViaVerticalScroll(
                 elements.container.specifier
               );
-              globalElements.errorPopup.container.assertDoesntExist();
+              globalElements.inlineError.container.assertDoesntExist();
               assertCubeMatchesStateString(testCaseCube, elements.caseToDrill);
               cy.assertNoHorizontalScrollbar();
             },
@@ -3809,7 +3809,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                   pllThatDoesntHaveAlgorithmPickedForItYet,
                   AUF.none,
                 ]);
-                globalElements.errorPopup.container.assertShows();
+                globalElements.inlineError.container.assertShows();
                 elements.recognitionExplanation.assertDoesntExist();
                 cy.setCurrentTestCase(originalTestCase);
               });

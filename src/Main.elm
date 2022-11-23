@@ -131,7 +131,7 @@ view model =
     Pages.view model.page model.shared model.url model.key
         |> View.map Page
         |> View.addOverlays
-            (Shared.getGlobalErrorOverlays model.shared
+            (Shared.getGlobalOverlays model.shared
                 |> List.map (Element.mapAttribute Shared)
             )
         |> View.toBrowserDocument

@@ -8,7 +8,7 @@ module Shared exposing
     , buildSharedMessage
     , getDisplayAngleOverride
     , getDisplayCubeAnnotationsOverride
-    , getGlobalErrorOverlays
+    , getGlobalOverlays
     , getSizeOverride
     , init
     , shouldUseDebugViewForVisualTesting
@@ -22,8 +22,11 @@ import Element
 import ErrorMessage
 import Json.Decode
 import Key
+import Notification
 import Ports
+import Process
 import Request exposing (Request)
+import Task
 import UI
 import User exposing (User)
 import ViewportSize exposing (ViewportSize)
@@ -94,7 +97,10 @@ type alias Model =
             , developerErrorMessage : String
             , uniqueId : Int
             }
-    , nextErrorMessageId : Int
+    , nextUnusedErrorMessageId : Int
+    , notificationQueue : List { message : String, notificationType : Notification.Type }
+    , currentNotification : Maybe { message : String, notificationType : Notification.Type }
+    , notificationQueueActive : Bool
     }
 
 
@@ -126,15 +132,18 @@ init _ { viewportSize, touchScreenAvailable, featureFlags, storedUser, cubeViewO
                 , displayCubeAnnotationsOverride = Nothing
                 }
       , errorMessages = []
-      , nextErrorMessageId = 0
+      , nextUnusedErrorMessageId = 0
+      , notificationQueue = []
+      , currentNotification = Nothing
+      , notificationQueueActive = False
       }
     , Cmd.none
     )
 
 
-getGlobalErrorOverlays : Model -> List (Element.Attribute Msg)
-getGlobalErrorOverlays shared =
-    shared.errorMessages
+getGlobalOverlays : Model -> List (Element.Attribute Msg)
+getGlobalOverlays shared =
+    (shared.errorMessages
         |> List.map
             (\{ userFacingErrorMessage, developerErrorMessage, uniqueId } ->
                 ErrorMessage.popupOverlay
@@ -142,16 +151,32 @@ getGlobalErrorOverlays shared =
                     shared.palette
                     { errorDescription = userFacingErrorMessage
                     , sendError =
-                        buildSharedMessage <|
+                        InternalMsg <|
                             SendErrorPopup
                                 { id = uniqueId
                                 , errorMessage = developerErrorMessage
                                 }
                     , closeWithoutSending =
-                        buildSharedMessage <|
+                        InternalMsg <|
                             CancelErrorPopup { id = uniqueId }
                     }
             )
+    )
+        ++ (shared.currentNotification
+                |> Maybe.map
+                    (\notificationParams ->
+                        Notification.overlay
+                            shared.viewportSize
+                            shared.palette
+                            { message = notificationParams.message
+                            , notificationType = notificationParams.notificationType
+                            , onReadyToDelete = InternalMsg HandleNotificationDone
+                            , animationOverrides = Nothing
+                            }
+                    )
+                |> Maybe.map List.singleton
+                |> Maybe.withDefault []
+           )
 
 
 type alias HardwareAvailable =
@@ -209,6 +234,10 @@ buildSharedMessage =
 type InternalMsg
     = WindowResized Int Int
     | KeyboardWasUsed
+    | CancelErrorPopup { id : Int }
+    | SendErrorPopup { id : Int, errorMessage : String }
+    | HandleNotificationDone
+    | DisplayNextNotification
     | NoOp
 
 
@@ -218,8 +247,7 @@ type PublicMsg
         { userFacingErrorMessage : String
         , developerErrorMessage : String
         }
-    | CancelErrorPopup { id : Int }
-    | SendErrorPopup { id : Int, errorMessage : String }
+    | AddNotification { message : String, notificationType : Notification.Type }
     | TESTONLYOverrideDisplayAngle (Maybe Cube.DisplayAngle)
     | TESTONLYSetCubeSizeOverride (Maybe Int)
     | TESTONLYOverrideDisplayCubeAnnotations (Maybe Bool)
@@ -249,6 +277,48 @@ update _ msg model =
                     , Cmd.none
                     )
 
+                CancelErrorPopup { id } ->
+                    ( { model
+                        | errorMessages =
+                            model.errorMessages
+                                |> List.filter (\{ uniqueId } -> uniqueId /= id)
+                      }
+                    , Cmd.none
+                    )
+
+                SendErrorPopup { id, errorMessage } ->
+                    ( { model
+                        | errorMessages =
+                            model.errorMessages
+                                |> List.filter (\{ uniqueId } -> uniqueId /= id)
+                      }
+                    , Ports.logError errorMessage
+                    )
+
+                HandleNotificationDone ->
+                    if List.isEmpty model.notificationQueue then
+                        ( { model
+                            | currentNotification = Nothing
+                            , notificationQueueActive = False
+                          }
+                        , Cmd.none
+                        )
+
+                    else
+                        ( { model
+                            | currentNotification = Nothing
+                          }
+                        , Task.perform (always <| InternalMsg DisplayNextNotification) <| Process.sleep 100
+                        )
+
+                DisplayNextNotification ->
+                    ( { model
+                        | notificationQueue = List.drop 1 model.notificationQueue
+                        , currentNotification = List.head model.notificationQueue
+                      }
+                    , Cmd.none
+                    )
+
                 NoOp ->
                     ( model, Cmd.none )
 
@@ -273,31 +343,29 @@ update _ msg model =
                         | errorMessages =
                             { developerErrorMessage = args.developerErrorMessage
                             , userFacingErrorMessage = args.userFacingErrorMessage
-                            , uniqueId = model.nextErrorMessageId
+                            , uniqueId = model.nextUnusedErrorMessageId
                             }
                                 :: model.errorMessages
-                        , nextErrorMessageId = model.nextErrorMessageId + 1
+                        , nextUnusedErrorMessageId = model.nextUnusedErrorMessageId + 1
                       }
                     , Cmd.none
                     )
 
-                CancelErrorPopup { id } ->
-                    ( { model
-                        | errorMessages =
-                            model.errorMessages
-                                |> List.filter (\{ uniqueId } -> uniqueId /= id)
-                      }
-                    , Cmd.none
-                    )
+                AddNotification notificationParams ->
+                    if model.notificationQueueActive then
+                        ( { model
+                            | notificationQueue = model.notificationQueue ++ [ notificationParams ]
+                          }
+                        , Cmd.none
+                        )
 
-                SendErrorPopup { id, errorMessage } ->
-                    ( { model
-                        | errorMessages =
-                            model.errorMessages
-                                |> List.filter (\{ uniqueId } -> uniqueId /= id)
-                      }
-                    , Ports.logError errorMessage
-                    )
+                    else
+                        ( { model
+                            | currentNotification = Just notificationParams
+                            , notificationQueueActive = True
+                          }
+                        , Cmd.none
+                        )
 
                 TESTONLYOverrideDisplayAngle newDisplayAngle ->
                     let

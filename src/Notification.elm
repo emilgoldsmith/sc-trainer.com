@@ -1,5 +1,6 @@
 module Notification exposing (Type(..), overlay)
 
+import Css exposing (testid)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Font as Font
@@ -31,23 +32,22 @@ overlay :
                 , notificationDisplayTimeMs : Int
                 }
         }
-    -> List (Attribute msg)
     -> Attribute msg
-overlay viewportSize palette { message, notificationType, onReadyToDelete, animationOverrides } attributes =
+overlay viewportSize palette { message, notificationType, onReadyToDelete, animationOverrides } =
     let
         maxWidth =
             ViewportSize.width viewportSize * 7 // 10
 
-        backgroundColor =
+        ( backgroundColor, notificationTestId ) =
             case notificationType of
                 Error ->
-                    palette.error
+                    ( palette.error, "error-notification" )
 
                 Success ->
-                    palette.correct
+                    ( palette.correct, "success-notification" )
 
                 Message ->
-                    palette.greyBackground
+                    ( palette.greyBackground, "message-notification" )
 
         animationParams =
             animationOverrides
@@ -56,19 +56,23 @@ overlay viewportSize palette { message, notificationType, onReadyToDelete, anima
     inFront <|
         animatedUi el
             (enterAndExitAnimation animationParams)
-            (attributes
-                ++ [ alignTop
-                   , centerX
-                   , Background.color backgroundColor
-                   , Font.color palette.darkText
-                   , UI.paddingAll.veryLarge
-                   , UI.fontSize.large
-                   , width (shrink |> maximum maxWidth)
-                   , htmlAttribute <| Html.Events.on "animationend" (Json.Decode.succeed onReadyToDelete)
-                   ]
-            )
+            [ testid "notification-container"
+            , testid notificationTestId
+            , alignTop
+            , centerX
+            , Background.color backgroundColor
+            , Font.color palette.darkText
+            , UI.paddingAll.veryLarge
+            , UI.fontSize.large
+            , width (shrink |> maximum maxWidth)
+            , htmlAttribute <| Html.Events.on "animationend" (Json.Decode.succeed onReadyToDelete)
+            ]
         <|
-            paragraph [ centerX, centerY ] [ text message ]
+            paragraph
+                [ centerX
+                , centerY
+                ]
+                [ text message ]
 
 
 animatedUi :
