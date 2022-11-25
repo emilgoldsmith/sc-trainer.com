@@ -1,8 +1,9 @@
-port module Ports exposing (logError, onTESTONLYCurrentTestCaseRequested, onTESTONLYOverrideCubeDisplayAngle, onTESTONLYOverrideDisplayCubeAnnotations, onTESTONLYOverrideNextTestCase, onTESTONLYSetCubeSizeOverride, onTESTONLYSetPLLAlgorithm, onTESTONLYSetTestCase, tESTONLYEmitCurrentTestCase, updateStoredUser)
+port module Ports exposing (MultiplePLLAlgorithmsError(..), logError, onTESTONLYCurrentTestCaseRequested, onTESTONLYOverrideCubeDisplayAngle, onTESTONLYOverrideDisplayCubeAnnotations, onTESTONLYOverrideNextTestCase, onTESTONLYSetCubeSizeOverride, onTESTONLYSetMultiplePLLAlgorithmsPort, onTESTONLYSetPLLAlgorithm, onTESTONLYSetTestCase, tESTONLYEmitCurrentTestCase, updateStoredUser)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
 import Cube
+import Dict
 import Json.Decode
 import Json.Encode
 import List.Extra
@@ -43,10 +44,54 @@ onTESTONLYSetPLLAlgorithm toMsg =
     setPLLAlgorithmPort
         (\{ algorithm, pll } ->
             ( stringToPll pll
-                |> Result.fromMaybe "Not a valid PLL case"
+                |> Result.fromMaybe (pll ++ " is not a valid PLL case")
             , Algorithm.fromString algorithm
             )
                 |> toMsg
+        )
+
+
+port setMultiplePLLAlgorithmsPort : (Json.Decode.Value -> msg) -> Sub msg
+
+
+type MultiplePLLAlgorithmsError
+    = ErrorString String
+    | AlgorithmError { pllString : String } Algorithm.FromStringError
+
+
+onTESTONLYSetMultiplePLLAlgorithmsPort : (Result MultiplePLLAlgorithmsError (List ( PLL, Algorithm )) -> msg) -> Sub msg
+onTESTONLYSetMultiplePLLAlgorithmsPort toMsg =
+    setMultiplePLLAlgorithmsPort
+        (\jsonValue ->
+            jsonValue
+                |> Json.Decode.decodeValue (Json.Decode.dict Json.Decode.string)
+                |> Result.mapError (Json.Decode.errorToString >> ErrorString)
+                |> Result.andThen
+                    (\stringDict ->
+                        stringDict
+                            |> Dict.foldl
+                                (\key value curResult ->
+                                    let
+                                        pllResult =
+                                            stringToPll key
+                                                |> Result.fromMaybe (key ++ " is not a valid PLL case")
+                                                |> Result.mapError ErrorString
+
+                                        algorithmResult =
+                                            Algorithm.fromString value
+                                                |> Result.mapError (AlgorithmError { pllString = key })
+                                    in
+                                    Result.map3
+                                        (\pll algorithm curList ->
+                                            ( pll, algorithm ) :: curList
+                                        )
+                                        pllResult
+                                        algorithmResult
+                                        curResult
+                                )
+                                (Ok [])
+                    )
+                >> toMsg
         )
 
 

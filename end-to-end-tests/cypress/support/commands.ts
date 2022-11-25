@@ -866,6 +866,38 @@ const setPLLAlgorithm: Cypress.Chainable<undefined>["setPLLAlgorithm"] =
   };
 Cypress.Commands.add("setPLLAlgorithm", setPLLAlgorithm);
 
+const setMultiplePLLAlgorithms: Cypress.Chainable<undefined>["setMultiplePLLAlgorithms"] =
+  function (toSet) {
+    const jsonValue = Cypress._.mapKeys(
+      toSet,
+      (_, key) => pllToPllLetters[key as unknown as PLL]
+    );
+    cy.withOverallNameLogged(
+      {
+        displayName: "SET MULTIPLE PLL ALGORITHMS",
+        message: JSON.stringify(jsonValue),
+      },
+      () => {
+        cy.getCustomWindow({ log: false }).then((window) => {
+          const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+          const setMultiplePLLAlgorithmsPort =
+            ports.setMultiplePLLAlgorithmsPort;
+          if (!setMultiplePLLAlgorithmsPort)
+            throw new Error(
+              `setMultiplePLLAlgorithms port is not exposed for some reason. The port keys are: ${JSON.stringify(
+                Object.keys(ports)
+              )}`
+            );
+          setMultiplePLLAlgorithmsPort.send(jsonValue);
+          // Release control of the thread to let the render loop do it's thing
+          // eslint-disable-next-line cypress/no-unnecessary-waiting
+          cy.wait(0);
+        });
+      }
+    );
+  };
+Cypress.Commands.add("setMultiplePLLAlgorithms", setMultiplePLLAlgorithms);
+
 const overrideCubeDisplayAngle: Cypress.Chainable<undefined>["overrideCubeDisplayAngle"] =
   function (displayAngle) {
     cy.withOverallNameLogged(

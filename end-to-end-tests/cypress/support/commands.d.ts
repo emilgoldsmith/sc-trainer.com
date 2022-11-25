@@ -312,6 +312,10 @@ declare namespace Cypress {
     setCubeSizeOverride(size: number | null): void;
 
     setPLLAlgorithm(pll: import("./pll").PLL, algorithm: string): void;
+
+    setMultiplePLLAlgorithms(
+      pllsToSet: Record<import("./pll").PLL, string>
+    ): void;
   }
 }
 

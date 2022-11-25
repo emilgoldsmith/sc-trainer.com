@@ -3763,14 +3763,15 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
             "snapshot all of the pll recognition explanations",
             () => {
               cy.getApplicationState().then((originalApplicationState) => {
+                // Set all the algorithms here both in case of them not being set in advance
+                // and to be able to control that we use Jperms algorithms for ease of understanding
+                // any test failures etc.
+                cy.setMultiplePLLAlgorithms(pllToJpermsAlgorithm);
+
                 const allPreAUFAndPLLCombinations: [AUF, PLL][] =
-                  allPLLs.flatMap((pll) => {
-                    // Set all the algorithms here both in case of them not being set in advance
-                    // and to be able to control that we use Jperms algorithms for ease of understanding
-                    // any test failures etc.
-                    cy.setPLLAlgorithm(pll, pllToJpermsAlgorithm[pll]);
-                    return allAUFs.map((auf) => [auf, pll] as [AUF, PLL]);
-                  });
+                  allPLLs.flatMap((pll) =>
+                    allAUFs.map((auf) => [auf, pll] as [AUF, PLL])
+                  );
 
                 const seen = new Set();
                 allPreAUFAndPLLCombinations.forEach(([preAUF, pll]) => {
