@@ -106,9 +106,9 @@ viewInline palette { errorDescription, sendError } =
         , errorMessageTestType
         , width fill
         , Border.shadow
-            { offset = ( 0, 5 )
+            { offset = ( 0, 0 )
             , size = 0
-            , blur = 15
+            , blur = 5
             , color = rgba255 0 0 0 0.35
             }
         ]

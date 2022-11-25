@@ -3,7 +3,6 @@ import {
   buildElementsCategory,
   buildGlobalsCategory,
   errorMessageElement,
-  optionalElement,
 } from "support/elements";
 
 export const globalElements = {
