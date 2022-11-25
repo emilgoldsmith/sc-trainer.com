@@ -220,6 +220,7 @@ type InternalMsg
     | TESTONLYSetCubeSizeOverride (Maybe Int)
     | TESTONLYOverrideDisplayCubeAnnotations (Maybe Bool)
     | TESTONLYSetPLLAlgorithm ( Result String PLL, Result Algorithm.FromStringError Algorithm )
+    | TESTONLYSetMultiplePLLAlgorithms (Result Ports.MultiplePLLAlgorithmsError (List ( PLL, Algorithm )))
     | TESTONLYCurrentTestCaseRequested
 
 
@@ -683,6 +684,62 @@ update shared msg model =
                                 )
                         )
 
+                TESTONLYSetMultiplePLLAlgorithms (Err err) ->
+                    let
+                        errorMessage =
+                            case err of
+                                Ports.ErrorString x ->
+                                    x
+
+                                Ports.AlgorithmError { pllString } algError ->
+                                    "Error in algorithm parsing of test only set multiple pll algorithms for pll "
+                                        ++ pllString
+                                        ++ ": "
+                                        ++ Algorithm.debugFromStringError algError
+                    in
+                    ( model, Effect.fromCmd <| Ports.logError errorMessage )
+
+                TESTONLYSetMultiplePLLAlgorithms (Ok pllAlgPairs) ->
+                    let
+                        modifyUserResult =
+                            pllAlgPairs
+                                |> List.foldl
+                                    (\( pll, algorithm ) curResult ->
+                                        case curResult of
+                                            Err x ->
+                                                Err x
+
+                                            Ok curModification ->
+                                                let
+                                                    cleanedUpAlgorithm =
+                                                        PLLTrainer.States.PickAlgorithmPage.cleanUpAlgorithm algorithm
+                                                in
+                                                if not <| PLL.solvedBy cleanedUpAlgorithm pll then
+                                                    Err ("algorithm given in test only set multiple pll algorithms didn't match the pll " ++ PLL.getLetters pll)
+
+                                                else
+                                                    Ok
+                                                        (curModification
+                                                            >> User.changePLLAlgorithm
+                                                                pll
+                                                                cleanedUpAlgorithm
+                                                        )
+                                    )
+                                    (Ok identity)
+                    in
+                    case modifyUserResult of
+                        Ok modifyUser ->
+                            ( model
+                            , Effect.fromShared <|
+                                Shared.ModifyUser (modifyUser >> (\x -> ( x, Nothing )))
+                            )
+
+                        Err err ->
+                            ( model
+                            , Effect.fromCmd <|
+                                Ports.logError err
+                            )
+
         NoOp ->
             ( model, Effect.none )
 
@@ -894,6 +951,7 @@ subscriptions shared model =
         , Ports.onTESTONLYOverrideDisplayCubeAnnotations (InternalMsg << TESTONLYOverrideDisplayCubeAnnotations)
         , Ports.onTESTONLYSetCubeSizeOverride (InternalMsg << TESTONLYSetCubeSizeOverride)
         , Ports.onTESTONLYSetPLLAlgorithm (InternalMsg << TESTONLYSetPLLAlgorithm)
+        , Ports.onTESTONLYSetMultiplePLLAlgorithmsPort (InternalMsg << TESTONLYSetMultiplePLLAlgorithms)
         , Ports.onTESTONLYCurrentTestCaseRequested (InternalMsg TESTONLYCurrentTestCaseRequested)
         ]
 
