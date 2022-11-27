@@ -275,6 +275,7 @@ describe("PLL Trainer", function () {
 
       it("always goes to driller and displays new case page for new preAUF, and exactly if it's not none for new postAUF, even when the pll and other AUF combination have been tested before; doesn't go to driller or display new case page for new combination of seen pre and postAUF with seen pll; on a slow correct it shows correct text and not wrong text in driller explanation page", function () {
         const pll = PLL.Gc;
+        const pllThatIsntUsedInThisTest = PLL.V;
         const firstPreAUF = AUF.U2;
         const firstNotNonePostAUF = AUF.U;
         const differentPreAUF = AUF.UPrime;
@@ -366,6 +367,7 @@ describe("PLL Trainer", function () {
             nearlyThereTypeOfWrongWasUsed: true,
             testCaseFront,
             testCaseBack,
+            pllThatDoesntHaveAlgorithmPickedForItYet: pllThatIsntUsedInThisTest,
           })
         );
 
@@ -4080,9 +4082,11 @@ function algorithmDrillerSuccessPageNavigateVariant2() {
 function wrongPageNoSideEffects({
   testCaseFront,
   testCaseBack,
+  pllThatDoesntHaveAlgorithmPickedForItYet,
 }: {
   testCaseFront: string;
   testCaseBack: string;
+  pllThatDoesntHaveAlgorithmPickedForItYet: PLL;
   // It's important that the nearly there button was used because
   // otherwise expected state could be solved state which could avoid catching
   // a bug we actually (nearly) had in production where what was
@@ -4102,6 +4106,7 @@ function wrongPageNoSideEffects({
             cy.assertNoHorizontalScrollbar();
             cy.assertNoVerticalScrollbar();
 
+            globalElements.inlineError.container.assertDoesntExist();
             cy.overrideDisplayCubeAnnotations(false);
             // Test case cubes look correct
             assertCubeMatchesStateString(
@@ -4158,6 +4163,202 @@ function wrongPageNoSideEffects({
               // Reset to the previous test case, which is very important to uphold the
               // promise of no side effects
               cy.setCurrentTestCase(testCase);
+            });
+          },
+        ],
+        [
+          "the algorithm is displayed as expected and without any rotations appended to the end of it",
+          () => {
+            cy.getApplicationState().then((originalApplicationState) => {
+              cy.setCurrentTestCase([AUF.U, PLL.Gb, AUF.UPrime]);
+              const gbAlgorithmEndingOneYRotationAway =
+                "R' Dw' F R2 Uw R' U R U' R Uw' R2";
+              cy.setPLLAlgorithm(PLL.Gb, gbAlgorithmEndingOneYRotationAway);
+              elements.algorithm
+                .get()
+                .invoke("text")
+                .then(sanitizeAlgorithm)
+                .should(
+                  "equal",
+                  sanitizeAlgorithm(
+                    "U" + gbAlgorithmEndingOneYRotationAway + "U'"
+                  )
+                );
+
+              cy.setCurrentTestCase([AUF.U2, PLL.Aa, AUF.UPrime]);
+              const AaAlgorithmEndingOneXRotationAway =
+                "Lw' U R' D2 R U' R' D2 R2";
+              cy.setPLLAlgorithm(PLL.Aa, AaAlgorithmEndingOneXRotationAway);
+              elements.algorithm
+                .get()
+                .invoke("text")
+                .then(sanitizeAlgorithm)
+                .should(
+                  "equal",
+                  // Note that the last AUF here becomes a B move instead of rotating and
+                  // doing a U move
+                  sanitizeAlgorithm(
+                    "U2" + AaAlgorithmEndingOneXRotationAway + "B'"
+                  )
+                );
+
+              // Try one here with no AUFs and also being a z rotation away instead of x or y
+              cy.setCurrentTestCase([AUF.none, PLL.Ra, AUF.none]);
+              const RaAlgorithmEndingOneZPrimeRotationAway =
+                "L U2 L' U2 L F' L' U' L U L Bw D2";
+              cy.setPLLAlgorithm(
+                PLL.Ra,
+                RaAlgorithmEndingOneZPrimeRotationAway
+              );
+              elements.algorithm
+                .get()
+                .invoke("text")
+                .then(sanitizeAlgorithm)
+                .should(
+                  "equal",
+                  sanitizeAlgorithm(RaAlgorithmEndingOneZPrimeRotationAway)
+                );
+
+              function sanitizeAlgorithm(algorithm: string): string {
+                return algorithm.replace(/\(|\)|\s/g, "");
+              }
+
+              // Undo all the side effects we just did
+              cy.setApplicationState(originalApplicationState);
+            });
+          },
+        ],
+        [
+          "recognition explanation does not change when postAUF changes, but otherwise does",
+          () => {
+            cy.getApplicationState().then((originalApplicationState) => {
+              // We choose F perm as it is not symmetrical, just to have an even more confidence building test
+              const originalTestCase = [AUF.U, PLL.F, AUF.U2] as const;
+              // We need to set the algorithm as that is required for recognition explanations
+              // and F perm may not have an algorithm set when this test is run
+              cy.setPLLAlgorithm(
+                originalTestCase[1],
+                pllToAlgorithmString[originalTestCase[1]]
+              );
+              cy.setCurrentTestCase(originalTestCase);
+
+              type Aliases = { originalExplanation: string };
+              const originalPostAUF = originalTestCase[2];
+              const otherPostAUFs = allAUFs.filter(
+                (auf) => auf !== originalPostAUF
+              );
+              elements.recognitionExplanation
+                .get()
+                .invoke("text")
+                .setAlias<Aliases, "originalExplanation">(
+                  "originalExplanation"
+                );
+              otherPostAUFs.forEach((otherPostAUF) => {
+                cy.setCurrentTestCase([
+                  originalTestCase[0],
+                  originalTestCase[1],
+                  otherPostAUF,
+                ]);
+                elements.recognitionExplanation
+                  .get()
+                  .invoke("text")
+                  .then((nextExplanation) => {
+                    cy.getAliases<Aliases>().then(({ originalExplanation }) =>
+                      assertNonFalsyStringsEqual(
+                        nextExplanation,
+                        originalExplanation,
+                        "nextExplanation (first) is not equal to originalExplanation (second)"
+                      )
+                    );
+                  });
+              });
+
+              // If we change to a different pll though, it should be different
+              const otherPLL = allPLLs.filter(
+                (pll) => pll !== originalTestCase[1]
+              )[0];
+              if (otherPLL === undefined)
+                throw new Error(
+                  "this shouldn't happen, we're just using it as a type guard"
+                );
+              // Again we need to set the algorithm as it's required
+              cy.setPLLAlgorithm(otherPLL, pllToAlgorithmString[otherPLL]);
+              cy.setCurrentTestCase([
+                originalTestCase[0],
+                otherPLL,
+                originalTestCase[2],
+              ]);
+              elements.recognitionExplanation
+                .get()
+                .invoke("text")
+                .then((otherPLLExplanation) => {
+                  cy.getAliases<Aliases>().then(({ originalExplanation }) =>
+                    assertNonFalsyStringsDifferent(
+                      otherPLLExplanation,
+                      originalExplanation,
+                      "otherPLLExplanation (first) is equal to originalExplanation (second)"
+                    )
+                  );
+                });
+
+              // Reset to the original state
+              cy.setApplicationState(originalApplicationState);
+            });
+          },
+        ],
+        [
+          "snapshot all of the pll recognition explanations",
+          () => {
+            cy.getApplicationState().then((originalApplicationState) => {
+              // Set all the algorithms here both in case of them not being set in advance
+              // and to be able to control that we use Jperms algorithms for ease of understanding
+              // any test failures etc.
+              cy.setMultiplePLLAlgorithms(pllToJpermsAlgorithm);
+
+              const allPreAUFAndPLLCombinations: [AUF, PLL][] = allPLLs.flatMap(
+                (pll) => allAUFs.map((auf) => [auf, pll] as [AUF, PLL])
+              );
+
+              const seen = new Set();
+              allPreAUFAndPLLCombinations.forEach(([preAUF, pll]) => {
+                // PostAUF doesn't matter for the recognition angle
+                cy.setCurrentTestCase([preAUF, pll, AUF.none]);
+                // To check that we aren't repeating any snapshots that are optimized away by symmetricalities
+                cy.getCurrentTestCase().then((testCase) => {
+                  const testCaseString = `${
+                    aufToAlgorithmString[testCase[0]]
+                  } [${pllToPllLetters[testCase[1]]}]`;
+                  if (seen.has(testCaseString)) return;
+                  seen.add(testCaseString);
+
+                  elements.recognitionExplanation
+                    .get()
+                    .invoke("text")
+                    .snapshot({
+                      name:
+                        "Wrong page recognition explanation from ufr angle using Jperm's algorithms for " +
+                        `${aufToAlgorithmString[preAUF]} [${pllToPllLetters[pll]}]`.trim(),
+                    });
+                });
+              });
+
+              // To avoid any side effects
+              cy.setApplicationState(originalApplicationState);
+            });
+          },
+        ],
+        [
+          "shows error message if algorithm not picked for pll",
+          () => {
+            cy.getCurrentTestCase().then((originalTestCase) => {
+              cy.setCurrentTestCase([
+                AUF.none,
+                pllThatDoesntHaveAlgorithmPickedForItYet,
+                AUF.none,
+              ]);
+              globalElements.inlineError.container.assertShows();
+              elements.recognitionExplanation.assertDoesntExist();
+              cy.setCurrentTestCase(originalTestCase);
             });
           },
         ],

@@ -1180,6 +1180,7 @@ states shared =
                 }
                 { expectedCubeState = model.expectedCubeState
                 , testCase = model.currentTestCase.testCase
+                , sendError = SubmitError
                 }
     }
 
