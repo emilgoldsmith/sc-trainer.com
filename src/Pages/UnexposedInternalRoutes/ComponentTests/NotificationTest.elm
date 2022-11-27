@@ -137,7 +137,7 @@ view shared model =
     , body =
         View.fullScreenBody
             (\_ ->
-                wrappedRow []
+                wrappedRow [ alignBottom ]
                     [ Element.Input.button [ testid "start-notification-series-button" ]
                         { onPress = Just InitiateAllNotificationsInSeries
                         , label = text "Start Notification Series"
