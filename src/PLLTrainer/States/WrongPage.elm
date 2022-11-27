@@ -74,7 +74,7 @@ view shared transitions arguments =
         maybePLLAlgorithm =
             User.getPLLAlgorithm (PLLTrainer.TestCase.pll arguments.testCase) shared.user
 
-        recognitionSpecResult =
+        recognitionSpecAndAlgorithmResult =
             case maybePLLAlgorithm of
                 Nothing ->
                     Err "No PLL algorithm was stored for this case"
@@ -92,7 +92,7 @@ view shared transitions arguments =
                             Err "Stored PLL algorithm doesn't solve the case"
 
                         Ok recognitionSpec ->
-                            Ok recognitionSpec
+                            Ok ( recognitionSpec, pllAlgorithm )
     in
     { overlays = View.buildOverlays []
     , body =
@@ -104,13 +104,14 @@ view shared transitions arguments =
                     , centerX
                     , centerY
                     , spacing largeTextSize
+                    , UI.paddingAll.large
                     ]
-                    [ el
+                    ([ el
                         [ centerX
                         , Font.size largeTextSize
                         , testid "test-case-name"
                         ]
-                      <|
+                       <|
                         let
                             preAufString =
                                 AUF.toString (PLLTrainer.TestCase.preAUF arguments.testCase)
@@ -138,7 +139,7 @@ view shared transitions arguments =
                                    )
                                 ++ ":"
                             )
-                    , row
+                     , row
                         [ centerX
                         ]
                         [ ViewCube.view shared.cubeViewOptions
@@ -158,14 +159,14 @@ view shared transitions arguments =
                             }
                             testCaseCube
                         ]
-                    , paragraph
+                     , paragraph
                         [ centerX
                         , Font.center
                         , Font.size largeTextSize
                         , testid "expected-cube-state-text"
                         ]
                         [ text "Your Cube Should Now Look Like This:" ]
-                    , row
+                     , row
                         [ centerX
                         ]
                         [ ViewCube.view shared.cubeViewOptions
@@ -185,7 +186,7 @@ view shared transitions arguments =
                             }
                             arguments.expectedCubeState
                         ]
-                    , PLLTrainer.ButtonWithShortcut.view
+                     , PLLTrainer.ButtonWithShortcut.view
                         shared.hardwareAvailable
                         [ testid "next-button"
                         , centerX
@@ -196,43 +197,49 @@ view shared transitions arguments =
                         , color = shared.palette.primaryButton
                         }
                         (UI.viewButton.customSize <| largeTextSize)
-                    , paragraph [ centerX, Font.center ]
-                        [ el [ Font.bold ] <| text "Algorithm: "
-                        , el [ testid "algorithm" ] <|
-                            text
-                                (arguments.testCase
-                                    |> PLLTrainer.TestCase.toAlg
-                                        { addFinalReorientationToAlgorithm = False }
-                                        shared.user
-                                    |> Algorithm.toString
-                                )
-                        ]
-                    , case recognitionSpecResult of
-                        Err errorDescription ->
-                            ErrorMessage.viewInline
-                                shared.palette
-                                { errorDescription = errorDescription
-                                , sendError = arguments.sendError errorDescription
-                                }
+                     ]
+                        ++ (case recognitionSpecAndAlgorithmResult of
+                                Err errorDescription ->
+                                    [ ErrorMessage.viewInline
+                                        shared.palette
+                                        { errorDescription = errorDescription
+                                        , sendError = arguments.sendError errorDescription
+                                        }
+                                    ]
 
-                        Ok recognitionSpec ->
-                            column
-                                [ testid "recognition-explanation"
-                                , centerX
-                                , UI.spacingVertical.extremelySmall
-                                , UI.fontSize.medium
-                                , Font.center
-                                ]
-                                [ paragraph
-                                    []
-                                    [ el [ Font.bold ] <| text "PLL Recognition: "
-                                    , text (PLLRecognition.specToPLLRecognitionString recognitionSpec)
+                                Ok ( recognitionSpec, algorithm ) ->
+                                    [ paragraph
+                                        [ centerX
+                                        , Font.center
+                                        , UI.fontSize.medium
+                                        ]
+                                        [ el [ Font.bold, testid "algorithm-prefix" ] <|
+                                            text <|
+                                                PLL.getLetters (PLLTrainer.TestCase.pll arguments.testCase)
+                                                    ++ "-perm: "
+                                        , el [ testid "algorithm" ] <|
+                                            text <|
+                                                Algorithm.toString algorithm
+                                        ]
+                                    , column
+                                        [ testid "recognition-explanation"
+                                        , centerX
+                                        , UI.spacingVertical.extremelySmall
+                                        , Font.center
+                                        , UI.fontSize.medium
+                                        ]
+                                        [ paragraph
+                                            []
+                                            [ el [ Font.bold ] <| text "PLL Recognition: "
+                                            , text (PLLRecognition.specToPLLRecognitionString recognitionSpec)
+                                            ]
+                                        , paragraph []
+                                            [ el [ Font.bold ] <| text "Post-AUF Recognition: "
+                                            , text (PLLRecognition.specToPostAUFString recognitionSpec)
+                                            ]
+                                        ]
                                     ]
-                                , paragraph []
-                                    [ el [ Font.bold ] <| text "Post-AUF Recognition: "
-                                    , text (PLLRecognition.specToPostAUFString recognitionSpec)
-                                    ]
-                                ]
-                    ]
+                           )
+                    )
             )
     }
