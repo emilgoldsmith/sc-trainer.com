@@ -81,7 +81,7 @@ export function parseAUFString(str: string): AUF {
   }
 }
 
-export const pllToPllLetters: { [key in PLL]: string } = {
+export const pllToPLLLetters: { [key in PLL]: string } = {
   [PLL.Aa]: "Aa",
   [PLL.Ab]: "Ab",
   [PLL.E]: "E",

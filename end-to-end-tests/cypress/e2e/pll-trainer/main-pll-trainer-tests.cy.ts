@@ -19,7 +19,7 @@ import {
   PLL,
   pllToAlgorithmString,
   pllToJpermsAlgorithm,
-  pllToPllLetters,
+  pllToPLLLetters,
 } from "support/pll";
 import {
   completePLLTestInMilliseconds,
@@ -1205,7 +1205,7 @@ describe("PLL Trainer", function () {
                 expect(text)
                   .to.match(
                     new RegExp(
-                      "\\b" + pllToPllLetters[caseInfo.pll] + "-perm\\b"
+                      "\\b" + pllToPLLLetters[caseInfo.pll] + "-perm\\b"
                     )
                   )
                   .and.match(
@@ -1218,7 +1218,7 @@ describe("PLL Trainer", function () {
                   );
               } else {
                 expect(text).to.equal(
-                  pllToPllLetters[caseInfo.pll] + "-perm: DNF"
+                  pllToPLLLetters[caseInfo.pll] + "-perm: DNF"
                 );
               }
             });
@@ -3068,7 +3068,7 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
               cy.getCurrentTestCase().then(([, pll]) =>
                 pllTrainerElements.pickAlgorithmPage.explanationText
                   .get()
-                  .should("contain.text", pllToPllLetters[pll])
+                  .should("contain.text", pllToPLLLetters[pll])
               );
             },
           ],
@@ -3163,10 +3163,10 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
                             href
                               .toLowerCase()
                               .endsWith(
-                                "/" + pllToPllLetters[currentPLL].toLowerCase()
+                                "/" + pllToPLLLetters[currentPLL].toLowerCase()
                               ),
                           "ends with /" +
-                            pllToPllLetters[currentPLL].toLowerCase()
+                            pllToPLLLetters[currentPLL].toLowerCase()
                         );
                     })
                     .then((link) => {
@@ -3783,7 +3783,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                   cy.getCurrentTestCase().then((testCase) => {
                     const testCaseString = `${
                       aufToAlgorithmString[testCase[0]]
-                    } [${pllToPllLetters[testCase[1]]}]`;
+                    } [${pllToPLLLetters[testCase[1]]}]`;
                     if (seen.has(testCaseString)) return;
                     seen.add(testCaseString);
 
@@ -3793,7 +3793,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                       .snapshot({
                         name:
                           "Driller explanation page recognition explanation from ufr angle using Jperm's algorithms for " +
-                          `${aufToAlgorithmString[preAUF]} [${pllToPllLetters[pll]}]`.trim(),
+                          `${aufToAlgorithmString[preAUF]} [${pllToPLLLetters[pll]}]`.trim(),
                       });
                   });
                 });
@@ -4180,7 +4180,7 @@ function wrongPageNoSideEffects({
                 .invoke("text")
                 .should(
                   "match",
-                  new RegExp(String.raw`\b${pllToPllLetters[PLL.Gb]}\b`)
+                  new RegExp(String.raw`\b${pllToPLLLetters[PLL.Gb]}\b`)
                 );
               elements.algorithm
                 .get()
@@ -4201,7 +4201,7 @@ function wrongPageNoSideEffects({
                 .invoke("text")
                 .should(
                   "match",
-                  new RegExp(String.raw`\b${pllToPllLetters[PLL.Aa]}\b`)
+                  new RegExp(String.raw`\b${pllToPLLLetters[PLL.Aa]}\b`)
                 );
               elements.algorithm
                 .get()
@@ -4209,12 +4209,9 @@ function wrongPageNoSideEffects({
                 .then(sanitizeAlgorithm)
                 .should(
                   "equal",
-                  // Note that the last AUF here becomes a B move instead of rotating and
-                  // doing a U move
                   sanitizeAlgorithm(AaAlgorithmEndingOneXRotationAway)
                 );
 
-              // Try one here with no AUFs and also being a z rotation away instead of x or y
               cy.setCurrentTestCase([AUF.none, PLL.Ra, AUF.none]);
               const RaAlgorithmEndingOneZPrimeRotationAway =
                 "L U2 L' U2 L F' L' U' L U L Bw D2";
@@ -4228,7 +4225,7 @@ function wrongPageNoSideEffects({
                 .invoke("text")
                 .should(
                   "match",
-                  new RegExp(String.raw`\b${pllToPllLetters[PLL.Ra]}\b`)
+                  new RegExp(String.raw`\b${pllToPLLLetters[PLL.Ra]}\b`)
                 );
               elements.algorithm
                 .get()
@@ -4347,7 +4344,7 @@ function wrongPageNoSideEffects({
                 cy.getCurrentTestCase().then((testCase) => {
                   const testCaseString = `${
                     aufToAlgorithmString[testCase[0]]
-                  } [${pllToPllLetters[testCase[1]]}]`;
+                  } [${pllToPLLLetters[testCase[1]]}]`;
                   if (seen.has(testCaseString)) return;
                   seen.add(testCaseString);
 
@@ -4357,7 +4354,7 @@ function wrongPageNoSideEffects({
                     .snapshot({
                       name:
                         "Wrong page recognition explanation from ufr angle using Jperm's algorithms for " +
-                        `${aufToAlgorithmString[preAUF]} [${pllToPllLetters[pll]}]`.trim(),
+                        `${aufToAlgorithmString[preAUF]} [${pllToPLLLetters[pll]}]`.trim(),
                     });
                 });
               });
@@ -4395,7 +4392,7 @@ function testCaseToWrongPageRegex(testCase: readonly [AUF, PLL, AUF]): RegExp {
   return new RegExp(
     [
       firstAufString && String.raw`\b${firstAufString}\s+`,
-      String.raw`[^\b]*${pllToPllLetters[testCase[1]]}[^\b]*`,
+      String.raw`[^\b]*${pllToPLLLetters[testCase[1]]}[^\b]*`,
       secondAufString && String.raw`\s+${secondAufString}\b`,
     ].join("")
   );
