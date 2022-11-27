@@ -116,8 +116,8 @@ export const pllTrainerElements = {
     expectedCubeStateFront: cubeElement("expected-cube-state-front"),
     expectedCubeStateBack: cubeElement("expected-cube-state-back"),
     nextButton: "next-button",
-    algorithm: "algorithm",
     algorithmPrefix: "algorithm-prefix",
+    algorithm: "algorithm",
     recognitionExplanation: "recognition-explanation",
   }),
   pickAlgorithmPage: buildElementsCategory({

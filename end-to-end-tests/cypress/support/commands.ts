@@ -32,7 +32,7 @@ import {
   parseAUFString,
   parsePLLString,
   PLL,
-  pllToPllLetters,
+  pllToPLLLetters,
 } from "./pll";
 import { register } from "@cypress/snapshot";
 
@@ -777,7 +777,7 @@ const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] =
   function ([preAuf, pll, postAuf]) {
     const jsonValue = [
       aufToAlgorithmString[preAuf],
-      pllToPllLetters[pll],
+      pllToPLLLetters[pll],
       aufToAlgorithmString[postAuf],
     ];
     cy.withOverallNameLogged(
@@ -810,7 +810,7 @@ const overrideNextTestCase: Cypress.Chainable<undefined>["overrideNextTestCase"]
   function ([preAuf, pll, postAuf]) {
     const jsonValue = [
       aufToAlgorithmString[preAuf],
-      pllToPllLetters[pll],
+      pllToPLLLetters[pll],
       aufToAlgorithmString[postAuf],
     ];
     cy.withOverallNameLogged(
@@ -839,7 +839,7 @@ const setPLLAlgorithm: Cypress.Chainable<undefined>["setPLLAlgorithm"] =
   function (pll, algorithm) {
     const jsonValue = {
       algorithm,
-      pll: pllToPllLetters[pll],
+      pll: pllToPLLLetters[pll],
     };
     cy.withOverallNameLogged(
       {
@@ -870,7 +870,7 @@ const setMultiplePLLAlgorithms: Cypress.Chainable<undefined>["setMultiplePLLAlgo
   function (toSet) {
     const jsonValue = Cypress._.mapKeys(
       toSet,
-      (_, key) => pllToPllLetters[key as unknown as PLL]
+      (_, key) => pllToPLLLetters[key as unknown as PLL]
     );
     cy.withOverallNameLogged(
       {

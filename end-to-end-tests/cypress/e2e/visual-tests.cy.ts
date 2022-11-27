@@ -275,9 +275,6 @@ describe("Visual Tests", function () {
 
     describe("Notification", function () {
       it("looks right", function () {
-        const errorNotificationTestId = "error-notification";
-        const successNotificationTestId = "success-notification";
-        const messageNotificationTestId = "message-notification";
         const showErrorNotificationButtonTestId =
           "show-error-notification-button";
         const showSuccessNotificationButtonTestId =
@@ -288,13 +285,13 @@ describe("Visual Tests", function () {
         cy.visit(unexposedInternalPaths.componentTests.notification);
 
         cy.getByTestId(showErrorNotificationButtonTestId).click();
-        cy.getByTestId(errorNotificationTestId);
+        globalElements.notification.errorNotification.waitFor();
         cy.percySnapshotWithProperName("Component: Error Notification");
         cy.getByTestId(showSuccessNotificationButtonTestId).click();
-        cy.getByTestId(successNotificationTestId);
+        globalElements.notification.successNotification.waitFor();
         cy.percySnapshotWithProperName("Component: Success Notification");
         cy.getByTestId(showMessageNotificationButtonTestId).click();
-        cy.getByTestId(messageNotificationTestId);
+        globalElements.notification.messageNotification.waitFor();
         cy.percySnapshotWithProperName("Component: Message Notification");
       });
     });
