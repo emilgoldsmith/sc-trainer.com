@@ -4174,21 +4174,35 @@ function wrongPageNoSideEffects({
               const gbAlgorithmEndingOneYRotationAway =
                 "R' Dw' F R2 Uw R' U R U' R Uw' R2";
               cy.setPLLAlgorithm(PLL.Gb, gbAlgorithmEndingOneYRotationAway);
+
+              elements.algorithmPrefix
+                .get()
+                .invoke("text")
+                .should(
+                  "match",
+                  new RegExp(String.raw`\b${pllToPllLetters[PLL.Gb]}\b`)
+                );
               elements.algorithm
                 .get()
                 .invoke("text")
                 .then(sanitizeAlgorithm)
                 .should(
                   "equal",
-                  sanitizeAlgorithm(
-                    "U" + gbAlgorithmEndingOneYRotationAway + "U'"
-                  )
+                  sanitizeAlgorithm(gbAlgorithmEndingOneYRotationAway)
                 );
 
               cy.setCurrentTestCase([AUF.U2, PLL.Aa, AUF.UPrime]);
               const AaAlgorithmEndingOneXRotationAway =
                 "Lw' U R' D2 R U' R' D2 R2";
               cy.setPLLAlgorithm(PLL.Aa, AaAlgorithmEndingOneXRotationAway);
+
+              elements.algorithmPrefix
+                .get()
+                .invoke("text")
+                .should(
+                  "match",
+                  new RegExp(String.raw`\b${pllToPllLetters[PLL.Aa]}\b`)
+                );
               elements.algorithm
                 .get()
                 .invoke("text")
@@ -4197,9 +4211,7 @@ function wrongPageNoSideEffects({
                   "equal",
                   // Note that the last AUF here becomes a B move instead of rotating and
                   // doing a U move
-                  sanitizeAlgorithm(
-                    "U2" + AaAlgorithmEndingOneXRotationAway + "B'"
-                  )
+                  sanitizeAlgorithm(AaAlgorithmEndingOneXRotationAway)
                 );
 
               // Try one here with no AUFs and also being a z rotation away instead of x or y
@@ -4210,6 +4222,14 @@ function wrongPageNoSideEffects({
                 PLL.Ra,
                 RaAlgorithmEndingOneZPrimeRotationAway
               );
+
+              elements.algorithmPrefix
+                .get()
+                .invoke("text")
+                .should(
+                  "match",
+                  new RegExp(String.raw`\b${pllToPllLetters[PLL.Ra]}\b`)
+                );
               elements.algorithm
                 .get()
                 .invoke("text")
