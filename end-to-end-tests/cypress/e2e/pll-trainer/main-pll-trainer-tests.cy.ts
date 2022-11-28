@@ -428,6 +428,123 @@ describe("PLL Trainer", function () {
         // case such as the H perm
         pllTrainerElements.correctPage.container.assertShows();
       });
+
+      it("introduces new cases in the correct learning order (UFR angle)", function () {
+        const expectedLearningOrder: [AUF, PLL][] = [
+          // All corners solved
+          [AUF.none, PLL.H],
+          [AUF.U, PLL.Z],
+          [AUF.UPrime, PLL.Ua],
+          [AUF.U2, PLL.Ub],
+          // Huge bars
+          [AUF.none, PLL.Y],
+          [AUF.UPrime, PLL.Ja],
+          [AUF.U2, PLL.Jb],
+          [AUF.none, PLL.Aa],
+          [AUF.none, PLL.Ab],
+          [AUF.U2, PLL.V],
+          [AUF.U, PLL.F],
+          // The Ns
+          [AUF.none, PLL.Na],
+          [AUF.none, PLL.Nb],
+          // T-looking
+          [AUF.U, PLL.T],
+          [AUF.U, PLL.Ra],
+          [AUF.U2, PLL.Rb],
+          // We teach Gs through inside 2 bar, so first teach
+          // the Y inside 2 bar variations in order to be able to
+          // distinguish in real solves
+          [AUF.UPrime, PLL.Y],
+          [AUF.U, PLL.Y],
+          [AUF.none, PLL.Ga],
+          [AUF.UPrime, PLL.Gc],
+          [AUF.UPrime, PLL.Gb],
+          [AUF.none, PLL.Gd],
+          // Teach the Y and V angles that can easily be confused for E
+          // before teaching E
+          [AUF.U2, PLL.Y],
+          [AUF.none, PLL.V],
+          [AUF.none, PLL.E],
+          // Now the user has learned all PLLs from at least one angle
+          // We now teach them the last of the 3-bar cases
+          [AUF.U2, PLL.F],
+          [AUF.U2, PLL.Ja],
+          [AUF.U, PLL.Jb],
+          [AUF.U2, PLL.Ua],
+          [AUF.UPrime, PLL.Ub],
+          // Now the last of the all corners solved cases
+          [AUF.none, PLL.Z],
+          [AUF.none, PLL.Ua],
+          [AUF.U, PLL.Ub],
+          [AUF.U, PLL.Ua],
+          [AUF.none, PLL.Ub],
+          // The last of headlights + 2-bar
+          [AUF.U2, PLL.T],
+          [AUF.U, PLL.Aa],
+          [AUF.UPrime, PLL.Ab],
+          [AUF.U, PLL.Ga],
+          [AUF.U2, PLL.Gc],
+          // The lone lights angles
+          [AUF.U2, PLL.Ra],
+          [AUF.U, PLL.Rb],
+          [AUF.U2, PLL.Ga],
+          [AUF.U, PLL.Gc],
+          [AUF.U, PLL.Gb],
+          [AUF.U, PLL.Gd],
+          [AUF.U2, PLL.Aa],
+          [AUF.U, PLL.Ab],
+          // Last double 2-bar angles
+          [AUF.none, PLL.Ja],
+          [AUF.U, PLL.Ja],
+          [AUF.none, PLL.Jb],
+          [AUF.UPrime, PLL.Jb],
+          // Outside 2-bar angles
+          [AUF.U, PLL.V],
+          [AUF.UPrime, PLL.V],
+          [AUF.none, PLL.Ra],
+          [AUF.UPrime, PLL.Rb],
+          [AUF.UPrime, PLL.Gb],
+          [AUF.none, PLL.Gd],
+          [AUF.none, PLL.T],
+          [AUF.UPrime, PLL.T],
+          [AUF.UPrime, PLL.Aa],
+          [AUF.U, PLL.Ab],
+          // Bookends no bars angles
+          [AUF.none, PLL.F],
+          [AUF.UPrime, PLL.F],
+          [AUF.UPrime, PLL.Ra],
+          [AUF.none, PLL.Rb],
+          [AUF.UPrime, PLL.Ga],
+          [AUF.none, PLL.Gc],
+        ];
+
+        let startingState: "doNewVisit" | "correctPage" = "doNewVisit";
+        expectedLearningOrder.forEach(([expectedPreAUF, expectedPLL]) => {
+          completePLLTestInMilliseconds(0, {
+            correct: true,
+            startingState,
+            endingState: "correctPage",
+            overrideDefaultAlgorithm: pllToJpermsAlgorithm[expectedPLL],
+            evaluateResultCallback() {
+              // Test the PLL here to get a good error message as opposed to algorithm
+              // input failing because we overrode it
+              cy.getCurrentTestCase().should(([, actualPLL]) => {
+                expect(
+                  actualPLL,
+                  `${pllToPLLLetters[actualPLL]} should be ${pllToPLLLetters[expectedPLL]}`
+                ).to.equal(expectedPLL);
+              });
+            },
+          });
+          startingState = "correctPage";
+          cy.getCurrentTestCase().should(([actualPreAUF]) => {
+            expect(
+              actualPreAUF,
+              `"${aufToAlgorithmString[actualPreAUF]}" should be "${aufToAlgorithmString[expectedPreAUF]}"`
+            ).to.equal(expectedPreAUF);
+          });
+        });
+      });
     });
 
     context("Target Parameters and Statistics Displaying:", function () {
