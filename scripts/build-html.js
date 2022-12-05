@@ -175,41 +175,62 @@ function replaceInTemplateForKey({ template, key, value }) {
 }
 
 /**
- * @param {string} template
  * @param {{key: string, value: string}[]} replacements
- * @returns {string}
+ * @param {string} template
+ * @returns {function(string): string}
  */
-function replaceMany(template, replacements) {
-  return replacements.reduce(
-    (currentTemplateState, { key: nextKey, value: nextValue }) =>
-      replaceInTemplateForKey({
-        template: currentTemplateState,
-        key: nextKey,
-        value: nextValue,
-      }),
-    template
-  );
+function replaceMany(replacements) {
+  return (template) =>
+    replacements.reduce(
+      (currentTemplateState, { key: nextKey, value: nextValue }) =>
+        replaceInTemplateForKey({
+          template: currentTemplateState,
+          key: nextKey,
+          value: nextValue,
+        }),
+      template
+    );
 }
 
-const builtIndexHtml = replaceMany(indexHtmlTemplate, [
-  {
-    key: "FEATURE_FLAGS",
-    value: JSON.stringify({ ...featureFlagsToUse }) + ",",
-  },
-  {
-    key: "SENTRY_ENABLE",
-    value: JSON.stringify(
-      environment === PRODUCTION || environment === STAGING
-    ),
-  },
-  {
-    key: "SENTRY_ENVIRONMENT",
-    value: JSON.stringify(
-      { [PRODUCTION]: "production", [STAGING]: "staging" }[environment] ||
-        undefined
-    ),
-  },
-]);
+/**
+ * @param {{name: string, content: string}[]} tags
+ * @returns {function(string): string}
+ */
+function addMetaTags(tags) {
+  const toAdd = tags
+    .map(({ name, content }) => `<meta name="${name}" content="${content}" />`)
+    .join("");
+
+  return (template) => template.replace("<head>", "<head>" + toAdd);
+}
+
+const pipe = (x0, ...fns) => fns.reduce((x, f) => f(x), x0);
+
+const builtIndexHtml = pipe(
+  indexHtmlTemplate,
+  addMetaTags(
+    environment === PRODUCTION ? [] : [{ name: "robots", content: "noindex" }]
+  ),
+  replaceMany([
+    {
+      key: "FEATURE_FLAGS",
+      value: JSON.stringify({ ...featureFlagsToUse }) + ",",
+    },
+    {
+      key: "SENTRY_ENABLE",
+      value: JSON.stringify(
+        environment === PRODUCTION || environment === STAGING
+      ),
+    },
+    {
+      key: "SENTRY_ENVIRONMENT",
+      value: JSON.stringify(
+        { [PRODUCTION]: "production", [STAGING]: "staging" }[environment] ||
+          undefined
+      ),
+    },
+  ])
+);
 
 childProcess.execSync(`rm ${path.join(BUILT_PUBLIC_PATH, HTML_TEMPLATE_NAME)}`);
 fs.writeFileSync(path.join(BUILT_PUBLIC_PATH, "index.html"), builtIndexHtml);

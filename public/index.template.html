@@ -29,15 +29,15 @@
         /** REPLACED_WITH_SENTRY_ENABLE_START **/ true /** REPLACED_WITH_SENTRY_ENABLE_END **/
       ) {
         Sentry.init({
-          dsn:
-            "https://3a5ba681f98246afaec422b5bd499b55@o571645.ingest.sentry.io/5720122",
+          dsn: "https://3a5ba681f98246afaec422b5bd499b55@o571645.ingest.sentry.io/5720122",
           integrations: [new Sentry.Integrations.BrowserTracing()],
 
           // Set tracesSampleRate to 1.0 to capture 100%
           // of transactions for performance monitoring.
           // We recommend adjusting this value in production
           tracesSampleRate: 1.0,
-          environment: /** REPLACED_WITH_SENTRY_ENVIRONMENT_START **/ undefined /** REPLACED_WITH_SENTRY_ENVIRONMENT_END **/,
+          environment:
+            /** REPLACED_WITH_SENTRY_ENVIRONMENT_START **/ undefined /** REPLACED_WITH_SENTRY_ENVIRONMENT_END **/,
         });
         /**
          * @arg {string} errorString
