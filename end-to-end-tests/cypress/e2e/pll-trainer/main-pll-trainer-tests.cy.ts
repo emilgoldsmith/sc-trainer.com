@@ -490,7 +490,9 @@ describe("PLL Trainer", function () {
           [AUF.U2, PLL.Ga],
           [AUF.U, PLL.Gc],
           [AUF.U, PLL.Gb],
+          [AUF.U2, PLL.Gb],
           [AUF.U, PLL.Gd],
+          [AUF.U2, PLL.Gd],
           [AUF.U2, PLL.Aa],
           [AUF.U, PLL.Ab],
           // Last double 2-bar angles
@@ -503,12 +505,12 @@ describe("PLL Trainer", function () {
           [AUF.UPrime, PLL.V],
           [AUF.none, PLL.Ra],
           [AUF.UPrime, PLL.Rb],
-          [AUF.UPrime, PLL.Gb],
-          [AUF.none, PLL.Gd],
+          [AUF.none, PLL.Gb],
+          [AUF.UPrime, PLL.Gd],
           [AUF.none, PLL.T],
           [AUF.UPrime, PLL.T],
           [AUF.UPrime, PLL.Aa],
-          [AUF.U, PLL.Ab],
+          [AUF.U2, PLL.Ab],
           // Bookends no bars angles
           [AUF.none, PLL.F],
           [AUF.UPrime, PLL.F],
@@ -518,31 +520,143 @@ describe("PLL Trainer", function () {
           [AUF.none, PLL.Gc],
         ];
 
+        // TODO: Test that all cases are covered here
+        // TODO: Test that all AUFs are covered
+        // Use type assertions for simpler types here and we ensure to initialize them properly
+        const seenPreAUFs: { [key in PLL]: Set<AUF> } = {} as {
+          [key in PLL]: Set<AUF>;
+        };
+        const seenPostAUFs: { [key in PLL]: Set<AUF> } = {} as {
+          [key in PLL]: Set<AUF>;
+        };
+        allPLLs.forEach((pll) => {
+          seenPreAUFs[pll] = new Set();
+          seenPostAUFs[pll] = new Set();
+        });
+
         let startingState: "doNewVisit" | "correctPage" = "doNewVisit";
-        expectedLearningOrder.forEach(([expectedPreAUF, expectedPLL]) => {
-          completePLLTestInMilliseconds(0, {
-            correct: true,
-            startingState,
-            endingState: "correctPage",
-            overrideDefaultAlgorithm: pllToJpermsAlgorithm[expectedPLL],
-            evaluateResultCallback() {
-              // Test the PLL here to get a good error message as opposed to algorithm
-              // input failing because we overrode it
-              cy.getCurrentTestCase().should(([, actualPLL]) => {
+        expectedLearningOrder.forEach(
+          ([expectedPreAUF, expectedPLL], index) => {
+            completePLLTestInMilliseconds(0, {
+              correct: true,
+              startingState,
+              endingState: "correctPage",
+              overrideDefaultAlgorithm: pllToJpermsAlgorithm[expectedPLL],
+              newCasePageCallback: () => {
+                // Just ensure everything is defined as a new case
+                pllTrainerElements.newCasePage.container.assertShows();
+              },
+              evaluateResultCallback() {
+                // Test the PLL here to get a good error message as opposed to algorithm
+                // input failing because we overrode it
+                cy.getCurrentTestCase().should(([, actualPLL]) => {
+                  expect(
+                    actualPLL,
+                    `Index ${index.toString()}: ${
+                      pllToPLLLetters[actualPLL]
+                    } should be ${pllToPLLLetters[expectedPLL]}`
+                  ).to.equal(expectedPLL);
+                });
+              },
+            });
+            startingState = "correctPage";
+            cy.getCurrentTestCase()
+              .should(([actualPreAUF]) => {
                 expect(
-                  actualPLL,
-                  `${pllToPLLLetters[actualPLL]} should be ${pllToPLLLetters[expectedPLL]}`
-                ).to.equal(expectedPLL);
+                  actualPreAUF,
+                  `Index ${index.toString()}, PLL ${
+                    pllToPLLLetters[expectedPLL]
+                  }: "${aufToAlgorithmString[actualPreAUF]}" should be "${
+                    aufToAlgorithmString[expectedPreAUF]
+                  }"`
+                ).to.equal(expectedPreAUF);
+              })
+              .then(([preAUF, pll, postAUF]) => {
+                seenPreAUFs[pll].add(preAUF);
+                seenPostAUFs[pll].add(postAUF);
               });
-            },
+          }
+        );
+
+        const fullSymmetricPLLs = [PLL.H, PLL.Na, PLL.Nb];
+        const halfSymmetricPLLs = [PLL.E, PLL.Z];
+        cy.wrap(null, { log: false }).then(() => {
+          allPLLs.forEach((pll) => {
+            // PreAUF testing
+            if (fullSymmetricPLLs.includes(pll)) {
+              expect(seenPreAUFs[pll].size, pllToPLLLetters[pll]).to.equal(1);
+            } else if (halfSymmetricPLLs.includes(pll)) {
+              expect(seenPreAUFs[pll].size, pllToPLLLetters[pll]).to.equal(2);
+              const [first, second] = [...seenPreAUFs[pll]];
+              expect(
+                [first, second].sort(),
+                pllToPLLLetters[pll]
+              ).not.to.deep.equal([AUF.none, AUF.U2].sort());
+              expect(
+                [first, second].sort(),
+                pllToPLLLetters[pll]
+              ).not.to.deep.equal([AUF.U, AUF.UPrime].sort());
+            } else {
+              expect(seenPreAUFs[pll].size, pllToPLLLetters[pll]).to.equal(
+                allAUFs.length
+              );
+            }
+
+            // PostAUF no symmetry testing. We don't care about testing the no post AUF case
+            // All non symmetric PLLs have been seen for 4 preAUFs so all 3 postAUFs should
+            // already have been learned simultaneously
+            if (!fullSymmetricPLLs.concat(halfSymmetricPLLs).includes(pll)) {
+              seenPostAUFs[pll].delete(AUF.none);
+              expect(seenPostAUFs[pll].size, pllToPLLLetters[pll]).to.equal(
+                allAUFs.length - 1
+              );
+            }
           });
-          startingState = "correctPage";
-          cy.getCurrentTestCase().should(([actualPreAUF]) => {
-            expect(
-              actualPreAUF,
-              `"${aufToAlgorithmString[actualPreAUF]}" should be "${aufToAlgorithmString[expectedPreAUF]}"`
-            ).to.equal(expectedPreAUF);
+        });
+
+        let newCasesEncountered = 0;
+        completeTestsUntilNoMoreNewCasePage();
+        function completeTestsUntilNoMoreNewCasePage() {
+          pllTrainerElements.correctPage.nextButton.get().click();
+          pllTrainerElements.root.waitForStateChangeAwayFrom(
+            pllTrainerElements.root.stateAttributeValues.correctPage
+          );
+          pllTrainerElements.root
+            .getStateAttributeValue()
+            .then((stateValue) => {
+              if (
+                stateValue ===
+                pllTrainerElements.root.stateAttributeValues.newCasePage
+              ) {
+                newCasesEncountered++;
+                completePLLTestInMilliseconds(0, {
+                  correct: true,
+                  startingState: "newCasePage",
+                  endingState: "correctPage",
+                });
+                cy.getCurrentTestCase().then(([_, pll, postAUF]) =>
+                  seenPostAUFs[pll].add(postAUF)
+                );
+                completeTestsUntilNoMoreNewCasePage();
+              }
+            });
+        }
+
+        cy.wrap(null, { log: false }).should(() => {
+          // Now that there are no mere new cases the symmetric plls should also
+          // be fully done
+          halfSymmetricPLLs.concat(fullSymmetricPLLs).forEach((pll) => {
+            seenPostAUFs[pll].delete(AUF.none);
+            expect(seenPostAUFs[pll].size, pllToPLLLetters[pll]).to.equal(
+              allAUFs.length - 1
+            );
           });
+
+          // Worst case scenario all the initial postAUFs were the no post AUF case
+          // and we therefore need to cover all other AUFs
+          expect(newCasesEncountered).to.be.at.most(
+            halfSymmetricPLLs.length * 2 + fullSymmetricPLLs.length * 3
+          );
         });
       });
     });
