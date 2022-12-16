@@ -3,7 +3,7 @@ module User exposing
     , new
     , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
     , hasAttemptedAnyPLLTestCase, PLLTargetParameters, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
-    , hasChosenPLLTargetParameters, cubeTheme
+    , hasChosenPLLTargetParameters, getAttemptedPLLPreAUFs, getAttemptedPLLPostAUFs, cubeTheme
     , TestResult(..), testResultPreAUF, testResultPostAUF, testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
     , serialize, deserialize
@@ -26,7 +26,7 @@ module User exposing
 
 @docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
 @docs hasAttemptedAnyPLLTestCase, PLLTargetParameters, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
-@docs hasChosenPLLTargetParameters, cubeTheme
+@docs hasChosenPLLTargetParameters, getAttemptedPLLPreAUFs, getAttemptedPLLPostAUFs, cubeTheme
 
 
 # Event Handling
@@ -52,6 +52,7 @@ import Cube.Advanced
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import List.Extra
 import List.Nonempty
 import PLL exposing (PLL)
 import Time
@@ -255,13 +256,37 @@ hasAttemptedPLL pll user =
         |> (List.isEmpty >> not)
 
 
-{-| If the user has attempted any PLL yet
+{-| Whether the user has attempted any PLL yet
 -}
 hasAttemptedAnyPLLTestCase : User -> Bool
 hasAttemptedAnyPLLTestCase user =
     PLL.all
         |> List.Nonempty.toList
         |> List.any (\pll -> hasAttemptedPLL pll user)
+
+
+{-| List all the pre AUFs already attempted by the user for given PLL
+-}
+getAttemptedPLLPreAUFs : PLL -> User -> List AUF
+getAttemptedPLLPreAUFs pll user =
+    user
+        |> getPLLData
+        |> getPLLResults pll
+        |> Maybe.withDefault []
+        |> List.map testResultPreAUF
+        |> List.Extra.unique
+
+
+{-| List all the post AUFs already attempted by the user for given PLL
+-}
+getAttemptedPLLPostAUFs : PLL -> User -> List AUF
+getAttemptedPLLPostAUFs pll user =
+    user
+        |> getPLLData
+        |> getPLLResults pll
+        |> Maybe.withDefault []
+        |> List.map testResultPostAUF
+        |> List.Extra.unique
 
 
 {-| Get the algorithm the user uses for this PLL

@@ -1,4 +1,4 @@
-module List.Nonempty.Extra exposing (find, lift2, lift3)
+module List.Nonempty.Extra exposing (find, findMap, lift2, lift3)
 
 import List.Extra
 import List.Nonempty
@@ -7,6 +7,11 @@ import List.Nonempty
 find : (a -> Bool) -> List.Nonempty.Nonempty a -> Maybe a
 find fn list =
     List.Extra.find fn (List.Nonempty.toList list)
+
+
+findMap : (a -> Maybe b) -> List.Nonempty.Nonempty a -> Maybe b
+findMap fn list =
+    List.Extra.findMap fn (List.Nonempty.toList list)
 
 
 lift2 :

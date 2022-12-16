@@ -396,7 +396,8 @@ const completePLLTestHelper: typeof completePLLTestInMilliseconds = (
               .get()
               .type(
                 (overrideDefaultAlgorithm ?? pllToAlgorithmString[pll]) +
-                  "{enter}"
+                  "{enter}",
+                { delay: 0 }
               );
           }
         });
