@@ -1,5 +1,5 @@
 {
-  "plugins": ["cypress", "chai-friendly", "@typescript-eslint", "mocha"],
+  "plugins": ["cypress", "chai-friendly", "@typescript-eslint", "mocha", "ban"],
   "extends": [
     "@nazarkulyk/esnext",
     "plugin:@typescript-eslint/eslint-recommended",
@@ -11,6 +11,13 @@
   ],
   "parser": "@typescript-eslint/parser",
   "rules": {
+    "ban/ban": [
+      "error",
+      {
+        "name": ["cy", "as"],
+        "message": "Do not use this command. Instead use our custom cy.setAlias command"
+      }
+    ],
     "cypress/no-force": "error",
     "cypress/assertion-before-screenshot": "error",
     // Can't get the configuration to work it seems and don't really care much, typescript checks it for us

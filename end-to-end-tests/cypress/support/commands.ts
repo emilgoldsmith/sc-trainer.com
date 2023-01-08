@@ -62,76 +62,74 @@ Cypress.Commands.overwrite(
 
 /** CUSTOM COMMANDS */
 
-const getByTestId: Cypress.Chainable<undefined>["getByTestId"] = (
-  testId,
-  ...args
-) => {
+const getByTestId: Cypress.QueryFn<"getByTestId"> = (testId, ...args) => {
   if (testId === null && args[0]?.testType === undefined) {
     throw new Error(
       "Can't get an element with neither testId or testType specified"
     );
   }
+  let getFn: ReturnType<typeof cy.now>;
   if (args[0]?.testType !== undefined) {
     if (testId === null) {
-      return cy.get(`[data-test-type=${args[0].testType}]`, ...args);
+      getFn = cy.now("get", `[data-test-type=${args[0].testType}]`, ...args);
+    } else {
+      getFn = cy.now(
+        "get",
+        `[data-testid=${testId}][data-test-type=${args[0].testType}]`,
+        ...args
+      );
     }
-    return cy.get(
-      `[data-testid=${testId}][data-test-type=${args[0].testType}]`,
-      ...args
-    );
+  } else {
+    getFn = cy.now("get", `[data-testid=${testId}]`, ...args);
   }
-  return cy.get(`[data-testid=${testId}]`, ...args);
+  return () => {
+    if (getFn instanceof Promise)
+      throw new Error("getFn is not supposed to be a promise");
+    return getFn(undefined);
+  };
 };
-Cypress.Commands.add("getByTestId", getByTestId);
+Cypress.Commands.addQuery("getByTestId", getByTestId);
 
-const getAliases: Cypress.Chainable<undefined>["getAliases"] = function <
+const getAliases: Cypress.QueryFn<"getAliases"> = function <
   Aliases extends Record<string, unknown>
->(this: Aliases) {
+>() {
   /**
    * We are saving the aliases on Mocha Context which is passed around as `this`
    * so that's what we return here
    */
-  return cy.wrap(this, { log: false });
-};
-Cypress.Commands.add("getAliases", getAliases);
-
-const getSingleAlias: Cypress.Chainable<undefined>["getSingleAlias"] =
-  function <Aliases extends Record<string, unknown>, Key extends keyof Aliases>(
-    alias: Key
-  ) {
-    return (
-      cy
-        .getAliases<Aliases>()
-        // Sadly it seems the best thing to do here is to just type cast
-        // as Typescript isn't liking these complex types
-        // It should hopefully work though and it's pretty simple code!
-        .then((aliases) => {
-          const value = aliases[alias];
-          if (value === undefined) {
-            throw new Error(
-              `Alias ${alias.toString()} was undefined when fetched with getSingleAlias`
-            );
-          }
-          return value;
-        }) as Cypress.Chainable<Aliases[Key]>
-    );
+  return function (this: Aliases) {
+    return this;
   };
-Cypress.Commands.add("getSingleAlias", getSingleAlias);
-
-Cypress.Commands.overwrite("as", () => {
-  throw new Error(
-    "Do not use this command. Instead use the custom typed command .setAlias"
-  );
-});
-
-const setAlias = function (
-  this: Record<string, unknown>,
-  subject: unknown,
-  alias: string
-) {
-  this[alias] = subject;
 };
-Cypress.Commands.add("setAlias", { prevSubject: true }, setAlias);
+Cypress.Commands.addQuery("getAliases", getAliases);
+
+const getSingleAlias: Cypress.QueryFn<"getSingleAlias"> = function <
+  Aliases extends Record<string, unknown>,
+  Key extends keyof Aliases
+>(alias: Key) {
+  const getAliasesFn = cy.now("getAliases");
+  return () => {
+    if (getAliasesFn instanceof Promise)
+      throw new Error("getAliasesFn should not be a promise");
+    const aliases = getAliasesFn(undefined) as Aliases;
+    const value = aliases[alias];
+    if (value === undefined) {
+      throw new Error(
+        `Alias ${alias.toString()} was undefined when fetched with getSingleAlias`
+      );
+    }
+    return value;
+  };
+};
+Cypress.Commands.addQuery("getSingleAlias", getSingleAlias);
+
+const setAlias = function (alias: string) {
+  return function (this: Record<string, unknown>, subject: unknown) {
+    cy.ensureSubjectByType(subject, ["element", "document", "window"], this);
+    this[alias] = subject;
+  };
+};
+Cypress.Commands.addQuery("setAlias", setAlias);
 
 Cypress.Commands.add("setSystemTimeWithLastFrameTicked", (now) => {
   cy.clock().invoke("setSystemTime", now - 60);
@@ -382,19 +380,24 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
 };
 Cypress.Commands.add("longButtonMash", longButtonMash);
 
-const getCustomWindow: Cypress.Chainable<undefined>["getCustomWindow"] =
-  function (options = {}) {
-    return cy.window(options).then((window) => {
-      const customWindow = window as Cypress.CustomWindow;
-      if (customWindow.END_TO_END_TEST_HELPERS === undefined) {
-        throw new Error(
-          "We expected a populated custom window, but didn't find END_TO_END_TEST_HELPERS property"
-        );
-      }
-      return customWindow;
-    });
+const getCustomWindow: Cypress.QueryFn<"getCustomWindow"> = function (
+  options = {}
+) {
+  const windowFn = cy.now("window", options);
+  return () => {
+    if (windowFn instanceof Promise)
+      throw new Error("windowFn shouldn't be a promise");
+    const window = windowFn(undefined);
+    const customWindow = window as Cypress.CustomWindow;
+    if (customWindow.END_TO_END_TEST_HELPERS === undefined) {
+      throw new Error(
+        "We expected a populated custom window, but didn't find END_TO_END_TEST_HELPERS property"
+      );
+    }
+    return customWindow;
   };
-Cypress.Commands.add("getCustomWindow", getCustomWindow);
+};
+Cypress.Commands.addQuery("getCustomWindow", getCustomWindow);
 
 const getApplicationState: Cypress.Chainable<undefined>["getApplicationState"] =
   function (name, options) {
