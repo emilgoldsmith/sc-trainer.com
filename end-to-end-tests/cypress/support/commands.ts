@@ -125,7 +125,12 @@ Cypress.Commands.addQuery("getSingleAlias", getSingleAlias);
 
 const setAlias = function (alias: string) {
   return function (this: Record<string, unknown>, subject: unknown) {
-    cy.ensureSubjectByType(subject, ["element", "document", "window"], this);
+    Cypress.ensure.isType(
+      subject,
+      ["element", "document", "window"],
+      "setAlias",
+      cy
+    );
     this[alias] = subject;
   };
 };
