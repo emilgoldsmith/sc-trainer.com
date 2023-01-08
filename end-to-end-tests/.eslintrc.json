@@ -1,7 +1,7 @@
 {
   "plugins": ["cypress", "chai-friendly", "@typescript-eslint", "mocha"],
   "extends": [
-    "esnext",
+    "@nazarkulyk/esnext",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
     "plugin:chai-friendly/recommended",
