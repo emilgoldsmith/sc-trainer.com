@@ -92,14 +92,12 @@ Cypress.Commands.addQuery("getByTestId", getByTestId);
 
 const getAliases: Cypress.QueryFn<"getAliases"> = function <
   Aliases extends Record<string, unknown>
->() {
+>(this: Aliases & Cypress.Command) {
   /**
    * We are saving the aliases on Mocha Context which is passed around as `this`
    * so that's what we return here
    */
-  return function (this: Aliases) {
-    return this;
-  };
+  return () => this;
 };
 Cypress.Commands.addQuery("getAliases", getAliases);
 
@@ -123,14 +121,14 @@ const getSingleAlias: Cypress.QueryFn<"getSingleAlias"> = function <
 };
 Cypress.Commands.addQuery("getSingleAlias", getSingleAlias);
 
-const setAlias = function (alias: string) {
-  return function (this: Record<string, unknown>, ...args: unknown[]) {
+const setAlias: Cypress.QueryFn<"setAlias"> = function (alias: string) {
+  return (...args: unknown[]) => {
     if (args.length !== 1)
       throw new Error(
         "Expected exactly one subject argument to set alias inner function"
       );
     const subject = args[0];
-    this[alias] = subject;
+    (this as unknown as Record<string, unknown>)[alias] = subject;
   };
 };
 Cypress.Commands.addQuery("setAlias", setAlias);
