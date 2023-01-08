@@ -61,6 +61,13 @@ declare namespace Cypress {
   interface Chainable<Subject> {
     // The command from the @cypress/snapshot package
     snapshot(options?: { name?: string }): Cypress.Chainable<Subject>;
+    /** See documentation at https://docs.cypress.io/api/cypress-api/custom-queries#Validation */
+    ensureSubjectByType(
+      subject: any,
+      types: ("optional" | "element" | "document" | "window")[],
+      passedThis: unknown
+    ): void;
+
     /**
      * Gets the window variable, but also asserts that it has our custom additions
      * to the window for test purposes and returns the extended window type
