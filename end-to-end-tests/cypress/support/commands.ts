@@ -124,13 +124,12 @@ const getSingleAlias: Cypress.QueryFn<"getSingleAlias"> = function <
 Cypress.Commands.addQuery("getSingleAlias", getSingleAlias);
 
 const setAlias = function (alias: string) {
-  return function (this: Record<string, unknown>, subject: unknown) {
-    Cypress.ensure.isType(
-      subject,
-      ["element", "document", "window"],
-      "setAlias",
-      cy
-    );
+  return function (this: Record<string, unknown>, ...args: unknown[]) {
+    if (args.length !== 1)
+      throw new Error(
+        "Expected exactly one subject argument to set alias inner function"
+      );
+    const subject = args[0];
     this[alias] = subject;
   };
 };
