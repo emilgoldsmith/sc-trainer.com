@@ -6,7 +6,7 @@
     "@percy/cypress": "^3.1.2",
     "@typescript-eslint/eslint-plugin": "^5.48.0",
     "@typescript-eslint/parser": "^5.48.0",
-    "cypress": "^12.3.0",
+    "cypress": "^12.9.0",
     "eslint": "7",
     "eslint-config-prettier": "^8.2.0",
     "eslint-plugin-ban": "^1.6.0",
