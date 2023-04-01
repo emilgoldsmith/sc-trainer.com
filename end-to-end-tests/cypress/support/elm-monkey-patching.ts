@@ -69,7 +69,9 @@ export function fixRandomnessSeedInJavascript(
   }
   const errorMessage = errors.reduce(
     (curMessage, nextError) =>
-      (curMessage += `ErrorMessage: ${nextError.message}\n\nStacktrace: ${nextError.stack}\n\n`),
+      (curMessage += `ErrorMessage: ${nextError.message}\n\nStacktrace: ${
+        nextError.stack ?? "No stack trace defined"
+      }\n\n`),
     ""
   );
   throw new Error(errorMessage);
@@ -313,7 +315,9 @@ function addE2ETestHelpersToWindow() {
 
   function trackDocumentEventListeners(): Set<keyof DocumentEventMap> {
     const eventListeners = new Set<keyof DocumentEventMap>();
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const add = document.addEventListener;
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const remove = document.removeEventListener;
     const documentCreationTime = Date.now();
 
@@ -344,7 +348,7 @@ function addE2ETestHelpersToWindow() {
           }
         }
       };
-      add.call(this, eventName, listenerWithTimestampOverriding, c);
+      add.call(document, eventName, listenerWithTimestampOverriding, c);
     };
     document.removeEventListener = function (
       eventName: keyof DocumentEventMap,
@@ -352,7 +356,7 @@ function addE2ETestHelpersToWindow() {
       c?: boolean | AddEventListenerOptions
     ) {
       eventListeners.delete(eventName);
-      remove.call(this, eventName, b, c);
+      remove.call(document, eventName, b, c);
     };
     return eventListeners;
   }
@@ -764,10 +768,7 @@ function getOrThrow<T>(index: number, list: T[]): T {
   const candidate = list[index];
   if (candidate === undefined) {
     throw new Error(
-      "Expected item to exist at index " +
-        index +
-        " in list " +
-        JSON.stringify(list)
+      `Expected item to exist at index ${index} in list ${JSON.stringify(list)}`
     );
   }
   return candidate;

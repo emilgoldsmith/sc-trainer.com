@@ -7,7 +7,7 @@ export function canvasOrThrow(jqueryElement: JQuery): HTMLCanvasElement {
   if (jqueryElement[0]?.tagName !== "CANVAS") {
     throw new Error(
       "Only supported cube elements right now are canvas elements. The tag name was " +
-        jqueryElement[0]?.tagName
+        (jqueryElement[0]?.tagName ?? "")
     );
   }
   return jqueryElement[0] as HTMLCanvasElement;

@@ -9,8 +9,15 @@ export type HtmlModifier = (html: { type: "html"; value: string }) => string;
 
 export type JavascriptModifier = (js: { type: "js"; value: string }) => string;
 
+const baseUrl = (() => {
+  const x = Cypress.config().baseUrl;
+  if (!x)
+    throw new Error("baseUrl Cypress config options is expected to be set");
+  return x;
+})();
+
 export function interceptHtml(...modifiers: HtmlModifier[]): void {
-  cy.intercept("GET", new RegExp(`^${Cypress.config().baseUrl}`), (req) => {
+  cy.intercept("GET", new RegExp(`^${baseUrl}`), (req) => {
     const acceptHeader = req.headers.accept;
     const acceptList =
       typeof acceptHeader === "string"
@@ -31,7 +38,7 @@ export function interceptHtml(...modifiers: HtmlModifier[]): void {
         // Just ignore redirects, they'll be followed
         return;
       }
-      const body = res.body;
+      const body: unknown = res.body;
       if (typeof body !== "string") {
         throw new Error("Body response wasn't a string");
       }
@@ -46,9 +53,8 @@ export function interceptHtml(...modifiers: HtmlModifier[]): void {
 }
 
 export function interceptJavascript(...modifiers: JavascriptModifier[]): void {
-  const jsPattern = Cypress.config().baseUrl + "/main.js";
-  expect(Cypress.minimatch(Cypress.config().baseUrl + "/main.js", jsPattern)).to
-    .be.true;
+  const jsPattern = baseUrl + "/main.js";
+  expect(Cypress.minimatch(baseUrl + "/main.js", jsPattern)).to.be.true;
   cy.intercept("GET", jsPattern, (req) => {
     // Delete caching headers so we always get fresh javascript to modify
     delete req.headers["if-modified-since"];
@@ -63,7 +69,7 @@ export function interceptJavascript(...modifiers: JavascriptModifier[]): void {
         // Just ignore redirects, they'll be followed
         return;
       }
-      const body = res.body;
+      const body: unknown = res.body;
       if (typeof body !== "string") {
         throw new Error("Body response wasn't a string");
       }
@@ -78,7 +84,7 @@ export function interceptJavascript(...modifiers: JavascriptModifier[]): void {
 }
 
 export function ensureServerNotReloading(): void {
-  cy.intercept(Cypress.config().baseUrl + "/reload/reload.js", () => {
+  cy.intercept(baseUrl + "/reload/reload.js", () => {
     throw new Error(
       `Reloading server most likely from ./scripts/run-hot.sh detected. \
 This has been known to cause flaky tests in development, so we enforce \
