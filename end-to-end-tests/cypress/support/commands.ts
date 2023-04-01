@@ -36,7 +36,11 @@ import {
 } from "./pll";
 import { register } from "@cypress/snapshot";
 
-register();
+const registerCypressSnapshot: unknown = register;
+if (typeof registerCypressSnapshot !== "function")
+  throw new Error("Cypress Snapshot Register was not a function");
+
+registerCypressSnapshot();
 
 type UnwrapChainable<T> = T extends Cypress.Chainable<infer U> ? U : T;
 
@@ -79,11 +83,6 @@ Cypress.Commands.overwrite(
 /** CUSTOM COMMANDS */
 
 const getByTestId: Cypress.QueryFn<"getByTestId"> = (testId, options) => {
-  if (testId === null && options?.testType === undefined) {
-    throw new Error(
-      "Can't get an element with neither testId or testType specified"
-    );
-  }
   const getFn = (() => {
     if (options?.testType !== undefined) {
       if (testId === null) {
@@ -95,6 +94,10 @@ const getByTestId: Cypress.QueryFn<"getByTestId"> = (testId, options) => {
         options
       );
     }
+    if (testId === null)
+      throw new Error(
+        "Can't get an element with neither testId or testType specified"
+      );
     return cyNow("get", `[data-testid=${testId}]`, options);
   })();
   return () => getFn(undefined);
@@ -166,7 +169,7 @@ Cypress.Commands.add(
   (subject, key, options) => {
     const event = buildKeyboardEvent(key, false);
     const handleKeyPress = () => {
-      (subject ?? cy.document({ log: false }))
+      (subject !== undefined ? subject : cy.document({ log: false }))
         .trigger("keydown", { ...event, log: false })
         .trigger("keypress", { ...event, log: false })
         .trigger("keyup", { ...event, log: false });
@@ -397,7 +400,7 @@ const getCustomWindow: Cypress.QueryFn<"getCustomWindow"> = function (options) {
   const windowFn = cyNow("window", options);
   return () => {
     const window = windowFn(undefined);
-    const customWindow = window as Cypress.CustomWindow;
+    const customWindow = window as Partial<Cypress.CustomWindow>;
     if (customWindow.END_TO_END_TEST_HELPERS === undefined) {
       throw new Error(
         "We expected a populated custom window, but didn't find END_TO_END_TEST_HELPERS property"
@@ -429,10 +432,17 @@ const getApplicationState: Cypress.QueryFn<"getApplicationState"> = function (
         consolePropsSetter: (props: Cypress.ObjectLike) => void
       ): Cypress.OurApplicationState => {
         const window = getCustomWindowFn(undefined);
-        const state = window.END_TO_END_TEST_HELPERS.getModel();
-        if (state === undefined) {
+        const state = window.END_TO_END_TEST_HELPERS.getModel() as
+          | Cypress.OurApplicationState
+          | undefined
+          | null;
+        if (!state) {
           throw new Error(
-            `${name} state which was attempted gotten was found to be undefined`
+            `${
+              name ?? "anonymous"
+            } state which was attempted gotten was found to be ${JSON.stringify(
+              state
+            )}`
           );
         }
         consolePropsSetter({ name, appState: state });
@@ -448,12 +458,6 @@ const setApplicationState: Cypress.CommandFn<"setApplicationState"> = function (
   name,
   options
 ) {
-  if (state === undefined) {
-    throw new Error(
-      "setApplicationState called with undefined state, which is not allowed"
-    );
-  }
-
   const stateDescription = name || "unknown";
   const handleSettingState = () => {
     cy.getCustomWindow({ log: false }).then((window) =>

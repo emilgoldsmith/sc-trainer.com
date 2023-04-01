@@ -13,7 +13,8 @@ export const unexposedInternalPaths = {
   },
 };
 
-export const urls = Cypress._.mapValues(
-  paths,
-  (path) => Cypress.config().baseUrl + path
-);
+const baseUrl = Cypress.config().baseUrl;
+if (!baseUrl)
+  throw new Error("baseUrl Cypress config options is expected to be set");
+
+export const urls = Cypress._.mapValues(paths, (path) => baseUrl + path);

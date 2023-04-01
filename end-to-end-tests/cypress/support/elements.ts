@@ -112,10 +112,8 @@ export function buildElementsCategory<keys extends string>(
     const fn = builder(specifier);
     return function (...args: Parameters<ReturnType<typeof buildGetter>>) {
       return getContainer({ log: false }).then((containerElement) => {
-        let options = { ...args[0] };
-        if (!options) {
-          options = { withinSubject: containerElement };
-        } else if (options.withinSubject === undefined) {
+        const options = { ...args[0] };
+        if (options.withinSubject === undefined) {
           options.withinSubject = containerElement;
         }
         return fn(options);
@@ -141,10 +139,8 @@ export function buildElementsCategory<keys extends string>(
       >
     ) {
       return getContainer({ log: false }).then((containerElement) => {
-        let options = { ...args[1] };
-        if (!options) {
-          options = { withinSubject: containerElement };
-        } else if (options.withinSubject === undefined) {
+        const options = { ...args[1] };
+        if (options.withinSubject === undefined) {
           options.withinSubject = containerElement;
         }
         return fn(args[0], options);
@@ -381,11 +377,11 @@ function buildContainedByWindow(specifier: ElementSpecifier) {
       if (instructionsTop === undefined) {
         throw new Error("Element has no offset");
       }
-      const instructionsBottom =
-        instructionsTop + instructionsElement.height()!;
-      if (instructionsBottom === undefined) {
-        throw new Error("Element has no height");
-      }
+      const height = instructionsElement.height();
+      if (height === undefined)
+        throw new Error("Element has an undefined height");
+
+      const instructionsBottom = instructionsTop + height;
       return cy.window(options).then((window) => {
         const windowTop = 0;
         const windowBottom = Cypress.$(window).height();
@@ -408,11 +404,11 @@ function buildContainedByWindowAsserter(specifier: ElementSpecifier) {
       if (instructionsTop === undefined) {
         throw new Error("Element has no offset");
       }
-      const instructionsBottom =
-        instructionsTop + instructionsElement.height()!;
-      if (instructionsBottom === undefined) {
-        throw new Error("Element has no height");
-      }
+      const height = instructionsElement.height();
+      if (height === undefined)
+        throw new Error("Element has an undefined height");
+
+      const instructionsBottom = instructionsTop + height;
       cy.window(options).should((window) => {
         const windowTop = 0;
         const windowBottom = Cypress.$(window).height();
