@@ -386,11 +386,10 @@ function addE2ETestHelpersToWindow() {
   };
 }
 declare global {
-  const app: { ports: Cypress.ElmPorts | undefined };
+  const app: { ports: Cypress.ElmPorts | undefined } | undefined;
 }
 function setAReferenceToElmPorts() {
-  if (!app || !app?.ports)
-    throw new Error("Couldn't find app.ports in this scope");
+  if (!app?.ports) throw new Error("Couldn't find app.ports in this scope");
   (window as Cypress.CustomWindow).END_TO_END_TEST_HELPERS.internal.setPorts(
     app.ports
   );

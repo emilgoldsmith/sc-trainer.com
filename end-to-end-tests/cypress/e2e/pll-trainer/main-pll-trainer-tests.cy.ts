@@ -4444,7 +4444,7 @@ function wrongPageNavigateVariant2() {
 // }
 
 function getVerifiedAliases<
-  Aliases extends { [key: string]: string },
+  Aliases extends Record<string, string>,
   Keys extends keyof Aliases
 >(keysToVerify: Keys[]): Cypress.Chainable<{ [key in Keys]: string }> {
   return cy.getAliases<Aliases>().then((aliases) => {

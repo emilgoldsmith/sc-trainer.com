@@ -409,7 +409,7 @@ const completePLLTestHelper: typeof completePLLTestInMilliseconds = (
       }
       if (params.algorithmDrillerExplanationPageCallback) {
         pllTrainerElements.algorithmDrillerExplanationPage.container.waitFor();
-        params.algorithmDrillerExplanationPageCallback?.();
+        params.algorithmDrillerExplanationPageCallback();
       }
       if (
         params.algorithmDrillerStatusPageCallback ||
@@ -504,7 +504,7 @@ export function completePLLTestInMilliseconds(
       ))
   )
 ): void {
-  const functionsCalled: { [functionName: string]: boolean } = {};
+  const functionsCalled: Record<string, boolean> = {};
 
   function withCallLogger(
     fn: (() => void) | undefined

@@ -428,7 +428,7 @@ const getApplicationState: Cypress.QueryFn<"getApplicationState"> = function (
       (
         consolePropsSetter: (props: Cypress.ObjectLike) => void
       ): Cypress.OurApplicationState => {
-        const window = getCustomWindowFn(undefined) as Cypress.CustomWindow;
+        const window = getCustomWindowFn(undefined);
         const state = window.END_TO_END_TEST_HELPERS.getModel();
         if (state === undefined) {
           throw new Error(
@@ -504,7 +504,7 @@ const withOverallNameLogged: Cypress.CommandFn<"withOverallNameLogged"> =
       return callbackReturnValue.then((returnValue) => {
         handleEndOfCommand();
         return returnValue;
-      }) as typeof callbackReturnValue;
+      });
     }
     cy.wrap(undefined, { log: false }).then(handleEndOfCommand);
     return callbackReturnValue;
@@ -527,7 +527,7 @@ function withOverallNameLoggedForQuery<T>(
   log.snapshot("before");
   const callbackReturnValue = queryCallback(consolePropsSetter);
   log.snapshot("after");
-  if (log.get("autoEnd") !== true) {
+  if (!log.get("autoEnd")) {
     log.end();
   }
   return callbackReturnValue;
@@ -1062,13 +1062,9 @@ const setLocalStorage: Cypress.CommandFn<"setLocalStorage"> = function (
 Cypress.Commands.add("setLocalStorage", setLocalStorage);
 
 function getGetAllDomNodesFn() {
-  return cyNow("get", ":not(style,script)") as (
-    subject: unknown
-  ) => JQuery<HTMLElement>;
+  return cyNow("get", ":not(style,script)") as (subject: unknown) => JQuery;
 }
-function getTopAndBottomElementsFromAllDomNodes(
-  allDomNodes: JQuery<HTMLElement>
-) {
+function getTopAndBottomElementsFromAllDomNodes(allDomNodes: JQuery) {
   const positions = { top: 0, bottom: 0 };
   const elements = {
     top: allDomNodes.get(0),
