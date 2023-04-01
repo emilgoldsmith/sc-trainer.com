@@ -2,8 +2,11 @@
   "plugins": ["cypress", "chai-friendly", "@typescript-eslint", "mocha", "ban"],
   "extends": [
     "@nazarkulyk/esnext",
+    "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:@typescript-eslint/strict",
     "plugin:chai-friendly/recommended",
     "plugin:cypress/recommended",
     "prettier",
@@ -33,9 +36,11 @@
     // Avoid the conflicts between a mocha rule and prefer-arrow-callback
     "prefer-arrow-callback": "off",
     "mocha/prefer-arrow-callback": "error",
-    "no-invalid-this": "off"
+    "no-invalid-this": "off",
+    "@typescript-eslint/switch-exhaustiveness-check": "error",
+    "@typescript-eslint/consistent-type-definitions": ["error", "type"]
   },
   "globals": { "Parameters": false, "ReturnType": false },
   "ignorePatterns": ["*.d.ts", "forked_modules"],
-  "parserOptions": { "ecmaVersion": 2021 }
+  "parserOptions": { "ecmaVersion": 2021, "project": "./tsconfig.json" }
 }
