@@ -101,52 +101,54 @@ const getByTestId: Cypress.QueryFn<"getByTestId"> = (testId, options) => {
 };
 Cypress.Commands.addQuery("getByTestId", getByTestId);
 
-const getAliases: Cypress.QueryFn<"getAliases"> = function <
+const getAliases: Cypress.CommandFn<"getAliases"> = function <
   Aliases extends Record<string, unknown>
->(this: Aliases & Cypress.Command) {
+>(this: Aliases & Mocha.Context) {
   /**
    * We are saving the aliases on Mocha Context which is passed around as `this`
    * so that's what we return here
    */
-  return () => this;
+  return cy.wrap(this as Aliases, { log: false });
 };
-Cypress.Commands.addQuery("getAliases", getAliases);
+Cypress.Commands.add("getAliases", getAliases);
 
-const getSingleAlias: Cypress.QueryFn<"getSingleAlias"> = function <
+const getSingleAlias: Cypress.CommandFn<"getSingleAlias"> = function <
   Aliases extends Record<string, unknown>,
   Key extends keyof Aliases
 >(alias: Key) {
-  const getAliasesFn = cyNow("getAliases");
-  return () => {
-    const aliases = getAliasesFn(undefined);
-    const value = (aliases as Aliases)[alias];
-    if (value === undefined) {
-      throw new Error(
-        `Alias ${alias.toString()} was undefined when fetched with getSingleAlias`
-      );
-    }
-    return value;
-  };
+  return (
+    cy
+      .getAliases<Aliases>()
+      // Sadly it seems the best thing to do here is to just type cast
+      // as Typescript isn't liking these complex types
+      // It should hopefully work though and it's pretty simple code!
+      .then((aliases) => {
+        const value = aliases[alias];
+        if (value === undefined) {
+          throw new Error(
+            `Alias ${alias.toString()} was undefined when fetched with getSingleAlias`
+          );
+        }
+        return value;
+      }) as Cypress.Chainable<Aliases[Key]>
+  );
 };
-Cypress.Commands.addQuery("getSingleAlias", getSingleAlias);
-
-const setAlias: Cypress.QueryFn<"setAlias"> = function (alias: string) {
-  return (...args: unknown[]) => {
-    if (args.length !== 1)
-      throw new Error(
-        "Expected exactly one subject argument to set alias inner function"
-      );
-    const subject = args[0];
-    (this as unknown as Record<string, unknown>)[alias] = subject;
-  };
-};
-Cypress.Commands.addQuery("setAlias", setAlias);
+Cypress.Commands.add("getSingleAlias", getSingleAlias);
 
 Cypress.Commands.overwriteQuery("as", () => {
   throw new Error(
     "Do not use this 'cy.as' command. Instead use the custom typed command .setAlias"
   );
 });
+
+const setAlias: Cypress.CommandFnWithSubject<"setAlias", unknown> = function (
+  this: Record<string, unknown>,
+  subject: unknown,
+  alias: string
+) {
+  this[alias] = subject;
+};
+Cypress.Commands.add("setAlias", { prevSubject: true }, setAlias);
 
 Cypress.Commands.add("setSystemTimeWithLastFrameTicked", (now) => {
   cy.clock().invoke("setSystemTime", now - 60);
@@ -410,33 +412,33 @@ const getApplicationState: Cypress.QueryFn<"getApplicationState"> = function (
   name,
   options
 ) {
-  const getCustomWindowFn = cyNow("getCustomWindow", { log: false });
-
-  const handleGettingApplicationState = (
-    consolePropsSetter: (props: Cypress.ObjectLike) => void
-  ): Cypress.OurApplicationState => {
-    const window = getCustomWindowFn(undefined) as Cypress.CustomWindow;
-    const state = window.END_TO_END_TEST_HELPERS.getModel();
-    if (state === undefined) {
-      throw new Error(
-        `${name} state which was attempted gotten was found to be undefined`
-      );
-    }
-    consolePropsSetter({ name, appState: state });
-    return state;
-  };
-  if (options?.log === false) {
-    return () => handleGettingApplicationState(() => undefined);
-  }
-  return () =>
-    withOverallNameLoggedForQuery(
-      {
+  const log = options?.log
+    ? Cypress.log({
         name: "getApplicationState",
         displayName: "GET APPLICATION STATE",
         message: name === undefined ? "current" : `current "${name}" state`,
         consoleProps: () => ({ name }),
+      })
+    : undefined;
+
+  const getCustomWindowFn = cyNow("getCustomWindow", { log: false });
+
+  return () =>
+    withOverallNameLoggedForQuery(
+      (
+        consolePropsSetter: (props: Cypress.ObjectLike) => void
+      ): Cypress.OurApplicationState => {
+        const window = getCustomWindowFn(undefined) as Cypress.CustomWindow;
+        const state = window.END_TO_END_TEST_HELPERS.getModel();
+        if (state === undefined) {
+          throw new Error(
+            `${name} state which was attempted gotten was found to be undefined`
+          );
+        }
+        consolePropsSetter({ name, appState: state });
+        return state;
       },
-      handleGettingApplicationState
+      log
     );
 };
 Cypress.Commands.addQuery("getApplicationState", getApplicationState);
@@ -510,17 +512,14 @@ const withOverallNameLogged: Cypress.CommandFn<"withOverallNameLogged"> =
 Cypress.Commands.add("withOverallNameLogged", withOverallNameLogged);
 
 function withOverallNameLoggedForQuery<T>(
-  logConfig: Partial<Cypress.LogConfig>,
   queryCallback: (
     consolePropsSetter: (
       props: ReturnType<Cypress.LogConfig["consoleProps"]>
     ) => void
-  ) => T
+  ) => T,
+  log: Cypress.Log | undefined
 ) {
-  const log = Cypress.log({
-    ...logConfig,
-    ...(logConfig.autoEnd === true ? {} : { autoEnd: false }),
-  });
+  if (log === undefined) return queryCallback(() => undefined);
   const consolePropsSetter = (consoleProps: Cypress.ObjectLike): void => {
     log.set({ consoleProps: () => consoleProps });
   };
@@ -528,7 +527,7 @@ function withOverallNameLoggedForQuery<T>(
   log.snapshot("before");
   const callbackReturnValue = queryCallback(consolePropsSetter);
   log.snapshot("after");
-  if (logConfig.autoEnd !== true) {
+  if (log.get("autoEnd") !== true) {
     log.end();
   }
   return callbackReturnValue;
@@ -560,64 +559,63 @@ const assertNoHorizontalScrollbar: Cypress.QueryFn<"assertNoHorizontalScrollbar"
     const documentFn = cyNow("document", { log: false });
     const windowFn = cyNow("window", { log: false });
     const getAllDomNodesFn = getGetAllDomNodesFn();
+    const log = Cypress.log({
+      name: "assertNoHorizontalScrollbar",
+      displayName: "ASSERT SCROLLBAR",
+      message: `no horizontal allowed`,
+    });
+
     return () =>
-      withOverallNameLoggedForQuery(
-        {
-          name: "assertNoHorizontalScrollbar",
-          displayName: "ASSERT SCROLLBAR",
-          message: `no horizontal allowed`,
-        },
-        (consolePropsSetter) => {
-          const document = documentFn(undefined);
-          const window = windowFn(undefined);
-          const windowWidth = Cypress.$(window).width();
-          if (windowWidth === undefined)
-            throw new Error("Window width is undefined");
+      withOverallNameLoggedForQuery((consolePropsSetter) => {
+        const document = documentFn(undefined);
+        const window = windowFn(undefined);
+        const windowWidth = Cypress.$(window).width();
+        if (windowWidth === undefined)
+          throw new Error("Window width is undefined");
 
-          expect(
-            Cypress.$(document).width(),
-            "document width at most window width"
-          ).to.be.at.most(windowWidth);
-          // The previous check won't necessarily work for elements with position fixed or absolute
-          // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
+        expect(
+          Cypress.$(document).width(),
+          "document width at most window width"
+        ).to.be.at.most(windowWidth);
+        // The previous check won't necessarily work for elements with position fixed or absolute
+        // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
 
-          const allDomNodes = getAllDomNodesFn(undefined);
-          const minMax = { left: 0, right: 0 };
-          const consoleProps = {
-            "Furthest Left": allDomNodes.get(0),
-            "Furthest Right": allDomNodes.get(0),
-          };
-          allDomNodes.each((_, curNode) => {
-            const nodeLeft = Cypress.$(curNode).offset()?.left;
-            if (nodeLeft === undefined) {
-              throw new Error("node had no offset");
-            }
-            const nodeWidth = Cypress.$(curNode).width();
-            if (nodeWidth === undefined) {
-              throw new Error("Node had no width");
-            }
-            const nodeRight = nodeLeft + nodeWidth;
-            if (nodeLeft < minMax.left) {
-              minMax.left = nodeLeft;
-              consoleProps["Furthest Left"] = curNode;
-            }
-            if (nodeRight > minMax.right) {
-              minMax.right = nodeRight;
-              consoleProps["Furthest Right"] = curNode;
-            }
-            minMax.left = Math.min(minMax.left, nodeLeft);
-          });
-          consolePropsSetter(consoleProps);
-          expect(
-            minMax.left,
-            "furthest left element should be within window"
-          ).to.be.at.least(0);
-          expect(
-            minMax.right,
-            "furthest right element should be within window"
-          ).to.be.at.most(windowWidth);
-        }
-      );
+        const allDomNodes = getAllDomNodesFn(undefined);
+        const minMax = { left: 0, right: 0 };
+        const consoleProps = {
+          "Furthest Left": allDomNodes.get(0),
+          "Furthest Right": allDomNodes.get(0),
+        };
+        allDomNodes.each((_, curNode) => {
+          const nodeLeft = Cypress.$(curNode).offset()?.left;
+          if (nodeLeft === undefined) {
+            throw new Error("node had no offset");
+          }
+          const nodeWidth = Cypress.$(curNode).width();
+          if (nodeWidth === undefined) {
+            throw new Error("Node had no width");
+          }
+          const nodeRight = nodeLeft + nodeWidth;
+          if (nodeLeft < minMax.left) {
+            minMax.left = nodeLeft;
+            consoleProps["Furthest Left"] = curNode;
+          }
+          if (nodeRight > minMax.right) {
+            minMax.right = nodeRight;
+            consoleProps["Furthest Right"] = curNode;
+          }
+          minMax.left = Math.min(minMax.left, nodeLeft);
+        });
+        consolePropsSetter(consoleProps);
+        expect(
+          minMax.left,
+          "furthest left element should be within window"
+        ).to.be.at.least(0);
+        expect(
+          minMax.right,
+          "furthest right element should be within window"
+        ).to.be.at.most(windowWidth);
+      }, log);
   };
 
 Cypress.Commands.addQuery(
@@ -630,43 +628,41 @@ const assertNoVerticalScrollbar: Cypress.QueryFn<"assertNoVerticalScrollbar"> =
     const documentFn = cyNow("document", { log: false });
     const windowFn = cyNow("window", { log: false });
     const getAllDomNodesFn = getGetAllDomNodesFn();
+    const log = Cypress.log({
+      name: "assertNoVerticalScrollbar",
+      displayName: "ASSERT SCROLLBAR",
+      message: `no vertical allowed`,
+    });
     return () =>
-      withOverallNameLoggedForQuery(
-        {
-          name: "assertNoVerticalScrollbar",
-          displayName: "ASSERT SCROLLBAR",
-          message: `no vertical allowed`,
-        },
-        (consolePropsSetter) => {
-          // Initial simple check
-          const document = documentFn(undefined);
-          const window = windowFn(undefined);
-          const windowHeight = Cypress.$(window).height();
-          if (windowHeight === undefined)
-            throw new Error("Window height is undefined");
-          expect(
-            Cypress.$(document).height(),
-            "document height at most window height"
-          ).to.be.at.most(windowHeight);
-          // The previous check won't necessarily work for elements with position fixed or absolute
-          // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
-          const allDomNodes = getAllDomNodesFn(undefined);
-          const { positions, elements } =
-            getTopAndBottomElementsFromAllDomNodes(allDomNodes);
-          consolePropsSetter({
-            "Furthest Up": elements.top,
-            "Furthest Down": elements.bottom,
-          });
-          expect(
-            positions.top,
-            "furthest up element should be within window"
-          ).to.be.at.least(0);
-          expect(
-            positions.bottom,
-            "furthest down element should be within window"
-          ).to.be.at.most(windowHeight);
-        }
-      );
+      withOverallNameLoggedForQuery((consolePropsSetter) => {
+        // Initial simple check
+        const document = documentFn(undefined);
+        const window = windowFn(undefined);
+        const windowHeight = Cypress.$(window).height();
+        if (windowHeight === undefined)
+          throw new Error("Window height is undefined");
+        expect(
+          Cypress.$(document).height(),
+          "document height at most window height"
+        ).to.be.at.most(windowHeight);
+        // The previous check won't necessarily work for elements with position fixed or absolute
+        // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
+        const allDomNodes = getAllDomNodesFn(undefined);
+        const { positions, elements } =
+          getTopAndBottomElementsFromAllDomNodes(allDomNodes);
+        consolePropsSetter({
+          "Furthest Up": elements.top,
+          "Furthest Down": elements.bottom,
+        });
+        expect(
+          positions.top,
+          "furthest up element should be within window"
+        ).to.be.at.least(0);
+        expect(
+          positions.bottom,
+          "furthest down element should be within window"
+        ).to.be.at.most(windowHeight);
+      }, log);
   };
 
 Cypress.Commands.addQuery(
@@ -679,41 +675,39 @@ const assertThereIsVerticalScrollbar: Cypress.QueryFn<"assertThereIsVerticalScro
     const documentFn = cyNow("document", { log: false });
     const windowFn = cyNow("window", { log: false });
     const getAllDomNodesFn = getGetAllDomNodesFn();
+    const log = Cypress.log({
+      name: "assertThereIsVerticalScrollbar",
+      displayName: "ASSERT SCROLLBAR",
+      message: "vertical required",
+    });
     return () =>
-      withOverallNameLoggedForQuery(
-        {
-          name: "assertThereIsVerticalScrollbar",
-          displayName: "ASSERT SCROLLBAR",
-          message: "vertical required",
-        },
-        (consolePropsSetter) => {
-          // Initial simple check
-          const document = documentFn(undefined);
-          const window = windowFn(undefined);
-          const windowHeight = Cypress.$(window).height();
-          if (windowHeight === undefined)
-            throw new Error("Window height is undefined");
-          if (Cypress.$(document).height() ?? -1 > windowHeight) {
-            // Document is higher than window so we don't need to do a more thorough check there
-            // should be a vertical scrollbar
-            return;
-          }
-          // The previous check won't necessarily work for elements with position fixed or absolute
-          // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
-
-          const allDomNodes = getAllDomNodesFn(undefined);
-          const { positions, elements } =
-            getTopAndBottomElementsFromAllDomNodes(allDomNodes);
-          consolePropsSetter({
-            "Furthest Up": elements.top,
-            "Furthest Down": elements.bottom,
-          });
-          expect(
-            positions.top < 0 || positions.bottom > windowHeight,
-            "furthest up element should be above window or furthest down below window"
-          ).to.be.true;
+      withOverallNameLoggedForQuery((consolePropsSetter) => {
+        // Initial simple check
+        const document = documentFn(undefined);
+        const window = windowFn(undefined);
+        const windowHeight = Cypress.$(window).height();
+        if (windowHeight === undefined)
+          throw new Error("Window height is undefined");
+        if (Cypress.$(document).height() ?? -1 > windowHeight) {
+          // Document is higher than window so we don't need to do a more thorough check there
+          // should be a vertical scrollbar
+          return;
         }
-      );
+        // The previous check won't necessarily work for elements with position fixed or absolute
+        // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
+
+        const allDomNodes = getAllDomNodesFn(undefined);
+        const { positions, elements } =
+          getTopAndBottomElementsFromAllDomNodes(allDomNodes);
+        consolePropsSetter({
+          "Furthest Up": elements.top,
+          "Furthest Down": elements.bottom,
+        });
+        expect(
+          positions.top < 0 || positions.bottom > windowHeight,
+          "furthest up element should be above window or furthest down below window"
+        ).to.be.true;
+      }, log);
   };
 
 Cypress.Commands.addQuery(
