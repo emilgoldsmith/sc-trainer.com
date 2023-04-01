@@ -33,7 +33,7 @@ type InternalElement = OurElement & { meta: ElementMeta };
 
 type Options = {
   log?: boolean;
-  withinSubject?: HTMLElement | JQuery<HTMLElement> | null;
+  withinSubject?: HTMLElement | JQuery | null;
 };
 
 function getTestId(specifier: ElementSpecifier): string | null {
@@ -198,7 +198,7 @@ export function buildElementsCategory<keys extends string>(
     assertAllShow() {
       Cypress._.forEach(
         elements,
-        (elem) => elem.meta.optional === false && elem.assertShows()
+        (elem) => !elem.meta.optional && elem.assertShows()
       );
     },
     assertAllConsumableViaVerticalScroll(
@@ -207,7 +207,7 @@ export function buildElementsCategory<keys extends string>(
       Cypress._.forEach(
         elements,
         (elem) =>
-          elem.meta.optional === false &&
+          !elem.meta.optional &&
           elem.assertConsumableViaVerticalScroll(scrollableContainerSpecifier)
       );
     },
@@ -382,7 +382,7 @@ function buildContainedByWindow(specifier: ElementSpecifier) {
         throw new Error("Element has no offset");
       }
       const instructionsBottom =
-        instructionsTop + (instructionsElement.height() as number);
+        instructionsTop + instructionsElement.height()!;
       if (instructionsBottom === undefined) {
         throw new Error("Element has no height");
       }
@@ -409,7 +409,7 @@ function buildContainedByWindowAsserter(specifier: ElementSpecifier) {
         throw new Error("Element has no offset");
       }
       const instructionsBottom =
-        instructionsTop + (instructionsElement.height() as number);
+        instructionsTop + instructionsElement.height()!;
       if (instructionsBottom === undefined) {
         throw new Error("Element has no height");
       }
@@ -558,37 +558,37 @@ function buildConsumableViaHorizontalScrollAsserter(
     });
   };
 }
-function getTop(elem: JQuery<HTMLElement>) {
+function getTop(elem: JQuery) {
   const top = elem.offset()?.top;
   if (top === undefined) {
     throw new Error("Element has no offset");
   }
   return Math.round(top);
 }
-function getHeight(elem: JQuery<HTMLElement>) {
+function getHeight(elem: JQuery) {
   const height = elem.outerHeight();
   if (height === undefined) {
     throw new Error("Element has no height");
   }
   return Math.round(height);
 }
-function getBottom(elem: JQuery<HTMLElement>) {
+function getBottom(elem: JQuery) {
   return getTop(elem) + getHeight(elem);
 }
-function getLeft(elem: JQuery<HTMLElement>) {
+function getLeft(elem: JQuery) {
   const left = elem.offset()?.left;
   if (left === undefined) {
     throw new Error("Element has no offset");
   }
   return Math.round(left);
 }
-function getWidth(elem: JQuery<HTMLElement>) {
+function getWidth(elem: JQuery) {
   const width = elem.outerWidth();
   if (width === undefined) {
     throw new Error("Element has no height");
   }
   return Math.round(width);
 }
-function getRight(elem: JQuery<HTMLElement>) {
+function getRight(elem: JQuery) {
   return getLeft(elem) + getWidth(elem);
 }

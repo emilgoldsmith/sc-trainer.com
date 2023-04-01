@@ -1,6 +1,4 @@
-export function canvasOrThrow(
-  jqueryElement: JQuery<HTMLElement>
-): HTMLCanvasElement {
+export function canvasOrThrow(jqueryElement: JQuery): HTMLCanvasElement {
   if (jqueryElement.length > 1) {
     throw new Error("Several elements were matched by JQuery in canvasOrThrow");
   }
