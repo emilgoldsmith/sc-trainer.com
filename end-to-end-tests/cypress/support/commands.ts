@@ -38,6 +38,22 @@ import { register } from "@cypress/snapshot";
 
 register();
 
+type UnwrapChainable<T> = T extends Cypress.Chainable<infer U> ? U : T;
+
+function cyNow<Name extends keyof Cypress.Chainable<unknown>>(
+  name: Name,
+  ...args: Parameters<Cypress.Chainable<unknown>[Name]>
+) {
+  const fn:
+    | Promise<UnwrapChainable<ReturnType<Cypress.Chainable<unknown>[Name]>>>
+    | ((
+        subject: unknown
+      ) => UnwrapChainable<ReturnType<Cypress.Chainable<unknown>[Name]>>) =
+    cy.now(name, ...args);
+  if (fn instanceof Promise)
+    throw new Error(`${name}Fn is not supposed to be a promise`);
+  return fn;
+}
 /** OVERWRITES */
 Cypress.Commands.overwrite("tick", (originalFn, milliseconds, options) => {
   originalFn(milliseconds, options);
@@ -62,31 +78,26 @@ Cypress.Commands.overwrite(
 
 /** CUSTOM COMMANDS */
 
-const getByTestId: Cypress.QueryFn<"getByTestId"> = (testId, ...args) => {
-  if (testId === null && args[0]?.testType === undefined) {
+const getByTestId: Cypress.QueryFn<"getByTestId"> = (testId, options) => {
+  if (testId === null && options?.testType === undefined) {
     throw new Error(
       "Can't get an element with neither testId or testType specified"
     );
   }
-  let getFn: ReturnType<typeof cy.now>;
-  if (args[0]?.testType !== undefined) {
-    if (testId === null) {
-      getFn = cy.now("get", `[data-test-type=${args[0].testType}]`, ...args);
-    } else {
-      getFn = cy.now(
+  const getFn = (() => {
+    if (options?.testType !== undefined) {
+      if (testId === null) {
+        return cyNow("get", `[data-test-type=${options.testType}]`, options);
+      }
+      return cyNow(
         "get",
-        `[data-testid=${testId}][data-test-type=${args[0].testType}]`,
-        ...args
+        `[data-testid=${testId}][data-test-type=${options.testType}]`,
+        options
       );
     }
-  } else {
-    getFn = cy.now("get", `[data-testid=${testId}]`, ...args);
-  }
-  return () => {
-    if (getFn instanceof Promise)
-      throw new Error("getFn is not supposed to be a promise");
-    return getFn(undefined);
-  };
+    return cyNow("get", `[data-testid=${testId}]`, options);
+  })();
+  return () => getFn(undefined);
 };
 Cypress.Commands.addQuery("getByTestId", getByTestId);
 
@@ -105,12 +116,10 @@ const getSingleAlias: Cypress.QueryFn<"getSingleAlias"> = function <
   Aliases extends Record<string, unknown>,
   Key extends keyof Aliases
 >(alias: Key) {
-  const getAliasesFn = cy.now("getAliases");
+  const getAliasesFn = cyNow("getAliases");
   return () => {
-    if (getAliasesFn instanceof Promise)
-      throw new Error("getAliasesFn should not be a promise");
-    const aliases = getAliasesFn(undefined) as Aliases;
-    const value = aliases[alias];
+    const aliases = getAliasesFn(undefined);
+    const value = (aliases as Aliases)[alias];
     if (value === undefined) {
       throw new Error(
         `Alias ${alias.toString()} was undefined when fetched with getSingleAlias`
@@ -132,6 +141,12 @@ const setAlias: Cypress.QueryFn<"setAlias"> = function (alias: string) {
   };
 };
 Cypress.Commands.addQuery("setAlias", setAlias);
+
+Cypress.Commands.overwriteQuery("as", () => {
+  throw new Error(
+    "Do not use this 'cy.as' command. Instead use the custom typed command .setAlias"
+  );
+});
 
 Cypress.Commands.add("setSystemTimeWithLastFrameTicked", (now) => {
   cy.clock().invoke("setSystemTime", now - 60);
@@ -197,7 +212,7 @@ function buildKeyboardEvent(
   };
 }
 
-const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
+const longPressKey: Cypress.CommandFn<"longPressKey"> = function (
   key,
   options
 ) {
@@ -256,10 +271,7 @@ const longPressKey: Cypress.Chainable<undefined>["longPressKey"] = function (
 };
 Cypress.Commands.add("longPressKey", longPressKey);
 
-const buttonMash: Cypress.Chainable<undefined>["buttonMash"] = (
-  keys,
-  options
-) => {
+const buttonMash: Cypress.CommandFn<"buttonMash"> = (keys, options) => {
   if (keys.length === 0) {
     throw new Error("You must pass in at least one key to mash");
   }
@@ -307,10 +319,7 @@ const buttonMash: Cypress.Chainable<undefined>["buttonMash"] = (
 };
 Cypress.Commands.add("buttonMash", buttonMash);
 
-const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
-  keys,
-  options
-) => {
+const longButtonMash: Cypress.CommandFn<"longButtonMash"> = (keys, options) => {
   if (keys.length === 0) {
     throw new Error("You must pass in at least one key to mash");
   }
@@ -382,13 +391,9 @@ const longButtonMash: Cypress.Chainable<undefined>["longButtonMash"] = (
 };
 Cypress.Commands.add("longButtonMash", longButtonMash);
 
-const getCustomWindow: Cypress.QueryFn<"getCustomWindow"> = function (
-  options = {}
-) {
-  const windowFn = cy.now("window", options);
+const getCustomWindow: Cypress.QueryFn<"getCustomWindow"> = function (options) {
+  const windowFn = cyNow("window", options);
   return () => {
-    if (windowFn instanceof Promise)
-      throw new Error("windowFn shouldn't be a promise");
     const window = windowFn(undefined);
     const customWindow = window as Cypress.CustomWindow;
     if (customWindow.END_TO_END_TEST_HELPERS === undefined) {
@@ -401,25 +406,30 @@ const getCustomWindow: Cypress.QueryFn<"getCustomWindow"> = function (
 };
 Cypress.Commands.addQuery("getCustomWindow", getCustomWindow);
 
-const getApplicationState: Cypress.Chainable<undefined>["getApplicationState"] =
-  function (name, options) {
-    const handleGettingApplicationState = (
-      consolePropsSetter: (props: Cypress.ObjectLike) => void
-    ): Cypress.Chainable<Cypress.OurApplicationState> =>
-      cy.getCustomWindow({ log: false }).then((window) => {
-        const state = window.END_TO_END_TEST_HELPERS.getModel();
-        if (state === undefined) {
-          throw new Error(
-            `${name} state which was attempted gotten was found to be undefined`
-          );
-        }
-        consolePropsSetter({ name, appState: state });
-        return state;
-      });
-    if (options?.log === false) {
-      return handleGettingApplicationState(() => void 0);
+const getApplicationState: Cypress.QueryFn<"getApplicationState"> = function (
+  name,
+  options
+) {
+  const getCustomWindowFn = cyNow("getCustomWindow", { log: false });
+
+  const handleGettingApplicationState = (
+    consolePropsSetter: (props: Cypress.ObjectLike) => void
+  ): Cypress.OurApplicationState => {
+    const window = getCustomWindowFn(undefined) as Cypress.CustomWindow;
+    const state = window.END_TO_END_TEST_HELPERS.getModel();
+    if (state === undefined) {
+      throw new Error(
+        `${name} state which was attempted gotten was found to be undefined`
+      );
     }
-    return cy.withOverallNameLogged(
+    consolePropsSetter({ name, appState: state });
+    return state;
+  };
+  if (options?.log === false) {
+    return () => handleGettingApplicationState(() => undefined);
+  }
+  return () =>
+    withOverallNameLoggedForQuery(
       {
         name: "getApplicationState",
         displayName: "GET APPLICATION STATE",
@@ -428,46 +438,49 @@ const getApplicationState: Cypress.Chainable<undefined>["getApplicationState"] =
       },
       handleGettingApplicationState
     );
+};
+Cypress.Commands.addQuery("getApplicationState", getApplicationState);
+
+const setApplicationState: Cypress.CommandFn<"setApplicationState"> = function (
+  state,
+  name,
+  options
+) {
+  if (state === undefined) {
+    throw new Error(
+      "setApplicationState called with undefined state, which is not allowed"
+    );
+  }
+
+  const stateDescription = name || "unknown";
+  const handleSettingState = () => {
+    cy.getCustomWindow({ log: false }).then((window) =>
+      window.END_TO_END_TEST_HELPERS.setModel(state)
+    );
+    // Force us to wait for a render loop as otherwise the update won't
+    // necessarily render for commands made right after, and there isn't
+    // really anything we can wait for as we don't know the target page
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
+    cy.wait(0);
   };
-Cypress.Commands.add("getApplicationState", getApplicationState);
 
-const setApplicationState: Cypress.Chainable<undefined>["setApplicationState"] =
-  function (state, name, options) {
-    if (state === undefined) {
-      throw new Error(
-        "setApplicationState called with undefined state, which is not allowed"
-      );
-    }
-
-    const stateDescription = name || "unknown";
-    const handleSettingState = () => {
-      cy.getCustomWindow({ log: false }).then((window) =>
-        window.END_TO_END_TEST_HELPERS.setModel(state)
-      );
-      // Force us to wait for a render loop as otherwise the update won't
-      // necessarily render for commands made right after, and there isn't
-      // really anything we can wait for as we don't know the target page
-      // eslint-disable-next-line cypress/no-unnecessary-waiting
-      cy.wait(0);
-    };
-
-    if (options?.log === false) {
-      handleSettingState();
-    } else {
-      cy.withOverallNameLogged(
-        {
-          name: "setApplicationState",
-          displayName: "SET APPLICATION STATE",
-          message: `to ${stateDescription} state`,
-          consoleProps: () => ({ appState: state, name: stateDescription }),
-        },
-        handleSettingState
-      );
-    }
-  };
+  if (options?.log === false) {
+    handleSettingState();
+  } else {
+    cy.withOverallNameLogged(
+      {
+        name: "setApplicationState",
+        displayName: "SET APPLICATION STATE",
+        message: `to ${stateDescription} state`,
+        consoleProps: () => ({ appState: state, name: stateDescription }),
+      },
+      handleSettingState
+    );
+  }
+};
 Cypress.Commands.add("setApplicationState", setApplicationState);
 
-const withOverallNameLogged: Cypress.Chainable<undefined>["withOverallNameLogged"] =
+const withOverallNameLogged: Cypress.CommandFn<"withOverallNameLogged"> =
   function (logConfig, commandsCallback) {
     const log = Cypress.log({
       ...logConfig,
@@ -496,9 +509,37 @@ const withOverallNameLogged: Cypress.Chainable<undefined>["withOverallNameLogged
   };
 Cypress.Commands.add("withOverallNameLogged", withOverallNameLogged);
 
-const waitForDocumentEventListeners: Cypress.Chainable<undefined>["waitForDocumentEventListeners"] =
-  function (...eventNames): void {
-    cy.getCustomWindow({ log: false }).should((window) => {
+function withOverallNameLoggedForQuery<T>(
+  logConfig: Partial<Cypress.LogConfig>,
+  queryCallback: (
+    consolePropsSetter: (
+      props: ReturnType<Cypress.LogConfig["consoleProps"]>
+    ) => void
+  ) => T
+) {
+  const log = Cypress.log({
+    ...logConfig,
+    ...(logConfig.autoEnd === true ? {} : { autoEnd: false }),
+  });
+  const consolePropsSetter = (consoleProps: Cypress.ObjectLike): void => {
+    log.set({ consoleProps: () => consoleProps });
+  };
+
+  log.snapshot("before");
+  const callbackReturnValue = queryCallback(consolePropsSetter);
+  log.snapshot("after");
+  if (logConfig.autoEnd !== true) {
+    log.end();
+  }
+  return callbackReturnValue;
+}
+
+const waitForDocumentEventListeners: Cypress.QueryFn<"waitForDocumentEventListeners"> =
+  function (...eventNames) {
+    const getCustomWindowFn = cyNow("getCustomWindow", { log: false });
+
+    return () => {
+      const window = getCustomWindowFn(undefined);
       const actualEventNames =
         window.END_TO_END_TEST_HELPERS.getDocumentEventListeners();
       eventNames.forEach((name) => {
@@ -507,172 +548,180 @@ const waitForDocumentEventListeners: Cypress.Chainable<undefined>["waitForDocume
           `has expected event listener ${name}`
         ).to.be.true;
       });
-    });
+    };
   };
-Cypress.Commands.add(
+Cypress.Commands.addQuery(
   "waitForDocumentEventListeners",
   waitForDocumentEventListeners
 );
 
-const assertNoHorizontalScrollbar: Cypress.Chainable<undefined>["assertNoHorizontalScrollbar"] =
+const assertNoHorizontalScrollbar: Cypress.QueryFn<"assertNoHorizontalScrollbar"> =
   function () {
-    cy.withOverallNameLogged(
-      {
-        name: "assertNoHorizontalScrollbar",
-        displayName: "ASSERT SCROLLBAR",
-        message: `no horizontal allowed`,
-      },
-      (consolePropsSetter) => {
-        cy.document({ log: false }).then((document) =>
-          cy.window({ log: false }).then((window) => {
-            const windowWidth = Cypress.$(window).width();
-            if (windowWidth === undefined)
-              throw new Error("Window width is undefined");
+    const documentFn = cyNow("document", { log: false });
+    const windowFn = cyNow("window", { log: false });
+    const getAllDomNodesFn = getGetAllDomNodesFn();
+    return () =>
+      withOverallNameLoggedForQuery(
+        {
+          name: "assertNoHorizontalScrollbar",
+          displayName: "ASSERT SCROLLBAR",
+          message: `no horizontal allowed`,
+        },
+        (consolePropsSetter) => {
+          const document = documentFn(undefined);
+          const window = windowFn(undefined);
+          const windowWidth = Cypress.$(window).width();
+          if (windowWidth === undefined)
+            throw new Error("Window width is undefined");
 
-            expect(
-              Cypress.$(document).width(),
-              "document width at most window width"
-            ).to.be.at.most(windowWidth);
-            // The previous check won't necessarily work for elements with position fixed or absolute
-            // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
+          expect(
+            Cypress.$(document).width(),
+            "document width at most window width"
+          ).to.be.at.most(windowWidth);
+          // The previous check won't necessarily work for elements with position fixed or absolute
+          // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
 
-            cy.get(":not(style,script)").should((allDomNodes) => {
-              const minMax = { left: 0, right: 0 };
-              const consoleProps = {
-                "Furthest Left": allDomNodes.get(0),
-                "Furthest Right": allDomNodes.get(0),
-              };
-              allDomNodes.each((_, curNode) => {
-                const nodeLeft = Cypress.$(curNode).offset()?.left;
-                if (nodeLeft === undefined) {
-                  throw new Error("node had no offset");
-                }
-                const nodeWidth = Cypress.$(curNode).width();
-                if (nodeWidth === undefined) {
-                  throw new Error("Node had no width");
-                }
-                const nodeRight = nodeLeft + nodeWidth;
-                if (nodeLeft < minMax.left) {
-                  minMax.left = nodeLeft;
-                  consoleProps["Furthest Left"] = curNode;
-                }
-                if (nodeRight > minMax.right) {
-                  minMax.right = nodeRight;
-                  consoleProps["Furthest Right"] = curNode;
-                }
-                minMax.left = Math.min(minMax.left, nodeLeft);
-              });
-              consolePropsSetter(consoleProps);
-              expect(
-                minMax.left,
-                "furthest left element should be within window"
-              ).to.be.at.least(0);
-              expect(
-                minMax.right,
-                "furthest right element should be within window"
-              ).to.be.at.most(windowWidth);
-            });
-          })
-        );
-      }
-    );
+          const allDomNodes = getAllDomNodesFn(undefined);
+          const minMax = { left: 0, right: 0 };
+          const consoleProps = {
+            "Furthest Left": allDomNodes.get(0),
+            "Furthest Right": allDomNodes.get(0),
+          };
+          allDomNodes.each((_, curNode) => {
+            const nodeLeft = Cypress.$(curNode).offset()?.left;
+            if (nodeLeft === undefined) {
+              throw new Error("node had no offset");
+            }
+            const nodeWidth = Cypress.$(curNode).width();
+            if (nodeWidth === undefined) {
+              throw new Error("Node had no width");
+            }
+            const nodeRight = nodeLeft + nodeWidth;
+            if (nodeLeft < minMax.left) {
+              minMax.left = nodeLeft;
+              consoleProps["Furthest Left"] = curNode;
+            }
+            if (nodeRight > minMax.right) {
+              minMax.right = nodeRight;
+              consoleProps["Furthest Right"] = curNode;
+            }
+            minMax.left = Math.min(minMax.left, nodeLeft);
+          });
+          consolePropsSetter(consoleProps);
+          expect(
+            minMax.left,
+            "furthest left element should be within window"
+          ).to.be.at.least(0);
+          expect(
+            minMax.right,
+            "furthest right element should be within window"
+          ).to.be.at.most(windowWidth);
+        }
+      );
   };
 
-Cypress.Commands.add(
+Cypress.Commands.addQuery(
   "assertNoHorizontalScrollbar",
   assertNoHorizontalScrollbar
 );
 
-const assertNoVerticalScrollbar: Cypress.Chainable<undefined>["assertNoVerticalScrollbar"] =
+const assertNoVerticalScrollbar: Cypress.QueryFn<"assertNoVerticalScrollbar"> =
   function () {
-    cy.withOverallNameLogged(
-      {
-        name: "assertNoVerticalScrollbar",
-        displayName: "ASSERT SCROLLBAR",
-        message: `no vertical allowed`,
-      },
-      (consolePropsSetter) => {
-        // Initial simple check
-        cy.document({ log: false }).then((document) =>
-          cy.window({ log: false }).then((window) => {
-            const windowHeight = Cypress.$(window).height();
-            if (windowHeight === undefined)
-              throw new Error("Window height is undefined");
-            expect(
-              Cypress.$(document).height(),
-              "document height at most window height"
-            ).to.be.at.most(windowHeight);
-            // The previous check won't necessarily work for elements with position fixed or absolute
-            // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
-            getTopAndBottomElements().then(({ positions, elements }) => {
-              consolePropsSetter({
-                "Furthest Up": elements.top,
-                "Furthest Down": elements.bottom,
-              });
-              expect(
-                positions.top,
-                "furthest up element should be within window"
-              ).to.be.at.least(0);
-              expect(
-                positions.bottom,
-                "furthest down element should be within window"
-              ).to.be.at.most(windowHeight);
-            });
-          })
-        );
-      }
-    );
+    const documentFn = cyNow("document", { log: false });
+    const windowFn = cyNow("window", { log: false });
+    const getAllDomNodesFn = getGetAllDomNodesFn();
+    return () =>
+      withOverallNameLoggedForQuery(
+        {
+          name: "assertNoVerticalScrollbar",
+          displayName: "ASSERT SCROLLBAR",
+          message: `no vertical allowed`,
+        },
+        (consolePropsSetter) => {
+          // Initial simple check
+          const document = documentFn(undefined);
+          const window = windowFn(undefined);
+          const windowHeight = Cypress.$(window).height();
+          if (windowHeight === undefined)
+            throw new Error("Window height is undefined");
+          expect(
+            Cypress.$(document).height(),
+            "document height at most window height"
+          ).to.be.at.most(windowHeight);
+          // The previous check won't necessarily work for elements with position fixed or absolute
+          // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
+          const allDomNodes = getAllDomNodesFn(undefined);
+          const { positions, elements } =
+            getTopAndBottomElementsFromAllDomNodes(allDomNodes);
+          consolePropsSetter({
+            "Furthest Up": elements.top,
+            "Furthest Down": elements.bottom,
+          });
+          expect(
+            positions.top,
+            "furthest up element should be within window"
+          ).to.be.at.least(0);
+          expect(
+            positions.bottom,
+            "furthest down element should be within window"
+          ).to.be.at.most(windowHeight);
+        }
+      );
   };
 
-Cypress.Commands.add("assertNoVerticalScrollbar", assertNoVerticalScrollbar);
+Cypress.Commands.addQuery(
+  "assertNoVerticalScrollbar",
+  assertNoVerticalScrollbar
+);
 
-const assertThereIsVerticalScrollbar: Cypress.Chainable<undefined>["assertThereIsVerticalScrollbar"] =
+const assertThereIsVerticalScrollbar: Cypress.QueryFn<"assertThereIsVerticalScrollbar"> =
   function () {
-    cy.withOverallNameLogged(
-      {
-        name: "assertThereIsVerticalScrollbar",
-        displayName: "ASSERT SCROLLBAR",
-        message: "vertical required",
-      },
-      (consolePropsSetter) => {
-        // Initial simple check
-        cy.document({ log: false }).then((document) =>
-          cy.window({ log: false }).then((window) => {
-            const windowHeight = Cypress.$(window).height();
-            if (windowHeight === undefined)
-              throw new Error("Window height is undefined");
-            if (Cypress.$(document).height() ?? -1 > windowHeight) {
-              // Document is higher than window so we don't need to do a more thorough check there
-              // should be a vertical scrollbar
-              return;
-            }
-            // The previous check won't necessarily work for elements with position fixed or absolute
-            // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
+    const documentFn = cyNow("document", { log: false });
+    const windowFn = cyNow("window", { log: false });
+    const getAllDomNodesFn = getGetAllDomNodesFn();
+    return () =>
+      withOverallNameLoggedForQuery(
+        {
+          name: "assertThereIsVerticalScrollbar",
+          displayName: "ASSERT SCROLLBAR",
+          message: "vertical required",
+        },
+        (consolePropsSetter) => {
+          // Initial simple check
+          const document = documentFn(undefined);
+          const window = windowFn(undefined);
+          const windowHeight = Cypress.$(window).height();
+          if (windowHeight === undefined)
+            throw new Error("Window height is undefined");
+          if (Cypress.$(document).height() ?? -1 > windowHeight) {
+            // Document is higher than window so we don't need to do a more thorough check there
+            // should be a vertical scrollbar
+            return;
+          }
+          // The previous check won't necessarily work for elements with position fixed or absolute
+          // this handles those cases. Inspired by https://stackoverflow.com/a/11670559
 
-            getTopAndBottomElements().should(({ positions, elements }) => {
-              consolePropsSetter({
-                "Furthest Up": elements.top,
-                "Furthest Down": elements.bottom,
-              });
-              expect(
-                positions.top < 0 || positions.bottom > windowHeight,
-                "furthest up element should be above window or furthest down below window"
-              ).to.be.true;
-            });
-          })
-        );
-      }
-    );
+          const allDomNodes = getAllDomNodesFn(undefined);
+          const { positions, elements } =
+            getTopAndBottomElementsFromAllDomNodes(allDomNodes);
+          consolePropsSetter({
+            "Furthest Up": elements.top,
+            "Furthest Down": elements.bottom,
+          });
+          expect(
+            positions.top < 0 || positions.bottom > windowHeight,
+            "furthest up element should be above window or furthest down below window"
+          ).to.be.true;
+        }
+      );
   };
 
-Cypress.Commands.add(
+Cypress.Commands.addQuery(
   "assertThereIsVerticalScrollbar",
   assertThereIsVerticalScrollbar
 );
 
-const touchScreen: Cypress.Chainable<undefined>["touchScreen"] = function (
-  position
-) {
+const touchScreen: Cypress.CommandFn<"touchScreen"> = function (position) {
   cy.withOverallNameLogged(
     {
       name: "touchScreen",
@@ -696,26 +745,28 @@ const touchScreen: Cypress.Chainable<undefined>["touchScreen"] = function (
 };
 Cypress.Commands.add("touchScreen", touchScreen);
 
-const mouseClickScreen: Cypress.Chainable<undefined>["mouseClickScreen"] =
-  function (position, options) {
-    const event = {
-      eventConstructor: "MouseEvent",
-    };
-    cy.withOverallNameLogged(
-      {
-        name: "mouseClickScreen",
-        displayName: "CLICK",
-        message: `on body element`,
-        consoleProps: () => ({ event }),
-      },
-      () => {
-        cy.get("body", { log: false }).click(position, options);
-      }
-    );
+const mouseClickScreen: Cypress.CommandFn<"mouseClickScreen"> = function (
+  position,
+  options
+) {
+  const event = {
+    eventConstructor: "MouseEvent",
   };
+  cy.withOverallNameLogged(
+    {
+      name: "mouseClickScreen",
+      displayName: "CLICK",
+      message: `on body element`,
+      consoleProps: () => ({ event }),
+    },
+    () => {
+      cy.get("body", { log: false }).click(position, options);
+    }
+  );
+};
 Cypress.Commands.add("mouseClickScreen", mouseClickScreen);
 
-const percySnapshotWithProperName: Cypress.Chainable<undefined>["percySnapshotWithProperName"] =
+const percySnapshotWithProperName: Cypress.CommandFn<"percySnapshotWithProperName"> =
   function (name, options) {
     // Wait for all canvases to fully render before snapshotting
     cy.get("canvas").should((elements) => {
@@ -732,7 +783,7 @@ Cypress.Commands.add(
   percySnapshotWithProperName
 );
 
-const getCurrentTestCase: Cypress.Chainable<string>["getCurrentTestCase"] =
+const getCurrentTestCase: Cypress.CommandFn<"getCurrentTestCase"> =
   function () {
     return cy
       .getCustomWindow({ log: false })
@@ -778,40 +829,43 @@ const getCurrentTestCase: Cypress.Chainable<string>["getCurrentTestCase"] =
   };
 Cypress.Commands.add("getCurrentTestCase", getCurrentTestCase);
 
-const setCurrentTestCase: Cypress.Chainable<undefined>["setCurrentTestCase"] =
-  function ([preAuf, pll, postAuf]) {
-    const jsonValue = [
-      aufToAlgorithmString[preAuf],
-      pllToPLLLetters[pll],
-      aufToAlgorithmString[postAuf],
-    ];
-    cy.withOverallNameLogged(
-      { displayName: "SET TEST CASE", message: JSON.stringify(jsonValue) },
-      () => {
-        cy.getCustomWindow({ log: false }).then((window) => {
-          const ports = window.END_TO_END_TEST_HELPERS.getPorts();
-          const setCurrentTestCasePort = ports.setCurrentTestCasePort;
-          if (!setCurrentTestCasePort)
-            throw new Error(
-              `setCurrentTestCase port is not exposed for some reason. The port keys are: ${JSON.stringify(
-                Object.keys(ports)
-              )}`
-            );
-          setCurrentTestCasePort.send(jsonValue);
-        });
-        // Force us to wait for a render loop as otherwise the update won't
-        // necessarily render for commands made right after, and there isn't
-        // really anything we can wait for as it's still the same page, and
-        // we don't know which page it is which is what determines what might
-        // change on the page
-        // eslint-disable-next-line cypress/no-unnecessary-waiting
-        cy.wait(0);
-      }
-    );
-  };
+const setCurrentTestCase: Cypress.CommandFn<"setCurrentTestCase"> = function ([
+  preAuf,
+  pll,
+  postAuf,
+]) {
+  const jsonValue = [
+    aufToAlgorithmString[preAuf],
+    pllToPLLLetters[pll],
+    aufToAlgorithmString[postAuf],
+  ];
+  cy.withOverallNameLogged(
+    { displayName: "SET TEST CASE", message: JSON.stringify(jsonValue) },
+    () => {
+      cy.getCustomWindow({ log: false }).then((window) => {
+        const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+        const setCurrentTestCasePort = ports.setCurrentTestCasePort;
+        if (!setCurrentTestCasePort)
+          throw new Error(
+            `setCurrentTestCase port is not exposed for some reason. The port keys are: ${JSON.stringify(
+              Object.keys(ports)
+            )}`
+          );
+        setCurrentTestCasePort.send(jsonValue);
+      });
+      // Force us to wait for a render loop as otherwise the update won't
+      // necessarily render for commands made right after, and there isn't
+      // really anything we can wait for as it's still the same page, and
+      // we don't know which page it is which is what determines what might
+      // change on the page
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(0);
+    }
+  );
+};
 Cypress.Commands.add("setCurrentTestCase", setCurrentTestCase);
 
-const overrideNextTestCase: Cypress.Chainable<undefined>["overrideNextTestCase"] =
+const overrideNextTestCase: Cypress.CommandFn<"overrideNextTestCase"> =
   function ([preAuf, pll, postAuf]) {
     const jsonValue = [
       aufToAlgorithmString[preAuf],
@@ -840,38 +894,40 @@ const overrideNextTestCase: Cypress.Chainable<undefined>["overrideNextTestCase"]
   };
 Cypress.Commands.add("overrideNextTestCase", overrideNextTestCase);
 
-const setPLLAlgorithm: Cypress.Chainable<undefined>["setPLLAlgorithm"] =
-  function (pll, algorithm) {
-    const jsonValue = {
-      algorithm,
-      pll: pllToPLLLetters[pll],
-    };
-    cy.withOverallNameLogged(
-      {
-        displayName: "SET PLL ALGORITHM",
-        message: JSON.stringify(jsonValue),
-      },
-      () => {
-        cy.getCustomWindow({ log: false }).then((window) => {
-          const ports = window.END_TO_END_TEST_HELPERS.getPorts();
-          const setPLLAlgorithmPort = ports.setPLLAlgorithmPort;
-          if (!setPLLAlgorithmPort)
-            throw new Error(
-              `setPLLAlgorithm port is not exposed for some reason. The port keys are: ${JSON.stringify(
-                Object.keys(ports)
-              )}`
-            );
-          setPLLAlgorithmPort.send(jsonValue);
-          // Release control of the thread to let the render loop do it's thing
-          // eslint-disable-next-line cypress/no-unnecessary-waiting
-          cy.wait(0);
-        });
-      }
-    );
+const setPLLAlgorithm: Cypress.CommandFn<"setPLLAlgorithm"> = function (
+  pll,
+  algorithm
+) {
+  const jsonValue = {
+    algorithm,
+    pll: pllToPLLLetters[pll],
   };
+  cy.withOverallNameLogged(
+    {
+      displayName: "SET PLL ALGORITHM",
+      message: JSON.stringify(jsonValue),
+    },
+    () => {
+      cy.getCustomWindow({ log: false }).then((window) => {
+        const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+        const setPLLAlgorithmPort = ports.setPLLAlgorithmPort;
+        if (!setPLLAlgorithmPort)
+          throw new Error(
+            `setPLLAlgorithm port is not exposed for some reason. The port keys are: ${JSON.stringify(
+              Object.keys(ports)
+            )}`
+          );
+        setPLLAlgorithmPort.send(jsonValue);
+        // Release control of the thread to let the render loop do it's thing
+        // eslint-disable-next-line cypress/no-unnecessary-waiting
+        cy.wait(0);
+      });
+    }
+  );
+};
 Cypress.Commands.add("setPLLAlgorithm", setPLLAlgorithm);
 
-const setMultiplePLLAlgorithms: Cypress.Chainable<undefined>["setMultiplePLLAlgorithms"] =
+const setMultiplePLLAlgorithms: Cypress.CommandFn<"setMultiplePLLAlgorithms"> =
   function (toSet) {
     const jsonValue = Cypress._.mapKeys(
       toSet,
@@ -903,7 +959,7 @@ const setMultiplePLLAlgorithms: Cypress.Chainable<undefined>["setMultiplePLLAlgo
   };
 Cypress.Commands.add("setMultiplePLLAlgorithms", setMultiplePLLAlgorithms);
 
-const overrideCubeDisplayAngle: Cypress.Chainable<undefined>["overrideCubeDisplayAngle"] =
+const overrideCubeDisplayAngle: Cypress.CommandFn<"overrideCubeDisplayAngle"> =
   function (displayAngle) {
     cy.withOverallNameLogged(
       { displayName: "OVERRIDE CUBE DISPLAY ANGLE", message: displayAngle },
@@ -932,7 +988,7 @@ const overrideCubeDisplayAngle: Cypress.Chainable<undefined>["overrideCubeDispla
   };
 Cypress.Commands.add("overrideCubeDisplayAngle", overrideCubeDisplayAngle);
 
-const overrideDisplayCubeAnnotations: Cypress.Chainable<undefined>["overrideDisplayCubeAnnotations"] =
+const overrideDisplayCubeAnnotations: Cypress.CommandFn<"overrideDisplayCubeAnnotations"> =
   function (displayAnnotations) {
     cy.withOverallNameLogged(
       {
@@ -967,77 +1023,81 @@ Cypress.Commands.add(
   overrideDisplayCubeAnnotations
 );
 
-const setCubeSizeOverride: Cypress.Chainable<undefined>["setCubeSizeOverride"] =
-  function (size) {
-    cy.withOverallNameLogged(
-      { displayName: "SET SIZE OVERRIDE", message: JSON.stringify(size) },
-      () => {
-        cy.getCustomWindow({ log: false }).then((window) => {
-          const ports = window.END_TO_END_TEST_HELPERS.getPorts();
-          const setCubeSizeOverridePort = ports.setCubeSizeOverridePort;
-          if (!setCubeSizeOverridePort)
-            throw new Error(
-              "setCubeSizeOverride port is not exposed for some reason"
-            );
-          setCubeSizeOverridePort.send(size);
+const setCubeSizeOverride: Cypress.CommandFn<"setCubeSizeOverride"> = function (
+  size
+) {
+  cy.withOverallNameLogged(
+    { displayName: "SET SIZE OVERRIDE", message: JSON.stringify(size) },
+    () => {
+      cy.getCustomWindow({ log: false }).then((window) => {
+        const ports = window.END_TO_END_TEST_HELPERS.getPorts();
+        const setCubeSizeOverridePort = ports.setCubeSizeOverridePort;
+        if (!setCubeSizeOverridePort)
+          throw new Error(
+            "setCubeSizeOverride port is not exposed for some reason"
+          );
+        setCubeSizeOverridePort.send(size);
+      });
+      // Release control of the thread to let the render loop do it's thing
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(0);
+      // Wait until canvases are finished re-rendering
+      cy.get("canvas").should((elements) => {
+        elements.each((_, canvas) => {
+          expect(isCanvasBlank(canvas), "canvas not to be blank").to.be.false;
+          if (size !== null) {
+            expect(canvas.style.width).to.equal(size.toString() + "px");
+            expect(canvas.style.height).to.equal(size.toString() + "px");
+          }
         });
-        // Release control of the thread to let the render loop do it's thing
-        // eslint-disable-next-line cypress/no-unnecessary-waiting
-        cy.wait(0);
-        // Wait until canvases are finished re-rendering
-        cy.get("canvas").should((elements) => {
-          elements.each((_, canvas) => {
-            expect(isCanvasBlank(canvas), "canvas not to be blank").to.be.false;
-            if (size !== null) {
-              expect(canvas.style.width).to.equal(size.toString() + "px");
-              expect(canvas.style.height).to.equal(size.toString() + "px");
-            }
-          });
-        });
-      }
-    );
-  };
+      });
+    }
+  );
+};
 Cypress.Commands.add("setCubeSizeOverride", setCubeSizeOverride);
 
-const setLocalStorage: Cypress.Chainable<undefined>["setLocalStorage"] =
-  function (storageState) {
-    cy.clearLocalStorage().then((ls) => {
-      Cypress._.forEach(storageState, (value, key) => {
-        ls.setItem(key, JSON.stringify(value));
-      });
+const setLocalStorage: Cypress.CommandFn<"setLocalStorage"> = function (
+  storageState
+) {
+  cy.clearLocalStorage().then((ls) => {
+    Cypress._.forEach(storageState, (value, key) => {
+      ls.setItem(key, JSON.stringify(value));
     });
-  };
+  });
+};
 Cypress.Commands.add("setLocalStorage", setLocalStorage);
 
-function getTopAndBottomElements(): Cypress.Chainable<{
-  elements: { top: HTMLElement; bottom: HTMLElement };
-  positions: { top: number; bottom: number };
-}> {
-  return cy.get(":not(style,script)").then((allDomNodes) => {
-    const positions = { top: 0, bottom: 0 };
-    const elements = {
-      top: allDomNodes.get(0),
-      bottom: allDomNodes.get(0),
-    };
-    allDomNodes.each((_, curNode) => {
-      const nodeTop = Cypress.$(curNode).offset()?.top;
-      if (nodeTop === undefined) {
-        throw new Error("node had no offset");
-      }
-      const nodeHeight = Cypress.$(curNode).height();
-      if (nodeHeight === undefined) {
-        throw new Error("Node had no height");
-      }
-      const nodeBottom = nodeTop + nodeHeight;
-      if (nodeTop < positions.top) {
-        positions.top = nodeTop;
-        elements.top = curNode;
-      }
-      if (nodeBottom > positions.bottom) {
-        positions.bottom = nodeBottom;
-        elements.bottom = curNode;
-      }
-    });
-    return { elements, positions };
+function getGetAllDomNodesFn() {
+  return cyNow("get", ":not(style,script)") as (
+    subject: unknown
+  ) => JQuery<HTMLElement>;
+}
+function getTopAndBottomElementsFromAllDomNodes(
+  allDomNodes: JQuery<HTMLElement>
+) {
+  const positions = { top: 0, bottom: 0 };
+  const elements = {
+    top: allDomNodes.get(0),
+    bottom: allDomNodes.get(0),
+  };
+  allDomNodes.each((_, curNode) => {
+    const nodeTop = Cypress.$(curNode).offset()?.top;
+    if (nodeTop === undefined) {
+      throw new Error("node had no offset");
+    }
+    const nodeHeight = Cypress.$(curNode).height();
+    if (nodeHeight === undefined) {
+      throw new Error("Node had no height");
+    }
+    const nodeBottom = nodeTop + nodeHeight;
+    if (nodeTop < positions.top) {
+      positions.top = nodeTop;
+      elements.top = curNode;
+    }
+    if (nodeBottom > positions.bottom) {
+      positions.bottom = nodeBottom;
+      elements.bottom = curNode;
+    }
   });
+  return { elements, positions };
 }
