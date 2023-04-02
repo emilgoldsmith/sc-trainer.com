@@ -6,7 +6,6 @@
 FROM node:16 as dependency-builder
 
 ENV ELM_VERSION=0.19.1
-ENV ELM_SPA_VERSION 6.0.4
 
 WORKDIR /dependencies
 
@@ -16,12 +15,7 @@ RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/$ELM_VER
     && chmod +x elm \
     # Smoke test
     && ./elm --version \
-    && echo "Installed Elm Successfully" \
-    # Install Elm SPA
-    && yarn add elm-spa@$ELM_SPA_VERSION \
-    # Smoke test
-    && yarn run elm-spa --version \
-    && echo "Installed Elm SPA Successfully"
+    && echo "Installed Elm Successfully"
 
 
 ############################
@@ -32,17 +26,23 @@ RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/$ELM_VER
 FROM node:16 AS prod-builder
 
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
-COPY --from=dependency-builder /dependencies/node_modules /node_modules
-
-RUN ln -s /node_modules/.bin/elm-spa /usr/local/bin/elm-spa
 
 WORKDIR /workdir
+
+COPY package.json package.json
+COPY yarn.lock yarn.lock
+
+RUN yarn --ignore-optional
 
 COPY elm.json scripts/build-production-js.sh ./
 COPY src src
 
 # Outputs main.min.js
 RUN ./build-production-js.sh
+
+RUN rm -rf node_modules \
+    && yarn --production
+    && mv node_modules production_only_node_modules
 
 
 ############################
@@ -54,9 +54,8 @@ FROM node:16-alpine as production
 
 WORKDIR /app
 
-RUN yarn add serve
-
 COPY --from=prod-builder /workdir/main.min.js public/main.js
+COPY --from=prod-builder /workdir/production_only_node_modules node_modules
 COPY public/index.template.html public/index.template.html
 COPY public/sentry.js public/sentry.js
 COPY scripts/run-production.sh scripts/run-production.sh
@@ -76,22 +75,6 @@ FROM node:16-buster as ci
 
 #### IMPORTANT: To have any changes actually take effect in CI, you have
 #### to go change the version number in the yaml file too
-
-ENV ELM_TEST_VERSION 0.19.1
-ENV ELM_FORMAT_VERSION 0.8.4
-ENV ELM_VERIFY_EXAMPLES_VERSION 5.0.0
-ENV ELM_ANALYSE_VERSION 0.16.5
-ENV ELM_DOC_PREVIEW_VERSION 5.0.5
-
-RUN cd / && mkdir dependencies && cd dependencies && \
-    yarn add \
-        elm-test@$ELM_TEST_VERSION \
-        elm-format@$ELM_FORMAT_VERSION \
-        elm-verify-examples@$ELM_VERIFY_EXAMPLES_VERSION \
-        elm-analyse@$ELM_ANALYSE_VERSION \
-        elm-doc-preview@$ELM_DOC_PREVIEW_VERSION
-
-ENV PATH "$PATH:/dependencies/node_modules/.bin"
 
 WORKDIR /ci-home
 
@@ -171,39 +154,24 @@ ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 # which is located in the .devcontainer directory
 FROM emilgoldsmith/unsafe-dev-container:node-16-latest AS local-development
 
-ENV ELM_LIVE_VERSION 4.0.2
-
 USER $USERNAME
 
 WORKDIR /home/$USERNAME
 
 ENV HISTFILE /home/$USERNAME/bash_history/bash_history.txt
 
-# Install the development specific ones
-RUN yarn global add \
-        elm-live@$ELM_LIVE_VERSION \
-    # Create the elm cache directory where we can mount a volume. If we don't create it like this
-    # it is auto created by docker on volume creation but with root as owner which makes it unusable.
-    && mkdir .elm \
+# Create the elm cache directory where we can mount a volume. If we don't create it like this
+# it is auto created by docker on volume creation but with root as owner which makes it unusable.
+RUN mkdir .elm \
     # Similar story here with the bash history we store in a volume
     && mkdir -p $(dirname $HISTFILE)
 
-ENV PATH "$PATH:/home/$USERNAME/.yarn/bin"
-
-RUN echo 'PATH="$PATH:/home/$USERNAME/.yarn/bin"' >> .bashrc
+# Install all the dependencies
+RUN yarn
 
 # Add in the dependencies shared between stages
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
-COPY --from=dependency-builder /dependencies/node_modules /elm-spa/node_modules
-COPY --from=ci /dependencies/node_modules /test-and-linters/node_modules
 
 USER root
-
-RUN ln -s /elm-spa/node_modules/.bin/elm-spa /usr/local/bin/elm-spa
-RUN ln -s /test-and-linters/node_modules/.bin/elm-test /usr/local/bin/elm-test
-RUN ln -s /test-and-linters/node_modules/.bin/elm-format /usr/local/bin/elm-format
-RUN ln -s /test-and-linters/node_modules/.bin/elm-verify-examples /usr/local/bin/elm-verify-examples
-RUN ln -s /test-and-linters/node_modules/.bin/elm-analyse /usr/local/bin/elm-analyse
-RUN ln -s /test-and-linters/node_modules/.bin/elm-doc-preview /usr/local/bin/elm-doc-preview
 
 USER $USERNAME

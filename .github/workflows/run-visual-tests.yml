@@ -20,7 +20,7 @@ jobs:
     env:
       REPOSITORY: sctrainer/main
       PRODUCTION_TAG: production-${{ github.event.workflow_run.head_sha }}
-      CHROME_TAG: ci-chrome-v2
+      CHROME_TAG: ci-chrome-v3
     steps:
       - name: Wait for Production image to exist
         shell: bash

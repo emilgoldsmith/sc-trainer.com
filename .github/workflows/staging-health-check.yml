@@ -12,7 +12,7 @@ jobs:
     name: Run Staging Health Check
     runs-on: ubuntu-20.04
     container:
-      image: sctrainer/main:ci-chrome-v2
+      image: sctrainer/main:ci-chrome-v3
       # This is needed for Firefox running as described here
       # https://github.com/cypress-io/github-action/issues/104
       options: --user 1001

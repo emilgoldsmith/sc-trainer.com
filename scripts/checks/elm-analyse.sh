@@ -24,6 +24,6 @@ echo "" >> $TEMPORARY_MODULE
 echo "temporary : effect -> { init : model, update : msg -> model -> model, view : view } -> ElmSpa.Page.Page shared route effect view model msg" >> $TEMPORARY_MODULE
 echo "temporary = ElmSpa.Page.sandbox" >> $TEMPORARY_MODULE
 
-elm-analyse
+./node_modules/.bin/elm-analyse
 
 rm src/Temporary.elm

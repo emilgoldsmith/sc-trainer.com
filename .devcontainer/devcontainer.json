@@ -37,5 +37,5 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/cube-community/workspace,type=bind,consistency=delegated",
   "workspaceFolder": "/home/cube-community/workspace",
   "postCreateCommand": "git config core.hooksPath scripts/git-hooks",
-  "postAttachCommand": "git pull --ff-only; cd end-to-end-tests && yarn && yarn add -D ./forked_modules/@cypress/snapshot/ && (yarn run cypress verify || yarn run cypress install)"
+  "postAttachCommand": "git pull --ff-only; cd end-to-end-tests && yarn && yarn add -D ./forked_modules/@cypress/snapshot/ && (yarn run cypress verify || yarn run cypress install) && cd ../ && yarn"
 }

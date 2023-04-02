@@ -30,4 +30,4 @@ else
     exit 1
 fi fi fi
 
-npx serve --listen tcp://0.0.0.0:$PORT --no-clipboard --single build/public
+./node_modules/.bin/serve --listen tcp://0.0.0.0:$PORT --no-clipboard --single build/public
