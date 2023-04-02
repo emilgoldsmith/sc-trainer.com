@@ -137,6 +137,9 @@ jobs:
       - name: Install Elm Yarn Dependencies
         run: yarn --cache-folder ~/elm-yarn-cache
 
+      - name: TEMP_DELETE_WHEN_DONE Check some user info
+        run: id -u && id -u -n && ls -la
+
       - name: Assert elm-verify-examples is up to date
         run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommitted-changes.sh
 
