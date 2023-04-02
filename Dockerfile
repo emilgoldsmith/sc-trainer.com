@@ -134,11 +134,11 @@ RUN apt-get update
 RUN apt-get install -y fonts-liberation libappindicator3-1 xdg-utils
 
 # install Chrome browser
-ENV CHROME_VERSION 89.0.4389.72
-RUN wget -O /usr/src/google-chrome-stable_current_amd64.deb "http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}-1_amd64.deb" && \
-  dpkg -i /usr/src/google-chrome-stable_current_amd64.deb ; \
-  apt-get install -f -y && \
-  rm -f /usr/src/google-chrome-stable_current_amd64.deb
+ENV CHROME_VERSION 107.0.5304.121
+RUN wget -O /usr/src/google-chrome-stable_current_amd64.deb "http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}-1_amd64.deb" \
+    && dpkg -i /usr/src/google-chrome-stable_current_amd64.deb \
+    && apt-get install -f -y \
+    && rm -f /usr/src/google-chrome-stable_current_amd64.deb
 RUN google-chrome --version
 
 # "fake" dbus address to prevent errors
