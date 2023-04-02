@@ -315,10 +315,8 @@ function addE2ETestHelpersToWindow() {
 
   function trackDocumentEventListeners(): Set<keyof DocumentEventMap> {
     const eventListeners = new Set<keyof DocumentEventMap>();
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const add = document.addEventListener;
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    const remove = document.removeEventListener;
+    const add = document.addEventListener.bind(document);
+    const remove = document.removeEventListener.bind(document);
     const documentCreationTime = Date.now();
 
     document.addEventListener = function (
@@ -348,7 +346,7 @@ function addE2ETestHelpersToWindow() {
           }
         }
       };
-      add.call(document, eventName, listenerWithTimestampOverriding, c);
+      add(eventName, listenerWithTimestampOverriding, c);
     };
     document.removeEventListener = function (
       eventName: keyof DocumentEventMap,
@@ -356,7 +354,7 @@ function addE2ETestHelpersToWindow() {
       c?: boolean | AddEventListenerOptions
     ) {
       eventListeners.delete(eventName);
-      remove.call(document, eventName, b, c);
+      remove(eventName, b, c);
     };
     return eventListeners;
   }
