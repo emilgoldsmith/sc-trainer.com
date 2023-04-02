@@ -25,7 +25,7 @@ export function interceptHtml(...modifiers: HtmlModifier[]): void {
         : typeof acceptHeader === "object"
         ? acceptHeader
         : acceptHeader;
-    const expectsHtml = acceptList && acceptList.includes("text/html");
+    const expectsHtml = acceptList?.includes("text/html");
     if (!expectsHtml) return;
 
     req.reply((res) => {

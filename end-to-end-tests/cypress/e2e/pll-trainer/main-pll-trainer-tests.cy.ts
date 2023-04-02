@@ -16,6 +16,7 @@ import {
   allPLLs,
   AUF,
   aufToAlgorithmString,
+  aufToString,
   PLL,
   pllToAlgorithmString,
   pllToJpermsAlgorithm,
@@ -286,8 +287,9 @@ describe("PLL Trainer", function () {
           startingState: "doNewVisit",
           forceTestCase: [firstPreAUF, pll, firstNotNonePostAUF],
           endingState: "correctPage",
-          newCasePageCallback: () =>
-            pllTrainerElements.newCasePage.container.assertShows(),
+          newCasePageCallback: () => {
+            pllTrainerElements.newCasePage.container.assertShows();
+          },
           testRunningNavigator: testRunningNavigateVariant8,
           evaluateResultCallback: () =>
             evaluateResultTimeDependantNoSideEffects5({ timeInMs: time }),
@@ -304,8 +306,9 @@ describe("PLL Trainer", function () {
           forceTestCase: [firstPreAUF, pll, differentNotNonePostAUF],
           endingState: "algorithmDrillerExplanationPage",
           correctPageNavigator: correctPageNavigateVariant1,
-          newCasePageCallback: () =>
-            pllTrainerElements.newCasePage.container.assertShows(),
+          newCasePageCallback: () => {
+            pllTrainerElements.newCasePage.container.assertShows();
+          },
           testRunningNavigator: testRunningNavigateChangingClockVariant4,
           evaluateResultWrongNavigator: evaluateResultNavigateWrongVariant1,
         });
@@ -317,8 +320,9 @@ describe("PLL Trainer", function () {
           startingState: "doNewVisit",
           forceTestCase: [differentPreAUF, pll, firstNotNonePostAUF],
           endingState: "algorithmDrillerExplanationPage",
-          newCasePageCallback: () =>
-            pllTrainerElements.newCasePage.container.assertShows(),
+          newCasePageCallback: () => {
+            pllTrainerElements.newCasePage.container.assertShows();
+          },
           testRunningNavigator: testRunningNavigateVariant9,
         });
         // new preAUF but seen not none postAUF should go to driller
@@ -1951,10 +1955,11 @@ function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVarian
     () => {
       testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesGivenSubmit(
         {
-          submit: () =>
+          submit: () => {
             pllTrainerElements.pickTargetParametersPage.submitButton
               .get()
-              .click(),
+              .click();
+          },
           ...params,
         }
       );
@@ -1970,10 +1975,11 @@ function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVarian
     () => {
       testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesGivenSubmit(
         {
-          submit: () =>
+          submit: () => {
             pllTrainerElements.pickTargetParametersPage.targetTPSInput
               .get()
-              .type("{enter}"),
+              .type("{enter}");
+          },
           ...params,
         }
       );
@@ -1989,10 +1995,11 @@ function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesVarian
     () => {
       testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesGivenSubmit(
         {
-          submit: () =>
+          submit: () => {
             pllTrainerElements.pickTargetParametersPage.recognitionTimeInput
               .get()
-              .type("{enter}"),
+              .type("{enter}");
+          },
           ...params,
         }
       );
@@ -2020,6 +2027,18 @@ function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesGivenS
             .then((recognitionTime) => ({ tps, recognitionTime }))
         )
         .then(({ tps, recognitionTime }) => {
+          if (typeof tps !== "string")
+            throw new Error(
+              "tps must be a string, actual value was: " + JSON.stringify(tps)
+            );
+          if (typeof recognitionTime !== "string")
+            throw new Error(
+              "recognitionTime must be a string, actual value was: " +
+                JSON.stringify(recognitionTime)
+            );
+          const tpsString = tps;
+          const recognitionTimeString = recognitionTime;
+
           makeInvalid(
             elements.recognitionTimeInput,
             elements.recognitionTimeError
@@ -2051,7 +2070,9 @@ function testPickTargetParametersOnlySubmitsWithNoErrorsUsingCurrentValuesGivenS
             errorElement: OurElement
           ) {
             const value =
-              inputElement === elements.targetTPSInput ? tps : recognitionTime;
+              inputElement === elements.targetTPSInput
+                ? tpsString
+                : recognitionTimeString;
             inputElement
               .get()
               .type("{selectall}{backspace}" + value, { delay: 0 });
@@ -2910,7 +2931,7 @@ function evaluateResultTimeDependantNoSideEffects7(_: { timeInMs: 45296780 }) {
                 Cypress.config().viewportHeight
               );
               [elements.expectedCubeFront, elements.expectedCubeBack].forEach(
-                (cubeElement) =>
+                (cubeElement) => {
                   cubeElement.get().should((jqueryCube) => {
                     expect(
                       jqueryCube.width(),
@@ -2924,7 +2945,8 @@ function evaluateResultTimeDependantNoSideEffects7(_: { timeInMs: 45296780 }) {
                       jqueryCube.height(),
                       "cube height to fill at most half of screen height"
                     ).to.be.at.most(Cypress.config().viewportHeight / 2);
-                  })
+                  });
+                }
               );
               elements.timeResult.get().should((timerElement) => {
                 expect(
@@ -3092,7 +3114,7 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
                   })
                   .then((link) => {
                     const url =
-                      link.attr("href") ||
+                      link.attr("href") ??
                       "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
                     // Check that the link actually works
                     return cy
@@ -3124,7 +3146,7 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
                   })
                   .then((link) => {
                     const url =
-                      link.attr("href") ||
+                      link.attr("href") ??
                       "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid";
                     // Check that the link actually works
                     cy.request(url)
@@ -3172,7 +3194,7 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
                     .then((link) => {
                       // Check that the link actually works
                       cy.request(
-                        link.attr("href") ||
+                        link.attr("href") ??
                           "http://veryinvaliddomainnameasdfasfasdfasfdas.invalid"
                       )
                         .its("status")
@@ -3390,9 +3412,9 @@ function typeInAlgorithm(currentPLL: PLL) {
 
   cy.log(
     "random preAUF, postAUF, and final rotation chosen to test these also work: " +
-      preAUF +
+      aufToString(preAUF) +
       ", " +
-      postAUF +
+      aufToString(postAUF) +
       ", " +
       rotation
   );

@@ -40,6 +40,6 @@ function saveWrongStateTestCase<Key extends keyof Aliases>(alias: Key) {
     // there isn't a real danger at least at the time of writing.
     // it just seems like there isn't a better option when extracting
     // alias saving out to a function like this
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
     .setAlias<Aliases, Key>(alias as any);
 }

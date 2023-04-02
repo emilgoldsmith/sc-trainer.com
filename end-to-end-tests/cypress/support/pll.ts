@@ -5,6 +5,19 @@ export enum AUF {
   UPrime,
 }
 
+export function aufToString(auf: AUF): string {
+  switch (auf) {
+    case AUF.none:
+      return "none";
+    case AUF.U:
+      return "U";
+    case AUF.U2:
+      return "U2";
+    case AUF.UPrime:
+      return "U'";
+  }
+}
+
 export const allAUFs = [AUF.none, AUF.U, AUF.U2, AUF.UPrime];
 
 export enum PLL {

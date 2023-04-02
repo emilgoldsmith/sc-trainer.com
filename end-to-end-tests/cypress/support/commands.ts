@@ -458,7 +458,7 @@ const setApplicationState: Cypress.CommandFn<"setApplicationState"> = function (
   name,
   options
 ) {
-  const stateDescription = name || "unknown";
+  const stateDescription = name ?? "unknown";
   const handleSettingState = () => {
     cy.getCustomWindow({ log: false }).then((window) =>
       window.END_TO_END_TEST_HELPERS.setModel(state)
@@ -487,7 +487,14 @@ const setApplicationState: Cypress.CommandFn<"setApplicationState"> = function (
 Cypress.Commands.add("setApplicationState", setApplicationState);
 
 const withOverallNameLogged: Cypress.CommandFn<"withOverallNameLogged"> =
-  function (logConfig, commandsCallback) {
+  function <T>(
+    logConfig: Partial<Cypress.LogConfig>,
+    commandsCallback: (
+      consolePropsSetter: (
+        props: ReturnType<Cypress.LogConfig["consoleProps"]>
+      ) => void
+    ) => T
+  ): T {
     const log = Cypress.log({
       ...logConfig,
       ...(logConfig.autoEnd === true ? {} : { autoEnd: false }),
@@ -505,10 +512,10 @@ const withOverallNameLogged: Cypress.CommandFn<"withOverallNameLogged"> =
     log.snapshot("before");
     const callbackReturnValue = commandsCallback(consolePropsSetter);
     if (Cypress.isCy(callbackReturnValue)) {
-      return callbackReturnValue.then((returnValue) => {
+      return callbackReturnValue.then(<V>(returnValue: V): V => {
         handleEndOfCommand();
         return returnValue;
-      });
+      }) as T;
     }
     cy.wrap(undefined, { log: false }).then(handleEndOfCommand);
     return callbackReturnValue;
