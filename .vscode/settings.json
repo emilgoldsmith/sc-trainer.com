@@ -17,6 +17,7 @@
     "source.fixAll": true,
     "source.fixAll.eslint": false
   },
+  "eslint.run": "onSave",
   "eslint.workingDirectories": ["./end-to-end-tests"],
   "typescript.tsdk": "./end-to-end-tests/node_modules/typescript/lib",
   // Javascript stuff
