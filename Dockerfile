@@ -25,7 +25,6 @@ RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/$ELM_VER
 
 FROM node:16 AS prod-builder
 
-COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 
 WORKDIR /workdir
 
@@ -34,11 +33,13 @@ COPY yarn.lock yarn.lock
 
 RUN yarn --ignore-optional
 
-COPY elm.json scripts/build-production-js.sh ./
+COPY elm.json ./
+COPY scripts/build-production-js.sh scripts/build-production-js.sh
 COPY src src
+COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 
 # Outputs main.min.js
-RUN ./build-production-js.sh
+RUN ./scripts/build-production-js.sh
 
 RUN rm -rf node_modules \
     && yarn --production \
@@ -54,13 +55,13 @@ FROM node:16-alpine as production
 
 WORKDIR /app
 
-COPY --from=prod-builder /workdir/main.min.js public/main.js
-COPY --from=prod-builder /workdir/production_only_node_modules node_modules
 COPY public/index.template.html public/index.template.html
 COPY public/sentry.js public/sentry.js
 COPY scripts/run-production.sh scripts/run-production.sh
 COPY scripts/build-html.js scripts/build-html.js
 COPY config/feature-flags.json config/feature-flags.json
+COPY --from=prod-builder /workdir/main.min.js public/main.js
+COPY --from=prod-builder /workdir/production_only_node_modules node_modules
 
 EXPOSE $PORT
 
