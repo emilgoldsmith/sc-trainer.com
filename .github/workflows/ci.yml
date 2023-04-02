@@ -113,7 +113,12 @@ jobs:
     name: Linting And Unit Tests
     runs-on: ubuntu-20.04
     needs: wait-for-docker-containers
-    container: ${{ needs.wait-for-docker-containers.outputs.ci-container }}
+    container:
+      image: ${{ needs.wait-for-docker-containers.outputs.ci-container }}
+      # This is to appease the new strict directory ownership checks announced here:
+      # https://github.blog/2022-04-12-git-security-vulnerability-announced/#
+      # User 1001 is the one Github uses to create the working directory
+      options: --user 1001
     # Dependabot doesn't receive secrets on a push event
     # so can't run our CI, so we just skip CI for it.
     # We have settings set up that ensure it can't be merged without
@@ -136,9 +141,6 @@ jobs:
 
       - name: Install Elm Yarn Dependencies
         run: yarn --cache-folder ~/elm-yarn-cache
-
-      - name: TEMP_DELETE_WHEN_DONE Check some user info
-        run: id -u && id -u -n && ls -la
 
       - name: Assert elm-verify-examples is up to date
         run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommitted-changes.sh
