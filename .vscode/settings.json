@@ -4,6 +4,8 @@
       "path": "bash"
     }
   },
+  "elmLS.elmFormatPath": "./node_modules/.bin/elm-format",
+  "elmLS.elmTestPath": "./node_modules/.bin/elm-test",
   "editor.tabSize": 4,
   "editor.formatOnSave": true,
   "editor.linkedEditing": false,

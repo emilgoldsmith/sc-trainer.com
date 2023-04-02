@@ -29,6 +29,16 @@ updates:
       - dependency-name: "@sinonjs/fake-timers"
       - dependency-name: "@percy/cli"
 
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: "daily"
+    assignees:
+      - emilgoldsmith
+    reviewers:
+      - emilgoldsmith
+    versioning-strategy: increase
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

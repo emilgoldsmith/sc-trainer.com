@@ -8,7 +8,7 @@ cd $ROOT_DIRECTORY
 
 ./scripts/build-html.js --target=development
 
-elm-spa gen
+./node_modules/.bin/elm-spa gen
 
 elm make --output build/public/main.js src/Main.elm
 
@@ -29,4 +29,4 @@ echo "${RED}NOTE: THIS COMMAND RUNS REGEXES THAT MAKE A LOT OF ANONYMOUS FUNCTIO
 echo "${RED}NOTE: THIS COMMAND DOESN'T REBUILD AT ALL SO YOU HAVE TO RESTART THE COMMAND IF YOU MAKE ANY CODE CHANGES$RESET_COLOUR"
 echo "${RED}NOTE:${RESET_COLOUR}"
 
-npx serve --listen 4000 --no-clipboard --single build/public
+./node_modules/.bin/serve --listen 4000 --no-clipboard --single build/public

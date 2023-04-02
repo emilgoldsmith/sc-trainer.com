@@ -11,4 +11,4 @@ cd $ROOT_DIRECTORY
 # They are gitignored so shouldn't be a problem to leave them lying around
 mkdir -p .elm-spa/defaults .elm-spa/generated
 
-elm-test "$@"
+./node_modules/.bin/elm-test "$@"

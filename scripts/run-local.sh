@@ -8,7 +8,7 @@ cd $ROOT_DIRECTORY
 
 ./scripts/build-html.js --target=development
 
-elm-spa gen
+./node_modules/.bin/elm-spa gen
 
 RESET_COLOUR=$(tput sgr0)
 RED=$(tput setaf 1)
@@ -21,4 +21,4 @@ echo "${RED}NOTE:${RESET_COLOUR}"
 echo "${RED}NOTE: Elm SPA generated files don't rebuild. Therefore a restart of the command is needed if files are removed/added/renamed in the Pages directory$RESET_COLOUR"
 echo "${RED}NOTE:${RESET_COLOUR}"
 
-elm-live src/Main.elm --port 4000 --no-reload --pushstate --dir build/public -- --output build/public/main.js "$@"
+./node_modules/.bin/elm-live src/Main.elm --port 4000 --no-reload --pushstate --dir build/public -- --output build/public/main.js "$@"

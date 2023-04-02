@@ -47,8 +47,8 @@ jobs:
             ) \
           )
 
-          echo "ci-container=ci-container-v3" >> $GITHUB_OUTPUT
-          echo "ci-chrome=ci-chrome-v2" >> $GITHUB_OUTPUT
+          echo "ci-container=ci-container-v4" >> $GITHUB_OUTPUT
+          echo "ci-chrome=ci-chrome-v3" >> $GITHUB_OUTPUT
           echo "production=production-$SHA" >> $GITHUB_OUTPUT
 
       - name: Wait for CI Container image to exist
@@ -123,6 +123,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Handle Elm Yarn Caching
+        uses: actions/cache@v3
+        env:
+          cache-name: yarn-e2e-cache-v2
+        with:
+          path: |
+            ~/elm-yarn-cache
+          key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('end-to-end-tests/**/yarn.lock')}}
+          # Note we purposefully don't specify fallback restore keys.
+          # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
+
+      - name: Install Elm Yarn Dependencies
+        run: yarn --cache-folder ~/elm-yarn-cache
+
       - name: Assert elm-verify-examples is up to date
         run: ./scripts/checks/elm-verify-examples.sh && ./scripts/helpers/check-for-uncommitted-changes.sh
 
@@ -138,20 +152,20 @@ jobs:
       - name: Check that docs compile
         run: ./scripts/checks/elm-docs-compile.sh
 
-      - name: Handle Yarn caching
+      - name: Handle E2E Yarn caching
         uses: actions/cache@v3
         env:
-          cache-name: yarn-cache-v2
+          cache-name: yarn-e2e-cache-v2
         with:
           path: |
-            ~/.cache/yarn
+            ~/e2e-yarn-cache
           key: ${{ job.container.image }}-${{ env.cache-name }}-${{ hashFiles('end-to-end-tests/**/yarn.lock')}}
           # Note we purposefully don't specify fallback restore keys.
           # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
 
       - name: Install Cypress Dependencies
         working-directory: end-to-end-tests
-        run: yarn
+        run: yarn --cache-folder ~/e2e-yarn-cache
 
       - name: Run Prettier
         run: ./scripts/checks/prettier.sh
