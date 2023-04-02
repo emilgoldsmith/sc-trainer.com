@@ -229,9 +229,14 @@ const longPressKey: Cypress.CommandFn<"longPressKey"> = function (
   const nonRepeatedEvent = buildKeyboardEvent(key, false);
   const repeatedEvent = buildKeyboardEvent(key, true);
   const handleKeyPress = () => {
-    cy.document({ log: false })
-      .trigger("keydown", { ...nonRepeatedEvent, log: false })
-      .trigger("keypress", { ...nonRepeatedEvent, log: false });
+    cy.document({ log: false }).trigger("keydown", {
+      ...nonRepeatedEvent,
+      log: false,
+    });
+    cy.document({ log: false }).trigger("keypress", {
+      ...nonRepeatedEvent,
+      log: false,
+    });
     if (options?.log !== false) cy.log(`Pressed down ${stringDisplayableKey}`);
     let previous = 0;
     let current: number;
@@ -241,9 +246,14 @@ const longPressKey: Cypress.CommandFn<"longPressKey"> = function (
       previous = current, current += KEY_REPEAT_INTERVAL
     ) {
       cy.tick(current - previous, { log: false });
-      cy.document({ log: false })
-        .trigger("keydown", { ...repeatedEvent, log: false })
-        .trigger("keypress", { ...repeatedEvent, log: false });
+      cy.document({ log: false }).trigger("keydown", {
+        ...repeatedEvent,
+        log: false,
+      });
+      cy.document({ log: false }).trigger("keypress", {
+        ...repeatedEvent,
+        log: false,
+      });
     }
     const remainingTime = LONG_TIME_MS - previous;
     if (remainingTime > 0) {
@@ -292,9 +302,8 @@ const buttonMash: Cypress.CommandFn<"buttonMash"> = (keys, options) => {
         curTime += timeUntilPress;
       }
       const event = buildKeyboardEvent(key, false);
-      cy.document({ log: false })
-        .trigger("keydown", { ...event, log: false })
-        .trigger("keypress", { ...event, log: false });
+      cy.document({ log: false }).trigger("keydown", { ...event, log: false });
+      cy.document({ log: false }).trigger("keypress", { ...event, log: false });
     });
     const remainingTime = BUTTON_MASH_DURATION - curTime;
     if (remainingTime > 0) {
@@ -340,9 +349,14 @@ const longButtonMash: Cypress.CommandFn<"longButtonMash"> = (keys, options) => {
         curTime += timeUntilPress;
       }
       const nonRepeatedEvent = buildKeyboardEvent(key, false);
-      cy.document({ log: false })
-        .trigger("keydown", { ...nonRepeatedEvent, log: false })
-        .trigger("keypress", { ...nonRepeatedEvent, log: false });
+      cy.document({ log: false }).trigger("keydown", {
+        ...nonRepeatedEvent,
+        log: false,
+      });
+      cy.document({ log: false }).trigger("keypress", {
+        ...nonRepeatedEvent,
+        log: false,
+      });
     });
     if (options?.log !== false) cy.log("All buttons pressed down");
     const LONG_TIME_MS = 1500;
@@ -358,9 +372,14 @@ const longButtonMash: Cypress.CommandFn<"longButtonMash"> = (keys, options) => {
       cy.tick(current - previous, { log: false });
       keys.forEach((key) => {
         const repeatedEvent = buildKeyboardEvent(key, true);
-        cy.document({ log: false })
-          .trigger("keydown", { ...repeatedEvent, log: false })
-          .trigger("keypress", { ...repeatedEvent, log: false });
+        cy.document({ log: false }).trigger("keydown", {
+          ...repeatedEvent,
+          log: false,
+        });
+        cy.document({ log: false }).trigger("keypress", {
+          ...repeatedEvent,
+          log: false,
+        });
       });
     }
     const remainingTime = LONG_TIME_MS - previous;
@@ -742,9 +761,13 @@ const touchScreen: Cypress.CommandFn<"touchScreen"> = function (position) {
         Partial<Cypress.TriggerOptions> = {
         eventConstructor: "TouchEvent" in window ? "TouchEvent" : "MouseEvent",
       };
-      cy.get("body", { log: false })
-        .trigger("touchstart", position, { ...event })
-        .trigger("touchend", position, { ...event, log: false });
+      cy.get("body", { log: false }).trigger("touchstart", position, {
+        ...event,
+      });
+      cy.get("body", { log: false }).trigger("touchend", position, {
+        ...event,
+        log: false,
+      });
     }
   );
 };
