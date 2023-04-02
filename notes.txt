@@ -11,3 +11,8 @@ Make tooltips for all the terminology etc.
 Make people select themselves their preferred AUF combination for symmetrical cases
 
 Test it doesn't show NaN in averages when no corrects yet, which will be a very normal case for beginners. Maybe even just don't display those averages until there are corrects
+
+
+Less important stuff:
+- Migrate to Elm Review from Elm Analyse
+- Install all the global dependencies with a package.json in the main folder
