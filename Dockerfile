@@ -41,7 +41,7 @@ COPY src src
 RUN ./build-production-js.sh
 
 RUN rm -rf node_modules \
-    && yarn --production
+    && yarn --production \
     && mv node_modules production_only_node_modules
 
 
