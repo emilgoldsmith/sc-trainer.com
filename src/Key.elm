@@ -24,7 +24,7 @@ decodeNonRepeatedKeyEvent =
     fields
         |> Json.Decode.andThen
             (\( key, isRepeated ) ->
-                if isRepeated == True then
+                if isRepeated then
                     Json.Decode.fail "Was a repeated key press"
 
                 else
