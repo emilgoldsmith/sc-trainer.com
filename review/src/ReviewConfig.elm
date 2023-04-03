@@ -31,6 +31,7 @@ import NoUnused.Patterns
 import NoUnused.Variables
 import Review.Rule as Rule exposing (Rule)
 import Simplify
+import NoUnoptimizedRecursion
 
 
 config : List Rule
@@ -54,6 +55,7 @@ config =
     , NoUnused.Patterns.rule
     , NoUnused.Variables.rule
     , Simplify.rule Simplify.defaults
+    , NoUnoptimizedRecursion.rule (NoUnoptimizedRecursion.optOutWithComment "IGNORE TCO")
     ]
     -- This is the temporary file that our elm-review.sh script generates to avoid unused dependency errors
     |> List.map (Rule.ignoreErrorsForFiles ["src/Temporary.elm"])
