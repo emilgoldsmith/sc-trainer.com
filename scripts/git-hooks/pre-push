@@ -6,6 +6,8 @@ CHECKS_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/../checks
 
 cd $CHECKS_DIRECTORY
 
+ROOT_DIRECTORY=../..
+
 RESET_COLOUR=$(tput sgr0)
 RED=$(tput setaf 1)
 GREEN=$(tput setaf 2)
@@ -98,8 +100,8 @@ fi
 if changed_compared_to_upstream ../../src ../../elm*.json .;
 then
     function check-compilation() {
-        cd ../../ && \
-        elm-spa gen && \
+        cd "$ROOT_DIRECTORY" && \
+        ./node_modules/.bin/elm-spa gen && \
         elm make src/Main.elm --output=main.js && \
         rm main.js && \
         cd -
