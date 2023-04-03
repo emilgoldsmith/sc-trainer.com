@@ -17,6 +17,8 @@ end-to-end-tests/cypress/downloads
 build
 # Local development feature flags
 config/local-feature-flags.json
+# Used by elm-review to not have an unused dependency flagged for Elm SPA, so we ignore it in case it doesn't get properly cleaned up one time
+src/Temporary.elm
 
 # Elm SPA generated files
 .elm-spa
