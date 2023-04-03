@@ -7,7 +7,6 @@
     "serve": "^14.2.0"
   },
   "optionalDependencies": {
-    "elm-analyse": "^0.16.5",
     "elm-doc-preview": "^5.0.5",
     "elm-format": "^0.8.6",
     "elm-live": "^4.0.2",
