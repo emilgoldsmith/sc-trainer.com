@@ -12,7 +12,12 @@ type Separator
 
 
 grammaticalList : { finalConjunction : Conjunction, separator : Separator } -> List String -> String
-grammaticalList { finalConjunction, separator } strings =
+grammaticalList =
+    tcoFriendlyGrammaticalListRecursion ""
+
+
+tcoFriendlyGrammaticalListRecursion : String -> { finalConjunction : Conjunction, separator : Separator } -> List String -> String
+tcoFriendlyGrammaticalListRecursion prefix { finalConjunction, separator } strings =
     let
         separatorString =
             case separator of
@@ -32,16 +37,16 @@ grammaticalList { finalConjunction, separator } strings =
     in
     case strings of
         [] ->
-            ""
+            prefix
 
         [ x ] ->
-            x
+            prefix ++ x
 
         [ x, y ] ->
-            x ++ separatorString ++ " " ++ conjunctionString ++ " " ++ y
+            prefix ++ x ++ separatorString ++ " " ++ conjunctionString ++ " " ++ y
 
         x :: xs ->
-            x ++ separatorString ++ " " ++ grammaticalList { finalConjunction = finalConjunction, separator = separator } xs
+            tcoFriendlyGrammaticalListRecursion (prefix ++ x ++ separatorString ++ " ") { finalConjunction = finalConjunction, separator = separator } xs
 
 
 capitalizeFirst : String -> String
