@@ -2,7 +2,6 @@ module Fuzz.Extra exposing (algorithm, algorithmWithoutTPSIgnoredTurns, auf, pll
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
-import Array
 import Dict exposing (Dict)
 import Fuzz
 import List.Nonempty
