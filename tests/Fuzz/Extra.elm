@@ -1,4 +1,4 @@
-module Fuzz.Extra exposing (algorithm, algorithmWithoutTPSIgnoredTurns, auf, pll, posix, testResult, turnDirection, turnFuzzer, turnLength, turnable, user)
+module Fuzz.Extra exposing (algorithm, algorithmWithoutTPSIgnoredTurns, auf, pll, posix, testResult, turn, turnDirection, turnLength, turnable, user)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
@@ -62,7 +62,7 @@ algorithm : Fuzz.Fuzzer Algorithm
 algorithm =
     let
         nonEmptyTurnList =
-            Fuzz.map2 (::) turnFuzzer <| Fuzz.list turnFuzzer
+            Fuzz.map2 (::) turn <| Fuzz.list turn
 
         nonEmptyTurnListWithNoRepeats =
             nonEmptyTurnList
@@ -141,8 +141,8 @@ testResult =
         auf
 
 
-turnFuzzer : Fuzz.Fuzzer Algorithm.Turn
-turnFuzzer =
+turn : Fuzz.Fuzzer Algorithm.Turn
+turn =
     Fuzz.map3
         Algorithm.Turn
         turnable
