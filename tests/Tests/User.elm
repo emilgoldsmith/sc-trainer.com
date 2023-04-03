@@ -93,7 +93,8 @@ helperTests =
                                             length / 6
 
                                         third =
-                                            (length + 2) / 1
+                                            -- Denominator is 1 here
+                                            length + 2
                                     in
                                     (first + second + third) / 3
                                 , pll = PLL.Aa
