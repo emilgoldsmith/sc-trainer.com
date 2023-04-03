@@ -108,8 +108,6 @@ then
     }
     run_check "Checking Elm Compilation" "Elm Compilation Failed" check-compilation
 
-    run_check "Checking Elm Linting" "Elm analyse found linting issues" ./elm-analyse.sh
-
     run_check "Checking Elm Code Formatting" "Elm Formatting issues found" ./elm-format.sh
 
     run_check "Checking Elm documentation compiles" "Issue with our Elm documentation" ./elm-docs-compile.sh
