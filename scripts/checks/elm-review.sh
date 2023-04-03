@@ -39,3 +39,5 @@ echo "temporary = ElmSpa.Page.sandbox" >> $TEMPORARY_MODULE
 ./node_modules/.bin/elm-review "$@" src tests || (cleanup && exit 1)
 
 cleanup
+
+./node_modules/.bin/elm-review suppress --check-after-tests
