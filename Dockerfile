@@ -149,10 +149,6 @@ ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 # LOCAL DEVELOPMENT STAGE
 ############################
 
-
-# The `unsafe-html-cube-devcontainer` is built in the
-# initializeCommand for the devcontainer from base.dockerfile
-# which is located in the .devcontainer directory
 FROM emilgoldsmith/unsafe-dev-container:node-16-latest AS local-development
 
 USER $USERNAME
