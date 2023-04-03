@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "automatically created by": "elm-review suppress",
+  "learn more": "elm-review suppress --help",
+  "suppressions": [
+    { "count": 4, "filePath": "src/View.elm" },
+    { "count": 4, "filePath": "tests/Fuzz/Extra.elm" },
+    { "count": 3, "filePath": "src/User.elm" },
+    { "count": 2, "filePath": "src/ViewportSize.elm" },
+    { "count": 1, "filePath": "src/Effect.elm" },
+    { "count": 1, "filePath": "src/List/Nonempty/Extra.elm" },
+    { "count": 1, "filePath": "src/Pages/Home_.elm" },
+    { "count": 1, "filePath": "src/Pages/UnexposedInternalRoutes/ComponentTests/ErrorPopupTest.elm" },
+    { "count": 1, "filePath": "src/Pages/UnexposedInternalRoutes/ComponentTests/InlineErrorTest.elm" },
+    { "count": 1, "filePath": "src/Pages/UnexposedInternalRoutes/ComponentTests/NotificationTest.elm" },
+    { "count": 1, "filePath": "src/PLLTrainer/Subscription.elm" },
+    { "count": 1, "filePath": "src/TimeInterval.elm" },
+    { "count": 1, "filePath": "tests/Tests/User.elm" }
+  ]
+}

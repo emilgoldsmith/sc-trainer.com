@@ -55,3 +55,5 @@ config =
     , NoUnused.Variables.rule
     , Simplify.rule Simplify.defaults
     ]
+    -- This is the temporary file that our elm-review.sh script generates to avoid unused dependency errors
+    |> List.map (Rule.ignoreErrorsForFiles ["src/Temporary.elm"])
