@@ -1,8 +1,6 @@
 module PLLRecognition exposing (specToPLLRecognitionString, specToPostAUFString)
 
 import Cube.Advanced
-import Html exposing (..)
-import Html.Attributes exposing (..)
 import List.Nonempty
 import PLL
 import UI.Text
