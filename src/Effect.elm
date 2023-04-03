@@ -30,6 +30,7 @@ none =
 
 map : (a -> b) -> Effect a -> Effect b
 map fn effect =
+    -- IGNORE TCO
     case effect of
         None ->
             None
@@ -65,6 +66,7 @@ batch =
 
 toCmd : ( Shared.Msg -> msg, pageMsg -> msg ) -> Effect pageMsg -> Cmd msg
 toCmd ( fromSharedMsg, fromPageMsg ) effect =
+    -- IGNORE TCO
     case effect of
         None ->
             Cmd.none
