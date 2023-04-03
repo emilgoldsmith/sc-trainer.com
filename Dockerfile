@@ -3,7 +3,7 @@
 # SHARED DEPENDENCIES STAGE
 ############################
 
-FROM node:16 as dependency-builder
+FROM node:18 as dependency-builder
 
 ENV ELM_VERSION=0.19.1
 
@@ -23,7 +23,7 @@ RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/$ELM_VER
 ############################
 
 
-FROM node:16 AS prod-builder
+FROM node:18 AS prod-builder
 
 
 WORKDIR /workdir
@@ -51,7 +51,7 @@ RUN rm -rf node_modules \
 ############################
 
 
-FROM node:16-alpine as production
+FROM node:18-alpine as production
 
 WORKDIR /app
 
@@ -72,7 +72,7 @@ ENTRYPOINT ["./scripts/run-production.sh"]
 ############################
 
 # We need buster for high enough glibc version for elm-format
-FROM node:16-buster as ci
+FROM node:18-buster as ci
 
 #### IMPORTANT: To have any changes actually take effect in CI, you have
 #### to go change the version number in the yaml file too
@@ -85,7 +85,7 @@ COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 # CI WITH BROWSERS STAGE
 ############################
 
-FROM node:16 AS ci-browsers-base
+FROM node:18 AS ci-browsers-base
 
 #### IMPORTANT: To have any changes actually take effect in CI, you have
 #### to go change the version number of all dockerfile stages that depend
@@ -149,7 +149,7 @@ ENV DBUS_SESSION_BUS_ADDRESS=/dev/null
 # LOCAL DEVELOPMENT STAGE
 ############################
 
-FROM emilgoldsmith/unsafe-dev-container:node-16-latest AS local-development
+FROM emilgoldsmith/unsafe-dev-container:node-18-latest AS local-development
 
 USER $USERNAME
 
