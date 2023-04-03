@@ -1,4 +1,4 @@
-module UI exposing (Button, Palette, defaultPalette, fontSize, formatFloatTwoDecimals, formatMilliseconds, formatTPS, materialIconColor, paddingAll, paddingHorizontal, paddingVertical, spacingAll, spacingHorizontal, spacingVertical, viewButton, viewDarkDivider, viewLightDivider, viewOrderedList, viewUnorderedList, viewWebResourceLink)
+module UI exposing (Button, Palette, Sizes, defaultPalette, fontSize, formatFloatTwoDecimals, formatMilliseconds, formatTPS, materialIconColor, paddingAll, paddingHorizontal, paddingVertical, spacingAll, spacingHorizontal, spacingVertical, viewButton, viewDarkDivider, viewLightDivider, viewOrderedList, viewUnorderedList, viewWebResourceLink)
 
 -- We can't expose all of Element as it clashes with the spacing export
 

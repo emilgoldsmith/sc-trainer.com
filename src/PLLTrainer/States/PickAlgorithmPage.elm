@@ -1,4 +1,4 @@
-module PLLTrainer.States.PickAlgorithmPage exposing (Arguments, Model, Msg, cleanUpAlgorithm, state)
+module PLLTrainer.States.PickAlgorithmPage exposing (Arguments, Error, Model, Msg, Transitions, cleanUpAlgorithm, state)
 
 import Algorithm exposing (Algorithm, FromStringError(..))
 import Browser.Dom

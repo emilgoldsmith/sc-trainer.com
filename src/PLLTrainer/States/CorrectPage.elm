@@ -1,4 +1,4 @@
-module PLLTrainer.States.CorrectPage exposing (Transitions, state)
+module PLLTrainer.States.CorrectPage exposing (Arguments, Transitions, state)
 
 import Css exposing (testid)
 import Element exposing (..)
