@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -euo pipefail
+shopt -s inherit_errexit
 
 ROOT_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/..
 
