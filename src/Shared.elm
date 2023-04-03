@@ -1,5 +1,6 @@
 module Shared exposing
     ( CubeViewOptions
+    , FeatureFlags
     , Flags
     , HardwareAvailable
     , Model

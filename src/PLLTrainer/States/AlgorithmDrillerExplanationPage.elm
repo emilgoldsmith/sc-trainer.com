@@ -1,4 +1,4 @@
-module PLLTrainer.States.AlgorithmDrillerExplanationPage exposing (Transitions, state)
+module PLLTrainer.States.AlgorithmDrillerExplanationPage exposing (Arguments, Transitions, state)
 
 import Algorithm
 import Css exposing (htmlTestid, testid)

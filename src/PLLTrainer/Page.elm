@@ -1,4 +1,4 @@
-module PLLTrainer.Page exposing (Model, Msg, page)
+module PLLTrainer.Page exposing (Model, Msg, TrainerState, page)
 
 import AUF
 import Algorithm exposing (Algorithm)

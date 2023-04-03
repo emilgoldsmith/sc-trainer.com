@@ -2,7 +2,7 @@ module User exposing
     ( User
     , new
     , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
-    , hasAttemptedAnyPLLTestCase, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
+    , hasAttemptedAnyPLLTestCase, PLLTargetParameters, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
     , hasChosenPLLTargetParameters, cubeTheme
     , TestResult(..), testResultPreAUF, testResultPostAUF, testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
@@ -25,7 +25,7 @@ module User exposing
 # Getters And Setters
 
 @docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
-@docs hasAttemptedAnyPLLTestCase, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
+@docs hasAttemptedAnyPLLTestCase, PLLTargetParameters, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
 @docs hasChosenPLLTargetParameters, cubeTheme
 
 
