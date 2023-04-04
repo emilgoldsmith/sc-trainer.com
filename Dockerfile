@@ -11,9 +11,9 @@ WORKDIR /dependencies
 
 # Taken from https://github.com/elm/compiler/blob/master/installers/linux/README.md
 RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/$ELM_VERSION/binary-for-linux-64-bit.gz \
+# Note that gunzip deletes the original file so we don't have to clean it up
     && gunzip elm.gz \
     && chmod +x elm \
-    && rm elm.gz \
 # Smoke test
     && ./elm --version \
     && echo "Installed Elm Successfully"
