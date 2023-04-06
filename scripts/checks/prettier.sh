@@ -8,4 +8,4 @@ cd $E2E_DIRECTORY
 
 set -o xtrace
 
-./node_modules/.bin/prettier --check "$@" cypress forked_modules "../scripts/**/*.js" "../*.md" "../.github/**/*.yml" "*.json" "../*.json"
+./node_modules/.bin/prettier --check "$@" cypress forked_modules "../scripts/**/*.js" "../*.md" "../.github/**/*.yml" "*.json" "../*.json" "../review/*.json"
