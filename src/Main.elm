@@ -46,7 +46,7 @@ init flags url key =
         ( page, effect ) =
             Pages.init (Route.fromUrl url) shared url key
     in
-    ( Model url key shared page
+    ( { url = url, key = key, shared = shared, page = page }
     , Cmd.batch
         [ Cmd.map Shared sharedCmd
         , Effect.toCmd ( Shared, Page ) effect

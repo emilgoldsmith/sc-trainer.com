@@ -12,6 +12,8 @@ when inside the directory containing this file.
 -}
 
 import Docs.ReviewAtDocs
+import Docs.ReviewLinksAndSections
+import Docs.UpToDateReadmeLinks
 import NoConfusingPrefixOperator
 import NoDebug.Log
 import NoDebug.TodoOrToString
@@ -32,11 +34,22 @@ import NoUnused.Variables
 import Review.Rule as Rule exposing (Rule)
 import Simplify
 import NoUnoptimizedRecursion
-
+import NoUnapprovedLicense
+import NoUnapprovedLicense
+import NoMissingSubscriptionsCall
+import NoRecursiveUpdate
+import NoUselessSubscriptions
+import NoEtaReducibleLambdas
+import NoRecordAliasConstructor
+import UseMemoizedLazyLambda
+import NoRedundantConcat
+import NoRedundantCons
 
 config : List Rule
 config =
     [ Docs.ReviewAtDocs.rule
+    , Docs.ReviewLinksAndSections.rule
+    , Docs.UpToDateReadmeLinks.rule
     , NoConfusingPrefixOperator.rule
     , NoDebug.Log.rule
     , NoDebug.TodoOrToString.rule
@@ -56,6 +69,21 @@ config =
     , NoUnused.Variables.rule
     , Simplify.rule Simplify.defaults
     , NoUnoptimizedRecursion.rule (NoUnoptimizedRecursion.optOutWithComment "IGNORE TCO")
+    , NoUnapprovedLicense.rule
+        { allowed = [ "BSD-3-Clause", "MIT" ]
+        , forbidden = [ "GPL-3.0-only", "GPL-3.0-or-later" ]
+        }
+    , NoMissingSubscriptionsCall.rule
+    , NoRecursiveUpdate.rule
+    , NoUselessSubscriptions.rule
+    , NoEtaReducibleLambdas.rule
+        { lambdaReduceStrategy = NoEtaReducibleLambdas.AlwaysRemoveLambdaWhenPossible
+        , argumentNamePredicate = always True
+        }
+    , NoRecordAliasConstructor.rule
+    , UseMemoizedLazyLambda.rule
+    , NoRedundantConcat.rule
+    , NoRedundantCons.rule
     ]
     -- This is the temporary file that our elm-review.sh script generates to avoid unused dependency errors
     |> List.map (Rule.ignoreErrorsForFiles ["src/Temporary.elm"])

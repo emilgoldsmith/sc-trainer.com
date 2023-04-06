@@ -32,7 +32,7 @@ user =
         |> Fuzz.map2
             (\changePLLOperations curUser ->
                 List.foldl
-                    (\operation user_ -> operation user_)
+                    identity
                     curUser
                     changePLLOperations
             )
