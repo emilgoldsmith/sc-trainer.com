@@ -106,12 +106,12 @@ view shared transitions arguments =
                     , spacing largeTextSize
                     , UI.paddingAll.large
                     ]
-                    (el
+                    ((el
                         [ centerX
                         , Font.size largeTextSize
                         , testid "test-case-name"
                         ]
-                     <|
+                      <|
                         let
                             preAufString =
                                 AUF.toString (PLLTrainer.TestCase.preAUF arguments.testCase)
@@ -139,99 +139,100 @@ view shared transitions arguments =
                                    )
                                 ++ ":"
                             )
-                            :: row [ centerX ]
-                                [ ViewCube.view shared.cubeViewOptions
-                                    [ htmlTestid "test-case-front" ]
-                                    { pixelSize = cubePixelSize
-                                    , displayAngle = Cube.ufrDisplayAngle
-                                    , annotateFaces = True
-                                    , theme = User.cubeTheme shared.user
-                                    }
-                                    testCaseCube
-                                , ViewCube.view shared.cubeViewOptions
-                                    [ htmlTestid "test-case-back" ]
-                                    { pixelSize = cubePixelSize
-                                    , displayAngle = Cube.ublDisplayAngle
-                                    , annotateFaces = True
-                                    , theme = User.cubeTheme shared.user
-                                    }
-                                    testCaseCube
-                                ]
-                            :: paragraph
-                                [ centerX
-                                , Font.center
-                                , Font.size largeTextSize
-                                , testid "expected-cube-state-text"
-                                ]
-                                [ text "Your Cube Should Now Look Like This:" ]
-                            :: row [ centerX ]
-                                [ ViewCube.view shared.cubeViewOptions
-                                    [ htmlTestid "expected-cube-state-front" ]
-                                    { pixelSize = cubePixelSize
-                                    , displayAngle = Cube.ufrDisplayAngle
-                                    , annotateFaces = True
-                                    , theme = User.cubeTheme shared.user
-                                    }
-                                    arguments.expectedCubeState
-                                , ViewCube.view shared.cubeViewOptions
-                                    [ htmlTestid "expected-cube-state-back" ]
-                                    { pixelSize = cubePixelSize
-                                    , displayAngle = Cube.ublDisplayAngle
-                                    , annotateFaces = True
-                                    , theme = User.cubeTheme shared.user
-                                    }
-                                    arguments.expectedCubeState
-                                ]
-                            :: PLLTrainer.ButtonWithShortcut.view shared.hardwareAvailable
-                                [ testid "next-button"
-                                , centerX
-                                ]
-                                { onPress = Just transitions.startNextTest
-                                , labelText = "Next"
-                                , keyboardShortcut = Key.Space
-                                , color = shared.palette.primaryButton
+                     )
+                        :: row [ centerX ]
+                            [ ViewCube.view shared.cubeViewOptions
+                                [ htmlTestid "test-case-front" ]
+                                { pixelSize = cubePixelSize
+                                , displayAngle = Cube.ufrDisplayAngle
+                                , annotateFaces = True
+                                , theme = User.cubeTheme shared.user
                                 }
-                                (UI.viewButton.customSize <| largeTextSize)
-                            :: (case recognitionSpecAndAlgorithmResult of
-                                    Err errorDescription ->
-                                        [ ErrorMessage.viewInline shared.palette
-                                            { errorDescription = errorDescription
-                                            , sendError = arguments.sendError errorDescription
-                                            }
-                                        ]
+                                testCaseCube
+                            , ViewCube.view shared.cubeViewOptions
+                                [ htmlTestid "test-case-back" ]
+                                { pixelSize = cubePixelSize
+                                , displayAngle = Cube.ublDisplayAngle
+                                , annotateFaces = True
+                                , theme = User.cubeTheme shared.user
+                                }
+                                testCaseCube
+                            ]
+                        :: paragraph
+                            [ centerX
+                            , Font.center
+                            , Font.size largeTextSize
+                            , testid "expected-cube-state-text"
+                            ]
+                            [ text "Your Cube Should Now Look Like This:" ]
+                        :: row [ centerX ]
+                            [ ViewCube.view shared.cubeViewOptions
+                                [ htmlTestid "expected-cube-state-front" ]
+                                { pixelSize = cubePixelSize
+                                , displayAngle = Cube.ufrDisplayAngle
+                                , annotateFaces = True
+                                , theme = User.cubeTheme shared.user
+                                }
+                                arguments.expectedCubeState
+                            , ViewCube.view shared.cubeViewOptions
+                                [ htmlTestid "expected-cube-state-back" ]
+                                { pixelSize = cubePixelSize
+                                , displayAngle = Cube.ublDisplayAngle
+                                , annotateFaces = True
+                                , theme = User.cubeTheme shared.user
+                                }
+                                arguments.expectedCubeState
+                            ]
+                        :: PLLTrainer.ButtonWithShortcut.view shared.hardwareAvailable
+                            [ testid "next-button"
+                            , centerX
+                            ]
+                            { onPress = Just transitions.startNextTest
+                            , labelText = "Next"
+                            , keyboardShortcut = Key.Space
+                            , color = shared.palette.primaryButton
+                            }
+                            (UI.viewButton.customSize <| largeTextSize)
+                        :: (case recognitionSpecAndAlgorithmResult of
+                                Err errorDescription ->
+                                    [ ErrorMessage.viewInline shared.palette
+                                        { errorDescription = errorDescription
+                                        , sendError = arguments.sendError errorDescription
+                                        }
+                                    ]
 
-                                    Ok ( recognitionSpec, algorithm ) ->
-                                        [ paragraph
-                                            [ centerX
-                                            , Font.center
-                                            , UI.fontSize.medium
+                                Ok ( recognitionSpec, algorithm ) ->
+                                    [ paragraph
+                                        [ centerX
+                                        , Font.center
+                                        , UI.fontSize.medium
+                                        ]
+                                        [ el [ Font.bold, testid "algorithm-prefix" ] <|
+                                            text <|
+                                                PLL.getLetters (PLLTrainer.TestCase.pll arguments.testCase)
+                                                    ++ "-perm: "
+                                        , el [ testid "algorithm" ] <|
+                                            text <|
+                                                Algorithm.toString algorithm
+                                        ]
+                                    , column
+                                        [ testid "recognition-explanation"
+                                        , centerX
+                                        , UI.spacingVertical.extremelySmall
+                                        , Font.center
+                                        , UI.fontSize.medium
+                                        ]
+                                        [ paragraph []
+                                            [ el [ Font.bold ] <| text "PLL Recognition: "
+                                            , text (PLLRecognition.specToPLLRecognitionString recognitionSpec)
                                             ]
-                                            [ el [ Font.bold, testid "algorithm-prefix" ] <|
-                                                text <|
-                                                    PLL.getLetters (PLLTrainer.TestCase.pll arguments.testCase)
-                                                        ++ "-perm: "
-                                            , el [ testid "algorithm" ] <|
-                                                text <|
-                                                    Algorithm.toString algorithm
-                                            ]
-                                        , column
-                                            [ testid "recognition-explanation"
-                                            , centerX
-                                            , UI.spacingVertical.extremelySmall
-                                            , Font.center
-                                            , UI.fontSize.medium
-                                            ]
-                                            [ paragraph []
-                                                [ el [ Font.bold ] <| text "PLL Recognition: "
-                                                , text (PLLRecognition.specToPLLRecognitionString recognitionSpec)
-                                                ]
-                                            , paragraph []
-                                                [ el [ Font.bold ] <| text "Post-AUF Recognition: "
-                                                , text (PLLRecognition.specToPostAUFString recognitionSpec)
-                                                ]
+                                        , paragraph []
+                                            [ el [ Font.bold ] <| text "Post-AUF Recognition: "
+                                            , text (PLLRecognition.specToPostAUFString recognitionSpec)
                                             ]
                                         ]
-                               )
+                                    ]
+                           )
                     )
             )
     }
