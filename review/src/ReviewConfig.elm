@@ -33,6 +33,7 @@ import NoRedundantCons
 import NoSimpleLetBody
 import NoUnapprovedLicense
 import NoUnoptimizedRecursion
+import NoUnsafeDivision
 import NoUnsafePorts
 import NoUnused.CustomTypeConstructorArgs
 import NoUnused.CustomTypeConstructors
@@ -88,6 +89,7 @@ config =
     , NoRedundantCons.rule
     , NoDuplicatePorts.rule
     , NoUnsafePorts.rule NoUnsafePorts.any
+    , NoUnsafeDivision.rule
     ]
         -- This is the temporary file that our elm-review.sh script generates to avoid unused dependency errors
         |> List.map (Rule.ignoreErrorsForFiles [ "src/Temporary.elm" ])
