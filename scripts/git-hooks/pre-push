@@ -110,6 +110,8 @@ then
 
     run_check "Checking Elm Code Formatting" "Elm Formatting issues found" ./elm-format.sh
 
+    run_check "Checking Elm Review" "Elm Review issues found" ./elm-review.sh
+
     run_check "Checking Elm documentation compiles" "Issue with our Elm documentation" ./elm-docs-compile.sh
 
     ./elm-verify-examples.sh
