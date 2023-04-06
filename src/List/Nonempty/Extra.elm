@@ -17,7 +17,7 @@ lift2 :
 lift2 f la lb =
     la
         |> List.Nonempty.concatMap
-            (\a -> lb |> List.Nonempty.map (\b -> f a b))
+            (\a -> lb |> List.Nonempty.map (f a))
 
 
 lift3 :
@@ -34,6 +34,6 @@ lift3 f la lb lc =
                     |> List.Nonempty.concatMap
                         (\b ->
                             lc
-                                |> List.Nonempty.map (\c -> f a b c)
+                                |> List.Nonempty.map (f a b)
                         )
             )

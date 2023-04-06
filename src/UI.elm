@@ -40,20 +40,17 @@ formatFloatTwoDecimals =
 viewWebResourceLink : List (Attribute msg) -> Palette -> WebResource.WebResource -> String -> Element msg
 viewWebResourceLink attributes palette resource labelText =
     newTabLink
-        ([ Font.underline
-         , mouseOver
-            [ Font.color palette.mouseOverLink
-            ]
-         , focused
-            [ Border.shadow
-                { offset = ( 0, 0 )
-                , blur = 0
-                , size = 3
-                , color = palette.focusBorder
-                }
-            ]
-         ]
-            ++ attributes
+        (Font.underline
+            :: mouseOver [ Font.color palette.mouseOverLink ]
+            :: focused
+                [ Border.shadow
+                    { offset = ( 0, 0 )
+                    , blur = 0
+                    , size = 3
+                    , color = palette.focusBorder
+                    }
+                ]
+            :: attributes
         )
         { label = text labelText
         , url = WebResource.getUrl resource
@@ -97,7 +94,7 @@ baseButton size attributes { onPress, label, color } =
         roundingSize =
             (paddingSize + size) // 5
     in
-    Input.button ([ Background.color color, padding paddingSize, Border.rounded roundingSize ] ++ attributes) { onPress = onPress, label = label size }
+    Input.button (Background.color color :: padding paddingSize :: Border.rounded roundingSize :: attributes) { onPress = onPress, label = label size }
 
 
 viewButton : { large : Button msg1, customSize : Int -> Button msg2 }
