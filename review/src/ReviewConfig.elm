@@ -17,13 +17,23 @@ import Docs.UpToDateReadmeLinks
 import NoConfusingPrefixOperator
 import NoDebug.Log
 import NoDebug.TodoOrToString
+import NoDuplicatePorts
+import NoEtaReducibleLambdas
 import NoExposingEverything
 import NoImportingEverything
+import NoMissingSubscriptionsCall
 import NoMissingTypeAnnotation
 import NoMissingTypeAnnotationInLetIn
 import NoMissingTypeExpose
 import NoPrematureLetComputation
+import NoRecordAliasConstructor
+import NoRecursiveUpdate
+import NoRedundantConcat
+import NoRedundantCons
 import NoSimpleLetBody
+import NoUnapprovedLicense
+import NoUnoptimizedRecursion
+import NoUnsafePorts
 import NoUnused.CustomTypeConstructorArgs
 import NoUnused.CustomTypeConstructors
 import NoUnused.Dependencies
@@ -31,19 +41,11 @@ import NoUnused.Exports
 import NoUnused.Parameters
 import NoUnused.Patterns
 import NoUnused.Variables
+import NoUselessSubscriptions
 import Review.Rule as Rule exposing (Rule)
 import Simplify
-import NoUnoptimizedRecursion
-import NoUnapprovedLicense
-import NoUnapprovedLicense
-import NoMissingSubscriptionsCall
-import NoRecursiveUpdate
-import NoUselessSubscriptions
-import NoEtaReducibleLambdas
-import NoRecordAliasConstructor
 import UseMemoizedLazyLambda
-import NoRedundantConcat
-import NoRedundantCons
+
 
 config : List Rule
 config =
@@ -55,7 +57,7 @@ config =
     , NoDebug.TodoOrToString.rule
         |> Rule.ignoreErrorsForDirectories [ "tests/" ]
     , NoExposingEverything.rule
-    , NoImportingEverything.rule ["Element", "Test"]
+    , NoImportingEverything.rule [ "Element", "Test" ]
     , NoMissingTypeAnnotation.rule
     , NoMissingTypeAnnotationInLetIn.rule
     , NoMissingTypeExpose.rule
@@ -84,6 +86,8 @@ config =
     , UseMemoizedLazyLambda.rule
     , NoRedundantConcat.rule
     , NoRedundantCons.rule
+    , NoDuplicatePorts.rule
+    , NoUnsafePorts.rule NoUnsafePorts.any
     ]
-    -- This is the temporary file that our elm-review.sh script generates to avoid unused dependency errors
-    |> List.map (Rule.ignoreErrorsForFiles ["src/Temporary.elm"])
+        -- This is the temporary file that our elm-review.sh script generates to avoid unused dependency errors
+        |> List.map (Rule.ignoreErrorsForFiles [ "src/Temporary.elm" ])
