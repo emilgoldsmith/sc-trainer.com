@@ -11,9 +11,10 @@ WORKDIR /dependencies
 
 # Taken from https://github.com/elm/compiler/blob/master/installers/linux/README.md
 RUN curl -L -o elm.gz https://github.com/elm/compiler/releases/download/$ELM_VERSION/binary-for-linux-64-bit.gz \
+# Note that gunzip deletes the original file so we don't have to clean it up
     && gunzip elm.gz \
     && chmod +x elm \
-    # Smoke test
+# Smoke test
     && ./elm --version \
     && echo "Installed Elm Successfully"
 
@@ -31,7 +32,7 @@ WORKDIR /workdir
 COPY package.json package.json
 COPY yarn.lock yarn.lock
 
-RUN yarn --ignore-optional
+RUN yarn --ignore-optional && yarn cache clean
 
 COPY elm.json ./
 COPY scripts/build-production-js.sh scripts/build-production-js.sh
@@ -43,7 +44,9 @@ RUN ./scripts/build-production-js.sh
 
 RUN rm -rf node_modules \
     && yarn --production \
-    && mv node_modules production_only_node_modules
+    && mv node_modules production_only_node_modules \
+    && yarn cache clean \
+    && rm -rf package.json yarn.lock elm.json scripts src /usr/local/bin/elm
 
 
 ############################
@@ -108,8 +111,8 @@ RUN apt-get update && \
   libxtst6 \
   xauth \
   xvfb \
-  # install Chinese fonts
-  # this list was copied from https://github.com/jim3ma/docker-leanote
+# install Chinese fonts
+# this list was copied from https://github.com/jim3ma/docker-leanote
   fonts-arphic-bkai00mp \
   fonts-arphic-bsmi00lp \
   fonts-arphic-gbsn00lp \
@@ -119,7 +122,7 @@ RUN apt-get update && \
   ttf-wqy-zenhei \
   ttf-wqy-microhei \
   xfonts-wqy \
-  # clean up
+# clean up
   && rm -rf /var/lib/apt/lists/*
 
 FROM ci-browsers-base as ci-chrome
@@ -130,14 +133,16 @@ FROM ci-browsers-base as ci-chrome
 # All taken from https://github.com/cypress-io/cypress-docker-images/blob/master/browsers/node12.18.3-chrome89-ff86/Dockerfile
 
 # Chrome dependencies
-RUN apt-get update
-RUN apt-get install -y fonts-liberation libappindicator3-1 xdg-utils
+RUN apt-get update \
+    && apt-get install -y fonts-liberation libappindicator3-1 xdg-utils \
+# clean up
+    && rm -rf /var/lib/apt/lists/*
 
 # install Chrome browser
 ENV CHROME_VERSION 107.0.5304.121
 RUN wget -O /usr/src/google-chrome-stable_current_amd64.deb "http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}-1_amd64.deb" \
     && dpkg -i /usr/src/google-chrome-stable_current_amd64.deb \
-    && apt-get install -f -y \
+    && apt-get install -f -y && rm -rf /var/lib/apt/lists/* \
     && rm -f /usr/src/google-chrome-stable_current_amd64.deb
 RUN google-chrome --version
 
@@ -160,11 +165,8 @@ ENV HISTFILE /home/$USERNAME/bash_history/bash_history.txt
 # Create the elm cache directory where we can mount a volume. If we don't create it like this
 # it is auto created by docker on volume creation but with root as owner which makes it unusable.
 RUN mkdir .elm \
-    # Similar story here with the bash history we store in a volume
+# Similar story here with the bash history we store in a volume
     && mkdir -p $(dirname $HISTFILE)
-
-# Install all the dependencies
-RUN yarn
 
 # Add in the dependencies shared between stages
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
