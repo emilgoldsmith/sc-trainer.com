@@ -69,6 +69,9 @@ type alias PLLTrainerData =
     }
 
 
+{-| The configuration the user sets for how quick they want to solve
+a case in order to consider it somewhat learned
+-}
 type alias PLLTargetParameters =
     { recognitionTimeInSeconds : Float, tps : Float }
 
