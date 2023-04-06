@@ -11,6 +11,7 @@ when inside the directory containing this file.
 
 -}
 
+import Docs.NoMissing
 import Docs.ReviewAtDocs
 import Docs.ReviewLinksAndSections
 import Docs.UpToDateReadmeLinks
@@ -50,7 +51,11 @@ import UseMemoizedLazyLambda
 
 config : List Rule
 config =
-    [ Docs.ReviewAtDocs.rule
+    [ Docs.NoMissing.rule
+        { document = Docs.NoMissing.onlyExposed
+        , from = Docs.NoMissing.exposedModules
+        }
+    , Docs.ReviewAtDocs.rule
     , Docs.ReviewLinksAndSections.rule
     , Docs.UpToDateReadmeLinks.rule
     , NoConfusingPrefixOperator.rule

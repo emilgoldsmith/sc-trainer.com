@@ -6,4 +6,4 @@ ROOT_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/../..
 
 cd $ROOT_DIRECTORY
 
-./node_modules/.bin/elm-format src --validate
+./node_modules/.bin/elm-format src review/src --validate
