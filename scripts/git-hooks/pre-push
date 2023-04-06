@@ -90,14 +90,14 @@ run_check \
     "It seems like the branch and the remote have diverged, rebase and try again" \
     can_be_pushed
 
-if changed_compared_to_upstream ../../end-to-end-tests ../ ../../*.md ../../*.yml ../../*.json ../../.github .;
+if changed_compared_to_upstream ../../end-to-end-tests ../ ../../*.md ../../*.yml ../../*.json ../../review/*.json ../../.github .;
 then
     run_check "Checking Prettier" "Prettier Failed" ./prettier.sh
 else
     echo "${YELLOW}No changes found in Prettier formatted files, skipping Prettier check"
 fi
 
-if changed_compared_to_upstream ../../src ../../elm*.json .;
+if changed_compared_to_upstream ../../src ../../elm*.json ../../review .;
 then
     function check-compilation() {
         cd "$ROOT_DIRECTORY" && \

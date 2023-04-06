@@ -148,6 +148,9 @@ jobs:
       - name: Run elm-format
         run: ./scripts/checks/elm-format.sh
 
+      - name: Run elm-review
+        run: ./scripts/checks/elm-review.sh
+
       - name: Run unit tests
         run: ./scripts/checks/elm-test.sh
 
