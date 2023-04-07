@@ -111,18 +111,18 @@ export function createFeatureFlagSetter(
 
 export const removeAnalyticsScripts: HtmlModifier = (prevHtml) =>
   prevHtml.value
-    .replace("\n", " ")
+    .replaceAll("\n", " ")
     .replace(
-      /<script[^>]*src="[^"]*https:\/\/plausible\.io[^"]*"[^>]*>.*?<\/script>/,
+      /<script[^>]*src="[^"]*https:\/\/plausible\.io[^"]*"[^>]*>.*?<\/script>/g,
       ""
     )
-    .replace(/<script[^>]*src="[^"]*\/sentry.js"[^>]*>.*?<\/script>/, "")
-    .replace(/\bSentry\.init\b/, "(() => {})")
+    .replace(/<script[^>]*src="[^"]*\/sentry.js"[^>]*>.*?<\/script>/g, "")
+    .replace(/\bSentry\.init\b/g, "(() => {})")
     .replace(
-      /\bSentry.captureMessage\b/,
+      /\bSentry.captureMessage\b/g,
       "((...args) => {throw new Error(JSON.stringify(args));})"
     )
-    .replace(/\bnew Sentry[a-zA-Z.]+\b/, "(() => {return {};})");
+    .replace(/\bnew Sentry[a-zA-Z.]+\b/g, "(() => {return {};})");
 
 const defaultHtmlModifiers: HtmlModifier[] = [
   addElmModelObserversAndModifiersToHtml,
