@@ -12,6 +12,15 @@ updates:
     reviewers:
       - emilgoldsmith
 
+  - package-ecosystem: elm
+    directory: /review/
+    schedule:
+      interval: "daily"
+    assignees:
+      - emilgoldsmith
+    reviewers:
+      - emilgoldsmith
+
   - package-ecosystem: npm
     directory: /end-to-end-tests/
     schedule:
