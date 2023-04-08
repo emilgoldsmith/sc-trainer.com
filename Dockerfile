@@ -177,4 +177,6 @@ COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 
 USER root
 
+RUN apt update && apt install -y shellcheck
+
 USER $USERNAME
