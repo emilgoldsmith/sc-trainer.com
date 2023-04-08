@@ -136,3 +136,10 @@ if changed_compared_to_upstream ../../end-to-end-tests .; then
 else
     echo "${YELLOW}No Cypress Changes Found, Skipping Cypress Checks${RESET_COLOUR}"
 fi
+
+# shellcheck disable=SC2310
+if changed_compared_to_upstream ../; then
+    run_check "Running Shellcheck" ./shellcheck.sh
+else
+    echo "${YELLOW}No Script Changes Found, Skipping Script Checks${RESET_COLOUR}"
+fi
