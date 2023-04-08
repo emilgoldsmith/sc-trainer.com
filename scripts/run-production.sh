@@ -2,7 +2,6 @@
 
 set -eu
 
-
 ############################################################
 # In order for this script to work place everything in the
 # top level public folder, and build-html will take care of
@@ -12,22 +11,19 @@ set -eu
 # run so it is futile trying to change something there
 ############################################################
 
-ROOT_DIRECTORY=$(dirname $0)/..
-cd $ROOT_DIRECTORY
+ROOT_DIRECTORY=$(dirname "$0")/..
+cd "${ROOT_DIRECTORY}"
 
-if [ $# -eq 0 ]
-then
+if [ $# -eq 0 ]; then
     ./scripts/build-html.js --target=production
-else if [ $# -ne 1 ]
-then
-    >&2 echo "Exactly one or zero arguments expected"
+elif [ $# -ne 1 ]; then
+    echo >&2 "Exactly one or zero arguments expected"
     exit 1
-else if [ "$1" = "--staging" ]
-then
+elif [ "$1" = "--staging" ]; then
     ./scripts/build-html.js --target=staging
 else
-    >&2 echo "Only allowed option is --staging"
+    echo >&2 "Only allowed option is --staging"
     exit 1
-fi fi fi
+fi
 
-./node_modules/.bin/serve --listen tcp://0.0.0.0:$PORT --no-clipboard --single build/public
+./node_modules/.bin/serve --listen tcp://0.0.0.0:"${PORT:?}" --no-clipboard --single build/public

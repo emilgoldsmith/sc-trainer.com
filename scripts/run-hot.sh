@@ -5,7 +5,7 @@ shopt -s inherit_errexit
 
 ROOT_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/..
 
-cd $ROOT_DIRECTORY
+cd "${ROOT_DIRECTORY}"
 
 ./scripts/build-html.js --target=development
 
@@ -19,7 +19,7 @@ RED=$(tput setaf 1)
 # even though there aren't any real changes to the Elm SPA code.
 echo
 echo "${RED}NOTE:${RESET_COLOUR}"
-echo "${RED}NOTE: Elm SPA generated files don't rebuild. Therefore a restart of the command is needed if files are removed/added/renamed in the Pages directory$RESET_COLOUR"
+echo "${RED}NOTE: Elm SPA generated files don't rebuild. Therefore a restart of the command is needed if files are removed/added/renamed in the Pages directory${RESET_COLOUR}"
 echo "${RED}NOTE:${RESET_COLOUR}"
 echo
 
