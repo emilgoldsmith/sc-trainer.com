@@ -1,14 +1,14 @@
 {
   "//": "We purely split them into these different categories in order to do slightly more efficient installing in the Dockerfile",
   "devDependencies": {
-    "elm-spa": "^6.0.4"
+    "@emilgoldsmith/elm-spa": "^6.0.5"
   },
   "dependencies": {
     "serve": "^14.2.0"
   },
   "optionalDependencies": {
+    "@emilgoldsmith/elm-doc-preview": "^5.0.6",
     "@emilgoldsmith/elm-verify-examples": "^5.2.2",
-    "elm-doc-preview": "^5.0.5",
     "elm-format": "^0.8.6",
     "elm-live": "^4.0.2",
     "elm-review": "^2.9.2",
