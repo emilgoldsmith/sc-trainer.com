@@ -266,7 +266,7 @@ jobs:
       PORT: 8080
     services:
       sctrainer-server:
-        image: ${{ needs.wait-for-docker-containers.outputs.production }}
+        image: ${{ needs.wait-for-production-container.outputs.production }}
         env:
           PORT: ${{ env.PORT }}
     strategy:
