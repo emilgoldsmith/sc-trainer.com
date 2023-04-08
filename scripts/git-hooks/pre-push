@@ -55,8 +55,7 @@ function has_upstream_branch() {
 }
 
 function changed_compared_to_upstream() {
-    # shellcheck disable=SC2310
-    ! has_upstream_branch || ! git diff --quiet --exit-code "${UPSTREAM_BRANCH}" HEAD -- "$@"
+    git diff --quiet --exit-code "${UPSTREAM_BRANCH:-origin/main}" HEAD -- "$@" && return 1
 }
 
 symbolic_ref="$(git symbolic-ref -q HEAD)"
@@ -70,6 +69,8 @@ run_check \
     "Checking For Uncommitted Changes" \
     "You have uncommitted changes. Commit (probably with '--amend') or 'git stash' them and try pushing again" \
     ../helpers/check-for-uncommitted-changes.sh
+
+run_check "Fetching origin/main" "Fetching failed" git fetch origin main
 
 # Make sure we have the remote up to date as we will be using it
 # shellcheck disable=SC2310
