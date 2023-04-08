@@ -84,9 +84,10 @@ WORKDIR /ci-home
 
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 
-RUN apt-get update && apt-get install shellcheck \
-# clean up
-  && rm -rf /var/lib/apt/lists/*
+RUN wget -O shellcheck https://github.com/koalaman/shellcheck/releases/download/v0.9.0/shellcheck-v0.9.0.linux.x86_64.tar.xz \
+  && tar -xf shellcheck \
+  && mv shellcheck-v0.9.0/shellcheck /bin \
+  && rm -rf shellcheck*
 
 ############################
 # CI WITH BROWSERS STAGE
