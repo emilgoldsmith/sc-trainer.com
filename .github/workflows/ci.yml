@@ -254,7 +254,9 @@ jobs:
       Cypress E2E tests for ${{ matrix.platform.browserString }}
       on screen size of ${{ matrix.sizeRelevant.deviceName }}
     runs-on: ubuntu-20.04
-    needs: wait-for-ci-chrome-container
+    needs:
+      - wait-for-ci-chrome-container
+      - wait-for-production-container
     container:
       image: ${{ needs.wait-for-ci-chrome-container.outputs.ci-chrome }}
       # This is needed for Firefox running as described here
