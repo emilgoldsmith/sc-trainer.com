@@ -98,3 +98,5 @@ config =
     ]
         -- This is the temporary file that our elm-review.sh script generates to avoid unused dependency errors
         |> List.map (Rule.ignoreErrorsForFiles [ "src/Temporary.elm" ])
+        -- All the auto generated files from elm-spa
+        |> List.map (Rule.ignoreErrorsForDirectories [ ".elm-spa" ])
