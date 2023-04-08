@@ -5,7 +5,7 @@ shopt -s inherit_errexit
 
 ROOT_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/../..
 
-cd $ROOT_DIRECTORY
+cd "${ROOT_DIRECTORY}"
 
 # Elm Test complains if there are source-directories listed in elm.json that don't exist
 # so we create the .elm-spa ones in case they don't currently exist.

@@ -54,6 +54,9 @@
   "[html]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
+  "[shellscript]": {
+    "editor.defaultFormatter": "foxundermoon.shell-format"
+  },
   "[dockerfile]": {
     "editor.defaultFormatter": "foxundermoon.shell-format"
   }

@@ -4,6 +4,6 @@ set -euo pipefail
 
 ROOT_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/../..
 
-cd $ROOT_DIRECTORY
+cd "${ROOT_DIRECTORY}"
 
-output=$(git status --porcelain) && [ -z "$output" ]
+output=$(git status --porcelain) && [[ -z "${output}" ]]

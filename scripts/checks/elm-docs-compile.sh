@@ -5,7 +5,7 @@ shopt -s inherit_errexit
 
 ROOT_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/../..
 
-cd $ROOT_DIRECTORY
+cd "${ROOT_DIRECTORY}"
 
 # It seems like sometimes it fails on first try and succeeds on second for some reason?
 # Or at the very least it seems to fail with bad error message on first try and then good one

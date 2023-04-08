@@ -8,7 +8,7 @@
         "esbenp.prettier-vscode",
         "dbaeumer.vscode-eslint",
         "timonwong.shellcheck",
-        "shakram02.bash-beautify"
+        "foxundermoon.shell-format"
       ]
     }
   },

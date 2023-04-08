@@ -5,7 +5,7 @@ shopt -s inherit_errexit
 
 CHECKS_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/../checks
 
-cd $CHECKS_DIRECTORY
+cd "${CHECKS_DIRECTORY}"
 
 ROOT_DIRECTORY=../..
 
@@ -15,52 +15,54 @@ GREEN=$(tput setaf 2)
 YELLOW=$(tput setaf 3)
 
 function run_check() {
-    local -a all_arguments=( "${@}" )
+    local -a all_arguments=("${@}")
 
-    echo -n "$YELLOW$1$RESET_COLOUR... "
+    echo -n "${YELLOW}$1${RESET_COLOUR}... "
 
     # Shell builtin that auto counts seconds, so we reset it to 0
     SECONDS=0
-    (\
-        "${all_arguments[@]:2}" > .temp_command_output 2>&1 \
-        && echo "${GREEN}SUCCESS${YELLOW} ${SECONDS}s$RESET_COLOUR" \
-        && rm .temp_command_output\
-    ) || \
-    (\
-        echo -e "${RED}FAILED$RESET_COLOUR" \
-        && echo \
-        && echo "${RED}$2$RESET_COLOUR" \
-        && echo \
-        && ( \
-            ( \
-                [ -s .temp_command_output ] \
-                && echo "Command Output Was As Follows:" \
-                && echo \
-                && cat .temp_command_output \
-            ) || \
-            ( \
-                echo "No Command Output Detected"
-            )
-        ) \
-        && echo \
-        && echo "${YELLOW}Remember that if you need to push despite knowing CI will fail, you can use 'git push --no-verify'$RESET_COLOUR" \
-        && echo \
-        && rm .temp_command_output \
-        && exit 1\
-    )
+    (
+        "${all_arguments[@]:2}" >.temp_command_output 2>&1 &&
+            echo "${GREEN}SUCCESS${YELLOW} ${SECONDS}s${RESET_COLOUR}" &&
+            rm .temp_command_output
+    ) ||
+        (
+            echo -e "${RED}FAILED${RESET_COLOUR}" &&
+                echo &&
+                echo "${RED}$2${RESET_COLOUR}" &&
+                echo &&
+                (
+                    (
+                        [[ -s .temp_command_output ]] &&
+                            echo "Command Output Was As Follows:" &&
+                            echo &&
+                            cat .temp_command_output
+                    ) ||
+                        (
+                            echo "No Command Output Detected"
+                        )
+                ) &&
+                echo &&
+                echo "${YELLOW}Remember that if you need to push despite knowing CI will fail, you can use 'git push --no-verify'${RESET_COLOUR}" &&
+                echo &&
+                rm .temp_command_output &&
+                exit 1
+        )
 }
 
 function has_upstream_branch() {
-    git rev-parse @{u} &> /dev/null
+    git rev-parse "@{u}" &>/dev/null
 }
 
 function changed_compared_to_upstream() {
-    ! has_upstream_branch || ! git diff --quiet --exit-code $UPSTREAM_BRANCH HEAD -- "$@"
+    # shellcheck disable=SC2310
+    ! has_upstream_branch || ! git diff --quiet --exit-code "${UPSTREAM_BRANCH}" HEAD -- "$@"
 }
 
-UPSTREAM_REMOTE=$(git for-each-ref --format='%(upstream:remotename)' "$(git symbolic-ref -q HEAD)")
-UPSTREAM_BRANCH_NAME=$(git for-each-ref --format='%(upstream:remoteref)' "$(git symbolic-ref -q HEAD)")
-UPSTREAM_BRANCH=$(git for-each-ref --format='%(upstream:short)' "$(git symbolic-ref -q HEAD)")
+symbolic_ref="$(git symbolic-ref -q HEAD)"
+UPSTREAM_REMOTE=$(git for-each-ref --format='%(upstream:remotename)' "${symbolic_ref}")
+UPSTREAM_BRANCH_NAME=$(git for-each-ref --format='%(upstream:remoteref)' "${symbolic_ref}")
+UPSTREAM_BRANCH=$(git for-each-ref --format='%(upstream:short)' "${symbolic_ref}")
 
 #### ACTUAL CHECKS START HERE
 
@@ -70,17 +72,17 @@ run_check \
     ../helpers/check-for-uncommitted-changes.sh
 
 # Make sure we have the remote up to date as we will be using it
-if has_upstream_branch;
-then
-    run_check "Fetching Latest Tracked Branch" "Fetching failed" git fetch $UPSTREAM_REMOTE $UPSTREAM_BRANCH_NAME
+# shellcheck disable=SC2310
+if has_upstream_branch; then
+    run_check "Fetching Latest Tracked Branch" "Fetching failed" git fetch "${UPSTREAM_REMOTE}" "${UPSTREAM_BRANCH_NAME}"
 else
-    echo "${YELLOW}No upstream branch found, so the push will probably fail if you aren't using -u or --set-upstream$RESET_COLOUR"
+    echo "${YELLOW}No upstream branch found, so the push will probably fail if you aren't using -u or --set-upstream${RESET_COLOUR}"
 fi
 
 function can_be_pushed() {
-    if has_upstream_branch;
-    then
-        git merge-base --is-ancestor $UPSTREAM_BRANCH HEAD
+    # shellcheck disable=SC2310
+    if has_upstream_branch; then
+        git merge-base --is-ancestor "${UPSTREAM_BRANCH}" HEAD
     else
         return 0
     fi
@@ -91,21 +93,21 @@ run_check \
     "It seems like the branch and the remote have diverged, rebase and try again" \
     can_be_pushed
 
-if changed_compared_to_upstream ../../end-to-end-tests ../ ../../*.md ../../*.yml ../../*.json ../../review/*.json ../../.github .;
-then
+# shellcheck disable=SC2310
+if changed_compared_to_upstream ../../end-to-end-tests ../ ../../*.md ../../*.yml ../../*.json ../../review/*.json ../../.github .; then
     run_check "Checking Prettier" "Prettier Failed" ./prettier.sh
 else
     echo "${YELLOW}No changes found in Prettier formatted files, skipping Prettier check"
 fi
 
-if changed_compared_to_upstream ../../src ../../elm*.json ../../review .;
-then
+# shellcheck disable=SC2310
+if changed_compared_to_upstream ../../src ../../elm*.json ../../review .; then
     function check-compilation() {
-        cd "$ROOT_DIRECTORY" && \
-        ./node_modules/.bin/elm-spa gen && \
-        elm make src/Main.elm --output=main.js && \
-        rm main.js && \
-        cd -
+        cd "${ROOT_DIRECTORY}" &&
+            ./node_modules/.bin/elm-spa gen &&
+            elm make src/Main.elm --output=main.js &&
+            rm main.js &&
+            cd -
     }
     run_check "Checking Elm Compilation" "Elm Compilation Failed" check-compilation
 
@@ -123,14 +125,14 @@ then
 
     run_check "Checking Elm Unit Tests" "Elm Unit Tests Failed" ./elm-test.sh
 else
-    echo "${YELLOW}No Elm Changes Found, Skipping Elm Checks$RESET_COLOUR"
+    echo "${YELLOW}No Elm Changes Found, Skipping Elm Checks${RESET_COLOUR}"
 fi
 
-if changed_compared_to_upstream ../../end-to-end-tests .;
-then
+# shellcheck disable=SC2310
+if changed_compared_to_upstream ../../end-to-end-tests .; then
     run_check "Checking Cypress ESLint" "ESLint Failed" ./eslint.sh
 
     run_check "Checking Cypress Typescript" "Typescript Failed" ./typescript.sh
 else
-    echo "${YELLOW}No Cypress Changes Found, Skipping Cypress Checks$RESET_COLOUR"
+    echo "${YELLOW}No Cypress Changes Found, Skipping Cypress Checks${RESET_COLOUR}"
 fi
