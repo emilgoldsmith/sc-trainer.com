@@ -59,7 +59,7 @@ jobs:
     needs: get-ref-and-sha
     env:
       repository: sctrainer/main
-      ci-container-tag: ci-container-v5
+      ci-container-tag: ci-container-v6
       ci-chrome-tag: ci-chrome-v4
       production-tag: production-${{ needs.get-ref-and-sha.outputs.sha }}
     # Dependabot doesn't receive secrets on a push event

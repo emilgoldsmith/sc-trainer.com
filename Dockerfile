@@ -84,6 +84,10 @@ WORKDIR /ci-home
 
 COPY --from=dependency-builder /dependencies/elm /usr/local/bin
 
+RUN apt-get update && apt-get install shellcheck \
+# clean up
+  && rm -rf /var/lib/apt/lists/*
+
 ############################
 # CI WITH BROWSERS STAGE
 ############################

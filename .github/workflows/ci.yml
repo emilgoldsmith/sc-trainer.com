@@ -47,7 +47,7 @@ jobs:
             ) \
           )
 
-          echo "ci-container=ci-container-v5" >> $GITHUB_OUTPUT
+          echo "ci-container=ci-container-v6" >> $GITHUB_OUTPUT
           echo "ci-chrome=ci-chrome-v4" >> $GITHUB_OUTPUT
           echo "production=production-$SHA" >> $GITHUB_OUTPUT
 
