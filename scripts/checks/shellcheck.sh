@@ -7,6 +7,7 @@ ROOT_DIRECTORY=$(dirname "${BASH_SOURCE[0]}")/../..
 
 cd "${ROOT_DIRECTORY}"
 
+echo "${TERM}"
 if [[ ${TERM} == dumb ]]; then
     # Overwrite tput with an empty function to stop CI from erroring as it doesn't support
     # features like that
