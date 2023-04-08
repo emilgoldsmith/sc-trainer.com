@@ -16,8 +16,8 @@ fi
 RESET_COLOUR=$(tput sgr0)
 RED=$(tput setaf 1)
 
-if ! shellcheck --help &> /dev/null; then
-    echo "${RED}You do not have shellcheck installed. This can for example be installed with sudo apt install shellcheck${RESET_COLOUR}"
+if ! shellcheck --version &> /dev/null; then
+    echo "${RED}You do not have shellcheck installed. This can for example be installed with sudo apt install shellcheck. We use v0.9.0 at the time of writing.${RESET_COLOUR}"
     exit 1
 fi
 
