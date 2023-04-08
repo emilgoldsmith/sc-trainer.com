@@ -152,7 +152,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: wait-for-ci-container
     container:
-      image: ${{ needs.wait-for-docker-containers.outputs.ci-container }}
+      image: ${{ needs.wait-for-ci-container.outputs.ci-container }}
       # This is to appease the new strict directory ownership checks announced here:
       # https://github.blog/2022-04-12-git-security-vulnerability-announced/#
       # User 1001 is the one Github uses to create the working directory
@@ -226,7 +226,7 @@ jobs:
     name: Javascript Asset Size Not Too Big
     runs-on: ubuntu-20.04
     needs: wait-for-production-container
-    container: ${{ needs.wait-for-docker-containers.outputs.production }}
+    container: ${{ needs.wait-for-production-container.outputs.production }}
     # Dependabot doesn't receive secrets on a push event
     # so can't run our CI, so we just skip CI for it.
     # We have settings set up that ensure it can't be merged without
@@ -256,7 +256,7 @@ jobs:
     runs-on: ubuntu-20.04
     needs: wait-for-ci-chrome-container
     container:
-      image: ${{ needs.wait-for-docker-containers.outputs.ci-chrome }}
+      image: ${{ needs.wait-for-ci-chrome-container.outputs.ci-chrome }}
       # This is needed for Firefox running as described here
       # https://github.com/cypress-io/github-action/issues/104
       options: --user 1001
