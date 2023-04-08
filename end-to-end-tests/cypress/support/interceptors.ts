@@ -4,6 +4,7 @@ import {
   fixRandomnessSeedInJavascript,
 } from "./elm-monkey-patching";
 import { handleHtmlCypressModifications } from "./html-template-replacements";
+import * as HtmlParser from "node-html-parser";
 
 export type HtmlModifier = (html: { type: "html"; value: string }) => string;
 
@@ -102,27 +103,30 @@ export function createFeatureFlagSetter(
   flagValue: boolean
 ): HtmlModifier {
   return function (prevHtml) {
-    return prevHtml.value.replace(
-      new RegExp(String.raw`("${key}":)(?:true|false)`),
+    return prevHtml.value.replaceAll(
+      new RegExp(String.raw`("${key}":)(?:true|false)`, "g"),
       "$1" + JSON.stringify(flagValue)
     );
   };
 }
 
-export const removeAnalyticsScripts: HtmlModifier = (prevHtml) =>
-  prevHtml.value
-    .replaceAll("\n", " ")
-    .replace(
-      /<script[^>]*src="[^"]*https:\/\/plausible\.io[^"]*"[^>]*>.*?<\/script>/g,
-      ""
-    )
-    .replace(/<script[^>]*src="[^"]*\/sentry.js"[^>]*>.*?<\/script>/g, "")
-    .replace(/\bSentry\.init\b/g, "(() => {})")
-    .replace(
+export const removeAnalyticsScripts: HtmlModifier = (prevHtml) => {
+  const root = HtmlParser.parse(prevHtml.value);
+  const scripts = root.querySelectorAll("script");
+  scripts.forEach((scriptNode) =>
+    scriptNode.attrs.src?.match(/plausible\.io|sentry\.js/)
+      ? scriptNode.remove()
+      : undefined
+  );
+  return root
+    .toString()
+    .replaceAll(/\bSentry\.init\b/g, "(() => {})")
+    .replaceAll(
       /\bSentry.captureMessage\b/g,
       "((...args) => {throw new Error(JSON.stringify(args));})"
     )
-    .replace(/\bnew Sentry[a-zA-Z.]+\b/g, "(() => {return {};})");
+    .replaceAll(/\bnew Sentry[a-zA-Z.]+\b/g, "(() => {return {};})");
+};
 
 const defaultHtmlModifiers: HtmlModifier[] = [
   addElmModelObserversAndModifiersToHtml,

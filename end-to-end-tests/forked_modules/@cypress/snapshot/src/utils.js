@@ -29,7 +29,7 @@ function deleteReactIdFromJson(json) {
 
 const stripReactIdAttributes = (html) => {
   const dataReactId = /data\-reactid="[\.\d\$\-abcdfef]+"/g;
-  return html.replace(dataReactId, "");
+  return html.replaceAll(dataReactId, "");
 };
 
 const serializeReactToHTML = (el$) => {

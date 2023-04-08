@@ -51,7 +51,7 @@ function registerCypressSnapshot() {
 
   let relative = Cypress.spec.relative;
   if (Cypress.platform === "win32") {
-    relative = relative.replace(/\\/g, path.sep);
+    relative = relative.replaceAll(/\\/g, path.sep);
   }
 
   const snapshotFileName = path.join(

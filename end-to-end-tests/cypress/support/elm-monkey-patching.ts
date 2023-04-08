@@ -122,7 +122,7 @@ function fixSeedUnminimized(
       // Capture the prefix we just include to make sure it's a unique match
       "(",
       // The identifier
-      initFunctionName.replace(/\$/g, "\\$"),
+      initFunctionName.replaceAll(/\$/g, "\\$"),
       // The assignment of that identifier
       String.raw`\b\s*=.*?\(`,
       // Go through three function openings
@@ -144,7 +144,7 @@ function fixSeedUnminimized(
     )
   );
   // Replace the matched part with our specified seed
-  const withPatchedSeedValue = previousJavascript.value.replace(
+  const withPatchedSeedValue = previousJavascript.value.replaceAll(
     regex,
     "$1" + seed.toString()
   );
@@ -217,7 +217,7 @@ function fixSeedUglifyJsMinified(
       applyGlobalRegex(regex, previousJavascript.value)
     )
   );
-  const withPatchedSeed = previousJavascript.value.replace(
+  const withPatchedSeed = previousJavascript.value.replaceAll(
     regex,
     "$1" + seed.toString() + "$2"
   );
@@ -261,7 +261,7 @@ function fixSeedTerserMinimized(
       applyGlobalRegex(regex, previousJavascript.value)
     )
   );
-  const withPatchedSeed = previousJavascript.value.replace(
+  const withPatchedSeed = previousJavascript.value.replaceAll(
     regex,
     "$1" + seed.toString() + "$2"
   );

@@ -3697,7 +3697,7 @@ function algorithmDrillerExplanationPageNoSideEffectsButScroll({
                   );
 
                 function sanitizeAlgorithm(algorithm: string): string {
-                  return algorithm.replace(/\(|\)|\s/g, "");
+                  return algorithm.replaceAll(/\(|\)|\s/g, "");
                 }
 
                 // Undo all the side effects we just did
@@ -4259,7 +4259,7 @@ function wrongPageNoSideEffects({
                 );
 
               function sanitizeAlgorithm(algorithm: string): string {
-                return algorithm.replace(/\(|\)|\s/g, "");
+                return algorithm.replaceAll(/\(|\)|\s/g, "");
               }
 
               // Undo all the side effects we just did
