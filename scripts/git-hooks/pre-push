@@ -22,7 +22,7 @@ function run_check() {
     # Shell builtin that auto counts seconds, so we reset it to 0
     SECONDS=0
     (
-        "${all_arguments[@]:2}" >.temp_command_output 2>&1 &&
+        "${all_arguments[@]:2}" > .temp_command_output 2>&1 &&
             echo "${GREEN}SUCCESS${YELLOW} ${SECONDS}s${RESET_COLOUR}" &&
             rm .temp_command_output
     ) ||
@@ -51,7 +51,7 @@ function run_check() {
 }
 
 function has_upstream_branch() {
-    git rev-parse "@{u}" &>/dev/null
+    git rev-parse "@{u}" &> /dev/null
 }
 
 function changed_compared_to_upstream() {
@@ -139,7 +139,7 @@ fi
 
 # shellcheck disable=SC2310
 if changed_compared_to_upstream ../; then
-    run_check "Running Shellcheck" ./shellcheck.sh
+    run_check "Running ShellCheck" ./shellcheck.sh
 else
     echo "${YELLOW}No Script Changes Found, Skipping Script Checks${RESET_COLOUR}"
 fi
