@@ -1,13 +1,17 @@
 {
   "name": "Elm Dev Container",
   "dockerFile": "../Dockerfile",
-  "extensions": [
-	"elmtooling.elm-ls-vscode",
-	"esbenp.prettier-vscode",
-	"dbaeumer.vscode-eslint",
-	"timonwong.shellcheck",
-	"shakram02.bash-beautify"
-],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "elmtooling.elm-ls-vscode",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "timonwong.shellcheck",
+        "shakram02.bash-beautify"
+      ]
+    }
+  },
   "context": "..",
   "build": {
     "target": "local-development"

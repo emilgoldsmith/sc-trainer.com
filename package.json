@@ -12,7 +12,6 @@
     "elm-live": "^4.0.2",
     "elm-review": "^2.9.2",
     "elm-test": "^0.19.1-revision12",
-    "elm-verify-examples": "^5.2.0",
-    "shellcheck": "^2.2.0"
+    "elm-verify-examples": "^5.2.0"
   }
 }
