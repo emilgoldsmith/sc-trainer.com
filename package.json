@@ -8,7 +8,7 @@
   },
   "optionalDependencies": {
     "elm-doc-preview": "^5.0.5",
-    "elm-format": "^0.8.6",
+    "elm-format": "^0.8.7",
     "elm-live": "^4.0.2",
     "elm-review": "^2.9.2",
     "elm-test": "^0.19.1-revision12",
