@@ -1,4 +1,7 @@
 {
+  "resolutions": {
+    "cosmiconfig": ">=8.0.0"
+  },
   "devDependencies": {
     "@cypress/snapshot": "./forked_modules/@cypress/snapshot/",
     "@nazarkulyk/eslint-config-esnext": "^5.0.0",
