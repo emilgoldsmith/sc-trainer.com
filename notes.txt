@@ -12,7 +12,18 @@ Make people select themselves their preferred AUF combination for symmetrical ca
 
 Test it doesn't show NaN in averages when no corrects yet, which will be a very normal case for beginners. Maybe even just don't display those averages until there are corrects
 
+Production tests:
+- 404 tests in prod
+- Assert no cookies (or other cookie checks?)
+- Assert CSRF is set up
+- Run the production tests in Edge and Firefox as well for sure
 
-Less important stuff:
-- Migrate to Elm Review from Elm Analyse
-- Install all the global dependencies with a package.json in the main folder
+Set up Edge and Firefox tests in CI?
+
+Test that the correct algorithm is saved (if it isn't already done)
+
+Support alternative algs for backside / mirror algs for things such as U perms
+
+Disable algorithm submit button on invalid
+
+Make changePLLAlgorithm also do verification?

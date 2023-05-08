@@ -658,6 +658,10 @@ describe("PLL Trainer", function () {
               cy.getCurrentTestCase().then(([, pll, postAUF]) => {
                 seenPostAUFs[pll].add(postAUF);
                 newCasesEncountered[pll]++;
+                if (newCasesEncountered[pll] > 3)
+                  throw new Error(
+                    `${pllToPLLLetters[pll]} received more than 3 extra new cases which means there's an error in the new case logic`
+                  );
               });
               completeTestsUntilNoMoreNewCasePage();
             });
