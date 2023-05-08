@@ -520,8 +520,6 @@ describe("PLL Trainer", function () {
           [AUF.none, PLL.Gc],
         ];
 
-        // TODO: Test that all cases are covered here
-        // TODO: Test that all AUFs are covered
         // Use type assertions for simpler types here and we ensure to initialize them properly
         const seenPreAUFs: { [key in PLL]: Set<AUF> } = {} as {
           [key in PLL]: Set<AUF>;
@@ -580,6 +578,10 @@ describe("PLL Trainer", function () {
 
         const fullSymmetricPLLs = [PLL.H, PLL.Na, PLL.Nb];
         const halfSymmetricPLLs = [PLL.E, PLL.Z];
+        // We initialize it below
+        const expectedNewCasesLeft: { [key in PLL]: number } = {} as {
+          [key in PLL]: number;
+        };
         cy.wrap(null, { log: false }).then(() => {
           allPLLs.forEach((pll) => {
             // PreAUF testing
@@ -602,10 +604,23 @@ describe("PLL Trainer", function () {
               );
             }
 
-            // PostAUF no symmetry testing. We don't care about testing the no post AUF case
-            // All non symmetric PLLs have been seen for 4 preAUFs so all 3 postAUFs should
-            // already have been learned simultaneously
-            if (!fullSymmetricPLLs.concat(halfSymmetricPLLs).includes(pll)) {
+            if (fullSymmetricPLLs.includes(pll)) {
+              expect(seenPostAUFs[pll].size).to.equal(1);
+              // We don't care about testing the no postAUF case as it has no moves
+              // so there isn't really anything to learn, and the postAUF recognition
+              // from that angle will have been learned in the other postAUF cases
+              if (seenPostAUFs[pll].has(AUF.none))
+                expectedNewCasesLeft[pll] = 3;
+              else expectedNewCasesLeft[pll] = 2;
+            } else if (halfSymmetricPLLs.includes(pll)) {
+              expect(seenPostAUFs[pll].size).to.equal(2);
+              if (seenPostAUFs[pll].has(AUF.none))
+                expectedNewCasesLeft[pll] = 2;
+              else expectedNewCasesLeft[pll] = 1;
+            } else {
+              expectedNewCasesLeft[pll] = 0;
+              // All non symmetric PLLs have been seen for 4 preAUFs so all 3 postAUFs should
+              // already have been learned simultaneously without any further cases
               seenPostAUFs[pll].delete(AUF.none);
               expect(seenPostAUFs[pll].size, pllToPLLLetters[pll]).to.equal(
                 allAUFs.length - 1
@@ -614,7 +629,13 @@ describe("PLL Trainer", function () {
           });
         });
 
-        let newCasesEncountered = 0;
+        // For symmetric cases all 3 postAUFs have not necessarily been
+        // encountered yet, so we first of all keep running tests until there
+        // are no more new cases left
+        const newCasesEncountered: { [key in PLL]: number } = {} as {
+          [key in PLL]: number;
+        };
+        allPLLs.forEach((pll) => (newCasesEncountered[pll] = 0));
         completeTestsUntilNoMoreNewCasePage();
         function completeTestsUntilNoMoreNewCasePage() {
           pllTrainerElements.correctPage.nextButton.get().click();
@@ -625,38 +646,36 @@ describe("PLL Trainer", function () {
             .getStateAttributeValue()
             .then((stateValue) => {
               if (
-                stateValue ===
+                stateValue !==
                 pllTrainerElements.root.stateAttributeValues.newCasePage
-              ) {
-                newCasesEncountered++;
-                completePLLTestInMilliseconds(0, {
-                  correct: true,
-                  startingState: "newCasePage",
-                  endingState: "correctPage",
-                });
-                cy.getCurrentTestCase().then(([_, pll, postAUF]) =>
-                  seenPostAUFs[pll].add(postAUF)
-                );
-                completeTestsUntilNoMoreNewCasePage();
-              }
+              )
+                return;
+              completePLLTestInMilliseconds(0, {
+                correct: true,
+                startingState: "newCasePage",
+                endingState: "correctPage",
+              });
+              cy.getCurrentTestCase().then(([, pll, postAUF]) => {
+                seenPostAUFs[pll].add(postAUF);
+                newCasesEncountered[pll]++;
+              });
+              completeTestsUntilNoMoreNewCasePage();
             });
         }
 
         cy.wrap(null, { log: false }).should(() => {
           // Now that there are no mere new cases the symmetric plls should also
-          // be fully done
-          halfSymmetricPLLs.concat(fullSymmetricPLLs).forEach((pll) => {
+          // be fully done with all their postAUF cases, and make sure that no
+          // unexpected new cases were encountered
+          allPLLs.forEach((pll) => {
+            expect(newCasesEncountered[pll], pllToPLLLetters[pll]).to.equal(
+              expectedNewCasesLeft[pll]
+            );
             seenPostAUFs[pll].delete(AUF.none);
             expect(seenPostAUFs[pll].size, pllToPLLLetters[pll]).to.equal(
               allAUFs.length - 1
             );
           });
-
-          // Worst case scenario all the initial postAUFs were the no post AUF case
-          // and we therefore need to cover all other AUFs
-          expect(newCasesEncountered).to.be.at.most(
-            halfSymmetricPLLs.length * 2 + fullSymmetricPLLs.length * 3
-          );
         });
       });
     });
