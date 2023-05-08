@@ -128,59 +128,72 @@ getNewCaseIfNeeded user =
 getNextNewCase : User -> Maybe TestCase
 getNextNewCase user =
     learningOrderForFixedPLLAlgorithms
-        |> List.Extra.findMap
-            (\( preAUF_, pll_ ) ->
+        |> List.Extra.findMap (isNewCase user)
+        |> Maybe.map TestCase
+
+
+
+-- TODO: Refactor this properly
+
+
+isNewCase : User -> ( AUF, PLL ) -> Maybe ( AUF, PLL, AUF )
+isNewCase user ( preAUF_, pll_ ) =
+    let
+        currentAlgorithm : Algorithm.Algorithm
+        currentAlgorithm =
+            toAlg
+                { addFinalReorientationToAlgorithm = False }
+                user
+                (TestCase ( AUF.None, pll_, AUF.None ))
+
+        maybeEquivalentPreAUF : Maybe AUF
+        maybeEquivalentPreAUF =
+            Cube.detectAUFs
+                { toDetectFor = currentAlgorithm
+                , toMatchTo =
+                    Algorithm.append
+                        (AUF.toAlgorithm preAUF_)
+                    <|
+                        Algorithm.append (PLL.getAlgorithm fixedShortPLLAlgorithms pll_) <|
+                            AUF.toAlgorithm AUF.None
+                }
+                |> Maybe.map (\( pre, _ ) -> pre)
+    in
+    maybeEquivalentPreAUF
+        |> Maybe.andThen
+            (\equivalentPreAUF ->
                 let
-                    currentAlgorithm =
-                        toAlg
-                            { addFinalReorientationToAlgorithm = False }
-                            user
-                            (TestCase ( AUF.None, pll_, AUF.None ))
+                    preAUFAttempted : Bool
+                    preAUFAttempted =
+                        User.getAttemptedPLLPreAUFs pll_ user
+                            |> List.any ((==) equivalentPreAUF)
 
-                    maybeEquivalentPreAUF =
-                        Cube.detectAUFs
-                            { toDetectFor = currentAlgorithm
-                            , toMatchTo =
-                                Algorithm.append
-                                    (AUF.toAlgorithm preAUF_)
-                                <|
-                                    Algorithm.append (PLL.getAlgorithm fixedShortPLLAlgorithms pll_) <|
-                                        AUF.toAlgorithm AUF.None
-                            }
-                            |> Maybe.map (\( pre, _ ) -> pre)
+                    attemptedPostAUFs : List AUF
+                    attemptedPostAUFs =
+                        User.getAttemptedPLLPostAUFs pll_ user
                 in
-                maybeEquivalentPreAUF
-                    |> Maybe.andThen
-                        (\equivalentPreAUF ->
-                            let
-                                preAUFAttempted =
-                                    User.getAttemptedPLLPreAUFs pll_ user
-                                        |> List.any ((==) equivalentPreAUF)
+                -- TODO: Make sure postAUFs of attempted preAUFs are also tested
+                if preAUFAttempted then
+                    Nothing
 
-                                attemptedPostAUFs =
-                                    User.getAttemptedPLLPostAUFs pll_ user
-                            in
-                            if preAUFAttempted then
-                                Nothing
-
-                            else
-                                Just
-                                    ( equivalentPreAUF
-                                    , pll_
-                                    , AUF.all
-                                        |> List.Nonempty.toList
-                                        |> List.filter ((/=) AUF.None)
-                                        |> List.filter
-                                            (\postAUF_ ->
-                                                attemptedPostAUFs
-                                                    |> List.all ((/=) postAUF_)
-                                            )
-                                        |> List.head
-                                        |> Maybe.withDefault AUF.None
-                                    )
+                else
+                    Just
+                        ( equivalentPreAUF
+                        , pll_
+                          -- TODO: Randomize order of this list
+                        , AUF.all
+                            |> List.Nonempty.toList
+                            |> List.filter ((/=) AUF.None)
+                            |> List.filter
+                                (\postAUF_ ->
+                                    attemptedPostAUFs
+                                        |> List.all ((/=) postAUF_)
+                                )
+                            |> List.head
+                            -- TODO: Make this random
+                            |> Maybe.withDefault AUF.None
                         )
             )
-        |> Maybe.map TestCase
 
 
 learningOrderForFixedPLLAlgorithms : List ( AUF, PLL )
