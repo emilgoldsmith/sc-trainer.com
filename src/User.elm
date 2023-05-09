@@ -66,8 +66,13 @@ type User
 
 type alias PLLTrainerData =
     { targetParameters : Maybe PLLTargetParameters
+    , aufPreferences : AUFPreferences
     , pllData : PLLData
     }
+
+
+type alias AUFPreferences =
+    {}
 
 
 {-| The configuration the user sets for how quick they want to solve

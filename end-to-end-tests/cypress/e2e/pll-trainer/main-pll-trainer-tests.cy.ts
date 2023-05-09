@@ -429,7 +429,24 @@ describe("PLL Trainer", function () {
         pllTrainerElements.correctPage.container.assertShows();
       });
 
-      it("introduces new cases in the correct learning order (UFR angle)", function () {
+      it.only("introduces new cases in the correct learning order (UFR angle)", function () {
+        const preAUFEquivalencyGroups: { [key in PLL]: AUF[][] } = {} as {
+          [key in PLL]: AUF[][];
+        };
+        allPLLs.forEach((pll) => {
+          const fullySymmetricPLLs = [PLL.H, PLL.Na, PLL.Nb];
+          const halfSymmetricPLLs = [PLL.E, PLL.Z];
+          if (fullySymmetricPLLs.includes(pll)) {
+            preAUFEquivalencyGroups[pll] = [[...allAUFs]];
+          } else if (halfSymmetricPLLs.includes(pll)) {
+            preAUFEquivalencyGroups[pll] = [
+              [AUF.none, AUF.U2],
+              [AUF.U, AUF.UPrime],
+            ];
+          } else {
+            preAUFEquivalencyGroups[pll] = allAUFs.map((x) => [x]);
+          }
+        });
         const expectedLearningOrder: [AUF, PLL][] = [
           // All corners solved
           [AUF.none, PLL.H],
@@ -465,6 +482,7 @@ describe("PLL Trainer", function () {
           [AUF.U2, PLL.Y],
           [AUF.none, PLL.V],
           [AUF.none, PLL.E],
+          [AUF.U, PLL.E],
           // Now the user has learned all PLLs from at least one angle
           // We now teach them the last of the 3-bar cases
           [AUF.U2, PLL.F],
@@ -527,9 +545,13 @@ describe("PLL Trainer", function () {
         const seenPostAUFs: { [key in PLL]: Set<AUF> } = {} as {
           [key in PLL]: Set<AUF>;
         };
+        const pllCount: { [key in PLL]: number } = {} as {
+          [key in PLL]: number;
+        };
         allPLLs.forEach((pll) => {
           seenPreAUFs[pll] = new Set();
           seenPostAUFs[pll] = new Set();
+          pllCount[pll] = 0;
         });
 
         let startingState: "doNewVisit" | "correctPage" = "doNewVisit";
@@ -554,20 +576,32 @@ describe("PLL Trainer", function () {
                       pllToPLLLetters[actualPLL]
                     } should be ${pllToPLLLetters[expectedPLL]}`
                   ).to.equal(expectedPLL);
+                  pllCount[actualPLL]++;
                 });
               },
             });
             startingState = "correctPage";
             cy.getCurrentTestCase()
               .should(([actualPreAUF]) => {
+                const preAUFEquivalencyGroup = preAUFEquivalencyGroups[
+                  expectedPLL
+                ].find(
+                  (group) =>
+                    group.find((option) => actualPreAUF === option) !==
+                    undefined
+                ) ?? [expectedPreAUF];
                 expect(
-                  actualPreAUF,
+                  expectedPreAUF,
                   `Index ${index.toString()}, PLL ${
                     pllToPLLLetters[expectedPLL]
-                  }: "${aufToAlgorithmString[actualPreAUF]}" should be "${
-                    aufToAlgorithmString[expectedPreAUF]
-                  }"`
-                ).to.equal(expectedPreAUF);
+                  }: "${
+                    aufToAlgorithmString[actualPreAUF]
+                  }" was expected to be found in equivalencyGroup ${JSON.stringify(
+                    preAUFEquivalencyGroup.map(
+                      (x) => `${aufToAlgorithmString[x]}`
+                    )
+                  )}`
+                ).to.be.oneOf(preAUFEquivalencyGroup);
               })
               .then(([preAUF, pll, postAUF]) => {
                 seenPreAUFs[pll].add(preAUF);
@@ -575,9 +609,6 @@ describe("PLL Trainer", function () {
               });
           }
         );
-
-        const fullSymmetricPLLs = [PLL.H, PLL.Na, PLL.Nb];
-        const halfSymmetricPLLs = [PLL.E, PLL.Z];
         // We initialize it below
         const expectedNewCasesLeft: { [key in PLL]: number } = {} as {
           [key in PLL]: number;
@@ -585,47 +616,32 @@ describe("PLL Trainer", function () {
         cy.wrap(null, { log: false }).then(() => {
           allPLLs.forEach((pll) => {
             // PreAUF testing
-            if (fullSymmetricPLLs.includes(pll)) {
-              expect(seenPreAUFs[pll].size, pllToPLLLetters[pll]).to.equal(1);
-            } else if (halfSymmetricPLLs.includes(pll)) {
-              expect(seenPreAUFs[pll].size, pllToPLLLetters[pll]).to.equal(2);
-              const [first, second] = [...seenPreAUFs[pll]];
-              expect(
-                [first, second].sort(),
-                pllToPLLLetters[pll]
-              ).not.to.deep.equal([AUF.none, AUF.U2].sort());
-              expect(
-                [first, second].sort(),
-                pllToPLLLetters[pll]
-              ).not.to.deep.equal([AUF.U, AUF.UPrime].sort());
-            } else {
-              expect(seenPreAUFs[pll].size, pllToPLLLetters[pll]).to.equal(
-                allAUFs.length
-              );
-            }
+            const equivalencyGroupsRepresented = [...seenPreAUFs[pll]].map(
+              (preAUF) =>
+                preAUFEquivalencyGroups[pll].findIndex(
+                  (group) =>
+                    group.find((option) => preAUF === option) !== undefined
+                )
+            );
+            // Assert all the equivalency groups are represented
+            expect(
+              equivalencyGroupsRepresented,
+              pllToPLLLetters[pll]
+            ).to.deep.equalInAnyOrder(
+              preAUFEquivalencyGroups[pll].map((_, index) => index)
+            );
 
-            if (fullSymmetricPLLs.includes(pll)) {
-              expect(seenPostAUFs[pll].size).to.equal(1);
-              // We don't care about testing the no postAUF case as it has no moves
-              // so there isn't really anything to learn, and the postAUF recognition
-              // from that angle will have been learned in the other postAUF cases
-              if (seenPostAUFs[pll].has(AUF.none))
-                expectedNewCasesLeft[pll] = 3;
-              else expectedNewCasesLeft[pll] = 2;
-            } else if (halfSymmetricPLLs.includes(pll)) {
-              expect(seenPostAUFs[pll].size).to.equal(2);
-              if (seenPostAUFs[pll].has(AUF.none))
-                expectedNewCasesLeft[pll] = 2;
-              else expectedNewCasesLeft[pll] = 1;
-            } else {
-              expectedNewCasesLeft[pll] = 0;
-              // All non symmetric PLLs have been seen for 4 preAUFs so all 3 postAUFs should
-              // already have been learned simultaneously without any further cases
-              seenPostAUFs[pll].delete(AUF.none);
-              expect(seenPostAUFs[pll].size, pllToPLLLetters[pll]).to.equal(
-                allAUFs.length - 1
-              );
-            }
+            // PostAUF testing
+            expect(seenPostAUFs[pll].size, pllToPLLLetters[pll]).to.equal(
+              seenPreAUFs[pll].size
+            );
+            // The app doesn't know the first postAUF it gives the user as it depends on the algorithm they use
+            // so they could start out with the no postAUF case which we otherwise try to avoid as it doesn't
+            // add anything practice wise, so we need to check for it
+            expectedNewCasesLeft[pll] =
+              3 -
+              seenPreAUFs[pll].size +
+              (seenPostAUFs[pll].has(AUF.none) ? 1 : 0);
           });
         });
 
@@ -672,6 +688,9 @@ describe("PLL Trainer", function () {
           // be fully done with all their postAUF cases, and make sure that no
           // unexpected new cases were encountered
           allPLLs.forEach((pll) => {
+            console.log(
+              [...seenPostAUFs[pll]].map((x) => aufToAlgorithmString[x])
+            );
             expect(newCasesEncountered[pll], pllToPLLLetters[pll]).to.equal(
               expectedNewCasesLeft[pll]
             );
