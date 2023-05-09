@@ -5,6 +5,30 @@ export enum AUF {
   UPrime,
 }
 
+const toNum: { [key in AUF]: number } = {
+  [AUF.none]: 0,
+  [AUF.U]: 1,
+  [AUF.U2]: 2,
+  [AUF.UPrime]: 3,
+};
+export function addAufs(a: AUF, b: AUF): AUF {
+  return fromNum(toNum[a] + toNum[b]);
+}
+function fromNum(aufNum: number): AUF {
+  switch (aufNum % 4) {
+    case 0:
+      return AUF.none;
+    case 1:
+      return AUF.U;
+    case 2:
+      return AUF.U2;
+    case 3:
+      return AUF.UPrime;
+    default:
+      throw new Error(`Invalid aufNum ${aufNum}`);
+  }
+}
+
 export function aufToString(auf: AUF): string {
   switch (auf) {
     case AUF.none:

@@ -127,17 +127,28 @@ getNewCaseIfNeeded user =
 
 getNextNewCase : User -> Maybe TestCase
 getNextNewCase user =
-    learningOrderForFixedPLLAlgorithms
-        |> List.Extra.findMap (isNewCase user)
-        |> Maybe.map TestCase
+    let
+        maybeNewPreAUFCase : Maybe ( AUF, PLL, AUF )
+        maybeNewPreAUFCase =
+            learningOrderForFixedPLLAlgorithms
+                |> List.Extra.findMap (isNewPreAUFCase user)
+    in
+    case maybeNewPreAUFCase of
+        Just newPreAUFCase ->
+            Just <| TestCase newPreAUFCase
+
+        Nothing ->
+            learningOrderForFixedPLLAlgorithms
+                |> List.Extra.findMap (getNewPostAUFCase user)
+                |> Maybe.map TestCase
 
 
 
 -- TODO: Refactor this properly
 
 
-isNewCase : User -> ( AUF, PLL ) -> Maybe ( AUF, PLL, AUF )
-isNewCase user ( preAUF_, pll_ ) =
+isNewPreAUFCase : User -> ( AUF, PLL ) -> Maybe ( AUF, PLL, AUF )
+isNewPreAUFCase user ( preAUF_, pll_ ) =
     let
         currentAlgorithm : Algorithm.Algorithm
         currentAlgorithm =
@@ -196,6 +207,32 @@ isNewCase user ( preAUF_, pll_ ) =
             )
 
 
+getNewPostAUFCase : User -> ( AUF, PLL ) -> Maybe ( AUF, PLL, AUF )
+getNewPostAUFCase user ( preAUF_, pll_ ) =
+    let
+        attemptedPostAUFs : List AUF
+        attemptedPostAUFs =
+            User.getAttemptedPLLPostAUFs pll_ user
+    in
+    -- TODO: Randomize order of this list
+    AUF.all
+        |> List.Nonempty.toList
+        |> List.filter ((/=) AUF.None)
+        |> List.filter
+            (\postAUF_ ->
+                attemptedPostAUFs
+                    |> List.all ((/=) postAUF_)
+            )
+        |> List.head
+        |> Maybe.map
+            (\newPostAUF ->
+                ( preAUF_
+                , pll_
+                , newPostAUF
+                )
+            )
+
+
 learningOrderForFixedPLLAlgorithms : List ( AUF, PLL )
 learningOrderForFixedPLLAlgorithms =
     [ ( AUF.None, PLL.H )
@@ -223,6 +260,7 @@ learningOrderForFixedPLLAlgorithms =
     , ( AUF.Halfway, PLL.Y )
     , ( AUF.CounterClockwise, PLL.V )
     , ( AUF.CounterClockwise, PLL.E )
+    , ( AUF.None, PLL.E )
     , ( AUF.Clockwise, PLL.F )
     , ( AUF.None, PLL.Ja )
     , ( AUF.Clockwise, PLL.Jb )

@@ -35,6 +35,9 @@ import {
   pllToPLLLetters,
 } from "./pll";
 import { register } from "@cypress/snapshot";
+import deepEqualInAnyOrder from "deep-equal-in-any-order";
+
+chai.use(deepEqualInAnyOrder);
 
 const registerCypressSnapshot: unknown = register;
 if (typeof registerCypressSnapshot !== "function")
