@@ -20,7 +20,10 @@ build : AUF -> PLL -> AUF -> TestCase
 build preAUF_ pll_ postAUF_ =
     let
         ( optimizedPreAUF, optimizedPostAUF ) =
-            PLL.Extra.getPreferredEquivalentAUFs ( preAUF_, pll_, postAUF_ )
+            PLL.Extra.getPreferredEquivalentAUFs
+                (List.Nonempty.singleton ( AUF.None, AUF.None ))
+                ( preAUF_, pll_, postAUF_ )
+                |> Maybe.withDefault ( AUF.None, AUF.None )
     in
     TestCase ( optimizedPreAUF, pll_, optimizedPostAUF )
 
