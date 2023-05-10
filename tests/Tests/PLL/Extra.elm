@@ -7,6 +7,7 @@ import Fuzz.Extra
 import PLL
 import PLL.Extra
 import Test exposing (..)
+import User
 
 
 getPreferredEquivalentAUFsTests : Test
@@ -21,7 +22,7 @@ getPreferredEquivalentAUFsTests =
             "never chooses a pair that makes the total moves longer symmetrical cases"
           <|
             \( pll, preAUF, postAUF ) ->
-                PLL.Extra.getPreferredEquivalentAUFs ( preAUF, pll, postAUF )
+                PLL.Extra.getPreferredEquivalentAUFs User.new ( preAUF, pll, postAUF )
                     |> countAUFTurns
                     |> Expect.atMost (countAUFTurns ( preAUF, postAUF ))
         ]

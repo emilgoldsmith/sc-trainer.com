@@ -5,7 +5,6 @@ import Algorithm
 import Cube exposing (Cube)
 import List.Extra
 import List.Nonempty
-import List.Nonempty.Extra
 import PLL exposing (PLL)
 import PLL.Extra
 import Random
