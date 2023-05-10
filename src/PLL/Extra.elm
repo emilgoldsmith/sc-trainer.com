@@ -4,10 +4,11 @@ import AUF exposing (AUF)
 import List.Extra
 import List.Nonempty
 import PLL exposing (PLL)
+import User exposing (User)
 
 
-getPreferredEquivalentAUFs : ( AUF, PLL, AUF ) -> ( AUF, AUF )
-getPreferredEquivalentAUFs testCase =
+getPreferredEquivalentAUFs : User -> ( AUF, PLL, AUF ) -> ( AUF, AUF )
+getPreferredEquivalentAUFs user testCase =
     testCase
         |> PLL.getAllEquivalentAUFs
         |> List.Nonempty.sortWith
