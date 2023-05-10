@@ -1,4 +1,4 @@
-module List.Nonempty.Extra exposing (find, findMap, lift2, lift3)
+module List.Nonempty.Extra exposing (allMinimums, find, findMap, lift2, lift3)
 
 import List.Extra
 import List.Nonempty
@@ -42,3 +42,21 @@ lift3 f la lb lc =
                                 |> List.Nonempty.map (f a b)
                         )
             )
+
+
+allMinimums : (a -> a -> Order) -> List.Nonempty.Nonempty a -> List.Nonempty.Nonempty a
+allMinimums cmp (List.Nonempty.Nonempty head tail) =
+    List.foldl
+        (\next cur ->
+            case cmp next (List.Nonempty.head cur) of
+                LT ->
+                    List.Nonempty.singleton next
+
+                EQ ->
+                    List.Nonempty.cons next cur
+
+                GT ->
+                    cur
+        )
+        (List.Nonempty.singleton head)
+        tail

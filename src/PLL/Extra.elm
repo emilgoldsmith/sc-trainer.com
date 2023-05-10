@@ -3,49 +3,47 @@ module PLL.Extra exposing (getPreferredEquivalentAUFs)
 import AUF exposing (AUF)
 import List.Extra
 import List.Nonempty
+import List.Nonempty.Extra
 import PLL exposing (PLL)
 import User exposing (User)
 
 
-getPreferredEquivalentAUFs : User -> ( AUF, PLL, AUF ) -> ( AUF, AUF )
-getPreferredEquivalentAUFs user testCase =
-    testCase
-        |> PLL.getAllEquivalentAUFs
-        |> List.Nonempty.sortWith
-            (\a b ->
-                let
-                    turnCountOrder =
-                        -- Better the lower turn count
+type alias Preferences =
+    List.Nonempty.Nonempty ( AUF, AUF )
+
+
+getPreferredEquivalentAUFs : Preferences -> ( AUF, PLL, AUF ) -> Maybe ( AUF, AUF )
+getPreferredEquivalentAUFs preferences testCase =
+    let
+        optimalOptions =
+            testCase
+                |> PLL.getAllEquivalentAUFs
+                |> List.Nonempty.Extra.allMinimums
+                    (\a b ->
+                        -- Lower turn count is always the better option
                         compare (countAUFTurns a) (countAUFTurns b)
+                    )
+    in
+    case optimalOptions of
+        List.Nonempty.Nonempty onlyOption [] ->
+            -- If only one optimal option we choose that one
+            Just onlyOption
 
-                    numPreAUFsOrder =
-                        -- Better the less pre aufs
-                        compare (countPreAUFs a) (countPreAUFs b)
-
-                    numCounterClockwisesOrder =
-                        -- Better the less counter clockwise turns
-                        compare (countCounterClockwises a) (countCounterClockwises b)
-
-                    specialCaseOrder =
-                        -- Just to be fully determined we prefer [U, U'] over [U', U]
-                        compare (countCounterClockwiseBeforeClockwise a) (countCounterClockwiseBeforeClockwise b)
-                in
-                [ turnCountOrder, numPreAUFsOrder, numCounterClockwisesOrder, specialCaseOrder ]
-                    -- Just pick the first one that's not EQ
-                    |> List.Extra.find ((/=) EQ)
-                    |> Maybe.withDefault EQ
-            )
-        |> List.Nonempty.head
+        nonSingletonOptions ->
+            -- Else we choose the preference
+            preferences
+                |> List.Nonempty.Extra.find
+                    (\pref ->
+                        nonSingletonOptions
+                            |> List.Nonempty.Extra.find (\option -> option == pref)
+                            |> Maybe.map (always True)
+                            |> Maybe.withDefault False
+                    )
 
 
 countAUFTurns : ( AUF, AUF ) -> Float
 countAUFTurns ( preAUF, postAUF ) =
     countSingleAUFTurns preAUF + countSingleAUFTurns postAUF
-
-
-countPreAUFs : ( AUF, AUF ) -> Float
-countPreAUFs ( preAUF, _ ) =
-    countSingleAUFTurns preAUF
 
 
 countSingleAUFTurns : AUF -> Float
@@ -59,30 +57,8 @@ countSingleAUFTurns auf =
         AUF.Halfway ->
             1.2
 
-        _ ->
+        AUF.Clockwise ->
             1
 
-
-countCounterClockwises : ( AUF, AUF ) -> Int
-countCounterClockwises ( preAUF, postAUF ) =
-    (if preAUF == AUF.CounterClockwise then
-        1
-
-     else
-        0
-    )
-        + (if postAUF == AUF.CounterClockwise then
+        AUF.CounterClockwise ->
             1
-
-           else
-            0
-          )
-
-
-countCounterClockwiseBeforeClockwise : ( AUF, AUF ) -> Int
-countCounterClockwiseBeforeClockwise aufs =
-    if aufs == ( AUF.CounterClockwise, AUF.Clockwise ) then
-        1
-
-    else
-        0
