@@ -666,7 +666,7 @@ recordPLLTestResult : PLL -> TestResult -> User -> Result RecordResultError User
 recordPLLTestResult pll result user =
     let
         maybeNewPLLData =
-            addPLLResult pll result (getPLLData user)
+            addPLLResult (Debug.log "record pll" pll) (Debug.log "record result" result) (getPLLData user)
     in
     maybeNewPLLData
         |> Result.fromMaybe NoAlgorithmPickedYet

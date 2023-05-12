@@ -695,16 +695,20 @@ describe("PLL Trainer", function () {
                 (prevSet, curAUF) => new Set(prevSet).add(curAUF),
                 new Set()
               );
+            // At this point we should have seen all recognition angles, but depending
+            // on optimality and preferences we may not have seen all preAUFs as it may
+            // be the same recognition angle can have different optimal preAUFs depending on
+            // the postAUF
             expect(
-              [...seenPreAUFs[pll]],
+              [...expectedPreAUFs],
               `${
                 pllToPLLLetters[pll]
-              }: Expected to find all the following pre-AUFs: ${JSON.stringify(
-                [...expectedPreAUFs].map((x) => aufToAlgorithmString[x])
-              )} in the seen AUFs ${JSON.stringify(
+              }: Expected all the seen AUFs: ${JSON.stringify(
                 [...seenPreAUFs[pll]].map((x) => aufToAlgorithmString[x])
+              )} to be a subset of the following pre-AUFs: ${JSON.stringify(
+                [...expectedPreAUFs].map((x) => aufToAlgorithmString[x])
               )}`
-            ).to.deep.equalInAnyOrder([...expectedPreAUFs]);
+            ).to.deep.include.members([...seenPreAUFs[pll]]);
             // Should have used our cases efficiently
             expect(seenPreAUFs[pll]).to.have.lengthOf(pllCount[pll]);
 
@@ -726,7 +730,62 @@ describe("PLL Trainer", function () {
             // isn't really anything to practice
             missingPostAUFs.delete(AUF.none);
             seenPostAUFs[pll].forEach((x) => missingPostAUFs.delete(x));
-            expectedNewCasesLeft[pll] = missingPostAUFs.size;
+            const missingPreAUFs = new Set(expectedPreAUFs);
+            seenPreAUFs[pll].forEach((x) => missingPreAUFs.delete(x));
+            expectedNewCasesLeft[pll] = calcExpectedNewCases(
+              limitedCaseSet,
+              missingPreAUFs,
+              missingPostAUFs
+            );
+
+            function calcExpectedNewCases(
+              casesLeft: (readonly [AUF, AUF])[],
+              missingPre: Set<AUF>,
+              missingPost: Set<AUF>
+            ): number {
+              const unseenCasesLeft = casesLeft.filter(
+                ([pre, post]) => missingPre.has(pre) || missingPost.has(post)
+              );
+              const [doubleUnseen, singleUnseen] = Cypress._.partition(
+                unseenCasesLeft,
+                ([pre, post]) => missingPre.has(pre) && missingPost.has(post)
+              );
+              if (!Cypress._.isEmpty(doubleUnseen)) {
+                const ret = Cypress._.max(
+                  doubleUnseen.map(([pre, post]) => {
+                    const newMissingPre = new Set(missingPre);
+                    const newMissingPost = new Set(missingPost);
+                    newMissingPre.delete(pre);
+                    newMissingPost.delete(post);
+                    return calcExpectedNewCases(
+                      unseenCasesLeft,
+                      newMissingPre,
+                      newMissingPost
+                    );
+                  })
+                );
+                if (ret === undefined) throw new Error("Undefined ret");
+                return ret + 1;
+              }
+              if (!Cypress._.isEmpty(singleUnseen)) {
+                const ret = Cypress._.max(
+                  singleUnseen.map(([pre, post]) => {
+                    const newMissingPre = new Set(missingPre);
+                    const newMissingPost = new Set(missingPost);
+                    newMissingPre.delete(pre);
+                    newMissingPost.delete(post);
+                    return calcExpectedNewCases(
+                      unseenCasesLeft,
+                      newMissingPre,
+                      newMissingPost
+                    );
+                  })
+                );
+                if (ret === undefined) throw new Error("Undefined ret");
+                return ret + 1;
+              }
+              return 0;
+            }
           });
         });
 
@@ -756,8 +815,9 @@ describe("PLL Trainer", function () {
                 startingState: "newCasePage",
                 endingState: "correctPage",
               });
-              cy.getCurrentTestCase().then(([, pll, postAUF]) => {
+              cy.getCurrentTestCase().then(([preAUF, pll, postAUF]) => {
                 seenPostAUFs[pll].add(postAUF);
+                seenPreAUFs[pll].add(preAUF);
                 newCasesEncountered[pll]++;
                 if (newCasesEncountered[pll] > 3)
                   throw new Error(
@@ -770,15 +830,36 @@ describe("PLL Trainer", function () {
 
         cy.wrap(null, { log: false }).should(() => {
           // Now that there are no mere new cases the symmetric plls should also
-          // be fully done with all their postAUF cases, and make sure that no
+          // be fully done with all their pre- and postAUF cases, and make sure that no
           // unexpected new cases were encountered
           allPLLs.forEach((pll) => {
+            const expectedPreAUFs = limitedCaseSets[pll]
+              .map((x) => x[0])
+              .reduce<Set<AUF>>(
+                (prevSet, curAUF) => new Set(prevSet).add(curAUF),
+                new Set()
+              );
+
+            expect(
+              [...seenPreAUFs[pll]],
+              `${
+                pllToPLLLetters[pll]
+              }: Expected to find all the following pre-AUFs: ${JSON.stringify(
+                [...expectedPreAUFs].map((x) => aufToAlgorithmString[x])
+              )} in the seen AUFs ${JSON.stringify(
+                [...seenPreAUFs[pll]].map((x) => aufToAlgorithmString[x])
+              )}`
+            ).to.deep.include.members([...expectedPreAUFs]);
+
             const expectedPostAUFs = limitedCaseSets[pll]
               .map((x) => x[1])
               .reduce<Set<AUF>>(
                 (prevSet, curAUF) => new Set(prevSet).add(curAUF),
                 new Set()
               );
+
+            // We don't care about the none AUF being practiced
+            expectedPostAUFs.delete(AUF.none);
 
             expect(
               [...seenPostAUFs[pll]],
@@ -789,7 +870,7 @@ describe("PLL Trainer", function () {
               )} in the seen AUFs ${JSON.stringify(
                 [...seenPostAUFs[pll]].map((x) => aufToAlgorithmString[x])
               )}`
-            ).to.deep.equalInAnyOrder([...expectedPostAUFs]);
+            ).to.deep.include.members([...expectedPostAUFs]);
 
             expect(newCasesEncountered[pll], pllToPLLLetters[pll]).to.equal(
               expectedNewCasesLeft[pll]

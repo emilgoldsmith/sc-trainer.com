@@ -126,14 +126,13 @@ buildConstantGenerator user testCase =
 getNewCaseIfNeeded : User -> Maybe TestCase
 getNewCaseIfNeeded user =
     getNextNewCase user
-        |> Maybe.map TestCase
 
 
 
 -- |> Maybe.map (\( preAUF_, pll_, postAUF_ ) -> build preAUF_ pll_ postAUF_)
 
 
-getNextNewCase : User -> Maybe ( AUF, PLL, AUF )
+getNextNewCase : User -> Maybe TestCase
 getNextNewCase user =
     let
         maybeNewPreAUFCase : Maybe ( AUF, PLL, AUF )
@@ -141,14 +140,16 @@ getNextNewCase user =
             learningOrderForFixedPLLAlgorithms
                 |> List.Extra.findMap (isNewPreAUFCase user)
     in
-    case maybeNewPreAUFCase of
-        Just newPreAUFCase ->
-            Just <| newPreAUFCase
+    Debug.log "next new case result" <|
+        case maybeNewPreAUFCase of
+            Just newPreAUFCase ->
+                Just <| TestCase newPreAUFCase
 
-        Nothing ->
-            PLL.all
-                |> List.Nonempty.toList
-                |> List.Extra.findMap (getNewPostAUFCase user)
+            Nothing ->
+                -- TODO: Randomize order of this list
+                PLL.all
+                    |> List.Nonempty.toList
+                    |> List.Extra.findMap (getNewPostAUFCase user)
 
 
 
@@ -165,8 +166,8 @@ isNewPreAUFCase user ( preAUF_, pll_ ) =
                 user
                 (TestCase ( AUF.None, pll_, AUF.None ))
 
-        maybeEquivalentPreAUF : Maybe AUF
-        maybeEquivalentPreAUF =
+        maybePreAUFForReferenceAlg : Maybe AUF
+        maybePreAUFForReferenceAlg =
             Cube.detectAUFs
                 { toDetectFor = currentAlgorithm
                 , toMatchTo =
@@ -178,20 +179,25 @@ isNewPreAUFCase user ( preAUF_, pll_ ) =
                 }
                 |> Maybe.map (\( pre, _ ) -> pre)
     in
-    maybeEquivalentPreAUF
+    maybePreAUFForReferenceAlg
         |> Maybe.andThen
-            (\equivalentPreAUF ->
+            (\preAUFForReferenceAlg ->
                 let
+                    equivalentPreAUFs : List.Nonempty.Nonempty AUF
+                    equivalentPreAUFs =
+                        -- Doesn't matter what we put as the post AUF as it won't change the equivalent pre AUFs
+                        PLL.getAllEquivalentAUFs ( preAUFForReferenceAlg, pll_, AUF.None )
+                            |> List.Nonempty.map Tuple.first
+
                     preAUFAttempted : Bool
                     preAUFAttempted =
                         User.getAttemptedPLLPreAUFs pll_ user
-                            |> List.any ((==) equivalentPreAUF)
+                            |> List.any (\attemptedPreAUF -> List.Nonempty.member attemptedPreAUF equivalentPreAUFs)
 
                     attemptedPostAUFs : List AUF
                     attemptedPostAUFs =
                         User.getAttemptedPLLPostAUFs pll_ user
                 in
-                -- TODO: Make sure postAUFs of attempted preAUFs are also tested
                 if preAUFAttempted then
                     Nothing
 
@@ -201,7 +207,7 @@ isNewPreAUFCase user ( preAUF_, pll_ ) =
                             Debug.log "preAUF" preAUF_
                     in
                     Just
-                        ( Debug.log "equivalentPreAUF" equivalentPreAUF
+                        ( Debug.log "equivalentPreAUF" preAUFForReferenceAlg
                         , pll_
                           -- TODO: Randomize order of this list
                         , AUF.all
@@ -219,47 +225,53 @@ isNewPreAUFCase user ( preAUF_, pll_ ) =
             )
 
 
-getNewPostAUFCase : User ->  PLL  -> Maybe ( AUF, PLL, AUF )
+getNewPostAUFCase : User -> PLL -> Maybe TestCase
 getNewPostAUFCase user pll_ =
     let
         attemptedPreAUFs : List AUF
-        attemptedPreAUFs = User.getAttemptedPLLPreAUFs pll_ user
+        attemptedPreAUFs =
+            User.getAttemptedPLLPreAUFs (Debug.log "pll" pll_) user
+                |> Debug.log "attemptedPreAUFs"
 
-        -- TODO: Randomize order of this list
-        notYetAttemptedPreAUFs = AUF.all
-            |> List.Nonempty.toList
-            |> List.filter
-                (\postAUF_ ->
-                    attemptedPostAUFs
-                        |> List.all ((/=) postAUF_)
-                )
         attemptedPostAUFs : List AUF
         attemptedPostAUFs =
-            User.getAttemptedPLLPostAUFs pll_ user
+            -- We add None here as we don't crea about learning none post AUF cases
+            AUF.None
+                :: User.getAttemptedPLLPostAUFs pll_ user
+                |> Debug.log "attemptedPostAUFs"
 
-        notYetAttemptedPostAUFs = AUF.all
-            |> List.Nonempty.toList
-            |> List.filter ((/=) AUF.None)
-            |> List.filter
-                (\postAUF_ ->
-                    attemptedPostAUFs
-                        |> List.all ((/=) postAUF_)
-                )
+        allTestCases =
+            AUF.all
+                |> List.Nonempty.toList
+                |> List.concatMap
+                    (\preAUF_ ->
+                        AUF.all
+                            |> List.Nonempty.toList
+                            |> List.map (build preAUF_ pll_)
+                    )
+                |> List.Extra.unique
+                |> Debug.log "allTestCases"
 
-        notYetAttemptedAUFPairs = notYetAttemptedPreAUFs
-            |> List.concatMap (\preAUF_ -> notYetAttemptedPostAUFs
-                |> List.map (Tuple.pair preAUF_))
+        allUnseenTestCases : List TestCase
+        allUnseenTestCases =
+            allTestCases
+                |> List.filter (\(TestCase ( preAUF_, _, postAUF_ )) -> not (List.member preAUF_ attemptedPreAUFs) || not (List.member postAUF_ attemptedPostAUFs))
+                |> Debug.log "all unseen"
 
+        ( bothNotAttempted, singleNotAttempted ) =
+            allUnseenTestCases
+                |> List.partition (\(TestCase ( preAUF_, _, postAUF_ )) -> not (List.member preAUF_ attemptedPreAUFs) && not (List.member postAUF_ attemptedPostAUFs))
+                |> Debug.log "partition"
+
+        -- TODO: Randomize order of this list
     in
+    Debug.log "new post auf case result" <|
+        case List.head bothNotAttempted of
+            Just x ->
+                Just x
 
-        |> List.head
-        |> Maybe.map
-            (\newPostAUF ->
-                ( preAUF_
-                , pll_
-                , newPostAUF
-                )
-            )
+            Nothing ->
+                List.head singleNotAttempted
 
 
 learningOrderForFixedPLLAlgorithms : List ( AUF, PLL )

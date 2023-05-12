@@ -473,14 +473,15 @@ update shared msg model =
                                                 (PLLTrainer.TestCase.pll model.currentTestCase.testCase)
                                                 correctedPostAUF
                                     }
+                                        |> Debug.log "correctedOldTestCase"
 
                                 correctedTestResult =
                                     case testResult of
                                         User.Correct parameters ->
-                                            User.Correct { parameters | preAUF = correctedPreAUF, postAUF = correctedPostAUF }
+                                            User.Correct { parameters | preAUF = PLLTrainer.TestCase.preAUF correctedTestCase.testCase, postAUF = PLLTrainer.TestCase.postAUF correctedTestCase.testCase }
 
                                         User.Wrong parameters ->
-                                            User.Wrong { parameters | preAUF = correctedPreAUF, postAUF = correctedPostAUF }
+                                            User.Wrong { parameters | preAUF = PLLTrainer.TestCase.preAUF correctedTestCase.testCase, postAUF = PLLTrainer.TestCase.postAUF correctedTestCase.testCase }
 
                                 nextTrainerState =
                                     getNextTrainerState algorithm
