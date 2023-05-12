@@ -27,3 +27,5 @@ Support alternative algs for backside / mirror algs for things such as U perms
 Disable algorithm submit button on invalid
 
 Make changePLLAlgorithm also do verification?
+
+Fix space not working in algorithm pick page (probably because we're listening for space on press right?)

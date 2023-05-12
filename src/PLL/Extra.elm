@@ -1,22 +1,21 @@
-module PLL.Extra exposing (getPreferredEquivalentAUFs)
+module PLL.Extra exposing (PreferredAUFsError(..), getPreferredEquivalentAUFs)
 
 import AUF exposing (AUF)
-import List.Extra
 import List.Nonempty
 import List.Nonempty.Extra
 import PLL exposing (PLL)
-import User exposing (User)
+import User exposing (PLLAUFPreferences)
 
 
-type alias Preferences =
-    List.Nonempty.Nonempty ( AUF, AUF )
+type PreferredAUFsError
+    = InvalidPreferences PLLAUFPreferences ( AUF, PLL, AUF )
 
 
-getPreferredEquivalentAUFs : Preferences -> ( AUF, PLL, AUF ) -> Maybe ( AUF, AUF )
+getPreferredEquivalentAUFs : PLLAUFPreferences -> ( AUF, PLL, AUF ) -> Result PreferredAUFsError ( AUF, AUF )
 getPreferredEquivalentAUFs preferences testCase =
     let
         optimalOptions =
-            testCase
+            Debug.log "testCase" testCase
                 |> PLL.getAllEquivalentAUFs
                 |> List.Nonempty.Extra.allMinimums
                     (\a b ->
@@ -24,21 +23,24 @@ getPreferredEquivalentAUFs preferences testCase =
                         compare (countAUFTurns a) (countAUFTurns b)
                     )
     in
-    case optimalOptions of
-        List.Nonempty.Nonempty onlyOption [] ->
-            -- If only one optimal option we choose that one
-            Just onlyOption
+    Debug.log "result" <|
+        case optimalOptions of
+            List.Nonempty.Nonempty onlyOption [] ->
+                -- If only one optimal option we choose that one
+                Ok onlyOption
 
-        nonSingletonOptions ->
-            -- Else we choose the preference
-            preferences
-                |> List.Nonempty.Extra.find
-                    (\pref ->
-                        nonSingletonOptions
-                            |> List.Nonempty.Extra.find (\option -> option == pref)
-                            |> Maybe.map (always True)
-                            |> Maybe.withDefault False
-                    )
+            nonSingletonOptions ->
+                -- Else we choose the preference
+                Debug.log "preferences" preferences
+                    |> User.getPLLAUFPreferencesList
+                    |> List.Nonempty.Extra.find
+                        (\pref ->
+                            nonSingletonOptions
+                                |> List.Nonempty.Extra.find (\option -> option == pref)
+                                |> Maybe.map (always True)
+                                |> Maybe.withDefault False
+                        )
+                    |> Result.fromMaybe (InvalidPreferences preferences testCase)
 
 
 countAUFTurns : ( AUF, AUF ) -> Float

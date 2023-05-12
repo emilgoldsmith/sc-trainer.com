@@ -21,11 +21,12 @@ build preAUF_ pll_ postAUF_ =
     let
         ( optimizedPreAUF, optimizedPostAUF ) =
             PLL.Extra.getPreferredEquivalentAUFs
-                (List.Nonempty.singleton ( AUF.None, AUF.None ))
+                (User.defaultPLLAUFPreferences pll_)
                 ( preAUF_, pll_, postAUF_ )
-                |> Maybe.withDefault ( AUF.None, AUF.None )
+                -- TODO: Make this return an error
+                |> Result.withDefault ( AUF.None, AUF.None )
     in
-    TestCase ( optimizedPreAUF, pll_, optimizedPostAUF )
+    TestCase (Debug.log "build result" ( optimizedPreAUF, pll_, optimizedPostAUF ))
 
 
 toAlg : { addFinalReorientationToAlgorithm : Bool } -> User -> TestCase -> Algorithm.Algorithm
@@ -125,9 +126,14 @@ buildConstantGenerator user testCase =
 getNewCaseIfNeeded : User -> Maybe TestCase
 getNewCaseIfNeeded user =
     getNextNewCase user
+        |> Maybe.map TestCase
 
 
-getNextNewCase : User -> Maybe TestCase
+
+-- |> Maybe.map (\( preAUF_, pll_, postAUF_ ) -> build preAUF_ pll_ postAUF_)
+
+
+getNextNewCase : User -> Maybe ( AUF, PLL, AUF )
 getNextNewCase user =
     let
         maybeNewPreAUFCase : Maybe ( AUF, PLL, AUF )
@@ -137,12 +143,12 @@ getNextNewCase user =
     in
     case maybeNewPreAUFCase of
         Just newPreAUFCase ->
-            Just <| TestCase newPreAUFCase
+            Just <| newPreAUFCase
 
         Nothing ->
-            learningOrderForFixedPLLAlgorithms
+            PLL.all
+                |> List.Nonempty.toList
                 |> List.Extra.findMap (getNewPostAUFCase user)
-                |> Maybe.map TestCase
 
 
 
@@ -190,8 +196,12 @@ isNewPreAUFCase user ( preAUF_, pll_ ) =
                     Nothing
 
                 else
+                    let
+                        _ =
+                            Debug.log "preAUF" preAUF_
+                    in
                     Just
-                        ( equivalentPreAUF
+                        ( Debug.log "equivalentPreAUF" equivalentPreAUF
                         , pll_
                           -- TODO: Randomize order of this list
                         , AUF.all
@@ -209,22 +219,39 @@ isNewPreAUFCase user ( preAUF_, pll_ ) =
             )
 
 
-getNewPostAUFCase : User -> ( AUF, PLL ) -> Maybe ( AUF, PLL, AUF )
-getNewPostAUFCase user ( preAUF_, pll_ ) =
+getNewPostAUFCase : User ->  PLL  -> Maybe ( AUF, PLL, AUF )
+getNewPostAUFCase user pll_ =
     let
+        attemptedPreAUFs : List AUF
+        attemptedPreAUFs = User.getAttemptedPLLPreAUFs pll_ user
+
+        -- TODO: Randomize order of this list
+        notYetAttemptedPreAUFs = AUF.all
+            |> List.Nonempty.toList
+            |> List.filter
+                (\postAUF_ ->
+                    attemptedPostAUFs
+                        |> List.all ((/=) postAUF_)
+                )
         attemptedPostAUFs : List AUF
         attemptedPostAUFs =
             User.getAttemptedPLLPostAUFs pll_ user
+
+        notYetAttemptedPostAUFs = AUF.all
+            |> List.Nonempty.toList
+            |> List.filter ((/=) AUF.None)
+            |> List.filter
+                (\postAUF_ ->
+                    attemptedPostAUFs
+                        |> List.all ((/=) postAUF_)
+                )
+
+        notYetAttemptedAUFPairs = notYetAttemptedPreAUFs
+            |> List.concatMap (\preAUF_ -> notYetAttemptedPostAUFs
+                |> List.map (Tuple.pair preAUF_))
+
     in
-    -- TODO: Randomize order of this list
-    AUF.all
-        |> List.Nonempty.toList
-        |> List.filter ((/=) AUF.None)
-        |> List.filter
-            (\postAUF_ ->
-                attemptedPostAUFs
-                    |> List.all ((/=) postAUF_)
-            )
+
         |> List.head
         |> Maybe.map
             (\newPostAUF ->
@@ -262,7 +289,7 @@ learningOrderForFixedPLLAlgorithms =
     , ( AUF.Halfway, PLL.Y )
     , ( AUF.CounterClockwise, PLL.V )
     , ( AUF.CounterClockwise, PLL.E )
-    , ( AUF.None, PLL.E )
+    , ( AUF.Halfway, PLL.E )
     , ( AUF.Clockwise, PLL.F )
     , ( AUF.None, PLL.Ja )
     , ( AUF.Clockwise, PLL.Jb )
@@ -313,28 +340,29 @@ learningOrderForFixedPLLAlgorithms =
 
 generate : { now : Time.Posix, overrideWithConstantValue : Maybe TestCase } -> User -> Generator
 generate { now, overrideWithConstantValue } user =
-    case overrideWithConstantValue of
-        Just testCaseOverride ->
-            buildConstantGenerator user testCaseOverride
+    Debug.log "generated" <|
+        case overrideWithConstantValue of
+            Just testCaseOverride ->
+                buildConstantGenerator user testCaseOverride
 
-        Nothing ->
-            case getNewCaseIfNeeded user of
-                Just newCase ->
-                    buildConstantGenerator user newCase
+            Nothing ->
+                case getNewCaseIfNeeded user of
+                    Just newCase ->
+                        buildConstantGenerator user newCase
 
-                Nothing ->
-                    let
-                        { pllGenerator, generatorType } =
-                            generatePLL { now = now } user
+                    Nothing ->
+                        let
+                            { pllGenerator, generatorType } =
+                                generatePLL { now = now } user
 
-                        testCaseGenerator =
-                            Random.map TestCase <|
-                                Random.map3 (\a b c -> ( a, b, c ))
-                                    (List.Nonempty.sample AUF.all)
-                                    pllGenerator
-                                    (List.Nonempty.sample AUF.all)
-                    in
-                    replaceInternalGenerator testCaseGenerator generatorType
+                            testCaseGenerator =
+                                Random.map TestCase <|
+                                    Random.map3 (\a b c -> ( a, b, c ))
+                                        (List.Nonempty.sample AUF.all)
+                                        pllGenerator
+                                        (List.Nonempty.sample AUF.all)
+                        in
+                        replaceInternalGenerator testCaseGenerator generatorType
 
 
 generatePLL :

@@ -7,6 +7,7 @@ module User exposing
     , TestResult(..), testResultPreAUF, testResultPostAUF, testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
     , serialize, deserialize
+    , PLLAUFPreferences, defaultPLLAUFPreferences, getPLLAUFPreferencesList, tESTONLYBuildPLLAUFPreferences
     )
 
 {-|
@@ -70,6 +71,113 @@ type alias PLLTrainerData =
     -- , aufPreferences : AUFPreferences
     , pllData : PLLData
     }
+
+
+{-| The auf preferences for a specific PLL
+-}
+type PLLAUFPreferences
+    = PLLAUFPreferences (List.Nonempty.Nonempty ( AUF, AUF ))
+
+
+{-| Get the PLL AUF preferences as a list of preferred AUFs,
+one for each equivalency group of AUF pairs where there are
+several optimal options
+-}
+getPLLAUFPreferencesList : PLLAUFPreferences -> List.Nonempty.Nonempty ( AUF, AUF )
+getPLLAUFPreferencesList (PLLAUFPreferences list) =
+    list
+
+
+{-| Only meant for tests at this moment, don't build PLLAUFPreferences by yourself
+for any other reason
+-}
+tESTONLYBuildPLLAUFPreferences : List.Nonempty.Nonempty ( AUF, AUF ) -> PLLAUFPreferences
+tESTONLYBuildPLLAUFPreferences =
+    PLLAUFPreferences
+
+
+nonSymmetricalAUFPreferenceDefault : PLLAUFPreferences
+nonSymmetricalAUFPreferenceDefault =
+    PLLAUFPreferences <| List.Nonempty.singleton ( AUF.None, AUF.None )
+
+
+{-| Our default values for PLLAUFPreferences
+-}
+defaultPLLAUFPreferences : PLL -> PLLAUFPreferences
+defaultPLLAUFPreferences pll =
+    case pll of
+        PLL.E ->
+            PLLAUFPreferences <|
+                List.Nonempty.Nonempty ( AUF.None, AUF.Halfway )
+                    [ ( AUF.Clockwise, AUF.CounterClockwise ), ( AUF.Clockwise, AUF.Clockwise ) ]
+
+        PLL.H ->
+            PLLAUFPreferences <|
+                List.Nonempty.Nonempty ( AUF.None, AUF.Halfway )
+                    [ ( AUF.None, AUF.CounterClockwise ), ( AUF.None, AUF.Clockwise ) ]
+
+        PLL.Na ->
+            PLLAUFPreferences <|
+                List.Nonempty.Nonempty ( AUF.None, AUF.Halfway )
+                    [ ( AUF.None, AUF.CounterClockwise ), ( AUF.None, AUF.Clockwise ) ]
+
+        PLL.Nb ->
+            PLLAUFPreferences <|
+                List.Nonempty.Nonempty ( AUF.None, AUF.Halfway )
+                    [ ( AUF.None, AUF.CounterClockwise ), ( AUF.None, AUF.Clockwise ) ]
+
+        PLL.Z ->
+            PLLAUFPreferences <|
+                List.Nonempty.Nonempty ( AUF.None, AUF.Halfway )
+                    [ ( AUF.Clockwise, AUF.CounterClockwise ), ( AUF.Clockwise, AUF.Clockwise ) ]
+
+        PLL.Aa ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Ab ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.F ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Ga ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Gb ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Gc ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Gd ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Ja ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Jb ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Ra ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Rb ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.T ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Ua ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Ub ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.V ->
+            nonSymmetricalAUFPreferenceDefault
+
+        PLL.Y ->
+            nonSymmetricalAUFPreferenceDefault
 
 
 
