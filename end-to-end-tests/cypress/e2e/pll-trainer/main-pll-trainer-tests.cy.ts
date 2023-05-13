@@ -468,8 +468,7 @@ describe("PLL Trainer", function () {
               [AUF.U, AUF.none],
               [AUF.UPrime, AUF.none],
               // Preferences where several optimal options
-              // [AUF.none, AUF.U2],
-              [AUF.U2, AUF.none],
+              [AUF.none, AUF.U2],
               [AUF.U, AUF.UPrime],
               [AUF.U, AUF.U],
             ];
