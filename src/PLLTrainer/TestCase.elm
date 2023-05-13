@@ -5,10 +5,12 @@ import Algorithm
 import Cube exposing (Cube)
 import List.Extra
 import List.Nonempty
+import List.Nonempty.Extra
 import PLL exposing (PLL)
 import PLL.Extra
 import Ports
 import Random
+import Random.List
 import Time
 import User exposing (User)
 
@@ -133,16 +135,12 @@ buildConstantGenerator user testCase =
         AlreadyAttempted (Random.constant testCase)
 
 
-getNewCaseIfNeeded : User -> Result (Cmd msg) (Maybe TestCase)
+getNewCaseIfNeeded : User -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
 getNewCaseIfNeeded user =
     getNextNewCase user
 
 
-
--- |> Maybe.map (\( preAUF_, pll_, postAUF_ ) -> build preAUF_ pll_ postAUF_)
-
-
-getNextNewCase : User -> Result (Cmd msg) (Maybe TestCase)
+getNextNewCase : User -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
 getNextNewCase user =
     let
         maybeNewPreAUFCase : Maybe ( AUF, PLL, AUF )
@@ -152,14 +150,16 @@ getNextNewCase user =
     in
     Debug.log "next new case result" <|
         case maybeNewPreAUFCase of
-            Just newPreAUFCase ->
-                Ok <| Just <| TestCase newPreAUFCase
+            Just ( pre, pll_, post ) ->
+                build pre pll_ post
+                    |> Result.map Random.constant
+                    |> Result.map Just
 
             Nothing ->
-                -- TODO: Randomize order of this list
                 PLL.all
                     |> List.Nonempty.toList
                     |> List.map (getNewPostAUFCase user)
+                    -- Convert list of errors to error of list
                     |> List.foldl
                         (\next result ->
                             case ( result, next ) of
@@ -176,7 +176,25 @@ getNextNewCase user =
                                     Err (Cmd.batch [ cmd, nextErr ])
                         )
                         (Ok [])
-                    |> Result.map (List.Extra.findMap identity)
+                    |> Result.map
+                        (List.filterMap identity
+                            >> List.Nonempty.fromList
+                            >> Maybe.map
+                                -- Convert list of generators to generator of list
+                                ((\(List.Nonempty.Nonempty firstElem rest) ->
+                                    List.foldl
+                                        (\next cur ->
+                                            Random.map2 List.Nonempty.cons
+                                                next
+                                                cur
+                                        )
+                                        (firstElem |> Random.map List.Nonempty.singleton)
+                                        rest
+                                 )
+                                    >> Random.andThen List.Nonempty.Extra.choose
+                                    >> Random.map Tuple.first
+                                )
+                        )
 
 
 
@@ -252,7 +270,7 @@ isNewPreAUFCase user ( preAUF_, pll_ ) =
             )
 
 
-getNewPostAUFCase : User -> PLL -> Result (Cmd msg) (Maybe TestCase)
+getNewPostAUFCase : User -> PLL -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
 getNewPostAUFCase user pll_ =
     let
         attemptedPreAUFs : List AUF
@@ -315,8 +333,6 @@ getNewPostAUFCase user pll_ =
                         )
                     )
                 |> Debug.log "partition"
-
-        -- TODO: Randomize order of this list
     in
     Debug.log "new post auf case result" <|
         -- NOTE: One could write a recursion here to make sure we pick
@@ -329,12 +345,17 @@ getNewPostAUFCase user pll_ =
         (numAttemptedPartition
             |> Result.map
                 (\( bothNotAttempted, singleNotAttempted ) ->
-                    case List.head bothNotAttempted of
-                        Just x ->
-                            Just x
+                    case List.Nonempty.fromList bothNotAttempted of
+                        Just nonemptyBothNotAttempted ->
+                            List.Nonempty.Extra.choose nonemptyBothNotAttempted
+                                |> Random.map Tuple.first
+                                |> Just
 
                         Nothing ->
-                            List.head singleNotAttempted
+                            singleNotAttempted
+                                |> List.Nonempty.fromList
+                                |> Maybe.map List.Nonempty.Extra.choose
+                                |> Maybe.map (Random.map <| Tuple.first)
                 )
         )
 
@@ -427,8 +448,8 @@ generate { now, overrideWithConstantValue } user =
                     |> Result.map
                         (\newCaseIfNeeded ->
                             case newCaseIfNeeded of
-                                Just newCase ->
-                                    buildConstantGenerator user newCase
+                                Just newCaseGenerator ->
+                                    NewCase newCaseGenerator
 
                                 Nothing ->
                                     let
