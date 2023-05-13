@@ -4,11 +4,10 @@ module User exposing
     , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
     , hasAttemptedAnyPLLTestCase, PLLTargetParameters, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
     , hasChosenPLLTargetParameters, getAttemptedPLLPreAUFs, getAttemptedPLLPostAUFs, cubeTheme
-    , PLLAUFPreferences, defaultPLLAUFPreferences, tESTONLYBuildPLLAUFPreferences
+    , PLLAUFPreferences, defaultPLLAUFPreferences, getPLLAUFPreferencesTuple, tESTONLYBuildPLLAUFPreferences, pllAUFPreferencesToDebugString
     , TestResult(..), testResultPreAUF, testResultPostAUF, testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
     , serialize, deserialize
-    , getPLLAUFPreferencesTuple
     )
 
 {-|
@@ -29,7 +28,7 @@ module User exposing
 @docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
 @docs hasAttemptedAnyPLLTestCase, PLLTargetParameters, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
 @docs hasChosenPLLTargetParameters, getAttemptedPLLPreAUFs, getAttemptedPLLPostAUFs, cubeTheme
-@docs PLLAUFPreferences, defaultPLLAUFPreferences, getPLLAUFPreferencesList, tESTONLYBuildPLLAUFPreferences
+@docs PLLAUFPreferences, defaultPLLAUFPreferences, getPLLAUFPreferencesTuple, tESTONLYBuildPLLAUFPreferences, pllAUFPreferencesToDebugString
 
 
 # Event Handling
@@ -79,6 +78,18 @@ type alias PLLTrainerData =
 -}
 type PLLAUFPreferences
     = PLLAUFPreferences ( ( AUF, AUF ), ( AUF, AUF ), ( AUF, AUF ) )
+
+
+{-| Used to log errors mainly
+-}
+pllAUFPreferencesToDebugString : PLLAUFPreferences -> String
+pllAUFPreferencesToDebugString (PLLAUFPreferences ( a, b, c )) =
+    String.join ", " (List.map aufPairToDebugString [ a, b, c ])
+
+
+aufPairToDebugString : ( AUF, AUF ) -> String
+aufPairToDebugString ( a, b ) =
+    String.join "" [ "(\"", AUF.toString a, "\", \"", AUF.toString b, "\")" ]
 
 
 {-| Get the PLL AUF preferences as a list of preferred AUFs,
