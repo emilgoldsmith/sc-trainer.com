@@ -429,21 +429,21 @@ describe("PLL Trainer", function () {
         pllTrainerElements.correctPage.container.assertShows();
       });
 
-      it.only("introduces new cases in the correct learning order (UFR angle)", function () {
+      it("introduces new cases in the correct learning order (UFR angle)", function () {
         const hSymmetricPLLs = [PLL.H];
         const nSymmetricPLLs = [PLL.Na, PLL.Nb];
         const halfSymmetricPLLs = [PLL.E, PLL.Z];
         const preAUFEquivalencyGroups: { [key in PLL]: Set<AUF>[] } = {} as {
           [key in PLL]: Set<AUF>[];
         };
-        const limitedCaseSets: {
+        const allowedCasesByPLL: {
           [key in PLL]: (readonly [AUF, AUF])[];
         } = {} as {
           [key in PLL]: (readonly [AUF, AUF])[];
         };
         allPLLs.forEach((pll) => {
           if (hSymmetricPLLs.includes(pll)) {
-            limitedCaseSets[pll] = [
+            allowedCasesByPLL[pll] = [
               // Always optimal cases
               [AUF.none, AUF.none],
               // Preferences where several optimal options
@@ -453,7 +453,7 @@ describe("PLL Trainer", function () {
             ];
             preAUFEquivalencyGroups[pll] = [new Set([...allAUFs])];
           } else if (nSymmetricPLLs.includes(pll)) {
-            limitedCaseSets[pll] = [
+            allowedCasesByPLL[pll] = [
               // Always optimal cases
               [AUF.none, AUF.none],
               // Preferences where several optimal options
@@ -463,7 +463,7 @@ describe("PLL Trainer", function () {
             ];
             preAUFEquivalencyGroups[pll] = [new Set([...allAUFs])];
           } else if (halfSymmetricPLLs.includes(pll)) {
-            limitedCaseSets[pll] = [
+            allowedCasesByPLL[pll] = [
               // Always optimal cases
               [AUF.none, AUF.none],
               [AUF.none, AUF.U],
@@ -481,12 +481,13 @@ describe("PLL Trainer", function () {
             ];
           } else {
             // There are all the combinations with no options when there's no symmetry.
-            limitedCaseSets[pll] = allAUFs.flatMap((preAUF) =>
+            allowedCasesByPLL[pll] = allAUFs.flatMap((preAUF) =>
               allAUFs.map((postAUF) => [preAUF, postAUF] as const)
             );
             preAUFEquivalencyGroups[pll] = allAUFs.map((x) => new Set([x]));
           }
         });
+        // All these preAUFs are relative to JPerms recommended algorithms
         const expectedLearningOrder: [AUF, PLL][] = [
           // All corners solved
           [AUF.none, PLL.H],
@@ -590,14 +591,10 @@ describe("PLL Trainer", function () {
         const pllCount: { [key in PLL]: number } = {} as {
           [key in PLL]: number;
         };
-        const seenCases: { [key in PLL]: [AUF, AUF][] } = {} as {
-          [key in PLL]: [AUF, AUF][];
-        };
         allPLLs.forEach((pll) => {
           seenPreAUFs[pll] = new Set();
           seenPostAUFs[pll] = new Set();
           pllCount[pll] = 0;
-          seenCases[pll] = [];
         });
 
         let startingState: "doNewVisit" | "correctPage" = "doNewVisit";
@@ -626,25 +623,21 @@ describe("PLL Trainer", function () {
                 });
               },
             });
+
             startingState = "correctPage";
+
             cy.getCurrentTestCase()
               .should(([actualPreAUF, , actualPostAUF]) => {
-                const limitedCaseSet = limitedCaseSets[expectedPLL];
-
-                console.log(
-                  aufToAlgorithmString[expectedPreAUF],
-                  ",",
-                  aufToAlgorithmString[actualPreAUF]
-                );
+                const allowedCases = allowedCasesByPLL[expectedPLL];
 
                 expect(
-                  limitedCaseSet,
+                  allowedCases,
                   `Index ${index.toString()}, PLL ${
                     pllToPLLLetters[expectedPLL]
                   }: ("${aufToAlgorithmString[actualPreAUF]}", "${
                     aufToAlgorithmString[actualPostAUF]
                   }") was expected to be found in the limited case set ${JSON.stringify(
-                    limitedCaseSet.map((singleCase) =>
+                    allowedCases.map((singleCase) =>
                       singleCase.map((x) => `${aufToAlgorithmString[x]}`)
                     )
                   )}`
@@ -670,10 +663,12 @@ describe("PLL Trainer", function () {
               .then(([preAUF, pll, postAUF]) => {
                 seenPreAUFs[pll].add(preAUF);
                 seenPostAUFs[pll].add(postAUF);
-                seenCases[pll] = [...seenCases[pll], [preAUF, postAUF]];
               });
           }
         );
+        // Now the initial learning order is complete. All 71 recognition angles or so should have been gone through
+        // so we do some assertions to verify everything is as should be at this stage
+
         // We initialize it below
         const expectedNewCasesLeft: { [key in PLL]: number } = {} as {
           [key in PLL]: number;
@@ -688,8 +683,8 @@ describe("PLL Trainer", function () {
             else expect(pllCount[pll]).to.equal(4);
 
             // Test Pre AUFs
-            const limitedCaseSet = limitedCaseSets[pll];
-            const expectedPreAUFs = limitedCaseSet
+            const allowedCases = allowedCasesByPLL[pll];
+            const expectedPreAUFs = allowedCases
               .map((x) => x[0])
               .reduce<Set<AUF>>(
                 (prevSet, curAUF) => new Set(prevSet).add(curAUF),
@@ -697,7 +692,7 @@ describe("PLL Trainer", function () {
               );
             // At this point we should have seen all recognition angles, but depending
             // on optimality and preferences we may not have seen all preAUFs as it may
-            // be the same recognition angle can have different optimal preAUFs depending on
+            // be that the same recognition angle can have different optimal preAUFs depending on
             // the postAUF
             expect(
               [...expectedPreAUFs],
@@ -713,7 +708,7 @@ describe("PLL Trainer", function () {
             expect(seenPreAUFs[pll]).to.have.lengthOf(pllCount[pll]);
 
             // Test Post AUFs
-            const expectedPostAUFs = limitedCaseSet
+            const expectedPostAUFs = allowedCases
               .map((x) => x[1])
               .reduce<Set<AUF>>(
                 (prevSet, curAUF) => new Set(prevSet).add(curAUF),
@@ -723,6 +718,8 @@ describe("PLL Trainer", function () {
               ...seenPostAUFs[pll],
             ]);
             // Should have used our cases efficiently
+            // This should also assert that non symmetric PLLs have already covered
+            // all their postAUFs
             expect(seenPostAUFs[pll]).to.have.lengthOf(pllCount[pll]);
 
             const missingPostAUFs = new Set(expectedPostAUFs);
@@ -730,10 +727,12 @@ describe("PLL Trainer", function () {
             // isn't really anything to practice
             missingPostAUFs.delete(AUF.none);
             seenPostAUFs[pll].forEach((x) => missingPostAUFs.delete(x));
+
             const missingPreAUFs = new Set(expectedPreAUFs);
             seenPreAUFs[pll].forEach((x) => missingPreAUFs.delete(x));
+
             expectedNewCasesLeft[pll] = calcExpectedNewCases(
-              limitedCaseSet,
+              allowedCases,
               missingPreAUFs,
               missingPostAUFs
             );
@@ -796,7 +795,9 @@ describe("PLL Trainer", function () {
           [key in PLL]: number;
         };
         allPLLs.forEach((pll) => (newCasesEncountered[pll] = 0));
+
         completeTestsUntilNoMoreNewCasePage();
+
         function completeTestsUntilNoMoreNewCasePage() {
           pllTrainerElements.correctPage.nextButton.get().click();
           pllTrainerElements.root.waitForStateChangeAwayFrom(
@@ -830,10 +831,10 @@ describe("PLL Trainer", function () {
 
         cy.wrap(null, { log: false }).should(() => {
           // Now that there are no mere new cases the symmetric plls should also
-          // be fully done with all their pre- and postAUF cases, and make sure that no
+          // be fully done with all their pre- and postAUF cases, and we also make sure that no
           // unexpected new cases were encountered
           allPLLs.forEach((pll) => {
-            const expectedPreAUFs = limitedCaseSets[pll]
+            const expectedPreAUFs = allowedCasesByPLL[pll]
               .map((x) => x[0])
               .reduce<Set<AUF>>(
                 (prevSet, curAUF) => new Set(prevSet).add(curAUF),
@@ -851,7 +852,7 @@ describe("PLL Trainer", function () {
               )}`
             ).to.deep.include.members([...expectedPreAUFs]);
 
-            const expectedPostAUFs = limitedCaseSets[pll]
+            const expectedPostAUFs = allowedCasesByPLL[pll]
               .map((x) => x[1])
               .reduce<Set<AUF>>(
                 (prevSet, curAUF) => new Set(prevSet).add(curAUF),

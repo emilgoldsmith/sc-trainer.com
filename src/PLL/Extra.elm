@@ -1,6 +1,7 @@
 module PLL.Extra exposing (PreferredAUFsError(..), getPreferredEquivalentAUFs)
 
 import AUF exposing (AUF)
+import List.Extra
 import List.Nonempty
 import List.Nonempty.Extra
 import PLL exposing (PLL)
@@ -32,8 +33,9 @@ getPreferredEquivalentAUFs preferences testCase =
             nonSingletonOptions ->
                 -- Else we choose the preference
                 Debug.log "preferences" preferences
-                    |> User.getPLLAUFPreferencesList
-                    |> List.Nonempty.Extra.find
+                    |> User.getPLLAUFPreferencesTuple
+                    |> (\( a, b, c ) -> [ a, b, c ])
+                    |> List.Extra.find
                         (\pref ->
                             nonSingletonOptions
                                 |> List.Nonempty.Extra.find (\option -> option == pref)

@@ -4,10 +4,11 @@ module User exposing
     , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
     , hasAttemptedAnyPLLTestCase, PLLTargetParameters, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
     , hasChosenPLLTargetParameters, getAttemptedPLLPreAUFs, getAttemptedPLLPostAUFs, cubeTheme
+    , PLLAUFPreferences, defaultPLLAUFPreferences, tESTONLYBuildPLLAUFPreferences
     , TestResult(..), testResultPreAUF, testResultPostAUF, testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
     , serialize, deserialize
-    , PLLAUFPreferences, defaultPLLAUFPreferences, getPLLAUFPreferencesList, tESTONLYBuildPLLAUFPreferences
+    , getPLLAUFPreferencesTuple
     )
 
 {-|
@@ -28,6 +29,7 @@ module User exposing
 @docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
 @docs hasAttemptedAnyPLLTestCase, PLLTargetParameters, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
 @docs hasChosenPLLTargetParameters, getAttemptedPLLPreAUFs, getAttemptedPLLPostAUFs, cubeTheme
+@docs PLLAUFPreferences, defaultPLLAUFPreferences, getPLLAUFPreferencesList, tESTONLYBuildPLLAUFPreferences
 
 
 # Event Handling
@@ -76,29 +78,30 @@ type alias PLLTrainerData =
 {-| The auf preferences for a specific PLL
 -}
 type PLLAUFPreferences
-    = PLLAUFPreferences (List.Nonempty.Nonempty ( AUF, AUF ))
+    = PLLAUFPreferences ( ( AUF, AUF ), ( AUF, AUF ), ( AUF, AUF ) )
 
 
 {-| Get the PLL AUF preferences as a list of preferred AUFs,
 one for each equivalency group of AUF pairs where there are
 several optimal options
 -}
-getPLLAUFPreferencesList : PLLAUFPreferences -> List.Nonempty.Nonempty ( AUF, AUF )
-getPLLAUFPreferencesList (PLLAUFPreferences list) =
-    list
+getPLLAUFPreferencesTuple : PLLAUFPreferences -> ( ( AUF, AUF ), ( AUF, AUF ), ( AUF, AUF ) )
+getPLLAUFPreferencesTuple (PLLAUFPreferences tuple) =
+    tuple
 
 
 {-| Only meant for tests at this moment, don't build PLLAUFPreferences by yourself
 for any other reason
 -}
-tESTONLYBuildPLLAUFPreferences : List.Nonempty.Nonempty ( AUF, AUF ) -> PLLAUFPreferences
+tESTONLYBuildPLLAUFPreferences : ( ( AUF, AUF ), ( AUF, AUF ), ( AUF, AUF ) ) -> PLLAUFPreferences
 tESTONLYBuildPLLAUFPreferences =
     PLLAUFPreferences
 
 
 nonSymmetricalAUFPreferenceDefault : PLLAUFPreferences
 nonSymmetricalAUFPreferenceDefault =
-    PLLAUFPreferences <| List.Nonempty.singleton ( AUF.None, AUF.None )
+    -- Non symmetric cases have no options so it doesn't matter what is in here
+    PLLAUFPreferences <| ( ( AUF.None, AUF.None ), ( AUF.None, AUF.None ), ( AUF.None, AUF.None ) )
 
 
 {-| Our default values for PLLAUFPreferences
@@ -108,28 +111,38 @@ defaultPLLAUFPreferences pll =
     case pll of
         PLL.E ->
             PLLAUFPreferences <|
-                List.Nonempty.Nonempty ( AUF.None, AUF.Halfway )
-                    [ ( AUF.Clockwise, AUF.CounterClockwise ), ( AUF.Clockwise, AUF.Clockwise ) ]
+                ( ( AUF.None, AUF.Halfway )
+                , ( AUF.Clockwise, AUF.CounterClockwise )
+                , ( AUF.Clockwise, AUF.Clockwise )
+                )
 
         PLL.H ->
             PLLAUFPreferences <|
-                List.Nonempty.Nonempty ( AUF.None, AUF.Halfway )
-                    [ ( AUF.None, AUF.CounterClockwise ), ( AUF.None, AUF.Clockwise ) ]
+                ( ( AUF.None, AUF.Halfway )
+                , ( AUF.None, AUF.CounterClockwise )
+                , ( AUF.None, AUF.Clockwise )
+                )
 
         PLL.Na ->
             PLLAUFPreferences <|
-                List.Nonempty.Nonempty ( AUF.None, AUF.Halfway )
-                    [ ( AUF.None, AUF.CounterClockwise ), ( AUF.None, AUF.Clockwise ) ]
+                ( ( AUF.None, AUF.Halfway )
+                , ( AUF.None, AUF.CounterClockwise )
+                , ( AUF.None, AUF.Clockwise )
+                )
 
         PLL.Nb ->
             PLLAUFPreferences <|
-                List.Nonempty.Nonempty ( AUF.None, AUF.Halfway )
-                    [ ( AUF.None, AUF.CounterClockwise ), ( AUF.None, AUF.Clockwise ) ]
+                ( ( AUF.None, AUF.Halfway )
+                , ( AUF.None, AUF.CounterClockwise )
+                , ( AUF.None, AUF.Clockwise )
+                )
 
         PLL.Z ->
             PLLAUFPreferences <|
-                List.Nonempty.Nonempty ( AUF.None, AUF.Halfway )
-                    [ ( AUF.Clockwise, AUF.CounterClockwise ), ( AUF.Clockwise, AUF.Clockwise ) ]
+                ( ( AUF.None, AUF.Halfway )
+                , ( AUF.Clockwise, AUF.CounterClockwise )
+                , ( AUF.Clockwise, AUF.Clockwise )
+                )
 
         PLL.Aa ->
             nonSymmetricalAUFPreferenceDefault
