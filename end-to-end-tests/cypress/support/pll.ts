@@ -243,3 +243,118 @@ export const pllToJpermsAlgorithm: { [key in PLL]: string } = {
   [PLL.Gc]: "R2 U' R U' R U R' U R2 (U D') (R U' R') D",
   [PLL.Gd]: "(R U R') (U' D) R2 U' R U' R' U R' U R2 D'",
 };
+
+export const pllLearningOrderByJpermsAlgorithms: [AUF, PLL][] = [
+  // All corners solved
+  [AUF.none, PLL.H],
+  [AUF.U, PLL.Z],
+  [AUF.UPrime, PLL.Ua],
+  [AUF.U2, PLL.Ub],
+  // Huge bars
+  [AUF.none, PLL.Y],
+  [AUF.UPrime, PLL.Ja],
+  [AUF.U2, PLL.Jb],
+  [AUF.none, PLL.Aa],
+  [AUF.none, PLL.Ab],
+  [AUF.U2, PLL.V],
+  [AUF.U, PLL.F],
+  // The Ns
+  [AUF.none, PLL.Na],
+  [AUF.none, PLL.Nb],
+  // T-looking
+  [AUF.U, PLL.T],
+  [AUF.U, PLL.Ra],
+  [AUF.U2, PLL.Rb],
+  // We teach Gs through inside 2 bar, so first teach
+  // the Y inside 2 bar variations in order to be able to
+  // distinguish in real solves
+  [AUF.UPrime, PLL.Y],
+  [AUF.U, PLL.Y],
+  [AUF.none, PLL.Ga],
+  [AUF.UPrime, PLL.Gc],
+  [AUF.UPrime, PLL.Gb],
+  [AUF.none, PLL.Gd],
+  // Teach the Y and V angles that can easily be confused for E
+  // before teaching E
+  [AUF.U2, PLL.Y],
+  [AUF.none, PLL.V],
+  [AUF.none, PLL.E],
+  // Now the user has learned all PLLs from at least one angle
+  // We first finish the no clear patterns group by teaching the
+  // alternate E angle
+  [AUF.U, PLL.E],
+  // We now teach them the last of the 3-bar cases
+  [AUF.U2, PLL.F],
+  [AUF.U2, PLL.Ja],
+  [AUF.U, PLL.Jb],
+  [AUF.U2, PLL.Ua],
+  [AUF.UPrime, PLL.Ub],
+  // Now the last of the all corners solved cases
+  [AUF.none, PLL.Z],
+  [AUF.none, PLL.Ua],
+  [AUF.U, PLL.Ub],
+  [AUF.U, PLL.Ua],
+  [AUF.none, PLL.Ub],
+  // The last of headlights + 2-bar
+  [AUF.U2, PLL.T],
+  [AUF.U, PLL.Aa],
+  [AUF.UPrime, PLL.Ab],
+  [AUF.U, PLL.Ga],
+  [AUF.U2, PLL.Gc],
+  // The lone lights angles
+  [AUF.U2, PLL.Ra],
+  [AUF.U, PLL.Rb],
+  [AUF.U2, PLL.Ga],
+  [AUF.U, PLL.Gc],
+  [AUF.U, PLL.Gb],
+  [AUF.U2, PLL.Gb],
+  [AUF.U, PLL.Gd],
+  [AUF.U2, PLL.Gd],
+  [AUF.U2, PLL.Aa],
+  [AUF.U, PLL.Ab],
+  // Last double 2-bar angles
+  [AUF.none, PLL.Ja],
+  [AUF.U, PLL.Ja],
+  [AUF.none, PLL.Jb],
+  [AUF.UPrime, PLL.Jb],
+  // Outside 2-bar angles
+  [AUF.U, PLL.V],
+  [AUF.UPrime, PLL.V],
+  [AUF.none, PLL.Ra],
+  [AUF.UPrime, PLL.Rb],
+  [AUF.none, PLL.Gb],
+  [AUF.UPrime, PLL.Gd],
+  [AUF.none, PLL.T],
+  [AUF.UPrime, PLL.T],
+  [AUF.UPrime, PLL.Aa],
+  [AUF.U2, PLL.Ab],
+  // Bookends no bars angles
+  [AUF.none, PLL.F],
+  [AUF.UPrime, PLL.F],
+  [AUF.UPrime, PLL.Ra],
+  [AUF.none, PLL.Rb],
+  [AUF.UPrime, PLL.Ga],
+  [AUF.none, PLL.Gc],
+];
+
+export const hSymmetricPLLs = [PLL.H];
+export const nSymmetricPLLs = [PLL.Na, PLL.Nb];
+export const halfSymmetricPLLs = [PLL.E, PLL.Z];
+
+export const preAUFEquivalencyGroups: { [key in PLL]: Set<AUF>[] } = {} as {
+  [key in PLL]: Set<AUF>[];
+};
+
+allPLLs.forEach((pll) => {
+  if (hSymmetricPLLs.includes(pll) || nSymmetricPLLs.includes(pll)) {
+    preAUFEquivalencyGroups[pll] = [new Set([...allAUFs])];
+  } else if (halfSymmetricPLLs.includes(pll)) {
+    preAUFEquivalencyGroups[pll] = [
+      new Set([AUF.none, AUF.U2]),
+      new Set([AUF.U, AUF.UPrime]),
+    ];
+  } else {
+    // No symmetry
+    preAUFEquivalencyGroups[pll] = allAUFs.map((x) => new Set([x]));
+  }
+});

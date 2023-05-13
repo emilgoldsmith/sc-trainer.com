@@ -17,10 +17,15 @@ import {
   AUF,
   aufToAlgorithmString,
   aufToString,
+  halfSymmetricPLLs,
+  hSymmetricPLLs,
+  nSymmetricPLLs,
   PLL,
+  pllLearningOrderByJpermsAlgorithms,
   pllToAlgorithmString,
   pllToJpermsAlgorithm,
   pllToPLLLetters,
+  preAUFEquivalencyGroups,
 } from "support/pll";
 import {
   completePLLTestInMilliseconds,
@@ -430,12 +435,6 @@ describe("PLL Trainer", function () {
       });
 
       it("introduces new cases in the correct learning order (UFR angle)", function () {
-        const hSymmetricPLLs = [PLL.H];
-        const nSymmetricPLLs = [PLL.Na, PLL.Nb];
-        const halfSymmetricPLLs = [PLL.E, PLL.Z];
-        const preAUFEquivalencyGroups: { [key in PLL]: Set<AUF>[] } = {} as {
-          [key in PLL]: Set<AUF>[];
-        };
         const allowedCasesByPLL: {
           [key in PLL]: (readonly [AUF, AUF])[];
         } = {} as {
@@ -451,7 +450,6 @@ describe("PLL Trainer", function () {
               [AUF.none, AUF.UPrime],
               [AUF.none, AUF.U],
             ];
-            preAUFEquivalencyGroups[pll] = [new Set([...allAUFs])];
           } else if (nSymmetricPLLs.includes(pll)) {
             allowedCasesByPLL[pll] = [
               // Always optimal cases
@@ -461,7 +459,6 @@ describe("PLL Trainer", function () {
               [AUF.none, AUF.UPrime],
               [AUF.none, AUF.U],
             ];
-            preAUFEquivalencyGroups[pll] = [new Set([...allAUFs])];
           } else if (halfSymmetricPLLs.includes(pll)) {
             allowedCasesByPLL[pll] = [
               // Always optimal cases
@@ -471,115 +468,18 @@ describe("PLL Trainer", function () {
               [AUF.U, AUF.none],
               [AUF.UPrime, AUF.none],
               // Preferences where several optimal options
-              [AUF.none, AUF.U2],
+              // [AUF.none, AUF.U2],
+              [AUF.U2, AUF.none],
               [AUF.U, AUF.UPrime],
               [AUF.U, AUF.U],
-            ];
-            preAUFEquivalencyGroups[pll] = [
-              new Set([AUF.none, AUF.U2]),
-              new Set([AUF.U, AUF.UPrime]),
             ];
           } else {
             // There are all the combinations with no options when there's no symmetry.
             allowedCasesByPLL[pll] = allAUFs.flatMap((preAUF) =>
               allAUFs.map((postAUF) => [preAUF, postAUF] as const)
             );
-            preAUFEquivalencyGroups[pll] = allAUFs.map((x) => new Set([x]));
           }
         });
-        // All these preAUFs are relative to JPerms recommended algorithms
-        const expectedLearningOrder: [AUF, PLL][] = [
-          // All corners solved
-          [AUF.none, PLL.H],
-          [AUF.U, PLL.Z],
-          [AUF.UPrime, PLL.Ua],
-          [AUF.U2, PLL.Ub],
-          // Huge bars
-          [AUF.none, PLL.Y],
-          [AUF.UPrime, PLL.Ja],
-          [AUF.U2, PLL.Jb],
-          [AUF.none, PLL.Aa],
-          [AUF.none, PLL.Ab],
-          [AUF.U2, PLL.V],
-          [AUF.U, PLL.F],
-          // The Ns
-          [AUF.none, PLL.Na],
-          [AUF.none, PLL.Nb],
-          // T-looking
-          [AUF.U, PLL.T],
-          [AUF.U, PLL.Ra],
-          [AUF.U2, PLL.Rb],
-          // We teach Gs through inside 2 bar, so first teach
-          // the Y inside 2 bar variations in order to be able to
-          // distinguish in real solves
-          [AUF.UPrime, PLL.Y],
-          [AUF.U, PLL.Y],
-          [AUF.none, PLL.Ga],
-          [AUF.UPrime, PLL.Gc],
-          [AUF.UPrime, PLL.Gb],
-          [AUF.none, PLL.Gd],
-          // Teach the Y and V angles that can easily be confused for E
-          // before teaching E
-          [AUF.U2, PLL.Y],
-          [AUF.none, PLL.V],
-          [AUF.none, PLL.E],
-          // Now the user has learned all PLLs from at least one angle
-          // We first finish the no clear patterns group by teaching the
-          // alternate E angle
-          [AUF.U, PLL.E],
-          // We now teach them the last of the 3-bar cases
-          [AUF.U2, PLL.F],
-          [AUF.U2, PLL.Ja],
-          [AUF.U, PLL.Jb],
-          [AUF.U2, PLL.Ua],
-          [AUF.UPrime, PLL.Ub],
-          // Now the last of the all corners solved cases
-          [AUF.none, PLL.Z],
-          [AUF.none, PLL.Ua],
-          [AUF.U, PLL.Ub],
-          [AUF.U, PLL.Ua],
-          [AUF.none, PLL.Ub],
-          // The last of headlights + 2-bar
-          [AUF.U2, PLL.T],
-          [AUF.U, PLL.Aa],
-          [AUF.UPrime, PLL.Ab],
-          [AUF.U, PLL.Ga],
-          [AUF.U2, PLL.Gc],
-          // The lone lights angles
-          [AUF.U2, PLL.Ra],
-          [AUF.U, PLL.Rb],
-          [AUF.U2, PLL.Ga],
-          [AUF.U, PLL.Gc],
-          [AUF.U, PLL.Gb],
-          [AUF.U2, PLL.Gb],
-          [AUF.U, PLL.Gd],
-          [AUF.U2, PLL.Gd],
-          [AUF.U2, PLL.Aa],
-          [AUF.U, PLL.Ab],
-          // Last double 2-bar angles
-          [AUF.none, PLL.Ja],
-          [AUF.U, PLL.Ja],
-          [AUF.none, PLL.Jb],
-          [AUF.UPrime, PLL.Jb],
-          // Outside 2-bar angles
-          [AUF.U, PLL.V],
-          [AUF.UPrime, PLL.V],
-          [AUF.none, PLL.Ra],
-          [AUF.UPrime, PLL.Rb],
-          [AUF.none, PLL.Gb],
-          [AUF.UPrime, PLL.Gd],
-          [AUF.none, PLL.T],
-          [AUF.UPrime, PLL.T],
-          [AUF.UPrime, PLL.Aa],
-          [AUF.U2, PLL.Ab],
-          // Bookends no bars angles
-          [AUF.none, PLL.F],
-          [AUF.UPrime, PLL.F],
-          [AUF.UPrime, PLL.Ra],
-          [AUF.none, PLL.Rb],
-          [AUF.UPrime, PLL.Ga],
-          [AUF.none, PLL.Gc],
-        ];
 
         // Use type assertions for simpler types here and we ensure to initialize them properly
         const seenPreAUFs: { [key in PLL]: Set<AUF> } = {} as {
@@ -598,7 +498,7 @@ describe("PLL Trainer", function () {
         });
 
         let startingState: "doNewVisit" | "correctPage" = "doNewVisit";
-        expectedLearningOrder.forEach(
+        pllLearningOrderByJpermsAlgorithms.forEach(
           ([expectedPreAUF, expectedPLL], index) => {
             completePLLTestInMilliseconds(0, {
               correct: true,
@@ -878,6 +778,58 @@ describe("PLL Trainer", function () {
             );
           });
         });
+      });
+
+      it("Continues learning order across different sessions", function () {
+        const startingStatesPerIndex: Parameters<
+          typeof completePLLTestInMilliseconds
+        >[1]["startingState"][] = ["doNewVisit", "correctPage", "doNewVisit"];
+
+        pllLearningOrderByJpermsAlgorithms
+          .slice(0, 3)
+          .forEach(([expectedPreAUF, expectedPLL], index) => {
+            completePLLTestInMilliseconds(0, {
+              correct: true,
+              startingState: startingStatesPerIndex[index],
+              endingState: "correctPage",
+              overrideDefaultAlgorithm: pllToJpermsAlgorithm[expectedPLL],
+              newCasePageCallback: () => {
+                // Just ensure everything is defined as a new case
+                pllTrainerElements.newCasePage.container.assertShows();
+              },
+              evaluateResultCallback() {
+                // Test the PLL here to get a good error message as opposed to algorithm
+                // input failing because we overrode it
+                cy.getCurrentTestCase().should(([, actualPLL]) => {
+                  expect(
+                    actualPLL,
+                    `Index ${index.toString()}: ${
+                      pllToPLLLetters[actualPLL]
+                    } should be ${pllToPLLLetters[expectedPLL]}`
+                  ).to.equal(expectedPLL);
+                });
+              },
+            });
+
+            cy.getCurrentTestCase().should(([actualPreAUF]) => {
+              const equivalentPreAUFs = preAUFEquivalencyGroups[
+                expectedPLL
+              ].find((group) => group.has(expectedPreAUF));
+
+              if (equivalentPreAUFs === undefined)
+                throw new Error("Shouldn't be undefined");
+              expect(
+                equivalentPreAUFs,
+                `Index ${index.toString()}, PLL ${
+                  pllToPLLLetters[expectedPLL]
+                }: ("${
+                  aufToAlgorithmString[actualPreAUF]
+                }", was expected to be found in the following equivalent pre aufs ${JSON.stringify(
+                  [...equivalentPreAUFs].map((x) => aufToAlgorithmString[x])
+                )}`
+              ).to.include(actualPreAUF);
+            });
+          });
       });
     });
 

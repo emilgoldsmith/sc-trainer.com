@@ -266,6 +266,13 @@ getNewPostAUFCase user pll_ =
         -- TODO: Randomize order of this list
     in
     Debug.log "new post auf case result" <|
+        -- NOTE: One could write a recursion here to make sure we pick
+        -- the most efficient way of learning all the different AUFs
+        -- in as few attempts as possible, but:
+        -- 1. It probably isn't too impactful for the user making that further optimization
+        -- 2. This is actually already optimal as it is impossible after all recognition angles
+        -- have been taught (each with a unique postAUF) to come up with a case where
+        -- preAUFsLeft + postAUFsLeft > 3, try it yourself.
         case List.head bothNotAttempted of
             Just x ->
                 Just x
