@@ -1,6 +1,6 @@
 module PLLTrainer.Page exposing (Model, Msg, TrainerState, page)
 
-import AUF
+import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
 import Algorithm.Extra
 import Browser.Dom
@@ -171,7 +171,7 @@ in order to determine to optimal AUF that slows down the app
 -}
 placeholderTestCase : TestCase
 placeholderTestCase =
-    PLLTrainer.TestCase.build AUF.None PLL.Aa AUF.None
+    PLLTrainer.TestCase.escapeHatch ( AUF.None, PLL.Aa, AUF.None )
 
 
 
@@ -214,8 +214,8 @@ type StateMsg
 
 
 type InternalMsg
-    = TESTONLYSetTestCase (Result Json.Decode.Error TestCase)
-    | TESTONLYOverrideNextTestCase (Result Json.Decode.Error TestCase)
+    = TESTONLYSetTestCase (Result Json.Decode.Error ( AUF, PLL, AUF ))
+    | TESTONLYOverrideNextTestCase (Result Json.Decode.Error ( AUF, PLL, AUF ))
     | TESTONLYOverrideCubeDisplayAngle (Maybe Cube.DisplayAngle)
     | TESTONLYSetCubeSizeOverride (Maybe Int)
     | TESTONLYOverrideDisplayCubeAnnotations (Maybe Bool)
@@ -285,38 +285,42 @@ update shared msg model =
                     )
 
                 InitiateTest (Just now) ->
-                    let
-                        oldTestOnly =
-                            model.tESTONLY
+                    case
+                        PLLTrainer.TestCase.generate
+                            { now = now
+                            , overrideWithConstantValue = model.tESTONLY.nextTestCaseOverride
+                            }
+                            shared.user
+                    of
+                        Ok generator ->
+                            let
+                                oldTestOnly =
+                                    model.tESTONLY
 
-                        generator =
-                            PLLTrainer.TestCase.generate
-                                { now = now
-                                , overrideWithConstantValue = oldTestOnly.nextTestCaseOverride
-                                }
-                                shared.user
+                                newCaseExtraState =
+                                    { generator = generator }
 
-                        newCaseExtraState =
-                            { generator = generator }
+                                gettingReadyExtraState =
+                                    GettingReadyExtraState generator
 
-                        gettingReadyExtraState =
-                            GettingReadyExtraState generator
+                                ( trainerState, stateCmd ) =
+                                    if PLLTrainer.TestCase.isNewCaseGenerator generator then
+                                        ((states shared).newCasePage newCaseExtraState).init
+                                            |> Tuple.mapFirst (always <| NewCasePage newCaseExtraState)
 
-                        ( trainerState, stateCmd ) =
-                            if PLLTrainer.TestCase.isNewCaseGenerator generator then
-                                ((states shared).newCasePage newCaseExtraState).init
-                                    |> Tuple.mapFirst (always <| NewCasePage newCaseExtraState)
+                                    else
+                                        ((states shared).testRunning gettingReadyExtraState).init
+                                            |> Tuple.mapFirst (\stateModel -> TestRunning stateModel gettingReadyExtraState)
+                            in
+                            ( { model
+                                | trainerState = trainerState
+                                , tESTONLY = { oldTestOnly | nextTestCaseOverride = Nothing }
+                              }
+                            , Effect.fromCmd stateCmd
+                            )
 
-                            else
-                                ((states shared).testRunning gettingReadyExtraState).init
-                                    |> Tuple.mapFirst (\stateModel -> TestRunning stateModel gettingReadyExtraState)
-                    in
-                    ( { model
-                        | trainerState = trainerState
-                        , tESTONLY = { oldTestOnly | nextTestCaseOverride = Nothing }
-                      }
-                    , Effect.fromCmd stateCmd
-                    )
+                        Err cmd ->
+                            ( model, Effect.fromCmd cmd )
 
                 NewCaseGetReadyForTest generator ->
                     let
@@ -461,45 +465,52 @@ update shared msg model =
                             ( model, Effect.fromCmd <| Ports.logError "the algorithm picked didn't match the case" )
 
                         Just ( correctedPreAUF, correctedPostAUF ) ->
-                            let
-                                oldTestCase =
-                                    model.currentTestCase
+                            case
+                                PLLTrainer.TestCase.build
+                                    correctedPreAUF
+                                    (PLLTrainer.TestCase.pll model.currentTestCase.testCase)
+                                    correctedPostAUF
+                                    |> Debug.log "correctedOldTestCase"
+                            of
+                                Ok correctedTestCase ->
+                                    let
+                                        oldTestCase =
+                                            model.currentTestCase
 
-                                correctedTestCase =
-                                    { oldTestCase
-                                        | testCase =
-                                            PLLTrainer.TestCase.build
-                                                correctedPreAUF
-                                                (PLLTrainer.TestCase.pll model.currentTestCase.testCase)
-                                                correctedPostAUF
-                                    }
-                                        |> Debug.log "correctedOldTestCase"
+                                        correctedTestResult =
+                                            case testResult of
+                                                User.Correct parameters ->
+                                                    User.Correct { parameters | preAUF = PLLTrainer.TestCase.preAUF correctedTestCase, postAUF = PLLTrainer.TestCase.postAUF correctedTestCase }
 
-                                correctedTestResult =
-                                    case testResult of
-                                        User.Correct parameters ->
-                                            User.Correct { parameters | preAUF = PLLTrainer.TestCase.preAUF correctedTestCase.testCase, postAUF = PLLTrainer.TestCase.postAUF correctedTestCase.testCase }
+                                                User.Wrong parameters ->
+                                                    User.Wrong { parameters | preAUF = PLLTrainer.TestCase.preAUF correctedTestCase, postAUF = PLLTrainer.TestCase.postAUF correctedTestCase }
 
-                                        User.Wrong parameters ->
-                                            User.Wrong { parameters | preAUF = PLLTrainer.TestCase.preAUF correctedTestCase.testCase, postAUF = PLLTrainer.TestCase.postAUF correctedTestCase.testCase }
+                                        nextTrainerState =
+                                            getNextTrainerState algorithm
+                                    in
+                                    ( { model
+                                        | currentTestCase =
+                                            { oldTestCase
+                                                | testCase = correctedTestCase
+                                            }
+                                        , trainerState = Tuple.first nextTrainerState
+                                      }
+                                    , Effect.batch
+                                        [ Tuple.second nextTrainerState
+                                        , Effect.fromShared <|
+                                            Shared.ModifyUser
+                                                (User.changePLLAlgorithm
+                                                    (PLLTrainer.TestCase.pll correctedTestCase)
+                                                    algorithm
+                                                    >> recordPLLTestResultWithErrorHandling
+                                                        (PLLTrainer.TestCase.pll correctedTestCase)
+                                                        correctedTestResult
+                                                )
+                                        ]
+                                    )
 
-                                nextTrainerState =
-                                    getNextTrainerState algorithm
-                            in
-                            ( { model | currentTestCase = correctedTestCase, trainerState = Tuple.first nextTrainerState }
-                            , Effect.batch
-                                [ Tuple.second nextTrainerState
-                                , Effect.fromShared <|
-                                    Shared.ModifyUser
-                                        (User.changePLLAlgorithm
-                                            (PLLTrainer.TestCase.pll correctedTestCase.testCase)
-                                            algorithm
-                                            >> recordPLLTestResultWithErrorHandling
-                                                (PLLTrainer.TestCase.pll correctedTestCase.testCase)
-                                                correctedTestResult
-                                        )
-                                ]
-                            )
+                                Err cmd ->
+                                    ( model, Effect.fromCmd cmd )
 
                 StartAlgorithmDrills ->
                     ( { model
@@ -521,21 +532,25 @@ update shared msg model =
                     )
 
                 InitiateAlgorithmDrillerTest (Just now) ->
-                    let
-                        generator =
-                            PLLTrainer.TestCase.generate
-                                { now = now
-                                , overrideWithConstantValue = Just model.currentTestCase.testCase
-                                }
-                                shared.user
+                    case
+                        PLLTrainer.TestCase.generate
+                            { now = now
+                            , overrideWithConstantValue = Just model.currentTestCase.testCase
+                            }
+                            shared.user
+                    of
+                        Ok generator ->
+                            let
+                                extraState =
+                                    GettingReadyExtraState generator
 
-                        extraState =
-                            GettingReadyExtraState generator
+                                ( stateModel, stateCmd ) =
+                                    ((states shared).testRunning extraState).init
+                            in
+                            ( { model | trainerState = TestRunning stateModel extraState }, Effect.fromCmd stateCmd )
 
-                        ( stateModel, stateCmd ) =
-                            ((states shared).testRunning extraState).init
-                    in
-                    ( { model | trainerState = TestRunning stateModel extraState }, Effect.fromCmd stateCmd )
+                        Err cmd ->
+                            ( model, Effect.fromCmd cmd )
 
                 WrongButNoMoveApplied { nextTrainerState } ->
                     ( { model
@@ -577,38 +592,45 @@ update shared msg model =
                 TESTONLYCurrentTestCaseRequested ->
                     ( model
                     , Effect.fromCmd <|
-                        Ports.tESTONLYEmitCurrentTestCase model.currentTestCase.testCase
+                        Ports.tESTONLYEmitCurrentTestCase (PLLTrainer.TestCase.toTriple model.currentTestCase.testCase)
                     )
 
-                TESTONLYSetTestCase (Ok testCase) ->
-                    let
-                        withUpdatedTestCase =
-                            { model
-                                | currentTestCase =
-                                    { testCase = testCase
-                                    , isNew = User.pllTestCaseIsNewForUser (PLLTrainer.TestCase.toTriple testCase) shared.user
+                TESTONLYSetTestCase (Ok (( pre, pll, post ) as testCaseTriple)) ->
+                    case
+                        PLLTrainer.TestCase.build pre pll post
+                    of
+                        Ok testCase ->
+                            let
+                                withUpdatedTestCase =
+                                    { model
+                                        | currentTestCase =
+                                            { testCase = testCase
+                                            , isNew = User.pllTestCaseIsNewForUser testCaseTriple shared.user
+                                            }
                                     }
-                            }
 
-                        fullyUpdatedModel =
-                            case model.trainerState of
-                                TestRunning localModel (TestRunningExtraState extraState) ->
-                                    let
-                                        newExtraState =
-                                            { extraState | memoizedCube = PLLTrainer.TestCase.toCube shared.user testCase }
+                                fullyUpdatedModel =
+                                    case model.trainerState of
+                                        TestRunning localModel (TestRunningExtraState extraState) ->
+                                            let
+                                                newExtraState =
+                                                    { extraState | memoizedCube = PLLTrainer.TestCase.toCube shared.user testCase }
 
-                                        newLocalModel =
-                                            ((states shared).testRunning (TestRunningExtraState newExtraState)).update
-                                                (PLLTrainer.States.TestRunning.tESTONLYUpdateMemoizedCube newExtraState.memoizedCube)
-                                                localModel
-                                                |> Tuple.first
-                                    in
-                                    { withUpdatedTestCase | trainerState = TestRunning newLocalModel (TestRunningExtraState newExtraState) }
+                                                newLocalModel =
+                                                    ((states shared).testRunning (TestRunningExtraState newExtraState)).update
+                                                        (PLLTrainer.States.TestRunning.tESTONLYUpdateMemoizedCube newExtraState.memoizedCube)
+                                                        localModel
+                                                        |> Tuple.first
+                                            in
+                                            { withUpdatedTestCase | trainerState = TestRunning newLocalModel (TestRunningExtraState newExtraState) }
 
-                                _ ->
-                                    withUpdatedTestCase
-                    in
-                    ( fullyUpdatedModel, Effect.none )
+                                        _ ->
+                                            withUpdatedTestCase
+                            in
+                            ( fullyUpdatedModel, Effect.none )
+
+                        Err cmd ->
+                            ( model, Effect.fromCmd cmd )
 
                 TESTONLYSetTestCase (Err decodeError) ->
                     ( model
@@ -619,12 +641,19 @@ update shared msg model =
                             )
                     )
 
-                TESTONLYOverrideNextTestCase (Ok testCaseOverride) ->
-                    let
-                        oldTestOnly =
-                            model.tESTONLY
-                    in
-                    ( { model | tESTONLY = { oldTestOnly | nextTestCaseOverride = Just testCaseOverride } }, Effect.none )
+                TESTONLYOverrideNextTestCase (Ok ( pre, pll, post )) ->
+                    case
+                        PLLTrainer.TestCase.build pre pll post
+                    of
+                        Ok testCaseOverride ->
+                            let
+                                oldTestOnly =
+                                    model.tESTONLY
+                            in
+                            ( { model | tESTONLY = { oldTestOnly | nextTestCaseOverride = Just testCaseOverride } }, Effect.none )
+
+                        Err cmd ->
+                            ( model, Effect.fromCmd cmd )
 
                 TESTONLYOverrideNextTestCase (Err decodeError) ->
                     ( model

@@ -9,7 +9,6 @@ import Json.Encode
 import List.Extra
 import List.Nonempty
 import PLL exposing (PLL)
-import PLLTrainer.TestCase exposing (TestCase)
 import User exposing (User)
 
 
@@ -138,16 +137,13 @@ onTESTONLYCurrentTestCaseRequested msg =
 port receiveCurrentTestCasePort : Json.Encode.Value -> Cmd msg
 
 
-tESTONLYEmitCurrentTestCase : TestCase -> Cmd msg
-tESTONLYEmitCurrentTestCase testCase =
+tESTONLYEmitCurrentTestCase : ( AUF, PLL, AUF ) -> Cmd msg
+tESTONLYEmitCurrentTestCase ( pre, pll, post ) =
     receiveCurrentTestCasePort <|
         Json.Encode.list Json.Encode.string <|
-            [ PLLTrainer.TestCase.preAUF testCase
-                |> AUF.toString
-            , PLLTrainer.TestCase.pll testCase
-                |> PLL.getLetters
-            , PLLTrainer.TestCase.postAUF testCase
-                |> AUF.toString
+            [ AUF.toString pre
+            , PLL.getLetters pll
+            , AUF.toString post
             ]
 
 
@@ -162,7 +158,7 @@ onTESTONLYSetCubeSizeOverride =
 port setCurrentTestCasePort : (Json.Decode.Value -> msg) -> Sub msg
 
 
-onTESTONLYSetTestCase : (Result Json.Decode.Error TestCase -> msg) -> Sub msg
+onTESTONLYSetTestCase : (Result Json.Decode.Error ( AUF, PLL, AUF ) -> msg) -> Sub msg
 onTESTONLYSetTestCase toMsg =
     setCurrentTestCasePort (Json.Decode.decodeValue testCaseDecoder >> toMsg)
 
@@ -170,14 +166,14 @@ onTESTONLYSetTestCase toMsg =
 port overrideNextTestCasePort : (Json.Decode.Value -> msg) -> Sub msg
 
 
-onTESTONLYOverrideNextTestCase : (Result Json.Decode.Error TestCase -> msg) -> Sub msg
+onTESTONLYOverrideNextTestCase : (Result Json.Decode.Error ( AUF, PLL, AUF ) -> msg) -> Sub msg
 onTESTONLYOverrideNextTestCase toMsg =
     overrideNextTestCasePort (Json.Decode.decodeValue testCaseDecoder >> toMsg)
 
 
-testCaseDecoder : Json.Decode.Decoder TestCase
+testCaseDecoder : Json.Decode.Decoder ( AUF, PLL, AUF )
 testCaseDecoder =
-    Json.Decode.map3 PLLTrainer.TestCase.build
+    Json.Decode.map3 (\a b c -> ( a, b, c ))
         (Json.Decode.index 0 aufDecoder)
         (Json.Decode.index 1 pllDecoder)
         (Json.Decode.index 2 aufDecoder)

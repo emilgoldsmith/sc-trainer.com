@@ -1,4 +1,4 @@
-module PLLTrainer.TestCase exposing (Generator, TestCase, build, generate, getGenerator, isNewCaseGenerator, pll, postAUF, preAUF, toAlg, toCube, toTriple)
+module PLLTrainer.TestCase exposing (Generator, TestCase, build, escapeHatch, generate, getGenerator, isNewCaseGenerator, pll, postAUF, preAUF, toAlg, toCube, toTriple)
 
 import AUF exposing (AUF)
 import Algorithm
@@ -7,6 +7,7 @@ import List.Extra
 import List.Nonempty
 import PLL exposing (PLL)
 import PLL.Extra
+import Ports
 import Random
 import Time
 import User exposing (User)
@@ -16,17 +17,26 @@ type TestCase
     = TestCase ( AUF, PLL, AUF )
 
 
-build : AUF -> PLL -> AUF -> TestCase
+build : AUF -> PLL -> AUF -> Result (Cmd msg) TestCase
 build preAUF_ pll_ postAUF_ =
     let
-        ( optimizedPreAUF, optimizedPostAUF ) =
+        optimizedAUFsResult =
             PLL.Extra.getPreferredEquivalentAUFs
                 (User.defaultPLLAUFPreferences pll_)
                 ( preAUF_, pll_, postAUF_ )
-                -- TODO: Make this return an error
-                |> Result.withDefault ( AUF.None, AUF.None )
     in
-    TestCase (Debug.log "build result" ( optimizedPreAUF, pll_, optimizedPostAUF ))
+    optimizedAUFsResult
+        |> Result.map
+            (\( optimizedPreAUF, optimizedPostAUF ) ->
+                TestCase ( optimizedPreAUF, pll_, optimizedPostAUF )
+            )
+        |> Result.mapError PLL.Extra.preferredAUFsErrorToDebugString
+        |> Result.mapError Ports.logError
+
+
+escapeHatch : ( AUF, PLL, AUF ) -> TestCase
+escapeHatch =
+    TestCase
 
 
 toAlg : { addFinalReorientationToAlgorithm : Bool } -> User -> TestCase -> Algorithm.Algorithm
@@ -123,7 +133,7 @@ buildConstantGenerator user testCase =
         AlreadyAttempted (Random.constant testCase)
 
 
-getNewCaseIfNeeded : User -> Maybe TestCase
+getNewCaseIfNeeded : User -> Result (Cmd msg) (Maybe TestCase)
 getNewCaseIfNeeded user =
     getNextNewCase user
 
@@ -132,7 +142,7 @@ getNewCaseIfNeeded user =
 -- |> Maybe.map (\( preAUF_, pll_, postAUF_ ) -> build preAUF_ pll_ postAUF_)
 
 
-getNextNewCase : User -> Maybe TestCase
+getNextNewCase : User -> Result (Cmd msg) (Maybe TestCase)
 getNextNewCase user =
     let
         maybeNewPreAUFCase : Maybe ( AUF, PLL, AUF )
@@ -143,13 +153,30 @@ getNextNewCase user =
     Debug.log "next new case result" <|
         case maybeNewPreAUFCase of
             Just newPreAUFCase ->
-                Just <| TestCase newPreAUFCase
+                Ok <| Just <| TestCase newPreAUFCase
 
             Nothing ->
                 -- TODO: Randomize order of this list
                 PLL.all
                     |> List.Nonempty.toList
-                    |> List.Extra.findMap (getNewPostAUFCase user)
+                    |> List.map (getNewPostAUFCase user)
+                    |> List.foldl
+                        (\next result ->
+                            case ( result, next ) of
+                                ( Ok list, Ok nextCase ) ->
+                                    Ok (nextCase :: list)
+
+                                ( Ok list, Err nextErr ) ->
+                                    Err nextErr
+
+                                ( Err cmd, Ok _ ) ->
+                                    Err cmd
+
+                                ( Err cmd, Err nextErr ) ->
+                                    Err (Cmd.batch [ cmd, nextErr ])
+                        )
+                        (Ok [])
+                    |> Result.map (List.Extra.findMap identity)
 
 
 
@@ -225,7 +252,7 @@ isNewPreAUFCase user ( preAUF_, pll_ ) =
             )
 
 
-getNewPostAUFCase : User -> PLL -> Maybe TestCase
+getNewPostAUFCase : User -> PLL -> Result (Cmd msg) (Maybe TestCase)
 getNewPostAUFCase user pll_ =
     let
         attemptedPreAUFs : List AUF
@@ -249,18 +276,44 @@ getNewPostAUFCase user pll_ =
                             |> List.Nonempty.toList
                             |> List.map (build preAUF_ pll_)
                     )
-                |> List.Extra.unique
+                |> List.foldl
+                    (\next result ->
+                        case ( result, next ) of
+                            ( Ok list, Ok nextCase ) ->
+                                Ok (nextCase :: list)
+
+                            ( Ok list, Err nextErr ) ->
+                                Err nextErr
+
+                            ( Err cmd, Ok _ ) ->
+                                Err cmd
+
+                            ( Err cmd, Err nextErr ) ->
+                                Err (Cmd.batch [ cmd, nextErr ])
+                    )
+                    (Ok [])
+                |> Result.map List.Extra.unique
                 |> Debug.log "allTestCases"
 
-        allUnseenTestCases : List TestCase
+        allUnseenTestCases : Result (Cmd msg) (List TestCase)
         allUnseenTestCases =
             allTestCases
-                |> List.filter (\(TestCase ( preAUF_, _, postAUF_ )) -> not (List.member preAUF_ attemptedPreAUFs) || not (List.member postAUF_ attemptedPostAUFs))
+                |> Result.map
+                    (List.filter
+                        (\(TestCase ( preAUF_, _, postAUF_ )) ->
+                            not (List.member preAUF_ attemptedPreAUFs) || not (List.member postAUF_ attemptedPostAUFs)
+                        )
+                    )
                 |> Debug.log "all unseen"
 
-        ( bothNotAttempted, singleNotAttempted ) =
+        numAttemptedPartition =
             allUnseenTestCases
-                |> List.partition (\(TestCase ( preAUF_, _, postAUF_ )) -> not (List.member preAUF_ attemptedPreAUFs) && not (List.member postAUF_ attemptedPostAUFs))
+                |> Result.map
+                    (List.partition
+                        (\(TestCase ( preAUF_, _, postAUF_ )) ->
+                            not (List.member preAUF_ attemptedPreAUFs) && not (List.member postAUF_ attemptedPostAUFs)
+                        )
+                    )
                 |> Debug.log "partition"
 
         -- TODO: Randomize order of this list
@@ -273,12 +326,17 @@ getNewPostAUFCase user pll_ =
         -- 2. This is actually already optimal as it is impossible after all recognition angles
         -- have been taught (each with a unique postAUF) to come up with a case where
         -- preAUFsLeft + postAUFsLeft > 3, try it yourself.
-        case List.head bothNotAttempted of
-            Just x ->
-                Just x
+        (numAttemptedPartition
+            |> Result.map
+                (\( bothNotAttempted, singleNotAttempted ) ->
+                    case List.head bothNotAttempted of
+                        Just x ->
+                            Just x
 
-            Nothing ->
-                List.head singleNotAttempted
+                        Nothing ->
+                            List.head singleNotAttempted
+                )
+        )
 
 
 learningOrderForFixedPLLAlgorithms : List ( AUF, PLL )
@@ -357,31 +415,35 @@ learningOrderForFixedPLLAlgorithms =
     ]
 
 
-generate : { now : Time.Posix, overrideWithConstantValue : Maybe TestCase } -> User -> Generator
+generate : { now : Time.Posix, overrideWithConstantValue : Maybe TestCase } -> User -> Result (Cmd msg) Generator
 generate { now, overrideWithConstantValue } user =
     Debug.log "generated" <|
         case overrideWithConstantValue of
             Just testCaseOverride ->
-                buildConstantGenerator user testCaseOverride
+                Ok <| buildConstantGenerator user testCaseOverride
 
             Nothing ->
-                case getNewCaseIfNeeded user of
-                    Just newCase ->
-                        buildConstantGenerator user newCase
+                getNewCaseIfNeeded user
+                    |> Result.map
+                        (\newCaseIfNeeded ->
+                            case newCaseIfNeeded of
+                                Just newCase ->
+                                    buildConstantGenerator user newCase
 
-                    Nothing ->
-                        let
-                            { pllGenerator, generatorType } =
-                                generatePLL { now = now } user
+                                Nothing ->
+                                    let
+                                        { pllGenerator, generatorType } =
+                                            generatePLL { now = now } user
 
-                            testCaseGenerator =
-                                Random.map TestCase <|
-                                    Random.map3 (\a b c -> ( a, b, c ))
-                                        (List.Nonempty.sample AUF.all)
-                                        pllGenerator
-                                        (List.Nonempty.sample AUF.all)
-                        in
-                        replaceInternalGenerator testCaseGenerator generatorType
+                                        testCaseGenerator =
+                                            Random.map TestCase <|
+                                                Random.map3 (\a b c -> ( a, b, c ))
+                                                    (List.Nonempty.sample AUF.all)
+                                                    pllGenerator
+                                                    (List.Nonempty.sample AUF.all)
+                                    in
+                                    replaceInternalGenerator testCaseGenerator generatorType
+                        )
 
 
 generatePLL :

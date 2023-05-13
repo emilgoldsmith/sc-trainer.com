@@ -1,15 +1,31 @@
-module PLL.Extra exposing (PreferredAUFsError(..), getPreferredEquivalentAUFs)
+module PLL.Extra exposing (PreferredAUFsError(..), getPreferredEquivalentAUFs, preferredAUFsErrorToDebugString)
 
 import AUF exposing (AUF)
 import List.Extra
 import List.Nonempty
 import List.Nonempty.Extra
 import PLL exposing (PLL)
-import User exposing (PLLAUFPreferences)
+import User exposing (PLLAUFPreferences, pllAUFPreferencesToDebugString)
 
 
 type PreferredAUFsError
     = InvalidPreferences PLLAUFPreferences ( AUF, PLL, AUF )
+
+
+preferredAUFsErrorToDebugString : PreferredAUFsError -> String
+preferredAUFsErrorToDebugString (InvalidPreferences prefs ( pre, pll, post )) =
+    String.join ""
+        [ "An invalid set of preferences were passed to getPreferredEquivalentAUFs. The preferences passed were: "
+        , pllAUFPreferencesToDebugString prefs
+        , "\n\nAnd the case that was passed as an argument was: "
+        , "(\""
+        , AUF.toString pre
+        , "\", "
+        , PLL.getLetters pll
+        , ", \""
+        , AUF.toString post
+        , "\")"
+        ]
 
 
 getPreferredEquivalentAUFs : PLLAUFPreferences -> ( AUF, PLL, AUF ) -> Result PreferredAUFsError ( AUF, AUF )
