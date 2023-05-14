@@ -10,7 +10,6 @@ import PLL exposing (PLL)
 import PLL.Extra
 import Ports
 import Random
-import Random.List
 import Time
 import User exposing (User)
 
@@ -116,6 +115,143 @@ isNewCaseGenerator generator =
             False
 
 
+generate : { now : Time.Posix, overrideWithConstantValue : Maybe TestCase } -> User -> Result (Cmd msg) Generator
+generate { now, overrideWithConstantValue } user =
+    case overrideWithConstantValue of
+        Just testCaseOverride ->
+            Ok <| buildConstantGenerator user testCaseOverride
+
+        Nothing ->
+            generateNewCase user
+                |> Result.andThen
+                    (\maybeNewCaseGenerator ->
+                        case maybeNewCaseGenerator of
+                            Just newCaseGenerator ->
+                                Ok <| NewCase newCaseGenerator
+
+                            Nothing ->
+                                generateAlreadyAttemptedCase { now = now } user
+                                    |> Result.map AlreadyAttempted
+                    )
+
+
+generateNewCase : User -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
+generateNewCase user =
+    learningOrderForFixedPLLAlgorithms
+        |> List.Extra.findMap
+            (\( referencePreAUF, pll_ ) ->
+                referencePreAUFToUserAlgPreAUF user ( referencePreAUF, pll_ )
+                    |> Maybe.andThen
+                        (\preAUFForUserAlg ->
+                            if isRecognitionAngleAttempted user ( preAUFForUserAlg, pll_ ) then
+                                Nothing
+
+                            else
+                                generateNewPostAUFCase user ( preAUFForUserAlg, pll_ )
+                        )
+            )
+        |> Maybe.map (Just >> Ok)
+        |> Maybe.withDefault (generateNewPostAUFCaseForAnyPLL user)
+
+
+generateNewRecognitionAngleCase : User -> ( AUF, PLL ) -> Maybe (Random.Generator TestCase)
+generateNewRecognitionAngleCase user ( preAUF_, pll_ ) =
+    referencePreAUFToUserAlgPreAUF user ( preAUF_, pll_ )
+        |> Debug.log "equivalentPreAUF"
+        |> Maybe.andThen
+            (\preAUFForUserAlg ->
+                if isRecognitionAngleAttempted user ( preAUFForUserAlg, pll_ ) then
+                    Nothing
+
+                else
+                    generateNewPostAUFCase user ( preAUFForUserAlg, pll_ )
+            )
+
+
+generateAlreadyAttemptedCase :
+    { now : Time.Posix }
+    -> User
+    -> Result (Cmd msg) (Random.Generator TestCase)
+generateAlreadyAttemptedCase { now } user =
+    let
+        statistics =
+            User.pllStatistics user
+
+        allAUFPairs =
+            AUF.all
+                |> List.Nonempty.toList
+                |> List.concatMap
+                    (\preAUF_ ->
+                        AUF.all
+                            |> List.Nonempty.toList
+                            |> List.map (Tuple.pair preAUF_)
+                    )
+
+        notYetLearneds =
+            List.filterMap
+                (\stat ->
+                    case stat of
+                        User.HasRecentDNF pll_ ->
+                            Just pll_
+
+                        _ ->
+                            Nothing
+                )
+                statistics
+                |> List.concatMap
+                    (\pll_ ->
+                        allAUFPairs
+                            |> List.map (\( pre, post ) -> build pre pll_ post)
+                    )
+                |> listOfResultsToResultOfList
+
+        fullyLearneds =
+            List.filterMap
+                (\stat ->
+                    case stat of
+                        User.AllRecentAttemptsSucceeded record ->
+                            Just
+                                ( toFloat
+                                    (Time.posixToMillis now - Time.posixToMillis record.lastTimeTested)
+                                    * record.lastThreeAverageTPS
+                                , record.pll
+                                )
+
+                        _ ->
+                            Nothing
+                )
+                statistics
+                |> List.concatMap
+                    (\( weight, pll_ ) ->
+                        allAUFPairs
+                            |> List.map
+                                (\( pre, post ) ->
+                                    build pre pll_ post
+                                        |> Result.map (Tuple.pair weight)
+                                )
+                    )
+                |> listOfResultsToResultOfList
+    in
+    case ( notYetLearneds, fullyLearneds ) of
+        ( Err a, Err b ) ->
+            Err (Cmd.batch [ a, b ])
+
+        ( Err a, Ok _ ) ->
+            Err a
+
+        ( Ok _, Err b ) ->
+            Err b
+
+        ( Ok (head :: tail), Ok _ ) ->
+            Ok <| Random.uniform head tail
+
+        ( Ok _, Ok (head :: tail) ) ->
+            Ok <| Random.weighted head tail
+
+        ( Ok [], Ok [] ) ->
+            Err (Ports.logError "Both notYetLearneds and fullyLearneds were empty lists")
+
+
 replaceInternalGenerator : Random.Generator TestCase -> Generator -> Generator
 replaceInternalGenerator newInternalGenerator oldGenerator =
     case oldGenerator of
@@ -135,74 +271,34 @@ buildConstantGenerator user testCase =
         AlreadyAttempted (Random.constant testCase)
 
 
-getNewCaseIfNeeded : User -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
-getNewCaseIfNeeded user =
-    getNextNewCase user
+generateNewPostAUFCaseForAnyPLL : User -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
+generateNewPostAUFCaseForAnyPLL user =
+    PLL.all
+        |> List.Nonempty.toList
+        |> List.map (getNewPostAUFCaseForPLL user)
+        |> listOfResultsToResultOfList
+        |> Result.map
+            (List.filterMap identity
+                >> List.Nonempty.fromList
+                >> Maybe.map
+                    -- Convert list of generators to generator of list
+                    ((\(List.Nonempty.Nonempty firstElem rest) ->
+                        List.foldl
+                            (\next cur ->
+                                Random.map2 List.Nonempty.cons
+                                    next
+                                    cur
+                            )
+                            (firstElem |> Random.map List.Nonempty.singleton)
+                            rest
+                     )
+                        >> Random.andThen List.Nonempty.sample
+                    )
+            )
 
 
-getNextNewCase : User -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
-getNextNewCase user =
-    let
-        maybeNewPreAUFCase : Maybe ( AUF, PLL, AUF )
-        maybeNewPreAUFCase =
-            learningOrderForFixedPLLAlgorithms
-                |> List.Extra.findMap (isNewPreAUFCase user)
-    in
-    Debug.log "next new case result" <|
-        case maybeNewPreAUFCase of
-            Just ( pre, pll_, post ) ->
-                build pre pll_ post
-                    |> Result.map Random.constant
-                    |> Result.map Just
-
-            Nothing ->
-                PLL.all
-                    |> List.Nonempty.toList
-                    |> List.map (getNewPostAUFCase user)
-                    -- Convert list of errors to error of list
-                    |> List.foldl
-                        (\next result ->
-                            case ( result, next ) of
-                                ( Ok list, Ok nextCase ) ->
-                                    Ok (nextCase :: list)
-
-                                ( Ok list, Err nextErr ) ->
-                                    Err nextErr
-
-                                ( Err cmd, Ok _ ) ->
-                                    Err cmd
-
-                                ( Err cmd, Err nextErr ) ->
-                                    Err (Cmd.batch [ cmd, nextErr ])
-                        )
-                        (Ok [])
-                    |> Result.map
-                        (List.filterMap identity
-                            >> List.Nonempty.fromList
-                            >> Maybe.map
-                                -- Convert list of generators to generator of list
-                                ((\(List.Nonempty.Nonempty firstElem rest) ->
-                                    List.foldl
-                                        (\next cur ->
-                                            Random.map2 List.Nonempty.cons
-                                                next
-                                                cur
-                                        )
-                                        (firstElem |> Random.map List.Nonempty.singleton)
-                                        rest
-                                 )
-                                    >> Random.andThen List.Nonempty.Extra.choose
-                                    >> Random.map Tuple.first
-                                )
-                        )
-
-
-
--- TODO: Refactor this properly
-
-
-isNewPreAUFCase : User -> ( AUF, PLL ) -> Maybe ( AUF, PLL, AUF )
-isNewPreAUFCase user ( preAUF_, pll_ ) =
+referencePreAUFToUserAlgPreAUF : User -> ( AUF, PLL ) -> Maybe AUF
+referencePreAUFToUserAlgPreAUF user ( preAUF_, pll_ ) =
     let
         currentAlgorithm : Algorithm.Algorithm
         currentAlgorithm =
@@ -210,68 +306,67 @@ isNewPreAUFCase user ( preAUF_, pll_ ) =
                 { addFinalReorientationToAlgorithm = False }
                 user
                 (TestCase ( AUF.None, pll_, AUF.None ))
-
-        maybePreAUFForReferenceAlg : Maybe AUF
-        maybePreAUFForReferenceAlg =
-            Cube.detectAUFs
-                { toDetectFor = currentAlgorithm
-                , toMatchTo =
-                    Algorithm.append
-                        (AUF.toAlgorithm preAUF_)
-                    <|
-                        Algorithm.append (PLL.getAlgorithm fixedShortPLLAlgorithms pll_) <|
-                            AUF.toAlgorithm AUF.None
-                }
-                |> Maybe.map (\( pre, _ ) -> pre)
     in
-    maybePreAUFForReferenceAlg
-        |> Maybe.andThen
-            (\preAUFForReferenceAlg ->
-                let
-                    equivalentPreAUFs : List.Nonempty.Nonempty AUF
-                    equivalentPreAUFs =
-                        -- Doesn't matter what we put as the post AUF as it won't change the equivalent pre AUFs
-                        PLL.getAllEquivalentAUFs ( preAUFForReferenceAlg, pll_, AUF.None )
-                            |> List.Nonempty.map Tuple.first
+    Cube.detectAUFs
+        { toDetectFor = currentAlgorithm
+        , toMatchTo =
+            Algorithm.append
+                (AUF.toAlgorithm preAUF_)
+            <|
+                Algorithm.append (PLL.getAlgorithm fixedShortPLLAlgorithms pll_) <|
+                    AUF.toAlgorithm AUF.None
+        }
+        |> Maybe.map (\( pre, _ ) -> pre)
 
-                    preAUFAttempted : Bool
-                    preAUFAttempted =
-                        User.getAttemptedPLLPreAUFs pll_ user
-                            |> List.any (\attemptedPreAUF -> List.Nonempty.member attemptedPreAUF equivalentPreAUFs)
 
-                    attemptedPostAUFs : List AUF
-                    attemptedPostAUFs =
-                        User.getAttemptedPLLPostAUFs pll_ user
-                in
-                if preAUFAttempted then
-                    Nothing
+isRecognitionAngleAttempted : User -> ( AUF, PLL ) -> Bool
+isRecognitionAngleAttempted user ( preAUF_, pll_ ) =
+    let
+        equivalentPreAUFs : List.Nonempty.Nonempty AUF
+        equivalentPreAUFs =
+            -- Doesn't matter what we put as the post AUF as it won't change the equivalent pre AUFs
+            PLL.getAllEquivalentAUFs ( preAUF_, pll_, AUF.None )
+                |> List.Nonempty.map Tuple.first
+    in
+    User.getAttemptedPLLPreAUFs pll_ user
+        |> List.any (\attemptedPreAUF -> List.Nonempty.member attemptedPreAUF equivalentPreAUFs)
 
-                else
-                    let
-                        _ =
-                            Debug.log "preAUF" preAUF_
-                    in
-                    Just
-                        ( Debug.log "equivalentPreAUF" preAUFForReferenceAlg
-                        , pll_
-                          -- TODO: Randomize order of this list
-                        , AUF.all
-                            |> List.Nonempty.toList
-                            |> List.filter ((/=) AUF.None)
-                            |> List.filter
-                                (\postAUF_ ->
-                                    attemptedPostAUFs
-                                        |> List.all ((/=) postAUF_)
-                                )
-                            |> List.head
-                            -- TODO: Make this random
-                            |> Maybe.withDefault AUF.None
+
+generateNewPostAUFCase : User -> ( AUF, PLL ) -> Maybe (Random.Generator TestCase)
+generateNewPostAUFCase user ( preAUF_, pll_ ) =
+    let
+        allTestCases =
+            AUF.all
+                |> List.Nonempty.toList
+                |> List.map (build preAUF_ pll_)
+                |> listOfResultsToResultOfList
+                |> Result.map List.Extra.unique
+
+        attemptedPostAUFs : List AUF
+        attemptedPostAUFs =
+            -- We add None here as we don't care about learning none post AUF cases
+            AUF.None
+                :: User.getAttemptedPLLPostAUFs pll_ user
+
+        allUnseenTestCases : Result (Cmd msg) (List TestCase)
+        allUnseenTestCases =
+            allTestCases
+                |> Result.map
+                    (List.filter
+                        (\(TestCase ( _, _, postAUF_ )) ->
+                            not (List.member postAUF_ attemptedPostAUFs)
                         )
-            )
+                    )
+                |> Debug.log "all unseen"
+    in
+    allUnseenTestCases
+        |> Result.toMaybe
+        |> Maybe.andThen List.Nonempty.fromList
+        |> Maybe.map List.Nonempty.sample
 
 
-getNewPostAUFCase : User -> PLL -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
-getNewPostAUFCase user pll_ =
+getNewPostAUFCaseForPLL : User -> PLL -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
+getNewPostAUFCaseForPLL user pll_ =
     let
         attemptedPreAUFs : List AUF
         attemptedPreAUFs =
@@ -280,7 +375,7 @@ getNewPostAUFCase user pll_ =
 
         attemptedPostAUFs : List AUF
         attemptedPostAUFs =
-            -- We add None here as we don't crea about learning none post AUF cases
+            -- We add None here as we don't care about learning none post AUF cases
             AUF.None
                 :: User.getAttemptedPLLPostAUFs pll_ user
                 |> Debug.log "attemptedPostAUFs"
@@ -294,22 +389,7 @@ getNewPostAUFCase user pll_ =
                             |> List.Nonempty.toList
                             |> List.map (build preAUF_ pll_)
                     )
-                |> List.foldl
-                    (\next result ->
-                        case ( result, next ) of
-                            ( Ok list, Ok nextCase ) ->
-                                Ok (nextCase :: list)
-
-                            ( Ok list, Err nextErr ) ->
-                                Err nextErr
-
-                            ( Err cmd, Ok _ ) ->
-                                Err cmd
-
-                            ( Err cmd, Err nextErr ) ->
-                                Err (Cmd.batch [ cmd, nextErr ])
-                    )
-                    (Ok [])
+                |> listOfResultsToResultOfList
                 |> Result.map List.Extra.unique
                 |> Debug.log "allTestCases"
 
@@ -347,17 +427,34 @@ getNewPostAUFCase user pll_ =
                 (\( bothNotAttempted, singleNotAttempted ) ->
                     case List.Nonempty.fromList bothNotAttempted of
                         Just nonemptyBothNotAttempted ->
-                            List.Nonempty.Extra.choose nonemptyBothNotAttempted
-                                |> Random.map Tuple.first
-                                |> Just
+                            Just <| List.Nonempty.sample nonemptyBothNotAttempted
 
                         Nothing ->
                             singleNotAttempted
                                 |> List.Nonempty.fromList
-                                |> Maybe.map List.Nonempty.Extra.choose
-                                |> Maybe.map (Random.map <| Tuple.first)
+                                |> Maybe.map List.Nonempty.sample
                 )
         )
+
+
+listOfResultsToResultOfList : List (Result (Cmd msg) a) -> Result (Cmd msg) (List a)
+listOfResultsToResultOfList =
+    List.foldl
+        (\next result ->
+            case ( result, next ) of
+                ( Ok list, Ok nextCase ) ->
+                    Ok (nextCase :: list)
+
+                ( Ok list, Err nextErr ) ->
+                    Err nextErr
+
+                ( Err cmd, Ok _ ) ->
+                    Err cmd
+
+                ( Err cmd, Err nextErr ) ->
+                    Err (Cmd.batch [ cmd, nextErr ])
+        )
+        (Ok [])
 
 
 learningOrderForFixedPLLAlgorithms : List ( AUF, PLL )
@@ -434,102 +531,6 @@ learningOrderForFixedPLLAlgorithms =
     , ( AUF.None, PLL.Ga )
     , ( AUF.None, PLL.Gc )
     ]
-
-
-generate : { now : Time.Posix, overrideWithConstantValue : Maybe TestCase } -> User -> Result (Cmd msg) Generator
-generate { now, overrideWithConstantValue } user =
-    Debug.log "generated" <|
-        case overrideWithConstantValue of
-            Just testCaseOverride ->
-                Ok <| buildConstantGenerator user testCaseOverride
-
-            Nothing ->
-                getNewCaseIfNeeded user
-                    |> Result.map
-                        (\newCaseIfNeeded ->
-                            case newCaseIfNeeded of
-                                Just newCaseGenerator ->
-                                    NewCase newCaseGenerator
-
-                                Nothing ->
-                                    let
-                                        { pllGenerator, generatorType } =
-                                            generatePLL { now = now } user
-
-                                        testCaseGenerator =
-                                            Random.map TestCase <|
-                                                Random.map3 (\a b c -> ( a, b, c ))
-                                                    (List.Nonempty.sample AUF.all)
-                                                    pllGenerator
-                                                    (List.Nonempty.sample AUF.all)
-                                    in
-                                    replaceInternalGenerator testCaseGenerator generatorType
-                        )
-
-
-generatePLL :
-    { now : Time.Posix }
-    -> User
-    -> { pllGenerator : Random.Generator PLL, generatorType : Generator }
-generatePLL { now } user =
-    let
-        statistics =
-            User.pllStatistics user
-
-        notAttemptedYets =
-            List.filterMap
-                (\stat ->
-                    case stat of
-                        User.CaseNotAttemptedYet pll_ ->
-                            Just pll_
-
-                        _ ->
-                            Nothing
-                )
-                statistics
-
-        notYetLearneds =
-            List.filterMap
-                (\stat ->
-                    case stat of
-                        User.HasRecentDNF pll_ ->
-                            Just pll_
-
-                        _ ->
-                            Nothing
-                )
-                statistics
-
-        fullyLearneds =
-            List.filterMap
-                (\stat ->
-                    case stat of
-                        User.AllRecentAttemptsSucceeded record ->
-                            Just
-                                ( toFloat
-                                    (Time.posixToMillis now - Time.posixToMillis record.lastTimeTested)
-                                    * record.lastThreeAverageTPS
-                                , record.pll
-                                )
-
-                        _ ->
-                            Nothing
-                )
-                statistics
-    in
-    case ( notAttemptedYets, notYetLearneds, fullyLearneds ) of
-        ( head :: tail, _, _ ) ->
-            { pllGenerator = Random.uniform head tail, generatorType = NewCase (Random.constant <| TestCase ( AUF.None, PLL.Aa, AUF.None )) }
-
-        ( _, head :: tail, _ ) ->
-            { pllGenerator = Random.uniform head tail, generatorType = AlreadyAttempted (Random.constant <| TestCase ( AUF.None, PLL.Aa, AUF.None )) }
-
-        ( _, _, head :: tail ) ->
-            { pllGenerator = Random.weighted head tail, generatorType = AlreadyAttempted (Random.constant <| TestCase ( AUF.None, PLL.Aa, AUF.None )) }
-
-        -- This should never occur as there should always be at least one list with elements in it
-        _ ->
-            { pllGenerator = Random.constant PLL.Aa, generatorType = AlreadyAttempted (Random.constant <| TestCase ( AUF.None, PLL.Aa, AUF.None )) }
 
 
 {-| Be aware that changing these algorithms could require

@@ -1,9 +1,8 @@
-module List.Nonempty.Extra exposing (allMinimums, choose, find, findMap, lift2, lift3)
+module List.Nonempty.Extra exposing (allMinimums, find, findMap, lift2, lift3)
 
 import List.Extra
 import List.Nonempty
 import Random
-import Random.List
 
 
 find : (a -> Bool) -> List.Nonempty.Nonempty a -> Maybe a
@@ -62,16 +61,3 @@ allMinimums cmp (List.Nonempty.Nonempty head tail) =
         )
         (List.Nonempty.singleton head)
         tail
-
-
-choose : List.Nonempty.Nonempty a -> Random.Generator ( a, List a )
-choose nonemptyList =
-    nonemptyList
-        |> List.Nonempty.toList
-        |> Random.List.choose
-        |> Random.map
-            (Tuple.mapFirst <|
-                -- This should be extremely impossible to happen, so we just default
-                -- here to satisfy the types
-                Maybe.withDefault (List.Nonempty.head nonemptyList)
-            )
