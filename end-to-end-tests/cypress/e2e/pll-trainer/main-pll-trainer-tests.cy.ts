@@ -3625,6 +3625,8 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
           [
             "it should be possible to input a space in the input",
             () => {
+              // This may seem like a peculiar test, but we actually had a regression that prompted
+              // this test, due to some scrolling when pressing space to navigate etc.
               elements.algorithmInput
                 .get()
                 .type("{selectall}{backspace}a ")
@@ -3661,7 +3663,7 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
               // We typed something different from last time so now should no longer be disabled;
               elements.submitButton.assertDoesNotHaveDisabledStyling();
               // Submit to get it back to disabled state
-              elements.submitButton.get().click();
+              elements.algorithmInput.get().type("{enter}");
               elements.submitButton.assertHasDisabledStyling();
 
               elements.algorithmInput
@@ -3675,6 +3677,14 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
                 .get()
                 .type("C")
                 .should("have.value", "BC");
+              elements.submitButton.assertHasDisabledStyling();
+
+              elements.algorithmInput
+                .get()
+                .type("{selectall}{backspace}F R L'");
+              elements.submitButton.get().click();
+              // Should also have disabled styling on valid algorithm but doesn't match case
+              // this test is here mostly because our implementation splits those types of errors up
               elements.submitButton.assertHasDisabledStyling();
             },
           ],

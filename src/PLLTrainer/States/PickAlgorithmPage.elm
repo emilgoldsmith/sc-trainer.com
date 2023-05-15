@@ -11,7 +11,7 @@ import Element.Region as Region
 import Html.Attributes
 import Json.Decode
 import Key
-import PLL
+import PLL exposing (PLL)
 import PLLTrainer.ButtonWithShortcut
 import PLLTrainer.State
 import PLLTrainer.Subscription
@@ -57,6 +57,7 @@ type alias Transitions msg =
 
 type alias Model =
     { text : String
+    , textFromPreviousSubmit : String
     , error : Maybe Error
     }
 
@@ -73,7 +74,10 @@ focusOnLoadId =
 
 init : (Msg -> msg) -> ( Model, Cmd msg )
 init toMsg =
-    ( { text = "", error = Nothing }
+    ( { text = ""
+      , textFromPreviousSubmit = ""
+      , error = Nothing
+      }
     , Task.attempt
         (toMsg << FocusAttempted)
         (Browser.Dom.focus focusOnLoadId)
@@ -120,7 +124,7 @@ update transitions currentTestCase msg model =
                                 _ ->
                                     Cmd.none
                     in
-                    ( { model | error = Just (AlgorithmParsingError parsingError) }, command )
+                    ( { model | error = Just (AlgorithmParsingError parsingError), textFromPreviousSubmit = model.text }, command )
 
                 Ok algorithm ->
                     let
@@ -139,7 +143,7 @@ update transitions currentTestCase msg model =
                         )
 
                     else
-                        ( { model | error = Just DoesntSolveCaseError }, Cmd.none )
+                        ( { model | error = Just DoesntSolveCaseError, textFromPreviousSubmit = model.text }, Cmd.none )
 
         FocusAttempted result ->
             case result of
@@ -216,8 +220,15 @@ view :
     -> PLLTrainer.State.View msg
 view currentTestCase testResult toMsg shared model =
     let
+        pllCase : PLL
         pllCase =
             PLLTrainer.TestCase.pll currentTestCase
+
+        submitDisabled : Bool
+        submitDisabled =
+            model.text
+                == model.textFromPreviousSubmit
+                || String.isEmpty model.text
     in
     { overlays = View.buildOverlays []
     , body =
@@ -296,7 +307,7 @@ view currentTestCase testResult toMsg shared model =
                             , labelText = "Submit"
                             , color = shared.palette.primaryButton
                             , keyboardShortcut = Key.Enter
-                            , disabledStyling = False
+                            , disabledStyling = submitDisabled
                             }
                             UI.viewButton.large
                         , paragraph

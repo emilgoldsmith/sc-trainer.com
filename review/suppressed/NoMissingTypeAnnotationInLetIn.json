@@ -13,17 +13,22 @@
     { "count": 7, "filePath": "src/PLLTrainer/States/WrongPage.elm" },
     { "count": 7, "filePath": "src/TimeInterval.elm" },
     { "count": 6, "filePath": "src/PLLTrainer/States/EvaluateResult.elm" },
-    { "count": 6, "filePath": "src/PLLTrainer/States/PickAlgorithmPage.elm" },
     { "count": 6, "filePath": "src/Shared.elm" },
     { "count": 4, "filePath": "src/UI.elm" },
     { "count": 4, "filePath": "src/ViewCube.elm" },
     { "count": 4, "filePath": "tests/Fuzz/Extra.elm" },
-    { "count": 3, "filePath": "src/PLLTrainer/States/PickTargetParametersPage.elm" },
+    {
+      "count": 3,
+      "filePath": "src/PLLTrainer/States/PickTargetParametersPage.elm"
+    },
     { "count": 3, "filePath": "src/PLLTrainer/States/StartPage.elm" },
     { "count": 2, "filePath": "src/Algorithm/Extra.elm" },
     { "count": 2, "filePath": "src/Notification.elm" },
     { "count": 2, "filePath": "src/PLLTrainer/State.elm" },
-    { "count": 2, "filePath": "src/PLLTrainer/States/AlgorithmDrillerExplanationPage.elm" },
+    {
+      "count": 2,
+      "filePath": "src/PLLTrainer/States/AlgorithmDrillerExplanationPage.elm"
+    },
     { "count": 2, "filePath": "src/PLLTrainer/TestCase.elm" },
     { "count": 2, "filePath": "src/Ports.elm" },
     { "count": 2, "filePath": "src/UI/Text.elm" },
