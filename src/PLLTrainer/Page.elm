@@ -470,7 +470,6 @@ update shared msg model =
                                     correctedPreAUF
                                     (PLLTrainer.TestCase.pll model.currentTestCase.testCase)
                                     correctedPostAUF
-                                    |> Debug.log "correctedOldTestCase"
                             of
                                 Ok correctedTestCase ->
                                     let
