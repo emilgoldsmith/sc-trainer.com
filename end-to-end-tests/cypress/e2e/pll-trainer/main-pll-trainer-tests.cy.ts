@@ -625,8 +625,8 @@ describe("PLL Trainer", function () {
             expect(seenPostAUFs[pll], `PostAUF, ${pllToPLLLetters[pll]}`)
               .to.have.lengthOf.at.least(
                 // We don't care if AUF.none is included as it doesn't really add
-                // to practice
-                pllCount[pll] - (seenPostAUFs[pll].has(AUF.none) ? 1 : 0)
+                // to practice, so subtract one if AUF.none is not part of it
+                pllCount[pll] - (seenPostAUFs[pll].has(AUF.none) ? 0 : 1)
               )
               .and.to.have.lengthOf.at.most(pllCount[pll]);
 
