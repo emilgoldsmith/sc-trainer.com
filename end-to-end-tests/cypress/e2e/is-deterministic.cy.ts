@@ -9,7 +9,6 @@ type Aliases = { first: string; second: string; third: string };
 describe("randomness", function () {
   it("is deterministic under test", function () {
     applyDefaultIntercepts();
-    cy.setLocalStorage(fullyPopulatedLocalStorage);
     saveWrongStateTestCase("first");
     saveWrongStateTestCase("second");
     saveWrongStateTestCase("third");
@@ -26,6 +25,7 @@ describe("randomness", function () {
 });
 
 function saveWrongStateTestCase<Key extends keyof Aliases>(alias: Key) {
+  cy.setLocalStorage(fullyPopulatedLocalStorage);
   completePLLTestInMilliseconds(7324, {
     correct: false,
     wrongType: "nearly there",
@@ -40,6 +40,6 @@ function saveWrongStateTestCase<Key extends keyof Aliases>(alias: Key) {
     // there isn't a real danger at least at the time of writing.
     // it just seems like there isn't a better option when extracting
     // alias saving out to a function like this
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
-    .setAlias<Aliases, Key>(alias as any);
+    // @ts-expect-error See above
+    .setAlias<Aliases, Key>(alias);
 }
