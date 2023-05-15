@@ -145,16 +145,34 @@ generateNewCase user =
             )
         |> listOfResultsToResultOfList
         |> Result.andThen
-            (List.Extra.findMap
+            (List.map
                 (\( pll_, preAUFForUserAlg ) ->
                     if isRecognitionAngleAttempted user ( preAUFForUserAlg, pll_ ) then
-                        Nothing
+                        Ok Nothing
 
                     else
-                        generateNewPostAUFCase user ( preAUFForUserAlg, pll_ )
+                        generateNewPostAUFCaseForPreAUF user ( preAUFForUserAlg, pll_ )
+                            |> Result.map (Maybe.map (Just >> Ok))
+                            |> Result.andThen
+                                (Maybe.withDefault
+                                    (AUF.all
+                                        |> List.Nonempty.map (build preAUFForUserAlg pll_)
+                                        |> nonemptyListOfResultsToResultOfList
+                                        |> Result.map (List.Nonempty.sample >> Just)
+                                    )
+                                )
                 )
-                >> Maybe.map (Just >> Ok)
-                >> Maybe.withDefault (generateNewPostAUFCaseForAnyPLL user)
+                >> listOfResultsToResultOfList
+            )
+        |> Result.map (List.Extra.findMap identity)
+        |> Result.andThen
+            (\newRecognitionAngleTestCase ->
+                case newRecognitionAngleTestCase of
+                    Just x ->
+                        Ok <| Just x
+
+                    Nothing ->
+                        generateNewPostAUFCaseForAnyPLL user
             )
 
 
@@ -328,8 +346,8 @@ generateNewPostAUFCaseForAnyPLL user =
             )
 
 
-generateNewPostAUFCase : User -> ( AUF, PLL ) -> Maybe (Random.Generator TestCase)
-generateNewPostAUFCase user ( preAUF_, pll_ ) =
+generateNewPostAUFCaseForPreAUF : User -> ( AUF, PLL ) -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
+generateNewPostAUFCaseForPreAUF user ( preAUF_, pll_ ) =
     let
         allTestCases =
             AUF.all
@@ -353,12 +371,10 @@ generateNewPostAUFCase user ( preAUF_, pll_ ) =
                             not (List.member postAUF_ attemptedPostAUFs)
                         )
                     )
-                |> Debug.log "all unseen"
     in
     allUnseenTestCases
-        |> Result.toMaybe
-        |> Maybe.andThen List.Nonempty.fromList
-        |> Maybe.map List.Nonempty.sample
+        |> Result.map List.Nonempty.fromList
+        |> Result.map (Maybe.map List.Nonempty.sample)
 
 
 getNewPostAUFCaseForPLL : User -> PLL -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
@@ -366,15 +382,13 @@ getNewPostAUFCaseForPLL user pll_ =
     let
         attemptedPreAUFs : List AUF
         attemptedPreAUFs =
-            User.getAttemptedPLLPreAUFs (Debug.log "pll" pll_) user
-                |> Debug.log "attemptedPreAUFs"
+            User.getAttemptedPLLPreAUFs pll_ user
 
         attemptedPostAUFs : List AUF
         attemptedPostAUFs =
             -- We add None here as we don't care about learning none post AUF cases
             AUF.None
                 :: User.getAttemptedPLLPostAUFs pll_ user
-                |> Debug.log "attemptedPostAUFs"
 
         allTestCases =
             AUF.all
@@ -387,7 +401,6 @@ getNewPostAUFCaseForPLL user pll_ =
                     )
                 |> listOfResultsToResultOfList
                 |> Result.map List.Extra.unique
-                |> Debug.log "allTestCases"
 
         allUnseenTestCases : Result (Cmd msg) (List TestCase)
         allUnseenTestCases =
@@ -398,7 +411,6 @@ getNewPostAUFCaseForPLL user pll_ =
                             not (List.member preAUF_ attemptedPreAUFs) || not (List.member postAUF_ attemptedPostAUFs)
                         )
                     )
-                |> Debug.log "all unseen"
 
         numAttemptedPartition =
             allUnseenTestCases
@@ -408,29 +420,26 @@ getNewPostAUFCaseForPLL user pll_ =
                             not (List.member preAUF_ attemptedPreAUFs) && not (List.member postAUF_ attemptedPostAUFs)
                         )
                     )
-                |> Debug.log "partition"
     in
-    Debug.log "new post auf case result" <|
-        -- NOTE: One could write a recursion here to make sure we pick
-        -- the most efficient way of learning all the different AUFs
-        -- in as few attempts as possible, but:
-        -- 1. It probably isn't too impactful for the user making that further optimization
-        -- 2. This is actually already optimal as it is impossible after all recognition angles
-        -- have been taught (each with a unique postAUF) to come up with a case where
-        -- preAUFsLeft + postAUFsLeft > 3, try it yourself.
-        (numAttemptedPartition
-            |> Result.map
-                (\( bothNotAttempted, singleNotAttempted ) ->
-                    case List.Nonempty.fromList bothNotAttempted of
-                        Just nonemptyBothNotAttempted ->
-                            Just <| List.Nonempty.sample nonemptyBothNotAttempted
+    -- NOTE: One could write a recursion here to make sure we pick
+    -- the most efficient way of learning all the different AUFs
+    -- in as few attempts as possible, but:
+    -- 1. It probably isn't too impactful for the user making that further optimization
+    -- 2. This is actually already optimal as it is impossible after all recognition angles
+    -- have been taught (each with a unique postAUF) to come up with a case where
+    -- preAUFsLeft + postAUFsLeft > 3, try it yourself.
+    numAttemptedPartition
+        |> Result.map
+            (\( bothNotAttempted, singleNotAttempted ) ->
+                case List.Nonempty.fromList bothNotAttempted of
+                    Just nonemptyBothNotAttempted ->
+                        Just <| List.Nonempty.sample nonemptyBothNotAttempted
 
-                        Nothing ->
-                            singleNotAttempted
-                                |> List.Nonempty.fromList
-                                |> Maybe.map List.Nonempty.sample
-                )
-        )
+                    Nothing ->
+                        singleNotAttempted
+                            |> List.Nonempty.fromList
+                            |> Maybe.map List.Nonempty.sample
+            )
 
 
 listOfResultsToResultOfList : List (Result (Cmd msg) a) -> Result (Cmd msg) (List a)
@@ -451,6 +460,27 @@ listOfResultsToResultOfList =
                     Err (Cmd.batch [ cmd, nextErr ])
         )
         (Ok [])
+
+
+nonemptyListOfResultsToResultOfList : List.Nonempty.Nonempty (Result (Cmd msg) a) -> Result (Cmd msg) (List.Nonempty.Nonempty a)
+nonemptyListOfResultsToResultOfList (List.Nonempty.Nonempty head tail) =
+    List.foldl
+        (\next result ->
+            case ( result, next ) of
+                ( Ok list, Ok nextCase ) ->
+                    Ok (List.Nonempty.cons nextCase list)
+
+                ( Ok list, Err nextErr ) ->
+                    Err nextErr
+
+                ( Err cmd, Ok _ ) ->
+                    Err cmd
+
+                ( Err cmd, Err nextErr ) ->
+                    Err (Cmd.batch [ cmd, nextErr ])
+        )
+        (Result.map List.Nonempty.singleton head)
+        tail
 
 
 learningOrderForFixedPLLAlgorithms : List ( AUF, PLL )

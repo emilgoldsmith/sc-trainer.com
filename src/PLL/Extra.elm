@@ -32,7 +32,7 @@ getPreferredEquivalentAUFs : PLLAUFPreferences -> ( AUF, PLL, AUF ) -> Result Pr
 getPreferredEquivalentAUFs preferences testCase =
     let
         optimalOptions =
-            Debug.log "testCase" testCase
+            testCase
                 |> PLL.getAllEquivalentAUFs
                 |> List.Nonempty.Extra.allMinimums
                     (\a b ->
@@ -40,25 +40,24 @@ getPreferredEquivalentAUFs preferences testCase =
                         compare (countAUFTurns a) (countAUFTurns b)
                     )
     in
-    Debug.log "result" <|
-        case optimalOptions of
-            List.Nonempty.Nonempty onlyOption [] ->
-                -- If only one optimal option we choose that one
-                Ok onlyOption
+    case optimalOptions of
+        List.Nonempty.Nonempty onlyOption [] ->
+            -- If only one optimal option we choose that one
+            Ok onlyOption
 
-            nonSingletonOptions ->
-                -- Else we choose the preference
-                Debug.log "preferences" preferences
-                    |> User.getPLLAUFPreferencesTuple
-                    |> (\( a, b, c ) -> [ a, b, c ])
-                    |> List.Extra.find
-                        (\pref ->
-                            nonSingletonOptions
-                                |> List.Nonempty.Extra.find (\option -> option == pref)
-                                |> Maybe.map (always True)
-                                |> Maybe.withDefault False
-                        )
-                    |> Result.fromMaybe (InvalidPreferences preferences testCase)
+        nonSingletonOptions ->
+            -- Else we choose the preference
+            preferences
+                |> User.getPLLAUFPreferencesTuple
+                |> (\( a, b, c ) -> [ a, b, c ])
+                |> List.Extra.find
+                    (\pref ->
+                        nonSingletonOptions
+                            |> List.Nonempty.Extra.find (\option -> option == pref)
+                            |> Maybe.map (always True)
+                            |> Maybe.withDefault False
+                    )
+                |> Result.fromMaybe (InvalidPreferences preferences testCase)
 
 
 countAUFTurns : ( AUF, AUF ) -> Float
