@@ -136,10 +136,12 @@ view shared transitions { expectedCube, correctAttemptsLeft, previousTestResult 
                         [ testid "next-test-button"
                         , centerX
                         ]
+                        shared.palette
                         { onPress = Just transitions.startTest
                         , labelText = "Next Test"
                         , keyboardShortcut = Key.Space
                         , color = shared.palette.primaryButton
+                        , disabledStyling = False
                         }
                         (UI.viewButton.customSize <| ViewportSize.minDimension shared.viewportSize // 25)
                     ]

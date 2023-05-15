@@ -81,15 +81,19 @@ popupOverlay viewportSize palette { errorDescription, sendError, closeWithoutSen
                 , row [ width fill ]
                     [ el [ width fill ] <|
                         UI.viewButton.large [ centerX, testid "dont-send-error-button" ]
+                            palette
                             { onPress = Just closeWithoutSending
                             , color = rgb255 125 125 125
                             , label = \size -> el [ Font.size size ] <| text "No"
+                            , disabledStyling = False
                             }
                     , el [ width fill ] <|
                         UI.viewButton.large [ centerX, testid "send-error-button" ]
+                            palette
                             { onPress = Just sendError
                             , color = palette.error
                             , label = \size -> el [ Font.size size ] <| text "Yes"
+                            , disabledStyling = False
                             }
                     ]
                 ]
@@ -150,9 +154,11 @@ viewInline palette { errorDescription, sendError } =
             , row [ width fill ]
                 [ el [ width fill ] <|
                     UI.viewButton.large [ centerX, testid "send-error-button" ]
+                        palette
                         { onPress = Just sendError
                         , color = palette.error
                         , label = \size -> el [ Font.size size ] <| text "Send Error"
+                        , disabledStyling = False
                         }
                 ]
             ]

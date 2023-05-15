@@ -291,10 +291,12 @@ view currentTestCase testResult toMsg shared model =
                             [ testid "submit-button"
                             , centerX
                             ]
+                            shared.palette
                             { onPress = Just (toMsg Submit)
                             , labelText = "Submit"
                             , color = shared.palette.primaryButton
                             , keyboardShortcut = Key.Enter
+                            , disabledStyling = False
                             }
                             UI.viewButton.large
                         , paragraph
