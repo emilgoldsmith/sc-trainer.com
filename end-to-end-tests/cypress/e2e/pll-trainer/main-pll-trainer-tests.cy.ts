@@ -70,7 +70,7 @@ describe("PLL Trainer", function () {
         cy.tick(evaluateResultIgnoreTransitionsWaitTime);
         cy.clock().invoke("restore");
         evaluateResultNavigateCorrectVariant1();
-        pickAlgorithmPageFirstThingNoSideEffects();
+        pickAlgorithmPageFirstThingNoSideEffectsExceptDisplayError();
         pickAlgorithmPageSideEffectsExceptNavigations();
         pickAlgorithmNavigateVariant1();
         pllTrainerElements.correctPage.goodJobText.assertShows();
@@ -3446,7 +3446,7 @@ function evaluateResultNavigateWrongVariant3() {
   );
 }
 
-function pickAlgorithmPageFirstThingNoSideEffects() {
+function pickAlgorithmPageFirstThingNoSideEffectsExceptDisplayError() {
   const elements = pllTrainerElements.pickAlgorithmPage;
   cy.withOverallNameLogged(
     { message: "pickAlgorithmPageFirstThingNoSideEffects" },
@@ -3617,6 +3617,20 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
             },
           ],
           [
+            "it should be possible to input a space in the input",
+            () => {
+              elements.algorithmInput
+                .get()
+                .type("{selectall}{backspace}a ")
+                .pressKey(Key.space);
+
+              elements.algorithmInput
+                .get()
+                .type("b")
+                .should("have.value", "a b");
+            },
+          ],
+          [
             "all errors display exactly when expected, don't update unless an attempt at submitting has occurred, have the correct text, and stay on the page despite submit action when an error is expected",
             () => {
               let useEnterKeyToSubmit = true;
@@ -3631,6 +3645,7 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
                   elements.submitButton.get().click();
                 }
 
+                // We alternate between using enter or the button for max test surface covered
                 useEnterKeyToSubmit = !useEnterKeyToSubmit;
               }
 
