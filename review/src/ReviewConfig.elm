@@ -72,13 +72,13 @@ config =
     , NoUnused.CustomTypeConstructorArgs.rule
     , NoUnused.Dependencies.rule
     , NoUnused.Exports.rule
-        |> Rule.ignoreErrorsForFiles [
-            "src/Effect.elm",
-            "src/View.elm"
-        ]
-        |> Rule.ignoreErrorsForDirectories [
-            "src/Pages"
-        ]
+        |> Rule.ignoreErrorsForFiles
+            [ "src/Effect.elm"
+            , "src/View.elm"
+            ]
+        |> Rule.ignoreErrorsForDirectories
+            [ "src/Pages"
+            ]
     , NoUnused.Parameters.rule
     , NoUnused.Patterns.rule
     , NoUnused.Variables.rule

@@ -55,7 +55,11 @@ function has_upstream_branch() {
 }
 
 function changed_compared_to_upstream() {
-    git diff --quiet --exit-code "${UPSTREAM_BRANCH:-origin/main}" HEAD -- "$@"
+    if git diff --quiet --exit-code "${UPSTREAM_BRANCH:-origin/main}" HEAD -- "$@"; then
+        return 1
+    else
+        return 0
+    fi
 }
 
 symbolic_ref="$(git symbolic-ref -q HEAD)"
