@@ -604,7 +604,10 @@ describe("PLL Trainer", function () {
               )}`
             ).to.deep.include.members([...seenPreAUFs[pll]]);
             // Should have used our cases efficiently
-            expect(seenPreAUFs[pll]).to.have.lengthOf(pllCount[pll]);
+            expect(
+              seenPreAUFs[pll],
+              `PreAUF, ${pllToPLLLetters[pll]}`
+            ).to.have.lengthOf(pllCount[pll]);
 
             // Test Post AUFs
             const expectedPostAUFs = allowedCases
@@ -619,7 +622,13 @@ describe("PLL Trainer", function () {
             // Should have used our cases efficiently
             // This should also assert that non symmetric PLLs have already covered
             // all their postAUFs
-            expect(seenPostAUFs[pll]).to.have.lengthOf(pllCount[pll]);
+            expect(seenPostAUFs[pll], `PostAUF, ${pllToPLLLetters[pll]}`)
+              .to.have.lengthOf.at.least(
+                // We don't care if AUF.none is included as it doesn't really add
+                // to practice
+                pllCount[pll] - (seenPostAUFs[pll].has(AUF.none) ? 1 : 0)
+              )
+              .and.to.have.lengthOf.at.most(pllCount[pll]);
 
             const missingPostAUFs = new Set(expectedPostAUFs);
             // We don't care about practicing the no post AUF case as it
