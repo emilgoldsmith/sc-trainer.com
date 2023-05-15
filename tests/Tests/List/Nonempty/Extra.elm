@@ -1,6 +1,5 @@
 module Tests.List.Nonempty.Extra exposing (getPreferredEquivalentAUFsTests)
 
-import AUF exposing (AUF)
 import Expect
 import List.Nonempty
 import List.Nonempty.Extra
