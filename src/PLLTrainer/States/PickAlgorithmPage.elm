@@ -109,6 +109,7 @@ update transitions currentTestCase msg model =
             case Algorithm.fromString model.text of
                 Err parsingError ->
                     let
+                        command : Cmd msg
                         command =
                             case parsingError of
                                 UnexpectedError { inputString, errorIndex, debugInfo } ->
@@ -128,6 +129,7 @@ update transitions currentTestCase msg model =
 
                 Ok algorithm ->
                     let
+                        cleanedUpAlgorithm : Algorithm
                         cleanedUpAlgorithm =
                             cleanUpAlgorithm algorithm
                     in
@@ -521,12 +523,14 @@ viewUnderlinedPlaceWhereErrorOcurred inputString start end =
         -- a piece of pre-formatted text. And trying things like
         -- htmlAttribute white-space: pre-wrap doesn't play well
         -- with the Elm UI internals
+        beforeUnderline : List (Element msg)
         beforeUnderline =
             String.left start inputString
                 |> String.toList
                 |> List.map String.fromChar
                 |> List.map text
 
+        underlinedCharacters : List (Element msg)
         underlinedCharacters =
             String.slice start end inputString
                 |> String.toList
@@ -537,6 +541,7 @@ viewUnderlinedPlaceWhereErrorOcurred inputString start end =
                             text char
                     )
 
+        afterUnderline : List (Element msg)
         afterUnderline =
             String.dropLeft end inputString
                 |> String.toList
