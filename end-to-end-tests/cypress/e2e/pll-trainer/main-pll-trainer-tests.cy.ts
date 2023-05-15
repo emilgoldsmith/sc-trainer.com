@@ -3460,6 +3460,12 @@ function pickAlgorithmPageFirstThingNoSideEffectsExceptDisplayError() {
             },
           ],
           [
+            "submit button has disabled styling on load",
+            () => {
+              elements.submitButton.assertHasDisabledStyling();
+            },
+          ],
+          [
             "errors behave properly at the start",
             () => {
               // No errors expected as you enter the page
@@ -3628,6 +3634,48 @@ function pickAlgorithmPageSideEffectsExceptNavigations() {
                 .get()
                 .type("b")
                 .should("have.value", "a b");
+            },
+          ],
+          [
+            "it should have disabled styling exactly when input is different from last invalid submit and non-empty",
+            () => {
+              elements.algorithmInput
+                .get()
+                .type("{selectall}{backspace}A")
+                .pressKey(Key.space);
+              elements.submitButton.get().click();
+              elements.submitButton.assertHasDisabledStyling();
+
+              elements.algorithmInput.get().type("{selectall}");
+              // Should still have disabled after just selecting
+              elements.submitButton.assertHasDisabledStyling();
+
+              elements.algorithmInput.get().type("{backspace}");
+              // Should still have disabled styling after deleting when it goes to empty input
+              elements.submitButton.assertHasDisabledStyling();
+
+              elements.algorithmInput
+                .get()
+                .type("BC")
+                .should("have.value", "BC");
+              // We typed something different from last time so now should no longer be disabled;
+              elements.submitButton.assertDoesNotHaveDisabledStyling();
+              // Submit to get it back to disabled state
+              elements.submitButton.get().click();
+              elements.submitButton.assertHasDisabledStyling();
+
+              elements.algorithmInput
+                .get()
+                .type("{backspace}")
+                .should("have.value", "B");
+              // Deleting with non-empty string result should re-enable button
+              elements.submitButton.assertDoesNotHaveDisabledStyling();
+              // Adding back the deleted string, therefore returning to most recent invalid state string goes back to disabled styling
+              elements.algorithmInput
+                .get()
+                .type("C")
+                .should("have.value", "BC");
+              elements.submitButton.assertHasDisabledStyling();
             },
           ],
           [

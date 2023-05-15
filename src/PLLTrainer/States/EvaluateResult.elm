@@ -138,33 +138,33 @@ subscriptions transitions arguments toMsg model =
 
 
 view : Shared.Model -> Transitions msg -> Arguments -> Model -> PLLTrainer.State.View msg
-view { viewportSize, palette, hardwareAvailable, cubeViewOptions, user } transitions arguments _ =
+view shared transitions arguments _ =
     { overlays = View.buildOverlays []
     , body =
         View.fullScreenBody
             (\{ scrollableContainerId } ->
                 let
                     overallPadding =
-                        ViewportSize.minDimension viewportSize // 20
+                        ViewportSize.minDimension shared.viewportSize // 20
 
                     cubeSize =
-                        ViewportSize.minDimension viewportSize // 3
+                        ViewportSize.minDimension shared.viewportSize // 3
 
                     cubeSpacing =
-                        ViewportSize.minDimension viewportSize // 15
+                        ViewportSize.minDimension shared.viewportSize // 15
 
                     timerSize =
-                        ViewportSize.minDimension viewportSize // 6
+                        ViewportSize.minDimension shared.viewportSize // 6
 
                     buttonSpacing =
-                        ViewportSize.minDimension viewportSize // 15
+                        ViewportSize.minDimension shared.viewportSize // 15
 
                     button =
                         \attributes ->
-                            UI.viewButton.customSize (ViewportSize.minDimension viewportSize // 13)
+                            UI.viewButton.customSize (ViewportSize.minDimension shared.viewportSize // 13)
                                 (attributes
                                     ++ [ Font.center
-                                       , width (px <| ViewportSize.minDimension viewportSize // 3)
+                                       , width (px <| ViewportSize.minDimension shared.viewportSize // 3)
                                        ]
                                 )
                 in
@@ -173,7 +173,7 @@ view { viewportSize, palette, hardwareAvailable, cubeViewOptions, user } transit
                     , htmlAttribute <| Html.Attributes.id scrollableContainerId
                     , centerX
                     , centerY
-                    , height (fill |> maximum (ViewportSize.minDimension viewportSize))
+                    , height (fill |> maximum (ViewportSize.minDimension shared.viewportSize))
                     , spaceEvenly
                     , padding overallPadding
                     ]
@@ -189,28 +189,29 @@ view { viewportSize, palette, hardwareAvailable, cubeViewOptions, user } transit
                         [ centerX
                         , spacing cubeSpacing
                         ]
-                        [ ViewCube.view cubeViewOptions
+                        [ ViewCube.view shared.cubeViewOptions
                             [ htmlTestid "expected-cube-front" ]
                             { pixelSize = cubeSize
                             , displayAngle = Cube.ufrDisplayAngle
                             , annotateFaces = True
-                            , theme = User.cubeTheme user
+                            , theme = User.cubeTheme shared.user
                             }
                             arguments.expectedCubeState
-                        , ViewCube.view cubeViewOptions
+                        , ViewCube.view shared.cubeViewOptions
                             [ htmlTestid "expected-cube-back" ]
                             { pixelSize = cubeSize
                             , displayAngle = Cube.ublDisplayAngle
                             , annotateFaces = True
-                            , theme = User.cubeTheme user
+                            , theme = User.cubeTheme shared.user
                             }
                             arguments.expectedCubeState
                         ]
                     , row [ centerX, spacing buttonSpacing ]
                         [ PLLTrainer.ButtonWithShortcut.view
-                            hardwareAvailable
+                            shared.hardwareAvailable
                             [ testid "correct-button"
                             ]
+                            shared.palette
                             { onPress =
                                 if arguments.transitionsDisabled then
                                     Nothing
@@ -218,14 +219,16 @@ view { viewportSize, palette, hardwareAvailable, cubeViewOptions, user } transit
                                 else
                                     Just transitions.evaluateCorrect
                             , labelText = "Correct"
-                            , color = palette.correct
+                            , color = shared.palette.correct
                             , keyboardShortcut = Key.Space
+                            , disabledStyling = False
                             }
                             button
                         , PLLTrainer.ButtonWithShortcut.view
-                            hardwareAvailable
+                            shared.hardwareAvailable
                             [ testid "wrong-button"
                             ]
+                            shared.palette
                             { onPress =
                                 if arguments.transitionsDisabled then
                                     Nothing
@@ -234,7 +237,8 @@ view { viewportSize, palette, hardwareAvailable, cubeViewOptions, user } transit
                                     Just transitions.evaluateWrong
                             , labelText = "Wrong"
                             , keyboardShortcut = Key.W
-                            , color = palette.wrong
+                            , color = shared.palette.wrong
+                            , disabledStyling = False
                             }
                             button
                         ]

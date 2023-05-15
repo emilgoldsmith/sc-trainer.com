@@ -23,6 +23,10 @@ export type OurElement = {
   >;
   isContainedByWindow: ReturnType<typeof buildContainedByWindow>;
   assertIsFocused: ReturnType<typeof buildAssertIsFocused>;
+  assertHasDisabledStyling: ReturnType<typeof buildAssertHasDisabledStyling>;
+  assertDoesNotHaveDisabledStyling: ReturnType<
+    typeof buildAssertDoesNotHaveDisabledStyling
+  >;
   getStringRepresentationOfCube: ReturnType<
     typeof buildGetStringRepresentationOfCube
   >;
@@ -179,6 +183,14 @@ export function buildElementsCategory<keys extends string>(
           specifier
         ),
         assertIsFocused: buildWithinContainer(buildAssertIsFocused, specifier),
+        assertHasDisabledStyling: buildWithinContainer(
+          buildAssertHasDisabledStyling,
+          specifier
+        ),
+        assertDoesNotHaveDisabledStyling: buildWithinContainer(
+          buildAssertDoesNotHaveDisabledStyling,
+          specifier
+        ),
         getStringRepresentationOfCube: buildWithinContainer(
           buildGetStringRepresentationOfCube,
           specifier
@@ -265,6 +277,9 @@ function buildElement(specifier: ElementSpecifier): InternalElement {
       buildConsumableViaHorizontalScrollAsserter(specifier),
     isContainedByWindow: buildContainedByWindow(specifier),
     assertIsFocused: buildAssertIsFocused(specifier),
+    assertHasDisabledStyling: buildAssertHasDisabledStyling(specifier),
+    assertDoesNotHaveDisabledStyling:
+      buildAssertDoesNotHaveDisabledStyling(specifier),
     getStringRepresentationOfCube:
       buildGetStringRepresentationOfCube(specifier),
     specifier,
@@ -335,6 +350,50 @@ function buildAssertIsFocused(specifier: ElementSpecifier) {
         consoleProps: () => ({ specifier }),
       },
       assertIsFocused
+    );
+  };
+}
+
+function buildAssertHasDisabledStyling(specifier: ElementSpecifier) {
+  return function (options?: Options) {
+    const assertHasDisabledStyling = () =>
+      getBySpecifier(specifier, { ...options, log: false }).should(
+        "have.attr",
+        "data-disabled-styling-active"
+      );
+
+    if (options?.log === false) {
+      return assertHasDisabledStyling();
+    }
+    return cy.withOverallNameLogged(
+      {
+        displayName: "ASSERT HAS DISABLED STYLING",
+        message: specifier,
+        consoleProps: () => ({ specifier }),
+      },
+      assertHasDisabledStyling
+    );
+  };
+}
+
+function buildAssertDoesNotHaveDisabledStyling(specifier: ElementSpecifier) {
+  return function (options?: Options) {
+    const assertDoesNotHaveDisabledStyling = () =>
+      getBySpecifier(specifier, { ...options, log: false }).should(
+        "not.have.attr",
+        "data-disabled-styling-active"
+      );
+
+    if (options?.log === false) {
+      return assertDoesNotHaveDisabledStyling();
+    }
+    return cy.withOverallNameLogged(
+      {
+        displayName: "ASSERT DOES NOT HAVE DISABLED STYLING",
+        message: specifier,
+        consoleProps: () => ({ specifier }),
+      },
+      assertDoesNotHaveDisabledStyling
     );
   };
 }

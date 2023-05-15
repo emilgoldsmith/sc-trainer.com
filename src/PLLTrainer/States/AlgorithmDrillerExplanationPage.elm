@@ -184,10 +184,12 @@ view shared transitions { testCase, wasCorrect, sendError } =
                             [ testid "continue-button"
                             , centerX
                             ]
+                            shared.palette
                             { onPress = Just transitions.startDrills
                             , labelText = "Continue"
                             , keyboardShortcut = Key.Space
                             , color = shared.palette.primaryButton
+                            , disabledStyling = False
                             }
                             UI.viewButton.large
                         ]

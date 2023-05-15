@@ -187,9 +187,11 @@ view shared transitions toMsg model =
                             , maxExpectedMainDigits = 2
                             }
                         , UI.viewButton.large [ testid "submit-button", centerX ]
+                            shared.palette
                             { color = shared.palette.primaryButton
                             , label = always (text "Submit")
                             , onPress = submitMsg
+                            , disabledStyling = False
                             }
                         ]
             )

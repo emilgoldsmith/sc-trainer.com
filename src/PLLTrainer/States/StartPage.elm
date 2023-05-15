@@ -107,10 +107,12 @@ view shared transitions =
                             [ testid "start-button"
                             , centerX
                             ]
+                            shared.palette
                             { onPress = Just transitions.startTest
                             , labelText = "Start"
                             , color = shared.palette.primaryButton
                             , keyboardShortcut = Key.Space
+                            , disabledStyling = False
                             }
                             UI.viewButton.large
                         , UI.viewDarkDivider shared.palette
@@ -181,9 +183,11 @@ view shared transitions =
                             [ testid "edit-target-parameters-button"
                             , centerX
                             ]
+                            shared.palette
                             { onPress = Just transitions.editTargetParameters
                             , color = shared.palette.primaryButton
                             , label = always <| text "Edit Target Parameters"
+                            , disabledStyling = False
                             }
                         ]
             )

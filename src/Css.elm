@@ -1,4 +1,4 @@
-module Css exposing (errorMessageTestType, htmlCubeTestType, htmlTestid, testid)
+module Css exposing (disabledStylingActiveAttribute, errorMessageTestType, htmlCubeTestType, htmlTestid, testid)
 
 import Element exposing (..)
 import Html
@@ -29,3 +29,9 @@ errorMessageTestType =
 htmlTestType : String -> Html.Attribute msg
 htmlTestType =
     Html.Attributes.attribute "data-test-type"
+
+
+disabledStylingActiveAttribute : Attribute msg
+disabledStylingActiveAttribute =
+    htmlAttribute <|
+        Html.Attributes.attribute "data-disabled-styling-active" ""

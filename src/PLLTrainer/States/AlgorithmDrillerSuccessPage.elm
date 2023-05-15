@@ -77,10 +77,12 @@ view viewportSize palette hardwareAvailable transitions =
                         [ testid "next-test-button"
                         , centerX
                         ]
+                        palette
                         { onPress = Just transitions.startTest
                         , labelText = "Next"
                         , keyboardShortcut = Key.Space
                         , color = palette.primaryButton
+                        , disabledStyling = False
                         }
                         (UI.viewButton.customSize <| ViewportSize.minDimension viewportSize // 10)
                     ]

@@ -79,10 +79,12 @@ view palette hardwareAvailable transitions =
                         [ testid "start-test-button"
                         , centerX
                         ]
+                        palette
                         { onPress = Just transitions.startTest
                         , labelText = "Start"
                         , keyboardShortcut = Key.Space
                         , color = palette.primaryButton
+                        , disabledStyling = False
                         }
                         UI.viewButton.large
                     ]

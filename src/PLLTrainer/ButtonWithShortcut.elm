@@ -7,8 +7,8 @@ import Shared
 import UI
 
 
-view : Shared.HardwareAvailable -> List (Attribute msg) -> { onPress : Maybe msg, labelText : String, color : Color, keyboardShortcut : Key } -> UI.Button msg -> Element msg
-view hardwareAvailable attributes { onPress, labelText, keyboardShortcut, color } button =
+view : Shared.HardwareAvailable -> List (Attribute msg) -> UI.Palette -> { onPress : Maybe msg, labelText : String, color : Color, disabledStyling : Bool, keyboardShortcut : Key } -> UI.Button msg -> Element msg
+view hardwareAvailable attributes palette { onPress, labelText, disabledStyling, keyboardShortcut, color } button =
     let
         keyString =
             case keyboardShortcut of
@@ -38,8 +38,10 @@ view hardwareAvailable attributes { onPress, labelText, keyboardShortcut, color 
 
         withShortcutLabel =
             button attributes
+                palette
                 { onPress = onPress
                 , color = color
+                , disabledStyling = disabledStyling
                 , label =
                     \fontSize ->
                         column [ centerX ]
@@ -50,8 +52,10 @@ view hardwareAvailable attributes { onPress, labelText, keyboardShortcut, color 
 
         withoutShortcutLabel =
             button attributes
+                palette
                 { onPress = onPress
                 , color = color
+                , disabledStyling = disabledStyling
                 , label =
                     \fontSize ->
                         el [ centerX, Font.size fontSize ] <| text labelText
@@ -64,8 +68,8 @@ view hardwareAvailable attributes { onPress, labelText, keyboardShortcut, color 
         withoutShortcutLabel
 
 
-viewSmall : Shared.HardwareAvailable -> List (Attribute msg) -> { onPress : Maybe msg, labelText : String, color : Color, keyboardShortcut : Key } -> UI.Button msg -> Element msg
-viewSmall hardwareAvailable attributes { onPress, labelText, keyboardShortcut, color } button =
+viewSmall : Shared.HardwareAvailable -> List (Attribute msg) -> UI.Palette -> { onPress : Maybe msg, labelText : String, color : Color, disabledStyling : Bool, keyboardShortcut : Key } -> UI.Button msg -> Element msg
+viewSmall hardwareAvailable attributes palette { onPress, labelText, disabledStyling, keyboardShortcut, color } button =
     let
         keyString =
             case keyboardShortcut of
@@ -95,8 +99,10 @@ viewSmall hardwareAvailable attributes { onPress, labelText, keyboardShortcut, c
 
         withShortcutLabel =
             button attributes
+                palette
                 { onPress = onPress
                 , color = color
+                , disabledStyling = disabledStyling
                 , label =
                     \fontSize ->
                         column [ centerX, spacing 3 ]
@@ -107,8 +113,10 @@ viewSmall hardwareAvailable attributes { onPress, labelText, keyboardShortcut, c
 
         withoutShortcutLabel =
             button attributes
+                palette
                 { onPress = onPress
                 , color = color
+                , disabledStyling = disabledStyling
                 , label =
                     \fontSize ->
                         el [ centerX, Font.size fontSize ] <| text labelText

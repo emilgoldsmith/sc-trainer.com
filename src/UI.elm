@@ -3,7 +3,7 @@ module UI exposing (Button, Palette, Sizes, defaultPalette, fontSize, formatFloa
 -- We can't expose all of Element as it clashes with the spacing export
 
 import Color
-import Css exposing (testid)
+import Css exposing (disabledStylingActiveAttribute, testid)
 import Element exposing (..)
 import Element.Background as Background
 import Element.Border as Border
@@ -82,11 +82,11 @@ viewLightDivider palette =
 
 
 type alias Button msg =
-    List (Attribute msg) -> { onPress : Maybe msg, color : Color, label : Int -> Element msg } -> Element msg
+    List (Attribute msg) -> Palette -> { onPress : Maybe msg, color : Color, label : Int -> Element msg, disabledStyling : Bool } -> Element msg
 
 
 baseButton : Int -> Button msg
-baseButton size attributes { onPress, label, color } =
+baseButton size attributes palette { onPress, label, color, disabledStyling } =
     let
         paddingSize =
             size * 2 // 3
@@ -94,7 +94,20 @@ baseButton size attributes { onPress, label, color } =
         roundingSize =
             (paddingSize + size) // 5
     in
-    Input.button (Background.color color :: padding paddingSize :: Border.rounded roundingSize :: attributes) { onPress = onPress, label = label size }
+    Input.button
+        (padding paddingSize
+            :: Border.rounded roundingSize
+            :: attributes
+            ++ (if disabledStyling then
+                    [ Background.color palette.disabledGrey
+                    , disabledStylingActiveAttribute
+                    ]
+
+                else
+                    [ Background.color color ]
+               )
+        )
+        { onPress = onPress, label = label size }
 
 
 viewButton : { large : Button msg1, customSize : Int -> Button msg2 }
@@ -135,6 +148,7 @@ type alias Palette =
       background : Color
     , primaryButton : Color
     , secondaryButton : Color
+    , disabledGrey : Color
     , correct : Color
     , wrong : Color
     , darkText : Color
@@ -158,6 +172,7 @@ defaultPalette =
       background = rgb255 255 255 255
     , primaryButton = rgb255 0 128 0
     , secondaryButton = rgb255 0 0 128
+    , disabledGrey = rgb255 180 180 180
     , correct = rgb255 0 128 0
     , wrong = rgb255 255 0 0
     , darkText = rgb255 0 0 0

@@ -187,10 +187,12 @@ view shared transitions arguments =
                             [ testid "next-button"
                             , centerX
                             ]
+                            shared.palette
                             { onPress = Just transitions.startNextTest
                             , labelText = "Next"
                             , keyboardShortcut = Key.Space
                             , color = shared.palette.primaryButton
+                            , disabledStyling = False
                             }
                             (UI.viewButton.customSize <| largeTextSize)
                         :: (case recognitionSpecAndAlgorithmResult of
