@@ -535,7 +535,7 @@ describe("PLL Trainer", function () {
                     pllToPLLLetters[expectedPLL]
                   }: ("${aufToAlgorithmString[actualPreAUF]}", "${
                     aufToAlgorithmString[actualPostAUF]
-                  }") was expected to be found in the limited case set ${JSON.stringify(
+                  }") was expected to be found in the allowed cases: ${JSON.stringify(
                     allowedCases.map((singleCase) =>
                       singleCase.map((x) => `${aufToAlgorithmString[x]}`)
                     )
