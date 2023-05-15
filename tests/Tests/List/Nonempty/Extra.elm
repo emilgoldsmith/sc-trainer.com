@@ -1,4 +1,4 @@
-module Tests.List.Nonempty.Extra exposing (getPreferredEquivalentAUFsTests)
+module Tests.List.Nonempty.Extra exposing (allMinimumsTests)
 
 import Expect
 import List.Nonempty
@@ -6,8 +6,8 @@ import List.Nonempty.Extra
 import Test exposing (..)
 
 
-getPreferredEquivalentAUFsTests : Test
-getPreferredEquivalentAUFsTests =
+allMinimumsTests : Test
+allMinimumsTests =
     describe "allMinimums"
         [ test "solves a complicated example correctly" <|
             \_ ->
