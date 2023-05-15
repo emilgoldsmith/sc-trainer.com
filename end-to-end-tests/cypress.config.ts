@@ -5,7 +5,7 @@ import { defineConfig } from "cypress";
  * place here so for now we just hack it
  */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
+// @ts-expect-error
 // eslint-disable-next-line import/no-nodejs-modules
 import fs from "fs";
 
@@ -15,6 +15,7 @@ export default defineConfig({
   viewportHeight: 667,
   videoUploadOnPasses: false,
   video: false,
+  experimentalMemoryManagement: true,
   retries: {
     runMode: 2,
     openMode: 0,

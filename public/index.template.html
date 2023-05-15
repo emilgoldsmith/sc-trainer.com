@@ -85,7 +85,8 @@
        */
       if (!window.Cypress) {
         document.addEventListener("keydown", function (e) {
-          if (e.code === "Space") e.preventDefault();
+          if (e.code === "Space" && e.target.nodeName !== "INPUT")
+            e.preventDefault();
         });
       }
 
