@@ -106,7 +106,7 @@ else
 fi
 
 # shellcheck disable=SC2310
-if changed_compared_to_upstream ../../src ../../elm*.json ../../review .; then
+if changed_compared_to_upstream ../../src ../../elm*.json ../../tests ../../review .; then
     function check-compilation() {
         cd "${ROOT_DIRECTORY}" &&
             ./node_modules/.bin/elm-spa gen &&
