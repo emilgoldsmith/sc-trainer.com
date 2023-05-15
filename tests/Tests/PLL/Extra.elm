@@ -23,13 +23,7 @@ getPreferredEquivalentAUFsTests =
           <|
             \( pll, preAUF, postAUF ) ->
                 PLL.Extra.getPreferredEquivalentAUFs
-                    -- An attempt at covering all the possible preference options
-                    (User.tESTONLYBuildPLLAUFPreferences
-                        ( ( AUF.Clockwise, AUF.None )
-                        , ( AUF.CounterClockwise, AUF.None )
-                        , ( AUF.Halfway, AUF.None )
-                        )
-                    )
+                    (User.defaultPLLAUFPreferences pll)
                     ( preAUF, pll, postAUF )
                     |> Result.map countAUFTurns
                     |> Result.withDefault 999999999999
