@@ -5,7 +5,6 @@ import Algorithm
 import Cube exposing (Cube)
 import List.Extra
 import List.Nonempty
-import List.Nonempty.Extra
 import PLL exposing (PLL)
 import PLL.Extra
 import Ports
@@ -135,15 +134,26 @@ generate { now, overrideWithConstantValue } user =
                     )
 
 
+buildConstantGenerator : User -> TestCase -> Generator
+buildConstantGenerator user testCase =
+    if User.pllTestCaseIsNewForUser (toTriple testCase) user then
+        NewCase (Random.constant testCase)
+
+    else
+        AlreadyAttempted (Random.constant testCase)
+
+
 generateNewCase : User -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
 generateNewCase user =
     learningOrderForFixedPLLAlgorithms
+        -- Get the equivalent pre auf for the user's utilized alg
         |> List.map
             (\( referencePreAUF, pll_ ) ->
                 referencePreAUFToUserAlgPreAUF user ( referencePreAUF, pll_ )
                     |> Result.map (Tuple.pair pll_)
             )
         |> listOfResultsToResultOfList
+        -- Generate new recognition angle case if one is left
         |> Result.andThen
             (List.map
                 (\( pll_, preAUFForUserAlg ) ->
@@ -152,18 +162,22 @@ generateNewCase user =
 
                     else
                         generateNewPostAUFCaseForPreAUF user ( preAUFForUserAlg, pll_ )
-                            |> Result.map (Maybe.map (Just >> Ok))
                             |> Result.andThen
-                                (Maybe.withDefault
-                                    (AUF.all
-                                        |> List.Nonempty.map (build preAUFForUserAlg pll_)
-                                        |> nonemptyListOfResultsToResultOfList
-                                        |> Result.map (List.Nonempty.sample >> Just)
-                                    )
+                                (\maybeNewPostAUFCase ->
+                                    case maybeNewPostAUFCase of
+                                        Just x ->
+                                            Ok <| Just x
+
+                                        Nothing ->
+                                            AUF.all
+                                                |> List.Nonempty.map (build preAUFForUserAlg pll_)
+                                                |> nonemptyListOfResultsToResultOfList
+                                                |> Result.map (List.Nonempty.sample >> Just)
                                 )
                 )
                 >> listOfResultsToResultOfList
             )
+        -- Find the first one that wasn't Nothing
         |> Result.map (List.Extra.findMap identity)
         |> Result.andThen
             (\newRecognitionAngleTestCase ->
@@ -172,59 +186,9 @@ generateNewCase user =
                         Ok <| Just x
 
                     Nothing ->
-                        generateNewPostAUFCaseForAnyPLL user
+                        -- If no new recognition angles generate any new case
+                        generateAnyNewAUFCase user
             )
-
-
-referencePreAUFToUserAlgPreAUF : User -> ( AUF, PLL ) -> Result (Cmd msg) AUF
-referencePreAUFToUserAlgPreAUF user ( preAUF_, pll_ ) =
-    let
-        currentAlgorithm : Algorithm.Algorithm
-        currentAlgorithm =
-            toAlg
-                { addFinalReorientationToAlgorithm = False }
-                user
-                (TestCase ( AUF.None, pll_, AUF.None ))
-
-        toMatchTo =
-            Algorithm.append
-                (AUF.toAlgorithm preAUF_)
-            <|
-                Algorithm.append (PLL.getAlgorithm fixedShortPLLAlgorithms pll_) <|
-                    AUF.toAlgorithm AUF.None
-    in
-    Cube.detectAUFs
-        { toDetectFor = currentAlgorithm
-        , toMatchTo = toMatchTo
-        }
-        |> Maybe.map Tuple.first
-        |> Result.fromMaybe
-            (Ports.logError
-                (String.join ""
-                    [ "Error detecting AUFs in referencePreAUFToUserAlgPreAUF.\n\nThe current algorithm passed in was: "
-                    , Algorithm.toString currentAlgorithm
-                    , "\n\nThe algorithm to match to was: "
-                    , Algorithm.toString toMatchTo
-                    , "\n\nThe preAUF was: "
-                    , AUF.toString preAUF_
-                    , "\n\nAnd the pll was: "
-                    , PLL.getLetters pll_
-                    ]
-                )
-            )
-
-
-isRecognitionAngleAttempted : User -> ( AUF, PLL ) -> Bool
-isRecognitionAngleAttempted user ( preAUF_, pll_ ) =
-    let
-        equivalentPreAUFs : List.Nonempty.Nonempty AUF
-        equivalentPreAUFs =
-            -- Doesn't matter what we put as the post AUF as it won't change the equivalent pre AUFs
-            PLL.getAllEquivalentAUFs ( preAUF_, pll_, AUF.None )
-                |> List.Nonempty.map Tuple.first
-    in
-    User.getAttemptedPLLPreAUFs pll_ user
-        |> List.any (\attemptedPreAUF -> List.Nonempty.member attemptedPreAUF equivalentPreAUFs)
 
 
 generateAlreadyAttemptedCase :
@@ -233,9 +197,11 @@ generateAlreadyAttemptedCase :
     -> Result (Cmd msg) (Random.Generator TestCase)
 generateAlreadyAttemptedCase { now } user =
     let
+        statistics : List User.CaseStatistics
         statistics =
             User.pllStatistics user
 
+        allAUFPairs : List ( AUF, AUF )
         allAUFPairs =
             AUF.all
                 |> List.Nonempty.toList
@@ -246,6 +212,7 @@ generateAlreadyAttemptedCase { now } user =
                             |> List.map (Tuple.pair preAUF_)
                     )
 
+        notYetLearneds : Result (Cmd msg) (List TestCase)
         notYetLearneds =
             List.filterMap
                 (\stat ->
@@ -264,6 +231,7 @@ generateAlreadyAttemptedCase { now } user =
                     )
                 |> listOfResultsToResultOfList
 
+        fullyLearneds : Result (Cmd msg) (List ( Float, TestCase ))
         fullyLearneds =
             List.filterMap
                 (\stat ->
@@ -311,44 +279,62 @@ generateAlreadyAttemptedCase { now } user =
             Err (Ports.logError "Both notYetLearneds and fullyLearneds were empty lists")
 
 
-buildConstantGenerator : User -> TestCase -> Generator
-buildConstantGenerator user testCase =
-    if User.pllTestCaseIsNewForUser (toTriple testCase) user then
-        NewCase (Random.constant testCase)
+referencePreAUFToUserAlgPreAUF : User -> ( AUF, PLL ) -> Result (Cmd msg) AUF
+referencePreAUFToUserAlgPreAUF user ( preAUF_, pll_ ) =
+    let
+        currentAlgorithm : Algorithm.Algorithm
+        currentAlgorithm =
+            toAlg
+                { addFinalReorientationToAlgorithm = False }
+                user
+                (TestCase ( AUF.None, pll_, AUF.None ))
 
-    else
-        AlreadyAttempted (Random.constant testCase)
-
-
-generateNewPostAUFCaseForAnyPLL : User -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
-generateNewPostAUFCaseForAnyPLL user =
-    PLL.all
-        |> List.Nonempty.toList
-        |> List.map (getNewPostAUFCaseForPLL user)
-        |> listOfResultsToResultOfList
-        |> Result.map
-            (List.filterMap identity
-                >> List.Nonempty.fromList
-                >> Maybe.map
-                    -- Convert list of generators to generator of list
-                    ((\(List.Nonempty.Nonempty firstElem rest) ->
-                        List.foldl
-                            (\next cur ->
-                                Random.map2 List.Nonempty.cons
-                                    next
-                                    cur
-                            )
-                            (firstElem |> Random.map List.Nonempty.singleton)
-                            rest
-                     )
-                        >> Random.andThen List.Nonempty.sample
-                    )
+        toMatchTo : Algorithm.Algorithm
+        toMatchTo =
+            Algorithm.append
+                (AUF.toAlgorithm preAUF_)
+            <|
+                Algorithm.append (PLL.getAlgorithm fixedShortPLLAlgorithms pll_) <|
+                    AUF.toAlgorithm AUF.None
+    in
+    Cube.detectAUFs
+        { toDetectFor = currentAlgorithm
+        , toMatchTo = toMatchTo
+        }
+        |> Maybe.map Tuple.first
+        |> Result.fromMaybe
+            (Ports.logError
+                (String.concat
+                    [ "Error detecting AUFs in referencePreAUFToUserAlgPreAUF.\n\nThe current algorithm passed in was: "
+                    , Algorithm.toString currentAlgorithm
+                    , "\n\nThe algorithm to match to was: "
+                    , Algorithm.toString toMatchTo
+                    , "\n\nThe preAUF was: "
+                    , AUF.toString preAUF_
+                    , "\n\nAnd the pll was: "
+                    , PLL.getLetters pll_
+                    ]
+                )
             )
+
+
+isRecognitionAngleAttempted : User -> ( AUF, PLL ) -> Bool
+isRecognitionAngleAttempted user ( preAUF_, pll_ ) =
+    let
+        equivalentPreAUFs : List.Nonempty.Nonempty AUF
+        equivalentPreAUFs =
+            -- Doesn't matter what we put as the post AUF as it won't change the equivalent pre AUFs
+            PLL.getAllEquivalentAUFs ( preAUF_, pll_, AUF.None )
+                |> List.Nonempty.map Tuple.first
+    in
+    User.getAttemptedPLLPreAUFs pll_ user
+        |> List.any (\attemptedPreAUF -> List.Nonempty.member attemptedPreAUF equivalentPreAUFs)
 
 
 generateNewPostAUFCaseForPreAUF : User -> ( AUF, PLL ) -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
 generateNewPostAUFCaseForPreAUF user ( preAUF_, pll_ ) =
     let
+        allTestCases : Result (Cmd msg) (List TestCase)
         allTestCases =
             AUF.all
                 |> List.Nonempty.toList
@@ -377,8 +363,30 @@ generateNewPostAUFCaseForPreAUF user ( preAUF_, pll_ ) =
         |> Result.map (Maybe.map List.Nonempty.sample)
 
 
-getNewPostAUFCaseForPLL : User -> PLL -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
-getNewPostAUFCaseForPLL user pll_ =
+generateAnyNewAUFCase : User -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
+generateAnyNewAUFCase user =
+    PLL.all
+        |> List.Nonempty.toList
+        |> List.map (generateAnyNewAUFCaseForPLL user)
+        |> listOfResultsToResultOfList
+        |> Result.map
+            (List.filterMap identity
+                >> List.Nonempty.fromList
+                >> Maybe.map
+                    -- Convert list of generators to generator of list
+                    ((\(List.Nonempty.Nonempty firstElem rest) ->
+                        List.foldl
+                            (Random.map2 List.Nonempty.cons)
+                            (firstElem |> Random.map List.Nonempty.singleton)
+                            rest
+                     )
+                        >> Random.andThen List.Nonempty.sample
+                    )
+            )
+
+
+generateAnyNewAUFCaseForPLL : User -> PLL -> Result (Cmd msg) (Maybe (Random.Generator TestCase))
+generateAnyNewAUFCaseForPLL user pll_ =
     let
         attemptedPreAUFs : List AUF
         attemptedPreAUFs =
@@ -390,6 +398,7 @@ getNewPostAUFCaseForPLL user pll_ =
             AUF.None
                 :: User.getAttemptedPLLPostAUFs pll_ user
 
+        allTestCases : Result (Cmd msg) (List TestCase)
         allTestCases =
             AUF.all
                 |> List.Nonempty.toList
@@ -412,6 +421,7 @@ getNewPostAUFCaseForPLL user pll_ =
                         )
                     )
 
+        numAttemptedPartition : Result (Cmd msg) ( List TestCase, List TestCase )
         numAttemptedPartition =
             allUnseenTestCases
                 |> Result.map
@@ -450,7 +460,7 @@ listOfResultsToResultOfList =
                 ( Ok list, Ok nextCase ) ->
                     Ok (nextCase :: list)
 
-                ( Ok list, Err nextErr ) ->
+                ( Ok _, Err nextErr ) ->
                     Err nextErr
 
                 ( Err cmd, Ok _ ) ->
@@ -470,7 +480,7 @@ nonemptyListOfResultsToResultOfList (List.Nonempty.Nonempty head tail) =
                 ( Ok list, Ok nextCase ) ->
                     Ok (List.Nonempty.cons nextCase list)
 
-                ( Ok list, Err nextErr ) ->
+                ( Ok _, Err nextErr ) ->
                     Err nextErr
 
                 ( Err cmd, Ok _ ) ->

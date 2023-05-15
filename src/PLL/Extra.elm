@@ -14,7 +14,7 @@ type PreferredAUFsError
 
 preferredAUFsErrorToDebugString : PreferredAUFsError -> String
 preferredAUFsErrorToDebugString (InvalidPreferences prefs ( pre, pll, post )) =
-    String.join ""
+    String.concat
         [ "An invalid set of preferences were passed to getPreferredEquivalentAUFs. The preferences passed were: "
         , pllAUFPreferencesToDebugString prefs
         , "\n\nAnd the case that was passed as an argument was: "

@@ -4,7 +4,6 @@ import AUF exposing (AUF)
 import Expect
 import Fuzz
 import Fuzz.Extra
-import List.Nonempty
 import PLL
 import PLL.Extra
 import Test exposing (..)
@@ -25,14 +24,11 @@ getPreferredEquivalentAUFsTests =
             \( pll, preAUF, postAUF ) ->
                 PLL.Extra.getPreferredEquivalentAUFs
                     -- An attempt at covering all the possible preference options
-                    (User.tESTONLYBuildPLLAUFPreferences <|
-                        List.Nonempty.Nonempty
-                            ( AUF.Clockwise, AUF.None )
-                            [ ( AUF.CounterClockwise, AUF.None )
-                            , ( AUF.Halfway, AUF.None )
-                            , ( AUF.Clockwise, AUF.CounterClockwise )
-                            , ( AUF.CounterClockwise, AUF.Clockwise )
-                            ]
+                    (User.tESTONLYBuildPLLAUFPreferences
+                        ( ( AUF.Clockwise, AUF.None )
+                        , ( AUF.CounterClockwise, AUF.None )
+                        , ( AUF.Halfway, AUF.None )
+                        )
                     )
                     ( preAUF, pll, postAUF )
                     |> Result.map countAUFTurns
@@ -41,50 +37,55 @@ getPreferredEquivalentAUFsTests =
         , test "respects the preferences with several preferences listed and a non-identical AUF is being presented" <|
             \_ ->
                 PLL.Extra.getPreferredEquivalentAUFs
-                    (User.tESTONLYBuildPLLAUFPreferences <|
-                        List.Nonempty.Nonempty
-                            ( AUF.Clockwise, AUF.CounterClockwise )
-                            [ ( AUF.None, AUF.Halfway ), ( AUF.Clockwise, AUF.Halfway ) ]
+                    (User.tESTONLYBuildPLLAUFPreferences
+                        ( ( AUF.Clockwise, AUF.CounterClockwise )
+                        , ( AUF.None, AUF.Halfway )
+                        , ( AUF.Clockwise, AUF.Halfway )
+                        )
                     )
                     ( AUF.CounterClockwise, PLL.Z, AUF.Clockwise )
                     |> Expect.equal (Ok ( AUF.Clockwise, AUF.CounterClockwise ))
         , test "respects the preferences with the inverse of the previous case" <|
             \_ ->
                 PLL.Extra.getPreferredEquivalentAUFs
-                    (User.tESTONLYBuildPLLAUFPreferences <|
-                        List.Nonempty.Nonempty
-                            ( AUF.CounterClockwise, AUF.Clockwise )
-                            [ ( AUF.None, AUF.Halfway ), ( AUF.Clockwise, AUF.Halfway ) ]
+                    (User.tESTONLYBuildPLLAUFPreferences
+                        ( ( AUF.CounterClockwise, AUF.Clockwise )
+                        , ( AUF.None, AUF.Halfway )
+                        , ( AUF.Clockwise, AUF.Halfway )
+                        )
                     )
                     ( AUF.Clockwise, PLL.Z, AUF.CounterClockwise )
                     |> Expect.equal (Ok ( AUF.CounterClockwise, AUF.Clockwise ))
         , test "respects the preferences with several preferences listed and an identical AUF being presented" <|
             \_ ->
                 PLL.Extra.getPreferredEquivalentAUFs
-                    (User.tESTONLYBuildPLLAUFPreferences <|
-                        List.Nonempty.Nonempty
-                            ( AUF.Clockwise, AUF.CounterClockwise )
-                            [ ( AUF.None, AUF.Halfway ), ( AUF.Clockwise, AUF.Halfway ) ]
+                    (User.tESTONLYBuildPLLAUFPreferences
+                        ( ( AUF.Clockwise, AUF.CounterClockwise )
+                        , ( AUF.None, AUF.Halfway )
+                        , ( AUF.Clockwise, AUF.Halfway )
+                        )
                     )
                     ( AUF.Clockwise, PLL.Z, AUF.CounterClockwise )
                     |> Expect.equal (Ok ( AUF.Clockwise, AUF.CounterClockwise ))
         , test "respects the preferences with the inverse of the previous identifical AUF being presented case" <|
             \_ ->
                 PLL.Extra.getPreferredEquivalentAUFs
-                    (User.tESTONLYBuildPLLAUFPreferences <|
-                        List.Nonempty.Nonempty
-                            ( AUF.CounterClockwise, AUF.Clockwise )
-                            [ ( AUF.None, AUF.Halfway ), ( AUF.Clockwise, AUF.Halfway ) ]
+                    (User.tESTONLYBuildPLLAUFPreferences
+                        ( ( AUF.CounterClockwise, AUF.Clockwise )
+                        , ( AUF.None, AUF.Halfway )
+                        , ( AUF.Clockwise, AUF.Halfway )
+                        )
                     )
                     ( AUF.CounterClockwise, PLL.Z, AUF.Clockwise )
                     |> Expect.equal (Ok ( AUF.CounterClockwise, AUF.Clockwise ))
         , test "fails on invalid preferences with several optimal options" <|
             \_ ->
                 PLL.Extra.getPreferredEquivalentAUFs
-                    (User.tESTONLYBuildPLLAUFPreferences <|
-                        List.Nonempty.Nonempty
-                            ( AUF.CounterClockwise, AUF.Clockwise )
-                            [ ( AUF.Clockwise, AUF.Halfway ) ]
+                    (User.tESTONLYBuildPLLAUFPreferences
+                        ( ( AUF.CounterClockwise, AUF.Clockwise )
+                        , ( AUF.Clockwise, AUF.Halfway )
+                        , ( AUF.Clockwise, AUF.Halfway )
+                        )
                     )
                     ( AUF.None, PLL.Z, AUF.Halfway )
                     |> Expect.err

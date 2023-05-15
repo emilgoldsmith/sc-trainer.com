@@ -89,7 +89,7 @@ pllAUFPreferencesToDebugString (PLLAUFPreferences ( a, b, c )) =
 
 aufPairToDebugString : ( AUF, AUF ) -> String
 aufPairToDebugString ( a, b ) =
-    String.join "" [ "(\"", AUF.toString a, "\", \"", AUF.toString b, "\")" ]
+    String.concat [ "(\"", AUF.toString a, "\", \"", AUF.toString b, "\")" ]
 
 
 {-| Get the PLL AUF preferences as a list of preferred AUFs,
