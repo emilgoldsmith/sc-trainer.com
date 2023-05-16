@@ -4,11 +4,14 @@ import {
   pllTrainerElements,
 } from "./pll-trainer/elements-and-helper-functions";
 import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
+import { fixRandomnessSeedInJavascript } from "support/elm-monkey-patching";
 
 type Aliases = { first: string; second: string; third: string };
 describe("randomness", function () {
-  it("is deterministic under test", function () {
-    applyDefaultIntercepts();
+  it("is deterministic under test when the fix seed interceptor is active", function () {
+    applyDefaultIntercepts({
+      extraJavascriptModifiers: [fixRandomnessSeedInJavascript],
+    });
     saveWrongStateTestCase("first");
     saveWrongStateTestCase("second");
     saveWrongStateTestCase("third");

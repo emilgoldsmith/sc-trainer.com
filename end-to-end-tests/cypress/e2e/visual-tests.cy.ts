@@ -8,10 +8,15 @@ import {
 } from "./pll-trainer/elements-and-helper-functions";
 import fullyPopulatedLocalStorage from "fixtures/local-storage/fully-populated.json";
 import { globalElements } from "./global-elements";
+import { fixRandomnessSeedInJavascript } from "support/elm-monkey-patching";
 
 describe("Visual Tests", function () {
   beforeEach(function () {
-    applyDefaultIntercepts();
+    applyDefaultIntercepts({
+      // We need determinism here to ensure we don't get annoying visual diffs
+      // just because it was a different test case randomly all the time
+      extraJavascriptModifiers: [fixRandomnessSeedInJavascript],
+    });
   });
 
   describe("PLL Trainer", function () {
