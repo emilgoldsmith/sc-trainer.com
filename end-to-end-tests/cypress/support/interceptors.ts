@@ -1,7 +1,6 @@
 import {
   addElmModelObserversAndModifiersToHtml,
   addElmModelObserversAndModifiersToJavascript,
-  fixRandomnessSeedInJavascript,
 } from "./elm-monkey-patching";
 import { handleHtmlCypressModifications } from "./html-template-replacements";
 import * as HtmlParser from "node-html-parser";
@@ -136,7 +135,6 @@ const defaultHtmlModifiers: HtmlModifier[] = [
 
 const defaultJavascriptModifiers: JavascriptModifier[] = [
   addElmModelObserversAndModifiersToJavascript,
-  fixRandomnessSeedInJavascript,
 ];
 
 export function applyDefaultIntercepts({
