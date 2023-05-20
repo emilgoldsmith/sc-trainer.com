@@ -66,7 +66,6 @@ jobs:
     name: Run Visual Tests on ${{ matrix.sizes.name }} screen size
     runs-on: ubuntu-20.04
     needs: wait-for-docker-images-to-build
-    environment: Percy
     # Don't run this for dependabot merges to spare our free Percy limit as we assume
     # that in the vast majority of cases this won't change anything. If we get unlimited
     # Percy though we may want to reenable this
