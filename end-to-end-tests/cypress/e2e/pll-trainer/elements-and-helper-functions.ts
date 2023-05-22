@@ -401,6 +401,9 @@ const completePLLTestHelper: typeof completePLLTestInMilliseconds = (
               );
           }
         });
+
+      if (endingState === "pickAUFPreferencePage") return;
+
       if (correct && params.correctPageCallback) {
         pllTrainerElements.correctPage.container.waitFor();
         params.correctPageCallback();
@@ -458,6 +461,7 @@ export function completePLLTestInMilliseconds(
       | "algorithmDrillerExplanationPage"
       | "algorithmDrillerStatusPage"
       | "algorithmDrillerSuccessPage"
+      | "pickAUFPreferencePage"
       | undefined;
     overrideDefaultAlgorithm?: string | undefined;
     pickTargetParametersNavigator?: (() => void) | undefined;
