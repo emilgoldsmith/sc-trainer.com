@@ -18,6 +18,7 @@ popupOverlay :
     -> Attribute msg
 popupOverlay viewportSize palette { errorDescription, sendError, closeWithoutSending } =
     let
+        maxWidth : Int
         maxWidth =
             min 500 (ViewportSize.width viewportSize * 9 // 10)
     in

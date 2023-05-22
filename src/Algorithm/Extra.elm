@@ -1,22 +1,32 @@
-module Algorithm.Extra exposing (complexity, complexityAdjustedTPS)
+module Algorithm.Extra exposing (TPSError(..), complexity, complexityAdjustedTPS)
 
 import AUF exposing (AUF)
 import Algorithm exposing (Algorithm)
+import Basics.Extra
 import Cube
 
 
-complexityAdjustedTPS : { milliseconds : Int } -> ( AUF, AUF ) -> Algorithm -> Float
+type TPSError
+    = ZeroMillisecondsError
+
+
+complexityAdjustedTPS : { milliseconds : Int } -> ( AUF, AUF ) -> Algorithm -> Result TPSError Float
 complexityAdjustedTPS { milliseconds } aufs algorithm =
     let
+        seconds : Float
         seconds =
             toFloat milliseconds / 1000
     in
-    complexity aufs algorithm / seconds
+    Basics.Extra.safeDivide
+        (complexity aufs algorithm)
+        seconds
+        |> Result.fromMaybe ZeroMillisecondsError
 
 
 complexity : ( AUF, AUF ) -> Algorithm -> Float
 complexity aufs algorithm =
     let
+        withYRotationsTrimmed : Algorithm
         withYRotationsTrimmed =
             algorithm
                 |> Algorithm.toTurnList

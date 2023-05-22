@@ -13,6 +13,7 @@
       "elm/random": "1.0.0",
       "elm/time": "1.0.0",
       "elm/url": "1.0.0",
+      "elm-community/basics-extra": "4.1.0",
       "elm-community/list-extra": "8.7.0",
       "emilgoldsmith/elm-speedcubing": "13.0.0",
       "icidasset/elm-material-icons": "11.0.0",

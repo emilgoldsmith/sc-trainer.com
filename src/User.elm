@@ -498,11 +498,15 @@ type CaseStatistics
     | CaseNotAttemptedYet PLL
 
 
+type PLLStatisticsError
+    = ZeroMillisecondsTestResultEncountered TestResult
+
+
 {-| Get statistics for the users PLL progress
 -}
 pllStatistics :
     User
-    -> List CaseStatistics
+    -> List (Result PLLStatisticsError CaseStatistics)
 pllStatistics user =
     PLL.all
         |> List.Nonempty.toList
@@ -536,18 +540,32 @@ pllStatistics user =
             )
         |> List.map
             (Result.map <|
-                \( ( lastTimeTested, maybeAverages ), pll ) ->
-                    maybeAverages
-                        |> Maybe.map
-                            (\{ timeMs, tps } ->
+                \( ( lastTimeTested, averagesResult ), pll ) ->
+                    case averagesResult of
+                        Ok { timeMs, tps } ->
+                            Ok <|
                                 AllRecentAttemptsSucceeded
                                     { lastThreeAverageMs = timeMs
                                     , lastThreeAverageTPS = tps
                                     , pll = pll
                                     , lastTimeTested = lastTimeTested
                                     }
-                            )
-                        |> Maybe.withDefault (HasRecentDNF pll)
+
+                        Err errors ->
+                            -- Give the user the simplest error possible
+                            if List.Nonempty.member DNFEncountered errors then
+                                Ok <| HasRecentDNF pll
+
+                            else
+                                -- TODO: Log something here
+                                -- Else we simply take the first error there is and (in the future) log the rest
+                                case List.Nonempty.head errors of
+                                    -- This case should obviously be caught above but just for type safety
+                                    DNFEncountered ->
+                                        Ok <| HasRecentDNF pll
+
+                                    ZeroMillisecondTestResult result ->
+                                        Err <| ZeroMillisecondsTestResultEncountered result
             )
         |> List.map
             (\result ->
@@ -556,11 +574,16 @@ pllStatistics user =
                         x
 
                     Err x ->
-                        x
+                        Ok x
             )
 
 
-computeAveragesOfLastThree : ( List.Nonempty.Nonempty TestResult, Algorithm ) -> Maybe { timeMs : Float, tps : Float }
+type LastThreeAveragesError
+    = ZeroMillisecondTestResult TestResult
+    | DNFEncountered
+
+
+computeAveragesOfLastThree : ( List.Nonempty.Nonempty TestResult, Algorithm ) -> Result (List.Nonempty.Nonempty LastThreeAveragesError) { timeMs : Float, tps : Float }
 computeAveragesOfLastThree ( results, algorithm ) =
     results
         |> List.Nonempty.take 3
@@ -568,20 +591,24 @@ computeAveragesOfLastThree ( results, algorithm ) =
             (\result ->
                 case result of
                     Correct { resultInMilliseconds, preAUF, postAUF } ->
-                        Just <|
-                            ( resultInMilliseconds
-                            , Algorithm.Extra.complexityAdjustedTPS
-                                { milliseconds = resultInMilliseconds }
-                                ( preAUF, postAUF )
-                                algorithm
-                            )
+                        Algorithm.Extra.complexityAdjustedTPS
+                            { milliseconds = resultInMilliseconds }
+                            ( preAUF, postAUF )
+                            algorithm
+                            |> Result.mapError
+                                (\err ->
+                                    case err of
+                                        Algorithm.Extra.ZeroMillisecondsError ->
+                                            ZeroMillisecondTestResult result
+                                )
+                            |> Result.map (Tuple.pair resultInMilliseconds)
 
                     Wrong _ ->
-                        Nothing
+                        Err DNFEncountered
             )
-        |> listOfMaybesToMaybeList
-        |> Maybe.map List.Nonempty.unzip
-        |> Maybe.map (\( timeMs, tps ) -> { timeMs = averageInts timeMs, tps = average tps })
+        |> nonemptyListOfResultsToResultOfList
+        |> Result.map List.Nonempty.unzip
+        |> Result.map (\( timeMs, tps ) -> { timeMs = averageInts timeMs, tps = average tps })
 
 
 {-| If there's a single Nothing it will be nothing, else a list of all
@@ -689,6 +716,7 @@ for the PLL case
 recordPLLTestResult : PLL -> TestResult -> User -> Result RecordResultError User
 recordPLLTestResult pll result user =
     let
+        maybeNewPLLData : Maybe PLLData
         maybeNewPLLData =
             addPLLResult pll result (getPLLData user)
     in
@@ -1328,3 +1356,26 @@ setPLLData newPLLData user =
             getPLLTrainerData user
     in
     setPLLTrainerData { prevTrainerData | pllData = newPLLData } user
+
+
+nonemptyListOfResultsToResultOfList : List.Nonempty.Nonempty (Result err a) -> Result (List.Nonempty.Nonempty err) (List.Nonempty.Nonempty a)
+nonemptyListOfResultsToResultOfList (List.Nonempty.Nonempty head tail) =
+    List.foldl
+        (\next result ->
+            case ( result, next ) of
+                ( Ok list, Ok nextCase ) ->
+                    Ok (List.Nonempty.cons nextCase list)
+
+                ( Ok _, Err nextErr ) ->
+                    Err <| List.Nonempty.singleton nextErr
+
+                ( Err errList, Ok _ ) ->
+                    Err errList
+
+                ( Err errList, Err nextErr ) ->
+                    Err (List.Nonempty.cons nextErr errList)
+        )
+        (Result.map List.Nonempty.singleton head
+            |> Result.mapError List.Nonempty.singleton
+        )
+        tail
