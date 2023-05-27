@@ -20,6 +20,7 @@ export const pllTrainerElements = {
       evaluateResultPage: "evaluate-result-page",
       typeOfWrongPage: "type-of-wrong-page",
       pickAlgorithmPage: "pick-algorithm-page",
+      pickAUFPreferencesPage: "pick-auf-preferences-page",
       algorithmDrillerExplanationPage: "algorithm-driller-explanation-page",
       algorithmDrillerStatusPage: "algorithm-driller-status-page",
       algorithmDrillerSuccessPage: "algorithm-driller-success-page",
@@ -164,6 +165,9 @@ export const pllTrainerElements = {
     algorithmDoesntMatchCaseError: optionalElement(
       errorMessageElement("algorithm-doesnt-match-case")
     ),
+  }),
+  pickAUFPreferencesPage: buildElementsCategory({
+    container: "pick-auf-preferences-container",
   }),
   algorithmDrillerExplanationPage: buildElementsCategory({
     container: "algorithm-driller-explanation-page-container",
@@ -402,6 +406,23 @@ const completePLLTestHelper: typeof completePLLTestInMilliseconds = (
           }
         });
 
+      pllTrainerElements.root.waitForStateChangeAwayFrom(
+        stateAttributeValues.pickAUFPreferencesPage
+      );
+      pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
+        if (stateValue === "pick-auf-preferences-page") {
+          if (params.assertPickAUFPreferencesPageDidntDisplay) {
+            throw new Error(
+              "Assertion that pick auf preferences page shouldn't display failed"
+            );
+          }
+          params.pickAUFPreferencesPageCallback?.();
+        } else if (params.pickAUFPreferencesPageCallback) {
+          throw new Error(
+            "pickAUFPreferencesPageCallback was specified but pickAUFPreferencesPage didn't show up"
+          );
+        }
+      });
       if (endingState === "pickAUFPreferencePage") return;
 
       if (correct && params.correctPageCallback) {
@@ -468,7 +489,9 @@ export function completePLLTestInMilliseconds(
     startPageCallback?: (() => void) | undefined;
     startPageNavigator?: (() => void) | undefined;
     newCasePageCallback?: (() => void) | undefined;
+    pickAUFPreferencesPageCallback?: (() => void) | undefined;
     assertNewCasePageDidntDisplay?: boolean | undefined;
+    assertPickAUFPreferencesPageDidntDisplay?: boolean | undefined;
     newCasePageNavigator?: (() => void) | undefined;
     getReadyCallback?: (() => void) | undefined;
     beginningOfTestRunningCallback?: (() => void) | undefined;
@@ -529,6 +552,8 @@ export function completePLLTestInMilliseconds(
     endingState: params.endingState,
     overrideDefaultAlgorithm: params.overrideDefaultAlgorithm,
     assertNewCasePageDidntDisplay: params.assertNewCasePageDidntDisplay,
+    assertPickAUFPreferencesPageDidntDisplay:
+      params.assertPickAUFPreferencesPageDidntDisplay,
     pickTargetParametersNavigator: withCallLogger(
       params.pickTargetParametersNavigator
     ),
@@ -539,6 +564,9 @@ export function completePLLTestInMilliseconds(
     getReadyCallback: withCallLogger(params.getReadyCallback),
     beginningOfTestRunningCallback: withCallLogger(
       params.beginningOfTestRunningCallback
+    ),
+    pickAUFPreferencesPageCallback: withCallLogger(
+      params.pickAUFPreferencesPageCallback
     ),
     testRunningCallback: withCallLogger(params.testRunningCallback),
     testRunningNavigator: withCallLogger(params.testRunningNavigator),

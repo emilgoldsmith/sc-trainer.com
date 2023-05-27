@@ -279,7 +279,7 @@ describe("PLL Trainer", function () {
         });
       });
 
-      it("always goes to driller and displays new case page for new preAUF, and exactly if it's not none for new postAUF, even when the pll and other AUF combination have been tested before; doesn't go to driller or display new case page for new combination of seen pre and postAUF with seen pll; on a slow correct it shows correct text and not wrong text in driller explanation page", function () {
+      it.only("always goes to driller and displays new case page for new preAUF, and exactly if it's not none for new postAUF, even when the pll and other AUF combination have been tested before; doesn't go to driller or display new case page for new combination of seen pre and postAUF with seen pll; on a slow correct it shows correct text and not wrong text in driller explanation page. Also assert that pick AUF preferences is not shown on non symmetric cases even if it's their first showing", function () {
         const pll = PLL.Gc;
         const pllThatIsntUsedInThisTest = PLL.V;
         const firstPreAUF = AUF.U2;
@@ -298,6 +298,7 @@ describe("PLL Trainer", function () {
           testRunningNavigator: testRunningNavigateVariant8,
           evaluateResultCallback: () =>
             evaluateResultTimeDependantNoSideEffects5({ timeInMs: time }),
+          assertPickAUFPreferencesPageDidntDisplay: true,
         });
         // We from now on very consciously switch between doing an incorrect test
         // and a slow correct test, in order to ensure this is true for both cases
@@ -314,6 +315,7 @@ describe("PLL Trainer", function () {
           newCasePageCallback: () => {
             pllTrainerElements.newCasePage.container.assertShows();
           },
+          assertPickAUFPreferencesPageDidntDisplay: true,
           testRunningNavigator: testRunningNavigateChangingClockVariant4,
           evaluateResultWrongNavigator: evaluateResultNavigateWrongVariant1,
         });
@@ -328,6 +330,7 @@ describe("PLL Trainer", function () {
           newCasePageCallback: () => {
             pllTrainerElements.newCasePage.container.assertShows();
           },
+          assertPickAUFPreferencesPageDidntDisplay: true,
           testRunningNavigator: testRunningNavigateVariant9,
         });
         // new preAUF but seen not none postAUF should go to driller
@@ -349,6 +352,7 @@ describe("PLL Trainer", function () {
           forceTestCase: [firstPreAUF, pll, AUF.none],
           endingState: "wrongPage",
           assertNewCasePageDidntDisplay: true,
+          assertPickAUFPreferencesPageDidntDisplay: true,
           startPageNavigator: recurringUserStartPageNavigateVariant2,
           testRunningCallback: () => {
             pllTrainerElements.testRunning.testCase
@@ -390,6 +394,7 @@ describe("PLL Trainer", function () {
           assertNewCasePageDidntDisplay: true,
           wrongPageNavigator: wrongPageNavigateVariant1,
           testRunningNavigator: testRunningNavigateVariant10,
+          assertPickAUFPreferencesPageDidntDisplay: true,
           evaluateResultCallback: () =>
             evaluateResultTimeDependantNoSideEffects7({ timeInMs }),
         });
@@ -408,7 +413,7 @@ describe("PLL Trainer", function () {
           ]);
       });
 
-      it("doesn't go to driller or display new case page on what is technically new pre and post aufs if they are equivalent by symmetry to cases that have been learned", function () {
+      it.only("doesn't go to driller or display new case page on what is technically new pre and post aufs if they are equivalent by symmetry to cases that have been learned, and prompts auf preference selection on first time for a symmetric PLL", function () {
         const time = 120 as const;
         completePLLTestInMilliseconds(time, {
           correct: true,
@@ -418,6 +423,8 @@ describe("PLL Trainer", function () {
           testRunningNavigator: testRunningNavigateVariant11,
           evaluateResultCallback: () =>
             evaluateResultTimeDependantNoSideEffects6({ timeInMs: time }),
+          pickAUFPreferencesPageCallback: () =>
+            pllTrainerElements.pickAUFPreferencesPage.assertAllShow(),
         });
         completePLLTestInMilliseconds(10000, {
           correct: true,
