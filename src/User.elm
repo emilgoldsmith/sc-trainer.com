@@ -68,9 +68,38 @@ type User
 
 type alias PLLTrainerData =
     { targetParameters : Maybe PLLTargetParameters
-
-    -- , aufPreferences : AUFPreferences
+    , aufPreferences : AllPLLAUFPreferences
     , pllData : PLLData
+    }
+
+
+type alias AllPLLAUFPreferences =
+    { -- Edges only
+      h : Maybe PLLAUFPreferences
+    , ua : Maybe PLLAUFPreferences
+    , ub : Maybe PLLAUFPreferences
+    , z : Maybe PLLAUFPreferences
+
+    -- Corners only
+    , aa : Maybe PLLAUFPreferences
+    , ab : Maybe PLLAUFPreferences
+    , e : Maybe PLLAUFPreferences
+
+    -- Edges And Corners
+    , f : Maybe PLLAUFPreferences
+    , ga : Maybe PLLAUFPreferences
+    , gb : Maybe PLLAUFPreferences
+    , gc : Maybe PLLAUFPreferences
+    , gd : Maybe PLLAUFPreferences
+    , ja : Maybe PLLAUFPreferences
+    , jb : Maybe PLLAUFPreferences
+    , na : Maybe PLLAUFPreferences
+    , nb : Maybe PLLAUFPreferences
+    , ra : Maybe PLLAUFPreferences
+    , rb : Maybe PLLAUFPreferences
+    , t : Maybe PLLAUFPreferences
+    , v : Maybe PLLAUFPreferences
+    , y : Maybe PLLAUFPreferences
     }
 
 
@@ -217,32 +246,36 @@ type alias PLLTargetParameters =
 
 
 type alias PLLData =
+    PLLRecord (Maybe ( Algorithm, List TestResult ))
+
+
+type alias PLLRecord a =
     { -- Edges only
-      h : Maybe ( Algorithm, List TestResult )
-    , ua : Maybe ( Algorithm, List TestResult )
-    , ub : Maybe ( Algorithm, List TestResult )
-    , z : Maybe ( Algorithm, List TestResult )
+      h : a
+    , ua : a
+    , ub : a
+    , z : a
 
     -- Corners only
-    , aa : Maybe ( Algorithm, List TestResult )
-    , ab : Maybe ( Algorithm, List TestResult )
-    , e : Maybe ( Algorithm, List TestResult )
+    , aa : a
+    , ab : a
+    , e : a
 
     -- Edges And Corners
-    , f : Maybe ( Algorithm, List TestResult )
-    , ga : Maybe ( Algorithm, List TestResult )
-    , gb : Maybe ( Algorithm, List TestResult )
-    , gc : Maybe ( Algorithm, List TestResult )
-    , gd : Maybe ( Algorithm, List TestResult )
-    , ja : Maybe ( Algorithm, List TestResult )
-    , jb : Maybe ( Algorithm, List TestResult )
-    , na : Maybe ( Algorithm, List TestResult )
-    , nb : Maybe ( Algorithm, List TestResult )
-    , ra : Maybe ( Algorithm, List TestResult )
-    , rb : Maybe ( Algorithm, List TestResult )
-    , t : Maybe ( Algorithm, List TestResult )
-    , v : Maybe ( Algorithm, List TestResult )
-    , y : Maybe ( Algorithm, List TestResult )
+    , f : a
+    , ga : a
+    , gb : a
+    , gc : a
+    , gd : a
+    , ja : a
+    , jb : a
+    , na : a
+    , nb : a
+    , ra : a
+    , rb : a
+    , t : a
+    , v : a
+    , y : a
     }
 
 
@@ -303,12 +336,15 @@ testTimestamp testResult =
 new : User
 new =
     User
-        { targetParameters = Nothing, pllData = emptyPLLData }
+        { targetParameters = Nothing
+        , pllData = emptyPLLRecord
+        , aufPreferences = emptyPLLRecord
+        }
         Cube.Advanced.defaultTheme
 
 
-emptyPLLData : PLLData
-emptyPLLData =
+emptyPLLRecord : PLLRecord (Maybe a)
+emptyPLLRecord =
     { h = Nothing
     , ua = Nothing
     , ub = Nothing
@@ -446,6 +482,13 @@ changePLLAlgorithm pll algorithm user =
     setPLLData newPLLData user
 
 
+getPLLAUFPreferences : PLL -> User -> Maybe PLLAUFPreferences
+getPLLAUFPreferences pll =
+    getPLLTrainerData
+        >> .aufPreferences
+        >> getFromPLLRecord pll
+
+
 {-| Get the target parameters the user has for PLL cases.
 Notice that you get values even if the user has not set their parameters
 yet. This is a design decision to avoid complexity with maybe types
@@ -508,7 +551,7 @@ pllStatistics user =
         |> List.Nonempty.toList
         |> List.map
             (\pll ->
-                getSpecificPLLData pll (getPLLData user)
+                getFromPLLRecord pll (getPLLData user)
                     |> Maybe.andThen
                         (\( algorithm, resultsList ) ->
                             resultsList
@@ -961,10 +1004,12 @@ pllDataDecoder algorithmsDecoder resultsDecoder =
                         in
                         maybeUpdatedData
                             |> Maybe.map
-                                (\updatedData -> setSpecificPLLData pll updatedData previousPLLData)
+                                (\updatedData ->
+                                    updatePLLRecordEntry pll (Just updatedData) previousPLLData
+                                )
                             |> Maybe.withDefault previousPLLData
                     )
-                    emptyPLLData
+                    emptyPLLRecord
         )
         algorithmsDecoder
         resultsDecoder
@@ -1121,16 +1166,16 @@ pllTargetParametersDecoder =
 
 getPLLAlgorithm_ : PLL -> PLLData -> Maybe Algorithm
 getPLLAlgorithm_ pll data =
-    Maybe.map Tuple.first (getSpecificPLLData pll data)
+    Maybe.map Tuple.first (getFromPLLRecord pll data)
 
 
 getPLLResults : PLL -> PLLData -> Maybe (List TestResult)
 getPLLResults pll data =
-    Maybe.map Tuple.second (getSpecificPLLData pll data)
+    Maybe.map Tuple.second (getFromPLLRecord pll data)
 
 
-getSpecificPLLData : PLL -> PLLData -> Maybe ( Algorithm, List TestResult )
-getSpecificPLLData pll data =
+getFromPLLRecord : PLL -> PLLRecord a -> a
+getFromPLLRecord pll data =
     case pll of
         PLL.H ->
             data.h
@@ -1204,92 +1249,92 @@ setPLLAlgorithm :
 setPLLAlgorithm pll newAlgorithm data =
     let
         newData =
-            getSpecificPLLData pll data
+            getFromPLLRecord pll data
                 |> Maybe.map (Tuple.mapFirst (always newAlgorithm))
                 |> Maybe.withDefault ( newAlgorithm, [] )
     in
-    setSpecificPLLData pll newData data
+    updatePLLRecordEntry pll newData data
 
 
 addPLLResult : PLL -> TestResult -> PLLData -> Maybe PLLData
 addPLLResult pll result data =
     let
         newData =
-            getSpecificPLLData pll data
+            getFromPLLRecord pll data
                 |> (Maybe.map <|
                         Tuple.mapSecond <|
                             (::) result
                    )
     in
     newData
-        |> Maybe.map (\justNewData -> setSpecificPLLData pll justNewData data)
+        |> Maybe.map (\justNewData -> updatePLLRecordEntry pll (Just justNewData) data)
 
 
-setSpecificPLLData : PLL -> ( Algorithm, List TestResult ) -> PLLData -> PLLData
-setSpecificPLLData pll newData data =
+updatePLLRecordEntry : PLL -> a -> PLLRecord a -> PLLRecord a
+updatePLLRecordEntry pll newData data =
     case pll of
         PLL.H ->
-            { data | h = Just newData }
+            { data | h = newData }
 
         PLL.Ua ->
-            { data | ua = Just newData }
+            { data | ua = newData }
 
         PLL.Ub ->
-            { data | ub = Just newData }
+            { data | ub = newData }
 
         PLL.Z ->
-            { data | z = Just newData }
+            { data | z = newData }
 
         PLL.Aa ->
-            { data | aa = Just newData }
+            { data | aa = newData }
 
         PLL.Ab ->
-            { data | ab = Just newData }
+            { data | ab = newData }
 
         PLL.E ->
-            { data | e = Just newData }
+            { data | e = newData }
 
         PLL.F ->
-            { data | f = Just newData }
+            { data | f = newData }
 
         PLL.Ga ->
-            { data | ga = Just newData }
+            { data | ga = newData }
 
         PLL.Gb ->
-            { data | gb = Just newData }
+            { data | gb = newData }
 
         PLL.Gc ->
-            { data | gc = Just newData }
+            { data | gc = newData }
 
         PLL.Gd ->
-            { data | gd = Just newData }
+            { data | gd = newData }
 
         PLL.Ja ->
-            { data | ja = Just newData }
+            { data | ja = newData }
 
         PLL.Jb ->
-            { data | jb = Just newData }
+            { data | jb = newData }
 
         PLL.Na ->
-            { data | na = Just newData }
+            { data | na = newData }
 
         PLL.Nb ->
-            { data | nb = Just newData }
+            { data | nb = newData }
 
         PLL.Ra ->
-            { data | ra = Just newData }
+            { data | ra = newData }
 
         PLL.Rb ->
-            { data | rb = Just newData }
+            { data | rb = newData }
 
         PLL.T ->
-            { data | t = Just newData }
+            { data | t = newData }
 
         PLL.V ->
-            { data | v = Just newData }
+            { data | v = newData }
 
         PLL.Y ->
-            { data | y = Just newData }
+            { data | y = newData }
 
 
 getPLLTrainerData : User -> PLLTrainerData

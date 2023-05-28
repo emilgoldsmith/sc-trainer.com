@@ -101,6 +101,7 @@ type TrainerState
     | TestRunning (PLLTrainer.States.TestRunning.Model Msg) TestRunningExtraState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
     | PickAlgorithmPage PLLTrainer.States.PickAlgorithmPage.Model PickAlgorithmExtraState
+    | PickAUFPreferencesPage
     | AlgorithmDrillerExplanationPage AlgorithmDrillerExplanationExtraState
     | AlgorithmDrillerStatusPage
     | AlgorithmDrillerSuccessPage
@@ -851,6 +852,9 @@ handleEvaluate testResult model shared =
                                     ( ( AlgorithmDrillerExplanationPage { testResult = testResult }, Effect.none )
                                     , Nothing
                                     )
+
+
+        withPickAUFPreferencesIncluded =
 
         ( withPickAlgorithmIncluded, maybeRecordResultEffect, newDrillerState ) =
             case User.getPLLAlgorithm (PLLTrainer.TestCase.pll model.currentTestCase.testCase) shared.user of

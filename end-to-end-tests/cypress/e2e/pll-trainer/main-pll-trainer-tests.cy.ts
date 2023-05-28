@@ -279,6 +279,10 @@ describe("PLL Trainer", function () {
         });
       });
 
+      it(
+        "something where we test that the results are recorded at the correct time with the correct values with auf preferences included"
+      );
+
       it.only("always goes to driller and displays new case page for new preAUF, and exactly if it's not none for new postAUF, even when the pll and other AUF combination have been tested before; doesn't go to driller or display new case page for new combination of seen pre and postAUF with seen pll; on a slow correct it shows correct text and not wrong text in driller explanation page. Also assert that pick AUF preferences is not shown on non symmetric cases even if it's their first showing", function () {
         const pll = PLL.Gc;
         const pllThatIsntUsedInThisTest = PLL.V;
