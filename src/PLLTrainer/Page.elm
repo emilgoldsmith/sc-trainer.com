@@ -10,6 +10,7 @@ import Effect exposing (Effect)
 import Element
 import Html.Attributes
 import Json.Decode
+import List.Nonempty
 import Notification
 import PLL exposing (PLL)
 import PLLTrainer.State
@@ -868,14 +869,22 @@ handleEvaluate testResult model shared =
                 let
                     ( withDrillerIncluded, newDrillerState_ ) =
                         withDrillerIncludedAndState algorithm
+
+                    equivalentAUFs =
+                        PLL.getAllEquivalentAUFs <|
+                            PLLTrainer.TestCase.toTriple model.currentTestCase.testCase
                 in
-                ( ( PickAUFPreferencesPage
-                        { nextTrainerState = Tuple.first <| withDrillerIncludedAndState algorithm
-                        }
-                  , Effect.none
-                  )
-                , newDrillerState_
-                )
+                if List.Nonempty.length equivalentAUFs > 1 then
+                    ( ( PickAUFPreferencesPage
+                            { nextTrainerState = withDrillerIncluded
+                            }
+                      , Effect.none
+                      )
+                    , newDrillerState_
+                    )
+
+                else
+                    ( withDrillerIncluded, newDrillerState_ )
 
         ( withPickAlgorithmIncluded, maybeRecordResultEffect, newDrillerState ) =
             case User.getPLLAlgorithm (PLLTrainer.TestCase.pll model.currentTestCase.testCase) shared.user of
