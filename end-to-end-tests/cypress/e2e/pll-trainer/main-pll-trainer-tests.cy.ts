@@ -417,7 +417,7 @@ describe("PLL Trainer", function () {
           ]);
       });
 
-      it.only("doesn't go to driller or display new case page on what is technically new pre and post aufs if they are equivalent by symmetry to cases that have been learned, and prompts auf preference selection on first time for a symmetric PLL", function () {
+      it.only("doesn't go to driller or display new case page on what is technically new pre and post aufs if they are equivalent by symmetry to cases that have been learned, and prompts auf preference selection exactly on first time for a symmetric PLL but not second time", function () {
         const time = 120 as const;
         completePLLTestInMilliseconds(time, {
           correct: true,
@@ -439,6 +439,7 @@ describe("PLL Trainer", function () {
           forceTestCase: [AUF.none, PLL.H, AUF.U2],
           endingState: "correctPage",
           assertNewCasePageDidntDisplay: true,
+          assertPickAUFPreferencesPageDidntDisplay: true,
           testRunningNavigator: testRunningNavigateVariant12,
           correctPageNavigator: correctPageNavigateVariant2,
         });

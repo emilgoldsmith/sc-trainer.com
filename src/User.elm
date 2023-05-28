@@ -4,7 +4,7 @@ module User exposing
     , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
     , hasAttemptedAnyPLLTestCase, PLLTargetParameters, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
     , hasChosenPLLTargetParameters, getAttemptedPLLPreAUFs, getAttemptedPLLPostAUFs, cubeTheme
-    , PLLAUFPreferences, defaultPLLAUFPreferences, getPLLAUFPreferencesTuple, tESTONLYBuildPLLAUFPreferences, pllAUFPreferencesToDebugString
+    , PLLAUFPreferences, getPLLAUFPreferences, setPLLAUFPreferences, defaultPLLAUFPreferences, getPLLAUFPreferencesTuple, tESTONLYBuildPLLAUFPreferences, pllAUFPreferencesToDebugString
     , TestResult(..), testResultPreAUF, testResultPostAUF, testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
     , serialize, deserialize
@@ -28,7 +28,7 @@ module User exposing
 @docs getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
 @docs hasAttemptedAnyPLLTestCase, PLLTargetParameters, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
 @docs hasChosenPLLTargetParameters, getAttemptedPLLPreAUFs, getAttemptedPLLPostAUFs, cubeTheme
-@docs PLLAUFPreferences, defaultPLLAUFPreferences, getPLLAUFPreferencesTuple, tESTONLYBuildPLLAUFPreferences, pllAUFPreferencesToDebugString
+@docs PLLAUFPreferences, getPLLAUFPreferences, setPLLAUFPreferences, defaultPLLAUFPreferences, getPLLAUFPreferencesTuple, tESTONLYBuildPLLAUFPreferences, pllAUFPreferencesToDebugString
 
 
 # Event Handling
@@ -482,11 +482,39 @@ changePLLAlgorithm pll algorithm user =
     setPLLData newPLLData user
 
 
+{-| Get the user's AUF preferences for a given PLL. If the PLL is symmetric
+in some way and the AUF preferences have been set previously it will return
+these preferences. If the AUF preferences have not been set yet, or if the
+PLL is not symmetric Nothing will be returned
+-}
 getPLLAUFPreferences : PLL -> User -> Maybe PLLAUFPreferences
 getPLLAUFPreferences pll =
     getPLLTrainerData
         >> .aufPreferences
         >> getFromPLLRecord pll
+
+
+{-| Set the user's AUF preferences for a given PLL. The three values should
+always be different equivalency classes, and the three preferences should always
+exactly cover the optimal choices a user has for any symmetric PLL
+-}
+setPLLAUFPreferences : PLL -> ( ( AUF, AUF ), ( AUF, AUF ), ( AUF, AUF ) ) -> User -> User
+setPLLAUFPreferences pll preferences user =
+    let
+        currentPLLTrainerData =
+            user
+                |> getPLLTrainerData
+
+        newPreferences =
+            currentPLLTrainerData
+                |> .aufPreferences
+                |> updatePLLRecordEntry pll (Just <| PLLAUFPreferences preferences)
+    in
+    setPLLTrainerData
+        { currentPLLTrainerData
+            | aufPreferences = newPreferences
+        }
+        user
 
 
 {-| Get the target parameters the user has for PLL cases.

@@ -521,7 +521,24 @@ update shared msg model =
                                     ( model, Effect.fromCmd cmd )
 
                 AUFPreferencesPicked ( nextTrainerState, nextEffect ) ->
-                    ( { model | trainerState = nextTrainerState }, nextEffect )
+                    let
+                        pll =
+                            PLLTrainer.TestCase.pll model.currentTestCase.testCase
+                    in
+                    ( { model | trainerState = nextTrainerState }
+                    , Effect.batch
+                        [ nextEffect
+                        , Effect.fromShared <|
+                            Shared.ModifyUser <|
+                                userModificationThatAlwaysSucceeds
+                                    (User.setPLLAUFPreferences
+                                        pll
+                                        (User.defaultPLLAUFPreferences pll
+                                            |> User.getPLLAUFPreferencesTuple
+                                        )
+                                    )
+                        ]
+                    )
 
                 StartAlgorithmDrills ->
                     ( { model
@@ -873,8 +890,13 @@ handleEvaluate testResult model shared =
                     equivalentAUFs =
                         PLL.getAllEquivalentAUFs <|
                             PLLTrainer.TestCase.toTriple model.currentTestCase.testCase
+
+                    aufPreferences =
+                        User.getPLLAUFPreferences
+                            (PLLTrainer.TestCase.pll model.currentTestCase.testCase)
+                            shared.user
                 in
-                if List.Nonempty.length equivalentAUFs > 1 then
+                if List.Nonempty.length equivalentAUFs > 1 && aufPreferences == Nothing then
                     ( ( PickAUFPreferencesPage
                             { nextTrainerState = withDrillerIncluded
                             }
