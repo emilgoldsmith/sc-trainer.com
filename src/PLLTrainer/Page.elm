@@ -19,6 +19,7 @@ import PLLTrainer.States.AlgorithmDrillerSuccessPage
 import PLLTrainer.States.CorrectPage
 import PLLTrainer.States.EvaluateResult
 import PLLTrainer.States.NewCasePage
+import PLLTrainer.States.PickAUFPreferencesPage
 import PLLTrainer.States.PickAlgorithmPage
 import PLLTrainer.States.PickTargetParametersPage
 import PLLTrainer.States.StartPage
@@ -101,7 +102,7 @@ type TrainerState
     | TestRunning (PLLTrainer.States.TestRunning.Model Msg) TestRunningExtraState
     | EvaluateResult PLLTrainer.States.EvaluateResult.Model EvaluateResultExtraState
     | PickAlgorithmPage PLLTrainer.States.PickAlgorithmPage.Model PickAlgorithmExtraState
-    | PickAUFPreferencesPage
+    | PickAUFPreferencesPage PickAUFPreferencesExtraState
     | AlgorithmDrillerExplanationPage AlgorithmDrillerExplanationExtraState
     | AlgorithmDrillerStatusPage
     | AlgorithmDrillerSuccessPage
@@ -130,6 +131,11 @@ type alias TypeOfWrongExtraState =
 type alias PickAlgorithmExtraState =
     { getNextTrainerState : Algorithm -> ( TrainerState, Effect Msg )
     , testResult : User.TestResult
+    }
+
+
+type alias PickAUFPreferencesExtraState =
+    { nextTrainerState : ( TrainerState, Effect Msg )
     }
 
 
@@ -198,6 +204,7 @@ type TransitionMsg
     | EnableEvaluateResultTransitions
     | EvaluateCorrect { testTimestamp : Time.Posix, result : TimeInterval }
     | AlgorithmPicked (Algorithm -> ( TrainerState, Effect Msg )) User.TestResult Algorithm
+    | AUFPreferencesPicked ( TrainerState, Effect Msg )
     | StartAlgorithmDrills
       -- Pass in Nothing when sending it and the time is generated internally
     | InitiateAlgorithmDrillerTest (Maybe Time.Posix)
@@ -511,6 +518,9 @@ update shared msg model =
 
                                 Err cmd ->
                                     ( model, Effect.fromCmd cmd )
+
+                AUFPreferencesPicked ( nextTrainerState, nextEffect ) ->
+                    ( { model | trainerState = nextTrainerState }, nextEffect )
 
                 StartAlgorithmDrills ->
                     ( { model
@@ -853,17 +863,28 @@ handleEvaluate testResult model shared =
                                     , Nothing
                                     )
 
-
-        withPickAUFPreferencesIncluded =
+        withPickAUFPreferencesIncludedAndDrillerState =
+            \algorithm ->
+                let
+                    ( withDrillerIncluded, newDrillerState_ ) =
+                        withDrillerIncludedAndState algorithm
+                in
+                ( ( PickAUFPreferencesPage
+                        { nextTrainerState = Tuple.first <| withDrillerIncludedAndState algorithm
+                        }
+                  , Effect.none
+                  )
+                , newDrillerState_
+                )
 
         ( withPickAlgorithmIncluded, maybeRecordResultEffect, newDrillerState ) =
             case User.getPLLAlgorithm (PLLTrainer.TestCase.pll model.currentTestCase.testCase) shared.user of
                 Just algorithm ->
                     let
-                        ( withDrillerIncluded, newDrillerState_ ) =
-                            withDrillerIncludedAndState algorithm
+                        ( withPickAUFPreferencesIncluded, newDrillerState_ ) =
+                            withPickAUFPreferencesIncludedAndDrillerState algorithm
                     in
-                    ( withDrillerIncluded
+                    ( withPickAUFPreferencesIncluded
                     , if model.maybeDrillerState == Nothing then
                         Effect.fromShared <|
                             Shared.ModifyUser <|
@@ -879,7 +900,7 @@ handleEvaluate testResult model shared =
                 Nothing ->
                     let
                         extraState =
-                            { getNextTrainerState = withDrillerIncludedAndState >> Tuple.first
+                            { getNextTrainerState = withPickAUFPreferencesIncludedAndDrillerState >> Tuple.first
                             , testResult = testResult
                             }
 
@@ -1064,6 +1085,7 @@ states :
                     PLLTrainer.States.PickAlgorithmPage.Msg
                     PLLTrainer.States.PickAlgorithmPage.Model
                     PickAlgorithmExtraState
+        , pickAUFPreferencesPage : StateBuilder () () PickAUFPreferencesExtraState
         , algorithmDrillerExplanationPage :
             Model
             -> StateBuilder () () AlgorithmDrillerExplanationExtraState
@@ -1143,6 +1165,13 @@ states shared =
                 , noOp = NoOp
                 }
                 (StateMsg << PickAlgorithmMsg)
+    , pickAUFPreferencesPage =
+        \{ nextTrainerState } ->
+            PLLTrainer.States.PickAUFPreferencesPage.state
+                shared
+                { continue = TransitionMsg <| AUFPreferencesPicked nextTrainerState
+                , noOp = NoOp
+                }
     , algorithmDrillerExplanationPage =
         \model extraState ->
             PLLTrainer.States.AlgorithmDrillerExplanationPage.state
@@ -1315,6 +1344,9 @@ trainerStateToString trainerState =
         PickAlgorithmPage _ _ ->
             "PickAlgorithmPage"
 
+        PickAUFPreferencesPage _ ->
+            "PickAUFPreferencesPage"
+
         AlgorithmDrillerExplanationPage _ ->
             "AlgorithmDrillerExplanationPage"
 
@@ -1364,6 +1396,9 @@ handleStateSubscriptionsBoilerplate shared model =
         PickAlgorithmPage stateModel extraState ->
             ((states shared).pickAlgorithmPage model extraState).subscriptions stateModel
 
+        PickAUFPreferencesPage extraState ->
+            ((states shared).pickAUFPreferencesPage extraState).subscriptions ()
+
         AlgorithmDrillerExplanationPage extraState ->
             ((states shared).algorithmDrillerExplanationPage model extraState).subscriptions ()
 
@@ -1406,6 +1441,9 @@ handleStateViewBoilerplate shared model =
 
         PickAlgorithmPage stateModel extraState ->
             ((states shared).pickAlgorithmPage model extraState).view stateModel
+
+        PickAUFPreferencesPage extraState ->
+            ((states shared).pickAUFPreferencesPage extraState).view ()
 
         AlgorithmDrillerExplanationPage extraState ->
             ((states shared).algorithmDrillerExplanationPage model extraState).view ()
@@ -1452,6 +1490,9 @@ getTestOnlyStateAttributeValue model =
         PickAlgorithmPage _ _ ->
             "pick-algorithm-page"
 
+        PickAUFPreferencesPage _ ->
+            "pick-auf-preferences-page"
+
         AlgorithmDrillerExplanationPage _ ->
             "algorithm-driller-explanation-page"
 
@@ -1491,6 +1532,9 @@ uniquePageIdentifier model =
 
         PickAlgorithmPage _ _ ->
             "pick-algorithm-page"
+
+        PickAUFPreferencesPage _ ->
+            "pick-auf-preferences-page"
 
         AlgorithmDrillerExplanationPage _ ->
             "algorithm-driller-explanation-page"

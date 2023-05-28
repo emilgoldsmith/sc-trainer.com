@@ -1251,7 +1251,8 @@ setPLLAlgorithm pll newAlgorithm data =
         newData =
             getFromPLLRecord pll data
                 |> Maybe.map (Tuple.mapFirst (always newAlgorithm))
-                |> Maybe.withDefault ( newAlgorithm, [] )
+                |> Maybe.map Just
+                |> Maybe.withDefault (Just ( newAlgorithm, [] ))
     in
     updatePLLRecordEntry pll newData data
 

@@ -168,6 +168,7 @@ export const pllTrainerElements = {
   }),
   pickAUFPreferencesPage: buildElementsCategory({
     container: "pick-auf-preferences-container",
+    submitButton: "submit-button",
   }),
   algorithmDrillerExplanationPage: buildElementsCategory({
     container: "algorithm-driller-explanation-page-container",
@@ -235,6 +236,7 @@ const completePLLTestHelper: typeof completePLLTestInMilliseconds = (
         evaluateResultCallback,
         correctPageNavigator,
         wrongPageNavigator,
+        pickAUFPreferencesNavigator,
         algorithmDrillerStatusPageNavigator,
       } = params;
       const { stateAttributeValues } = pllTrainerElements.root;
@@ -407,8 +409,9 @@ const completePLLTestHelper: typeof completePLLTestInMilliseconds = (
         });
 
       pllTrainerElements.root.waitForStateChangeAwayFrom(
-        stateAttributeValues.pickAUFPreferencesPage
+        stateAttributeValues.pickAlgorithmPage
       );
+      if (endingState === "pickAUFPreferencePage") return;
       pllTrainerElements.root.getStateAttributeValue().then((stateValue) => {
         if (stateValue === "pick-auf-preferences-page") {
           if (params.assertPickAUFPreferencesPageDidntDisplay) {
@@ -417,13 +420,19 @@ const completePLLTestHelper: typeof completePLLTestInMilliseconds = (
             );
           }
           params.pickAUFPreferencesPageCallback?.();
+          (
+            params.pickAUFPreferencesNavigator ??
+            (() =>
+              pllTrainerElements.pickAUFPreferencesPage.submitButton
+                .get()
+                .click())
+          )();
         } else if (params.pickAUFPreferencesPageCallback) {
           throw new Error(
             "pickAUFPreferencesPageCallback was specified but pickAUFPreferencesPage didn't show up"
           );
         }
       });
-      if (endingState === "pickAUFPreferencePage") return;
 
       if (correct && params.correctPageCallback) {
         pllTrainerElements.correctPage.container.waitFor();
@@ -500,6 +509,7 @@ export function completePLLTestInMilliseconds(
     evaluateResultCallback?: (() => void) | undefined;
     correctPageNavigator?: (() => void) | undefined;
     wrongPageNavigator?: (() => void) | undefined;
+    pickAUFPreferencesNavigator?: (() => void) | undefined;
     algorithmDrillerStatusPageNavigator?: (() => void) | undefined;
   } & (
     | {
@@ -573,6 +583,9 @@ export function completePLLTestInMilliseconds(
     evaluateResultCallback: withCallLogger(params.evaluateResultCallback),
     correctPageNavigator: withCallLogger(params.correctPageNavigator),
     wrongPageNavigator: withCallLogger(params.wrongPageNavigator),
+    pickAUFPreferencesNavigator: withCallLogger(
+      params.pickAUFPreferencesNavigator
+    ),
     algorithmDrillerStatusPageNavigator: withCallLogger(
       params.algorithmDrillerStatusPageNavigator
     ),

@@ -427,8 +427,11 @@ describe("PLL Trainer", function () {
           testRunningNavigator: testRunningNavigateVariant11,
           evaluateResultCallback: () =>
             evaluateResultTimeDependantNoSideEffects6({ timeInMs: time }),
-          pickAUFPreferencesPageCallback: () =>
-            pllTrainerElements.pickAUFPreferencesPage.assertAllShow(),
+          pickAUFPreferencesPageCallback: () => {
+            pllTrainerElements.pickAUFPreferencesPage.container.assertShows();
+            pickAUFPreferencesPageNoSideEffects();
+          },
+          pickAUFPreferencesNavigator: pickAUFPreferencesPageNavigateVariant1,
         });
         completePLLTestInMilliseconds(10000, {
           correct: true,
@@ -532,6 +535,12 @@ describe("PLL Trainer", function () {
                   pllCount[actualPLL]++;
                 });
               },
+              pickAUFPreferencesNavigator:
+                // Just make sure we're also testing variant 2 here, and first case should
+                // be H-perm which is symmetric
+                index === 0
+                  ? pickAUFPreferencesPageNavigateVariant2
+                  : undefined,
             });
 
             startingState = "correctPage";
@@ -3924,6 +3933,49 @@ function typeInAlgorithm(currentPLL: PLL) {
         rotation,
       { delay: 0 }
     );
+}
+
+function pickAUFPreferencesPageNoSideEffects() {
+  cy.withOverallNameLogged(
+    { message: "pickAUFPreferencesPageNoSideEffects" },
+    () => {
+      const elements = pllTrainerElements.pickAUFPreferencesPage;
+      (
+        [
+          [
+            "looks right",
+            () => {
+              elements.assertAllShow();
+              cy.assertNoHorizontalScrollbar();
+            },
+          ],
+        ] as const
+      ).forEach(([testDescription, testFunction]) =>
+        cy.withOverallNameLogged({ message: testDescription }, testFunction)
+      );
+    }
+  );
+}
+
+function pickAUFPreferencesPageNavigateVariant1() {
+  cy.withOverallNameLogged(
+    { message: "pickAUFPreferencesPageNavigateVariant1" },
+    () => {
+      pllTrainerElements.pickAUFPreferencesPage.submitButton.get().click();
+      pllTrainerElements.pickAUFPreferencesPage.container.assertDoesntExist();
+    }
+  );
+}
+
+function pickAUFPreferencesPageNavigateVariant2() {
+  cy.withOverallNameLogged(
+    { message: "pickAUFPreferencesPageNavigateVariant2" },
+    () => {
+      pllTrainerElements.pickAUFPreferencesPage.container.waitFor();
+      cy.pressKey(Key.enter);
+      pllTrainerElements.pickAUFPreferencesPage.container.assertDoesntExist();
+    }
+  );
 }
 
 function correctPageNoSideEffects() {
