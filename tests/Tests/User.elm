@@ -7,6 +7,7 @@ import Fuzz
 import Fuzz.Extra
 import Json.Decode
 import Json.Encode
+import List.Nonempty
 import PLL
 import Test exposing (..)
 import Time
@@ -250,6 +251,16 @@ serializationTests =
         , fuzz Fuzz.string "deserializing a random string fails" <|
             \string ->
                 User.deserialize (Json.Encode.string string)
+                    |> Expect.err
+        , test "deserializing invalid AUF preferences fails" <|
+            \_ ->
+                User.new
+                    |> User.setPLLAUFPreferences PLL.H
+                        -- It is invalid because they aren't in three different equivalency classes where each of them have several optimal
+                        -- solutions, and it's a symmetric PLL so it is necessary to set preferences
+                        ( ( AUF.None, AUF.None ), ( AUF.None, AUF.None ), ( AUF.None, AUF.None ) )
+                    |> User.serialize
+                    |> User.deserialize
                     |> Expect.err
         , describe "Ensure Backwards Compatibility"
             [ test "it still works for the first format" <|

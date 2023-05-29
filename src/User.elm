@@ -4,7 +4,7 @@ module User exposing
     , getPLLAlgorithm, changePLLAlgorithm, hasChosenPLLAlgorithmFor
     , hasAttemptedAnyPLLTestCase, PLLTargetParameters, getPLLTargetParameters, changePLLTargetParameters, pllTestCaseIsNewForUser
     , hasChosenPLLTargetParameters, getAttemptedPLLPreAUFs, getAttemptedPLLPostAUFs, cubeTheme
-    , PLLAUFPreferences, getPLLAUFPreferences, setPLLAUFPreferences, defaultPLLAUFPreferences, getPLLAUFPreferencesTuple, tESTONLYBuildPLLAUFPreferences, pllAUFPreferencesToDebugString
+    , getPLLAUFPreferences, setPLLAUFPreferences
     , TestResult(..), testResultPreAUF, testResultPostAUF, testTimestamp, RecordResultError(..), recordPLLTestResult
     , CaseStatistics(..), pllStatistics, orderByWorstCaseFirst
     , serialize, deserialize
@@ -57,6 +57,7 @@ import Json.Encode
 import List.Extra
 import List.Nonempty
 import PLL exposing (PLL)
+import PLL.Extra
 import Time
 
 
@@ -74,168 +75,7 @@ type alias PLLTrainerData =
 
 
 type alias AllPLLAUFPreferences =
-    { -- Edges only
-      h : Maybe PLLAUFPreferences
-    , ua : Maybe PLLAUFPreferences
-    , ub : Maybe PLLAUFPreferences
-    , z : Maybe PLLAUFPreferences
-
-    -- Corners only
-    , aa : Maybe PLLAUFPreferences
-    , ab : Maybe PLLAUFPreferences
-    , e : Maybe PLLAUFPreferences
-
-    -- Edges And Corners
-    , f : Maybe PLLAUFPreferences
-    , ga : Maybe PLLAUFPreferences
-    , gb : Maybe PLLAUFPreferences
-    , gc : Maybe PLLAUFPreferences
-    , gd : Maybe PLLAUFPreferences
-    , ja : Maybe PLLAUFPreferences
-    , jb : Maybe PLLAUFPreferences
-    , na : Maybe PLLAUFPreferences
-    , nb : Maybe PLLAUFPreferences
-    , ra : Maybe PLLAUFPreferences
-    , rb : Maybe PLLAUFPreferences
-    , t : Maybe PLLAUFPreferences
-    , v : Maybe PLLAUFPreferences
-    , y : Maybe PLLAUFPreferences
-    }
-
-
-{-| The auf preferences for a specific PLL
--}
-type PLLAUFPreferences
-    = PLLAUFPreferences ( ( AUF, AUF ), ( AUF, AUF ), ( AUF, AUF ) )
-
-
-{-| Used to log errors mainly
--}
-pllAUFPreferencesToDebugString : PLLAUFPreferences -> String
-pllAUFPreferencesToDebugString (PLLAUFPreferences ( a, b, c )) =
-    String.join ", " (List.map aufPairToDebugString [ a, b, c ])
-
-
-aufPairToDebugString : ( AUF, AUF ) -> String
-aufPairToDebugString ( a, b ) =
-    String.concat [ "(\"", AUF.toString a, "\", \"", AUF.toString b, "\")" ]
-
-
-{-| Get the PLL AUF preferences as a list of preferred AUFs,
-one for each equivalency group of AUF pairs where there are
-several optimal options
--}
-getPLLAUFPreferencesTuple : PLLAUFPreferences -> ( ( AUF, AUF ), ( AUF, AUF ), ( AUF, AUF ) )
-getPLLAUFPreferencesTuple (PLLAUFPreferences tuple) =
-    tuple
-
-
-{-| Only meant for tests at this moment, don't build PLLAUFPreferences by yourself
-for any other reason
--}
-tESTONLYBuildPLLAUFPreferences : ( ( AUF, AUF ), ( AUF, AUF ), ( AUF, AUF ) ) -> PLLAUFPreferences
-tESTONLYBuildPLLAUFPreferences =
-    PLLAUFPreferences
-
-
-nonSymmetricalAUFPreferenceDefault : PLLAUFPreferences
-nonSymmetricalAUFPreferenceDefault =
-    -- Non symmetric cases have no options so it doesn't matter what is in here
-    PLLAUFPreferences <| ( ( AUF.None, AUF.None ), ( AUF.None, AUF.None ), ( AUF.None, AUF.None ) )
-
-
-{-| Our default values for PLLAUFPreferences
--}
-defaultPLLAUFPreferences : PLL -> PLLAUFPreferences
-defaultPLLAUFPreferences pll =
-    case pll of
-        PLL.E ->
-            PLLAUFPreferences <|
-                ( ( AUF.None, AUF.Halfway )
-                , ( AUF.Clockwise, AUF.CounterClockwise )
-                , ( AUF.Clockwise, AUF.Clockwise )
-                )
-
-        PLL.H ->
-            PLLAUFPreferences <|
-                ( ( AUF.None, AUF.Halfway )
-                , ( AUF.None, AUF.CounterClockwise )
-                , ( AUF.None, AUF.Clockwise )
-                )
-
-        PLL.Na ->
-            PLLAUFPreferences <|
-                ( ( AUF.None, AUF.Halfway )
-                , ( AUF.None, AUF.CounterClockwise )
-                , ( AUF.None, AUF.Clockwise )
-                )
-
-        PLL.Nb ->
-            PLLAUFPreferences <|
-                ( ( AUF.None, AUF.Halfway )
-                , ( AUF.None, AUF.CounterClockwise )
-                , ( AUF.None, AUF.Clockwise )
-                )
-
-        PLL.Z ->
-            PLLAUFPreferences <|
-                ( ( AUF.None, AUF.Halfway )
-                , ( AUF.Clockwise, AUF.CounterClockwise )
-                , ( AUF.Clockwise, AUF.Clockwise )
-                )
-
-        PLL.Aa ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Ab ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.F ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Ga ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Gb ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Gc ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Gd ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Ja ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Jb ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Ra ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Rb ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.T ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Ua ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Ub ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.V ->
-            nonSymmetricalAUFPreferenceDefault
-
-        PLL.Y ->
-            nonSymmetricalAUFPreferenceDefault
-
-
-
--- type alias AUFPreferences =
---     {}
+    SymmetricPLLsRecord (Maybe PLL.Extra.PLLAUFPreferences)
 
 
 {-| The configuration the user sets for how quick they want to solve
@@ -276,6 +116,20 @@ type alias PLLRecord a =
     , t : a
     , v : a
     , y : a
+    }
+
+
+type alias SymmetricPLLsRecord a =
+    { -- Fully symmetric
+      h : a
+
+    -- Half symmetric
+    , z : a
+    , e : a
+
+    -- N-perm symmetric
+    , na : a
+    , nb : a
     }
 
 
@@ -338,7 +192,7 @@ new =
     User
         { targetParameters = Nothing
         , pllData = emptyPLLRecord
-        , aufPreferences = emptyPLLRecord
+        , aufPreferences = emptySymmetricPLLsRecord
         }
         Cube.Advanced.defaultTheme
 
@@ -366,6 +220,21 @@ emptyPLLRecord =
     , t = Nothing
     , v = Nothing
     , y = Nothing
+    }
+
+
+emptySymmetricPLLsRecord : SymmetricPLLsRecord (Maybe a)
+emptySymmetricPLLsRecord =
+    { -- Fully symmetric
+      h = Nothing
+
+    -- Half symmetric
+    , z = Nothing
+    , e = Nothing
+
+    -- N-perm symmetric
+    , na = Nothing
+    , nb = Nothing
     }
 
 
@@ -487,18 +356,18 @@ in some way and the AUF preferences have been set previously it will return
 these preferences. If the AUF preferences have not been set yet, or if the
 PLL is not symmetric Nothing will be returned
 -}
-getPLLAUFPreferences : PLL -> User -> Maybe PLLAUFPreferences
+getPLLAUFPreferences : PLL.Extra.SymmetricPLL -> User -> Maybe PLL.Extra.PLLAUFPreferences
 getPLLAUFPreferences pll =
     getPLLTrainerData
         >> .aufPreferences
-        >> getFromPLLRecord pll
+        >> getFromSymmetricPLLsRecord pll
 
 
 {-| Set the user's AUF preferences for a given PLL. The three values should
 always be different equivalency classes, and the three preferences should always
 exactly cover the optimal choices a user has for any symmetric PLL
 -}
-setPLLAUFPreferences : PLL -> ( ( AUF, AUF ), ( AUF, AUF ), ( AUF, AUF ) ) -> User -> User
+setPLLAUFPreferences : PLL.Extra.SymmetricPLL -> PLL.Extra.PLLAUFPreferences -> User -> User
 setPLLAUFPreferences pll preferences user =
     let
         currentPLLTrainerData =
@@ -508,7 +377,7 @@ setPLLAUFPreferences pll preferences user =
         newPreferences =
             currentPLLTrainerData
                 |> .aufPreferences
-                |> updatePLLRecordEntry pll (Just <| PLLAUFPreferences preferences)
+                |> updateSymmetricPLLsRecordEntry pll (Just preferences)
     in
     setPLLTrainerData
         { currentPLLTrainerData
@@ -869,6 +738,31 @@ decoderByVersion maybeVersion =
                     ++ " is not supported"
 
 
+decoderv3 : Json.Decode.Decoder User
+decoderv3 =
+    let
+        pllAlgorithms =
+            Json.Decode.field
+                serializationKeys.usersCurrentPLLAlgorithms
+                pllAlgorithmsDecoder
+
+        pllResults =
+            Json.Decode.field
+                serializationKeys.usersPLLResults
+                pllResultsDecoder
+
+        pllTargetParameters =
+            Json.Decode.field
+                serializationKeys.usersPLLTargetParameters.topLevelKey
+                pllTargetParametersDecoder
+    in
+    Json.Decode.succeed new
+        |> Json.Decode.map2 setPLLData (pllDataDecoder pllAlgorithms pllResults)
+        |> Json.Decode.map2
+            setInternalPLLTargetParameters
+            pllTargetParameters
+
+
 decoderv2 : Json.Decode.Decoder User
 decoderv2 =
     let
@@ -1202,6 +1096,36 @@ getPLLResults pll data =
     Maybe.map Tuple.second (getFromPLLRecord pll data)
 
 
+setPLLAlgorithm :
+    PLL
+    -> Algorithm
+    -> PLLData
+    -> PLLData
+setPLLAlgorithm pll newAlgorithm data =
+    let
+        newData =
+            getFromPLLRecord pll data
+                |> Maybe.map (Tuple.mapFirst (always newAlgorithm))
+                |> Maybe.map Just
+                |> Maybe.withDefault (Just ( newAlgorithm, [] ))
+    in
+    updatePLLRecordEntry pll newData data
+
+
+addPLLResult : PLL -> TestResult -> PLLData -> Maybe PLLData
+addPLLResult pll result data =
+    let
+        newData =
+            getFromPLLRecord pll data
+                |> (Maybe.map <|
+                        Tuple.mapSecond <|
+                            (::) result
+                   )
+    in
+    newData
+        |> Maybe.map (\justNewData -> updatePLLRecordEntry pll (Just justNewData) data)
+
+
 getFromPLLRecord : PLL -> PLLRecord a -> a
 getFromPLLRecord pll data =
     case pll of
@@ -1269,36 +1193,6 @@ getFromPLLRecord pll data =
             data.y
 
 
-setPLLAlgorithm :
-    PLL
-    -> Algorithm
-    -> PLLData
-    -> PLLData
-setPLLAlgorithm pll newAlgorithm data =
-    let
-        newData =
-            getFromPLLRecord pll data
-                |> Maybe.map (Tuple.mapFirst (always newAlgorithm))
-                |> Maybe.map Just
-                |> Maybe.withDefault (Just ( newAlgorithm, [] ))
-    in
-    updatePLLRecordEntry pll newData data
-
-
-addPLLResult : PLL -> TestResult -> PLLData -> Maybe PLLData
-addPLLResult pll result data =
-    let
-        newData =
-            getFromPLLRecord pll data
-                |> (Maybe.map <|
-                        Tuple.mapSecond <|
-                            (::) result
-                   )
-    in
-    newData
-        |> Maybe.map (\justNewData -> updatePLLRecordEntry pll (Just justNewData) data)
-
-
 updatePLLRecordEntry : PLL -> a -> PLLRecord a -> PLLRecord a
 updatePLLRecordEntry pll newData data =
     case pll of
@@ -1364,6 +1258,44 @@ updatePLLRecordEntry pll newData data =
 
         PLL.Y ->
             { data | y = newData }
+
+
+getFromSymmetricPLLsRecord : PLL.Extra.SymmetricPLL -> SymmetricPLLsRecord a -> a
+getFromSymmetricPLLsRecord pll data =
+    case pll of
+        PLL.Extra.FullySymmetric PLL.FullSymH ->
+            data.h
+
+        PLL.Extra.HalfSymmetric PLL.HalfSymE ->
+            data.e
+
+        PLL.Extra.HalfSymmetric PLL.HalfSymZ ->
+            data.z
+
+        PLL.Extra.NPermSymmetric PLL.NPermSymNa ->
+            data.na
+
+        PLL.Extra.NPermSymmetric PLL.NPermSymNb ->
+            data.nb
+
+
+updateSymmetricPLLsRecordEntry : PLL.Extra.SymmetricPLL -> a -> SymmetricPLLsRecord a -> SymmetricPLLsRecord a
+updateSymmetricPLLsRecordEntry pll newData data =
+    case pll of
+        PLL.Extra.FullySymmetric PLL.FullSymH ->
+            { data | h = newData }
+
+        PLL.Extra.HalfSymmetric PLL.HalfSymE ->
+            { data | e = newData }
+
+        PLL.Extra.HalfSymmetric PLL.HalfSymZ ->
+            { data | z = newData }
+
+        PLL.Extra.NPermSymmetric PLL.NPermSymNa ->
+            { data | na = newData }
+
+        PLL.Extra.NPermSymmetric PLL.NPermSymNb ->
+            { data | nb = newData }
 
 
 getPLLTrainerData : User -> PLLTrainerData

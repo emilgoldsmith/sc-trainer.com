@@ -17,15 +17,7 @@ state : Shared.Model -> Transitions msg -> PLLTrainer.State.State msg () ()
 state shared transitions =
     PLLTrainer.State.static
         { view = view shared transitions
-        , nonRepeatedKeyUpHandler =
-            Just <|
-                \key ->
-                    case key of
-                        Key.Space ->
-                            transitions.continue
-
-                        _ ->
-                            transitions.noOp
+        , nonRepeatedKeyUpHandler = Nothing
         }
 
 

@@ -42,7 +42,7 @@ describe("PLL Trainer", function () {
 
   context("completely new user", function () {
     describe("different paths in the app:", function () {
-      it("shows new case for new user -> solved quickly + ending test by touching screen where correct button shows up doesn't press that button -> pick algorithm -> correct with goodjob text (no driller) -> same case again on a different visit, no new case page, doesn't display picker, doesn't display good job text", function () {
+      it.only("shows new case for new user -> solved quickly + ending test by touching screen where correct button shows up doesn't press that button -> pick algorithm -> pick AUF preferences -> correct with goodjob text (no driller) -> same case again on a different visit, no new case page, doesn't display picker, doesn't display auf preferences (and therefore persists picks in local storage), and doesn't display good job text", function () {
         cy.visit(paths.pllTrainer);
         pickTargetParametersPageFirstThingNoSideEffects();
         pickTargetParametersPageNoSideEffectsButScroll();
@@ -73,6 +73,7 @@ describe("PLL Trainer", function () {
         pickAlgorithmPageFirstThingNoSideEffectsExceptDisplayError();
         pickAlgorithmPageSideEffectsExceptNavigations();
         pickAlgorithmNavigateVariant1();
+        pickAUFPreferencesPageNavigateVariant1();
         pllTrainerElements.correctPage.goodJobText.assertShows();
         correctPageNoSideEffects();
 
@@ -98,7 +99,7 @@ describe("PLL Trainer", function () {
           cy.tick(evaluateResultIgnoreTransitionsWaitTime);
           cy.clock().invoke("restore");
           evaluateResultNavigateCorrectVariant1();
-          // No pick algorithm page here
+          // No pick algorithm or pick auf preferences page here
           pllTrainerElements.correctPage.container.assertShows();
           pllTrainerElements.correctPage.goodJobText.assertDoesntExist();
         });
@@ -420,7 +421,7 @@ describe("PLL Trainer", function () {
           ]);
       });
 
-      it.only("doesn't go to driller or display new case page on what is technically new pre and post aufs if they are equivalent by symmetry to cases that have been learned, and prompts auf preference selection exactly on first time for a symmetric PLL but not second time", function () {
+      it("doesn't go to driller or display new case page on what is technically new pre and post aufs if they are equivalent by symmetry to cases that have been learned, and prompts auf preference selection exactly on first time for a symmetric PLL but not second time", function () {
         const time = 120 as const;
         completePLLTestInMilliseconds(time, {
           correct: true,
@@ -452,7 +453,7 @@ describe("PLL Trainer", function () {
         pllTrainerElements.correctPage.container.assertShows();
       });
 
-      it("introduces new cases in the correct learning order (UFR angle)", function () {
+      it.only("introduces new cases in the correct learning order (UFR angle)", function () {
         const allowedCasesByPLL: {
           [key in PLL]: (readonly [AUF, AUF])[];
         } = {} as {
@@ -539,12 +540,6 @@ describe("PLL Trainer", function () {
                   pllCount[actualPLL]++;
                 });
               },
-              pickAUFPreferencesNavigator:
-                // Just make sure we're also testing variant 2 here, and first case should
-                // be H-perm which is symmetric
-                index === 0
-                  ? pickAUFPreferencesPageNavigateVariant2
-                  : undefined,
             });
 
             startingState = "correctPage";
@@ -1018,7 +1013,7 @@ describe("PLL Trainer", function () {
   });
 
   context("user who has learned full pll", function () {
-    it("shows the recurring user start page displaying all cases attempted, navigates correctly to edit target parameters, and doesn't show new case page on first attempt, it then changes the cube state correctly after choosing type of wrong", function () {
+    it.only("shows the recurring user start page displaying all cases attempted, navigates correctly to edit target parameters, and doesn't show new case page on first attempt, it then changes the cube state correctly after choosing type of wrong", function () {
       cy.setLocalStorage(fullyPopulatedLocalStorage);
       type Aliases = {
         solvedFront: string;
@@ -3966,17 +3961,6 @@ function pickAUFPreferencesPageNavigateVariant1() {
     { message: "pickAUFPreferencesPageNavigateVariant1" },
     () => {
       pllTrainerElements.pickAUFPreferencesPage.submitButton.get().click();
-      pllTrainerElements.pickAUFPreferencesPage.container.assertDoesntExist();
-    }
-  );
-}
-
-function pickAUFPreferencesPageNavigateVariant2() {
-  cy.withOverallNameLogged(
-    { message: "pickAUFPreferencesPageNavigateVariant2" },
-    () => {
-      pllTrainerElements.pickAUFPreferencesPage.container.waitFor();
-      cy.pressKey(Key.enter);
       pllTrainerElements.pickAUFPreferencesPage.container.assertDoesntExist();
     }
   );
