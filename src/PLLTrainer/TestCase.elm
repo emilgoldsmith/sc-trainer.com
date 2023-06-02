@@ -17,13 +17,22 @@ type TestCase
     = TestCase ( AUF, PLL, AUF )
 
 
-build : AUF -> PLL -> AUF -> Result (Cmd msg) TestCase
-build preAUF_ pll_ postAUF_ =
+build : User -> AUF -> PLL -> AUF -> Result (Cmd msg) TestCase
+build user preAUF_ pll_ postAUF_ =
     let
         optimizedAUFsResult =
-            PLL.Extra.getPreferredEquivalentAUFs
-                (User.defaultPLLAUFPreferences pll_)
-                ( preAUF_, pll_, postAUF_ )
+            PLL.Extra.isSymmetricPLL pll_
+                |> Maybe.map
+                    (\symPLL ->
+                        PLL.Extra.getPreferredEquivalentAUFs
+                            (User.getPLLAUFPreferences symPLL user
+                                |> Maybe.withDefault
+                                    (PLL.Extra.getDefaultPLLPreferences symPLL)
+                            )
+                            ( preAUF_, symPLL, postAUF_ )
+                    )
+                -- If it's not symmetric it's already optimized
+                |> Maybe.withDefault (Ok ( preAUF_, postAUF_ ))
     in
     optimizedAUFsResult
         |> Result.map

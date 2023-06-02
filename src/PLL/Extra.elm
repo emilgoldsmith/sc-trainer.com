@@ -1,4 +1,4 @@
-module PLL.Extra exposing (PLLAUFPreferences, SymmetricPLL(..), getPreferredEquivalentAUFs, isSymmetricPLL)
+module PLL.Extra exposing (PLLAUFPreferences, SymmetricPLL(..), getDefaultPLLPreferences, getPreferredEquivalentAUFs, isSymmetricPLL, preferredAUFsErrorToDebugString)
 
 import AUF exposing (AUF)
 import List.Extra
@@ -290,8 +290,33 @@ preferredAUFsErrorToDebugString error =
         ]
 
 
-getPreferredEquivalentAUFs : PLLAUFPreferences -> ( AUF, SymmetricPLL, AUF ) -> ( AUF, AUF )
-getPreferredEquivalentAUFs preferences ( preAUF, symPLL, postAUF ) =
+getPreferredEquivalentAUFs : PLLAUFPreferences -> ( AUF, SymmetricPLL, AUF ) -> Result PreferredAUFsError ( AUF, AUF )
+getPreferredEquivalentAUFs preferences (( preAUF, symPLL, postAUF ) as testCaseTriple) =
+    (case ( preferences, symPLL ) of
+        ( FullySymmetricPreferences _, FullySymmetric _ ) ->
+            Ok ()
+
+        ( FullySymmetricPreferences _, _ ) ->
+            Err ()
+
+        ( HalfSymmetricPreferences _, HalfSymmetric _ ) ->
+            Ok ()
+
+        ( HalfSymmetricPreferences _, _ ) ->
+            Err ()
+
+        ( NPermSymmetricPreferences _, NPermSymmetric _ ) ->
+            Ok ()
+
+        ( NPermSymmetricPreferences _, _ ) ->
+            Err ()
+    )
+        |> Result.mapError (always (InvalidPreferenceSymmetryType preferences testCaseTriple))
+        |> Result.andThen (always <| preVerifiedGetPreferredEquivalentAUFs preferences testCaseTriple)
+
+
+preVerifiedGetPreferredEquivalentAUFs : PLLAUFPreferences -> ( AUF, SymmetricPLL, AUF ) -> Result PreferredAUFsError ( AUF, AUF )
+preVerifiedGetPreferredEquivalentAUFs preferences (( preAUF, symPLL, postAUF ) as testCaseTriple) =
     let
         optimalOptions =
             ( preAUF, symmetricPLLToPLL symPLL, postAUF )
@@ -305,7 +330,7 @@ getPreferredEquivalentAUFs preferences ( preAUF, symPLL, postAUF ) =
     case optimalOptions of
         List.Nonempty.Nonempty onlyOption [] ->
             -- If only one optimal option we choose that one
-            onlyOption
+            Ok onlyOption
 
         nonSingletonOptions ->
             -- Else we choose the preference
@@ -316,20 +341,9 @@ getPreferredEquivalentAUFs preferences ( preAUF, symPLL, postAUF ) =
                     (\pref ->
                         nonSingletonOptions
                             |> List.Nonempty.Extra.find (\option -> option == pref)
-                            |> (\x ->
-                                    case x of
-                                        Just _ ->
-                                            True
-
-                                        Nothing ->
-                                            False
-                               )
+                            |> (/=) Nothing
                     )
-                -- We make sure to unit test this heavily to make sure this
-                -- case never happens instead of returning a result or maybe
-                -- as our strong types should really make this impossible to
-                -- ever occur.
-                |> Maybe.withDefault ( AUF.None, AUF.None )
+                |> Result.fromMaybe (UnexpectedInvalidPreferencesError preferences testCaseTriple)
 
 
 countAUFTurns : ( AUF, AUF ) -> Float
