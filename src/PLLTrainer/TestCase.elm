@@ -179,7 +179,7 @@ generateNewCase user =
 
                                         Nothing ->
                                             AUF.all
-                                                |> List.Nonempty.map (build preAUFForUserAlg pll_)
+                                                |> List.Nonempty.map (build user preAUFForUserAlg pll_)
                                                 |> nonemptyListOfResultsToResultOfList
                                                 |> Result.map (List.Nonempty.sample >> Just)
                                 )
@@ -236,7 +236,7 @@ generateAlreadyAttemptedCase { now } user =
                 |> List.concatMap
                     (\pll_ ->
                         allAUFPairs
-                            |> List.map (\( pre, post ) -> build pre pll_ post)
+                            |> List.map (\( pre, post ) -> build user pre pll_ post)
                     )
                 |> listOfResultsToResultOfList
 
@@ -262,7 +262,7 @@ generateAlreadyAttemptedCase { now } user =
                         allAUFPairs
                             |> List.map
                                 (\( pre, post ) ->
-                                    build pre pll_ post
+                                    build user pre pll_ post
                                         |> Result.map (Tuple.pair weight)
                                 )
                     )
@@ -347,7 +347,7 @@ generateNewPostAUFCaseForPreAUF user ( preAUF_, pll_ ) =
         allTestCases =
             AUF.all
                 |> List.Nonempty.toList
-                |> List.map (build preAUF_ pll_)
+                |> List.map (build user preAUF_ pll_)
                 |> listOfResultsToResultOfList
                 |> Result.map List.Extra.unique
 
@@ -415,7 +415,7 @@ generateAnyNewAUFCaseForPLL user pll_ =
                     (\preAUF_ ->
                         AUF.all
                             |> List.Nonempty.toList
-                            |> List.map (build preAUF_ pll_)
+                            |> List.map (build user preAUF_ pll_)
                     )
                 |> listOfResultsToResultOfList
                 |> Result.map List.Extra.unique

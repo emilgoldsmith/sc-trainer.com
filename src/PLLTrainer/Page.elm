@@ -13,6 +13,7 @@ import Json.Decode
 import List.Nonempty
 import Notification
 import PLL exposing (PLL)
+import PLL.Extra
 import PLLTrainer.State
 import PLLTrainer.States.AlgorithmDrillerExplanationPage
 import PLLTrainer.States.AlgorithmDrillerStatusPage
@@ -476,6 +477,7 @@ update shared msg model =
                         Just ( correctedPreAUF, correctedPostAUF ) ->
                             case
                                 PLLTrainer.TestCase.build
+                                    shared.user
                                     correctedPreAUF
                                     (PLLTrainer.TestCase.pll model.currentTestCase.testCase)
                                     correctedPostAUF
@@ -525,20 +527,30 @@ update shared msg model =
                         pll =
                             PLLTrainer.TestCase.pll model.currentTestCase.testCase
                     in
-                    ( { model | trainerState = nextTrainerState }
-                    , Effect.batch
-                        [ nextEffect
-                        , Effect.fromShared <|
-                            Shared.ModifyUser <|
-                                userModificationThatAlwaysSucceeds
-                                    (User.setPLLAUFPreferences
-                                        pll
-                                        (User.defaultPLLAUFPreferences pll
-                                            |> User.getPLLAUFPreferencesTuple
-                                        )
-                                    )
-                        ]
-                    )
+                    case PLL.Extra.isSymmetricPLL pll of
+                        Nothing ->
+                            ( model
+                            , Effect.fromShared
+                                (Shared.AddErrorPopup
+                                    { userFacingErrorMessage = "Unexpected error occurred while saving AUF preferences"
+                                    , developerErrorMessage = "Attempted to save AUF preferences for no symmetric PLL " ++ PLL.getLetters pll
+                                    }
+                                )
+                            )
+
+                        Just symPLL ->
+                            ( { model | trainerState = nextTrainerState }
+                            , Effect.batch
+                                [ nextEffect
+                                , Effect.fromShared <|
+                                    Shared.ModifyUser <|
+                                        userModificationThatAlwaysSucceeds
+                                            (User.setPLLAUFPreferences
+                                                symPLL
+                                                (PLL.Extra.getDefaultPLLPreferences symPLL)
+                                            )
+                                ]
+                            )
 
                 StartAlgorithmDrills ->
                     ( { model
@@ -625,7 +637,7 @@ update shared msg model =
 
                 TESTONLYSetTestCase (Ok (( pre, pll, post ) as testCaseTriple)) ->
                     case
-                        PLLTrainer.TestCase.build pre pll post
+                        PLLTrainer.TestCase.build shared.user pre pll post
                     of
                         Ok testCase ->
                             let
@@ -671,7 +683,7 @@ update shared msg model =
 
                 TESTONLYOverrideNextTestCase (Ok ( pre, pll, post )) ->
                     case
-                        PLLTrainer.TestCase.build pre pll post
+                        PLLTrainer.TestCase.build shared.user pre pll post
                     of
                         Ok testCaseOverride ->
                             let
@@ -887,16 +899,20 @@ handleEvaluate testResult model shared =
                     ( withDrillerIncluded, newDrillerState_ ) =
                         withDrillerIncludedAndState algorithm
 
-                    equivalentAUFs =
-                        PLL.getAllEquivalentAUFs <|
-                            PLLTrainer.TestCase.toTriple model.currentTestCase.testCase
+                    maybeSymPLL =
+                        PLL.Extra.isSymmetricPLL
+                            (PLLTrainer.TestCase.pll model.currentTestCase.testCase)
 
                     aufPreferences =
-                        User.getPLLAUFPreferences
-                            (PLLTrainer.TestCase.pll model.currentTestCase.testCase)
-                            shared.user
+                        maybeSymPLL
+                            |> Maybe.andThen
+                                (\symPLL ->
+                                    User.getPLLAUFPreferences
+                                        symPLL
+                                        shared.user
+                                )
                 in
-                if List.Nonempty.length equivalentAUFs > 1 && aufPreferences == Nothing then
+                if maybeSymPLL /= Nothing && aufPreferences == Nothing then
                     ( ( PickAUFPreferencesPage
                             { nextTrainerState = withDrillerIncluded
                             }
