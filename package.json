@@ -4,7 +4,7 @@
     "elm-spa": "^6.0.4"
   },
   "dependencies": {
-    "serve": "^14.2.0"
+    "serve": "^14.2.1"
   },
   "optionalDependencies": {
     "elm-doc-preview": "^5.0.5",
