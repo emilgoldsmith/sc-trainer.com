@@ -73,7 +73,7 @@ jobs:
       # where it won't have access to our secrets. Don't do anything else with
       # this code! Especially don't allow it to execute in any way!
       - name: Checkout possibly unsafe code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.get-ref-and-sha.outputs.ref }}
 
