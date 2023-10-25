@@ -7,7 +7,7 @@
     "@nazarkulyk/eslint-config-esnext": "^5.0.0",
     "@percy/cli": "^1.21.0",
     "@percy/cypress": "^3.1.2",
-    "@types/deep-equal-in-any-order": "^1.0.1",
+    "@types/deep-equal-in-any-order": "^1.0.2",
     "@typescript-eslint/eslint-plugin": "^5.57.0",
     "@typescript-eslint/parser": "^5.57.0",
     "cypress": "^12.17.4",
