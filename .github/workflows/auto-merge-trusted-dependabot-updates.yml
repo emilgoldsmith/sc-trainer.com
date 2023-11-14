@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Automerge
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         # If the dependabot change is wrong it is a bit dangerous as we approve the
         # PR. Not as bad as automerging it but still, be careful with those checks.
         # It is a bit safer as we are just commenting to tell dependabot to merge for us
