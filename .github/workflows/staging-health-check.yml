@@ -59,7 +59,7 @@ jobs:
           --config '{"baseUrl": "https://staging.sc-trainer.com", "e2e": {"specPattern": "cypress/smoke-tests"}}'
 
       - name: Upload recorded videos
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         continue-on-error: true
         with:
@@ -67,7 +67,7 @@ jobs:
           path: end-to-end-tests/cypress/videos
 
       - name: Upload recorded Screenshots
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         continue-on-error: true
         with:
