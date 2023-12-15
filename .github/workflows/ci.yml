@@ -335,7 +335,7 @@ jobs:
           --config '{"viewportWidth": ${{ matrix.sizeRelevant.viewportWidth }}, "viewportHeight": ${{ matrix.sizeRelevant.viewportHeight }}, "baseUrl": "http://sctrainer-server:${{ env.PORT }}", "e2e": {"excludeSpecPattern": ["**/visual-tests.cy.ts" ${{ matrix.sizeRelevant.ignoredSpecs }}]}, "video": true}'
 
       - name: Upload recorded videos
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         continue-on-error: true
         with:
@@ -343,7 +343,7 @@ jobs:
           path: end-to-end-tests/cypress/videos
 
       - name: Upload recorded Screenshots
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         continue-on-error: true
         with:
