@@ -170,7 +170,7 @@ jobs:
         run: ./scripts/checks/shellcheck.sh
 
       - name: Handle Elm Yarn Caching
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: yarn-e2e-cache-v2
         with:
@@ -199,7 +199,7 @@ jobs:
         run: ./scripts/checks/elm-docs-compile.sh
 
       - name: Handle E2E Yarn caching
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: yarn-e2e-cache-v2
         with:
@@ -298,7 +298,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Handle Yarn caching
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: yarn-cache-v2
         with:
@@ -309,7 +309,7 @@ jobs:
           # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
 
       - name: Handle Cypress caching
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cypress-cache-v2
         with:
