@@ -102,7 +102,7 @@ jobs:
       ### or expose any of our secrets without great thought behind it
 
       - name: Handle Yarn caching
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: yarn-cache-v2
         with:
@@ -113,7 +113,7 @@ jobs:
           # Explanation: https://glebbahmutov.com/blog/do-not-let-cypress-cache-snowball/
 
       - name: Handle Cypress caching
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cypress-cache-v2
         with:
