@@ -1001,10 +1001,10 @@ elm-solve-deps-wasm@^1.0.2:
   resolved "https://registry.yarnpkg.com/elm-solve-deps-wasm/-/elm-solve-deps-wasm-1.0.2.tgz#cabd3cadf344295944b8d046a857b6ee05e12aaf"
   integrity sha512-qnwo7RO9IO7jd9SLHvIy0rSOEIlc/tNMTE9Cras0kl+b161PVidW4FvXo0MtXU8GAKi/2s/HYvhcnpR/NNQ1zw==
 
-elm-spa@^6.0.4:
-  version "6.0.4"
-  resolved "https://registry.yarnpkg.com/elm-spa/-/elm-spa-6.0.4.tgz#8b7513fe710903f92b5fb88efeba814cfed43a86"
-  integrity sha512-TiOBuxL1SrzqYyWkime3AZ1/xFqKa6B/Bi4SplFg7YmlwPL5d7R+u6w0dxc14cnvmP1RS2+QZAkczZtqayFK9A==
+elm-spa@^6.0.6:
+  version "6.0.6"
+  resolved "https://registry.yarnpkg.com/elm-spa/-/elm-spa-6.0.6.tgz#de5fc59bbd4f96c8f6a4b3b21f344f48301f7dc0"
+  integrity sha512-FslLqKt2D5EjMJjtYU55P9xu/LGNnWL8pTzWAaOtTTFkNq2vVXFEknXRq1SCahicMEPRp+26r7NvawV+XuAxMA==
   dependencies:
     chokidar "3.4.2"
     mime "2.4.6"
