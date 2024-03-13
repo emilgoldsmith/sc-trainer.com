@@ -1,7 +1,7 @@
 {
   "//": "We purely split them into these different categories in order to do slightly more efficient installing in the Dockerfile",
   "devDependencies": {
-    "elm-spa": "^6.0.4"
+    "elm-spa": "^6.0.6"
   },
   "dependencies": {
     "serve": "^14.2.1"
