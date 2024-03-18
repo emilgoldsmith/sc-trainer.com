@@ -970,15 +970,15 @@ elm-live@^4.0.2:
     serve-static "1.14.1"
     ws "7.1.1"
 
-elm-review@^2.10.3:
-  version "2.10.3"
-  resolved "https://registry.yarnpkg.com/elm-review/-/elm-review-2.10.3.tgz#0f8a83be4ac1d7d726e19eb1eec8809156d18f16"
-  integrity sha512-9gBqLc5Xm3v9Ncpf8y2haEaBZZyMX25vmwQkrNqSIaNYQ2vdGOIx1eyqRtt1xwX5O8pZdqU8IWC/ENyTrOTKbw==
+elm-review@^2.11.1:
+  version "2.11.1"
+  resolved "https://registry.yarnpkg.com/elm-review/-/elm-review-2.11.1.tgz#02aa590433973af3e4b25a02fbe55fbaea773a83"
+  integrity sha512-mJJN7QmqlV7HcaLigsiap6X3/7o9idA3bg3h7228iokUmBccpBquakPaShM8BZ/wDYtWg53sevSaFpGniEujFA==
   dependencies:
     chalk "^4.0.0"
     chokidar "^3.5.2"
     cross-spawn "^7.0.3"
-    elm-tooling "^1.14.1"
+    elm-solve-deps-wasm "^1.0.2"
     fastest-levenshtein "^1.0.16"
     find-up "^4.1.0"
     folder-hash "^3.3.0"
@@ -994,7 +994,7 @@ elm-review@^2.10.3:
     strip-ansi "^6.0.0"
     terminal-link "^2.1.1"
     which "^2.0.2"
-    wrap-ansi "^6.2.0"
+    wrap-ansi "^7.0.0"
 
 elm-solve-deps-wasm@^1.0.2:
   version "1.0.2"
@@ -1050,11 +1050,6 @@ elm-test@^0.19.1-revision7:
     temp "0.9.0"
     which "2.0.1"
     xmlbuilder "^13.0.2"
-
-elm-tooling@^1.14.1:
-  version "1.14.1"
-  resolved "https://registry.yarnpkg.com/elm-tooling/-/elm-tooling-1.14.1.tgz#0dddebf50a41af91e4545a1184ce4b9dbbb65a0d"
-  integrity sha512-3LjMe2WXdH/0swZsWT6R9RS73NhsqqLjbwS2PF0QmFauCII/9nomOtFFv/DIPOJ3oxbKFltBgvDELMCMdV+Bww==
 
 elm-verify-examples@^5.2.0:
   version "5.2.0"
@@ -3340,7 +3335,7 @@ widest-line@^4.0.1:
   dependencies:
     string-width "^5.0.1"
 
-"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0":
+"wrap-ansi-cjs@npm:wrap-ansi@^7.0.0", wrap-ansi@^7.0.0:
   version "7.0.0"
   resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-7.0.0.tgz#67e145cff510a6a6984bdf1152911d69d2eb9e43"
   integrity sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==
@@ -3357,15 +3352,6 @@ wrap-ansi@^5.1.0:
     ansi-styles "^3.2.0"
     string-width "^3.0.0"
     strip-ansi "^5.0.0"
-
-wrap-ansi@^6.2.0:
-  version "6.2.0"
-  resolved "https://registry.yarnpkg.com/wrap-ansi/-/wrap-ansi-6.2.0.tgz#e9393ba07102e6c91a3b221478f0257cd2856e53"
-  integrity sha512-r6lPcBGxZXlIcymEu7InxDMhdW0KDxpLgoFLcguasxCaJ/SOIZwINatK9KY/tf+ZrlywOKU0UDj3ATXUBfxJXA==
-  dependencies:
-    ansi-styles "^4.0.0"
-    string-width "^4.1.0"
-    strip-ansi "^6.0.0"
 
 wrap-ansi@^8.0.1, wrap-ansi@^8.1.0:
   version "8.1.0"
